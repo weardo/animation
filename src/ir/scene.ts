@@ -1,0 +1,359 @@
+// Scene IR — concrete, deterministic. JSON = Remotion `inputProps`. Lottie superset. Spec §6.2, §7.
+//
+// Adopts the `{a,k}` animated-property model (animated.ts) and GSAP-style label positioning.
+// Extends Lottie with: camera/parallax, `rig` layers (DragonBones refs), `generator` layers,
+// `audio` cues, and morph/effects channels.
+//
+// M1 IMPLEMENTS the layer types: 'asset' (parallax background), 'rig' (DragonBones ref +
+// transform + rig_state.clips), 'generator' (gen + seed + path + params), plus 'shape' (carries
+// the morph channel — kept minimal in M1). All fields the spec mentions for later milestones
+// (audio[], parts, attach, morph, effects[], post[], stagger, transition_in, light, shading,
+// gradient fills, clip layers) are RESERVED here as optional/unused so later milestones need no
+// schema migration.
+
+import { z } from 'zod';
+import {
+  animated,
+  AnimatedColorSchema,
+  AnimatedNumberSchema,
+  AnimatedVec2Schema,
+  ColorSchema,
+} from './animated.js';
+
+// --- defs ---
+
+/** Palette: token name → color. */
+export const PaletteSchema = z.record(ColorSchema);
+export type Palette = z.infer<typeof PaletteSchema>;
+
+/**
+ * Easings: token name → curve definition.
+ * Either a cubic-bezier control array [x1,y1,x2,y2] or a named curve string (e.g. "backOut").
+ */
+export const EasingDefSchema = z.union([
+  z.tuple([z.number(), z.number(), z.number(), z.number()]),
+  z.string().min(1),
+]);
+export type EasingDef = z.infer<typeof EasingDefSchema>;
+export const EasingsSchema = z.record(EasingDefSchema);
+export type Easings = z.infer<typeof EasingsSchema>;
+
+/** An asset definition (URI + kind). */
+export const AssetDefSchema = z
+  .object({
+    uri: z.string().min(1),
+    kind: z.enum(['svg', 'lottie', 'image']),
+  })
+  .strict();
+export type AssetDef = z.infer<typeof AssetDefSchema>;
+export const AssetsSchema = z.record(AssetDefSchema);
+
+/** A rig definition (DragonBones JSON ref). */
+export const RigDefSchema = z
+  .object({
+    uri: z.string().min(1),
+    kind: z.literal('dragonbones'),
+  })
+  .strict();
+export type RigDef = z.infer<typeof RigDefSchema>;
+export const RigsSchema = z.record(RigDefSchema);
+
+export const DefsSchema = z
+  .object({
+    palette: PaletteSchema.default({}),
+    easings: EasingsSchema.default({}),
+    assets: AssetsSchema.default({}),
+    rigs: RigsSchema.default({}),
+  })
+  .strict();
+export type Defs = z.infer<typeof DefsSchema>;
+
+// --- config ---
+
+export const SceneConfigSchema = z
+  .object({
+    w: z.number().int().positive(),
+    h: z.number().int().positive(),
+    fps: z.number().positive(),
+    duration_frames: z.number().int().positive(),
+  })
+  .strict();
+export type SceneConfig = z.infer<typeof SceneConfigSchema>;
+
+// --- camera ---
+
+/** Camera: position (pan) + zoom as animated `{a,k}` props with easing-ref'd keyframes. */
+export const CameraSchema = z
+  .object({
+    position: AnimatedVec2Schema,
+    zoom: AnimatedNumberSchema,
+  })
+  .strict();
+export type Camera = z.infer<typeof CameraSchema>;
+
+// --- reserved channels (defined now, unused in M1) ---
+
+/** RESERVED (M2 look): gradient fill spec. */
+export const GradientFillSchema = z
+  .object({
+    type: z.enum(['linear', 'radial']),
+    stops: z.array(z.tuple([ColorSchema, z.number()])),
+    angle: z.number().optional(),
+  })
+  .strict();
+
+/** A layer fill: a flat (animated) color or a gradient. RESERVED gradient form for M2. */
+export const FillSchema = z.union([
+  AnimatedColorSchema,
+  z.object({ gradient: GradientFillSchema }).strict(),
+]);
+export type Fill = z.infer<typeof FillSchema>;
+
+/** RESERVED (M2): morph channel — animated path `d` strings with fill interpolation. */
+export const MorphChannelSchema = animated(z.string().min(1));
+
+/** RESERVED (M2): a single per-layer effect (glow/drop_shadow/motion_blur/…). Loosely typed. */
+export const EffectSchema = z
+  .object({
+    kind: z.string().min(1),
+  })
+  .passthrough();
+export type Effect = z.infer<typeof EffectSchema>;
+
+/** RESERVED (M3): a single composition post-process (color_grade/vignette/grain/bloom/…). */
+export const PostSchema = z
+  .object({
+    kind: z.string().min(1),
+  })
+  .passthrough();
+export type Post = z.infer<typeof PostSchema>;
+
+/** RESERVED (M2): per-layer shading (supporting gradient shapes). */
+export const ShadingSchema = z
+  .object({
+    form: z.boolean().optional(),
+    contact_shadow: z.boolean().optional(),
+    rim: z.number().optional(),
+    ao: z.boolean().optional(),
+    glow: z.number().optional(),
+  })
+  .strict();
+
+/** RESERVED (M2): scene light source. */
+export const LightSchema = z
+  .object({
+    dir: z.number(),
+    elevation: z.number(),
+    color: ColorSchema,
+    intensity: z.number(),
+    ambient: z.number(),
+  })
+  .strict();
+
+/** RESERVED (M2): inter-rig attachment (scene-graph parenting). */
+export const AttachSchema = z
+  .object({
+    to: z.string().min(1),
+    bone: z.string().min(1).optional(),
+    slot: z.string().min(1).optional(),
+    inherit: z.array(z.string()).optional(),
+  })
+  .strict();
+
+// --- layer transform (used by rig + reusable) ---
+
+export const TransformSchema = z
+  .object({
+    position: AnimatedVec2Schema.optional(),
+    scale: AnimatedNumberSchema.optional(),
+    rotation: AnimatedNumberSchema.optional(),
+    opacity: AnimatedNumberSchema.optional(),
+  })
+  .strict();
+export type Transform = z.infer<typeof TransformSchema>;
+
+// --- rig_state ---
+
+/** A clip selection on a rig: which internal animation, looped or one-shot at a frame. */
+export const RigClipSchema = z
+  .object({
+    anim: z.string().min(1),
+    loop: z.boolean().optional(),
+    /** Frame at which this clip starts (relative to scene). */
+    at: z.number().optional(),
+  })
+  .strict();
+export type RigClip = z.infer<typeof RigClipSchema>;
+
+export const RigStateSchema = z
+  .object({
+    clips: z.array(RigClipSchema).min(1),
+    /** Optional pose hints (expression etc.) — thin pointer, never re-describes bones. */
+    pose: z.record(z.unknown()).optional(),
+  })
+  .strict();
+export type RigState = z.infer<typeof RigStateSchema>;
+
+// --- common layer fields shared by every layer type ---
+
+const layerBase = {
+  id: z.string().min(1),
+  /** Z-order; higher = front. */
+  z: z.number().default(0),
+  // --- reserved-now look/effect channels (unused in M1) ---
+  effects: z.array(EffectSchema).optional(),
+  shading: ShadingSchema.optional(),
+  /** RESERVED (M2): cascade offset metadata. */
+  stagger: z.number().optional(),
+} as const;
+
+// --- M1 layer types ---
+
+/** asset layer: fixed art with a parallax factor (M1 background). */
+export const AssetLayerSchema = z
+  .object({
+    type: z.literal('asset'),
+    ...layerBase,
+    /** defs.assets key. */
+    ref: z.string().min(1),
+    /** Parallax factor (0 = static far, 1 = moves with camera). 2.5D depth. */
+    parallax: z.number().default(0),
+    transform: TransformSchema.optional(),
+  })
+  .strict();
+export type AssetLayer = z.infer<typeof AssetLayerSchema>;
+
+/** rig layer: a DragonBones rig with a transform + rig_state.clips. */
+export const RigLayerSchema = z
+  .object({
+    type: z.literal('rig'),
+    ...layerBase,
+    /** defs.rigs key. */
+    ref: z.string().min(1),
+    transform: TransformSchema.optional(),
+    rig_state: RigStateSchema,
+    // --- reserved compositional fields (M2) ---
+    /** Intra-rig variant selection (reserved; M2). */
+    parts: z.record(z.string()).optional(),
+    /** Inter-rig attachment (reserved; M2). */
+    attach: AttachSchema.optional(),
+  })
+  .strict();
+export type RigLayer = z.infer<typeof RigLayerSchema>;
+
+/** generator layer: a procedural component (gen + seed + path + params). */
+export const GeneratorLayerSchema = z
+  .object({
+    type: z.literal('generator'),
+    ...layerBase,
+    /** Registered generator name (e.g. "bead-string"). */
+    gen: z.string().min(1),
+    /** Deterministic seed. */
+    seed: z.number().int(),
+    /** Optional path the generator places along (e.g. "asset://axon.svg#path"). */
+    path: z.string().min(1).optional(),
+    /** Free-form, generator-specific parameters. */
+    params: z.record(z.unknown()).default({}),
+    transform: TransformSchema.optional(),
+  })
+  .strict();
+export type GeneratorLayer = z.infer<typeof GeneratorLayerSchema>;
+
+/** shape layer: vector shape carrying the (reserved) morph channel. Minimal in M1. */
+export const ShapeLayerSchema = z
+  .object({
+    type: z.literal('shape'),
+    ...layerBase,
+    /** RESERVED (M2): animated path morph. */
+    morph: MorphChannelSchema.optional(),
+    fill: FillSchema.optional(),
+    transform: TransformSchema.optional(),
+  })
+  .strict();
+export type ShapeLayer = z.infer<typeof ShapeLayerSchema>;
+
+/** Discriminated union of all M1 layer types. */
+export const LayerSchema = z.discriminatedUnion('type', [
+  AssetLayerSchema,
+  RigLayerSchema,
+  GeneratorLayerSchema,
+  ShapeLayerSchema,
+]);
+export type Layer = z.infer<typeof LayerSchema>;
+
+// --- reserved: stagger group + transition (defined now, unused in M1) ---
+
+export const StaggerGroupSchema = z
+  .object({
+    group: z.array(z.string()),
+    offset_frames: z.number(),
+  })
+  .strict();
+
+export const TransitionSchema = z
+  .object({
+    kind: z.string().min(1),
+  })
+  .passthrough();
+
+// --- scene ---
+
+export const SceneSchema = z
+  .object({
+    id: z.string().min(1),
+    /** Start frame of this scene on the global timeline. */
+    at: z.number().int().nonnegative(),
+    duration_frames: z.number().int().positive(),
+    /** GSAP-style named frame labels (label → frame). */
+    labels: z.record(z.number()).default({}),
+    camera: CameraSchema,
+    layers: z.array(LayerSchema),
+    // --- reserved-now (unused in M1) ---
+    light: LightSchema.optional(),
+    stagger: z.array(StaggerGroupSchema).optional(),
+    transition_in: TransitionSchema.optional(),
+  })
+  .strict();
+export type Scene = z.infer<typeof SceneSchema>;
+
+// --- reserved: audio cue (defined now, empty in M1; filled by the later TTS pass) ---
+
+export const AudioCueSchema = z
+  .object({
+    id: z.string().min(1),
+    kind: z.string().min(1),
+    src: z.string().optional(),
+    at: z.number(),
+    duration_frames: z.number(),
+    transcript: z.string().optional(),
+    align: z.array(z.unknown()).optional(),
+  })
+  .strict();
+export type AudioCue = z.infer<typeof AudioCueSchema>;
+
+// --- provenance ---
+
+export const ProvenanceSchema = z
+  .object({
+    story_ir_hash: z.string().optional(),
+    passes: z.array(z.string()).optional(),
+  })
+  .passthrough();
+export type Provenance = z.infer<typeof ProvenanceSchema>;
+
+// --- Scene IR root ---
+
+export const SceneIRSchema = z
+  .object({
+    scene_ir_version: z.string().default('1.0'),
+    config: SceneConfigSchema,
+    defs: DefsSchema,
+    /** RESERVED (M3): empty in M1, filled by the later TTS pass. */
+    audio: z.array(AudioCueSchema).default([]),
+    scenes: z.array(SceneSchema).min(1),
+    /** RESERVED (M3): full-frame post grade. */
+    post: z.array(PostSchema).optional(),
+    provenance: ProvenanceSchema.optional(),
+  })
+  .strict();
+export type SceneIR = z.infer<typeof SceneIRSchema>;

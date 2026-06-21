@@ -1,0 +1,36 @@
+{
+  "name": "animation-factory",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Code-driven, Kurzgesagt-style 2.5D deterministic animation pipeline: story script in, video out.",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build:m1": "tsx src/cli/render.ts examples/neuron.yaml out.mp4",
+    "studio": "remotion studio src/render/index.ts"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.481",
+    "@remotion/renderer": "4.0.481",
+    "d3-shape": "3.2.0",
+    "object-hash": "3.0.0",
+    "pixi-dragonbones-runtime": "8.0.3",
+    "pixi.js": "8.19.0",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "remotion": "4.0.481",
+    "simplex-noise": "4.0.3",
+    "yaml": "2.7.0",
+    "zod": "3.24.1",
+    "zod-to-json-schema": "3.24.1"
+  },
+  "devDependencies": {
+    "@types/d3-shape": "3.1.7",
+    "@types/node": "22.10.5",
+    "@types/object-hash": "3.0.6",
+    "@types/react": "19.0.0",
+    "@types/react-dom": "19.0.0",
+    "tsx": "4.19.2",
+    "typescript": "5.7.3"
+  }
+}

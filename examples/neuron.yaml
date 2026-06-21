@@ -1,0 +1,24 @@
+# examples/neuron.yaml — the M1 vertical-slice Story IR (spec §6.1, §15).
+#
+# ONE beat, authored as high-level semantic intent only (no frames, no coordinates): a narrator
+# character, a bead-string neuron chain, and a slow camera push-in. The pipeline (P0 parse →
+# P5 lower → lite layout/camera → V validate) turns this into a concrete Scene IR, which Remotion
+# renders to out.mp4. See `npm run build:m1`.
+#
+# The narrator's `rig: dragon` resolves through the library catalog (dragon@1.0.0 → content hash),
+# exercising the deterministic content-addressing seam even at one rig (spec §15).
+
+title: "How neurons talk"
+
+characters:
+  narrator:
+    rig: dragon # → library characters/dragon@1.0.0 (DragonBones 'starter' armature, anim "throw")
+    palette: warm
+
+beats:
+  - id: b1
+    say: "Your brain is a network of neurons."
+    show:
+      - generator: bead-string
+        as: neuron_chain # traveling pulse + wavy bending + blobby beads (generator family)
+    camera: slow_push_in # zoom 1.0 → 1.15 + a slight pan, driving the parallax differential

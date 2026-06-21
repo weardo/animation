@@ -1,0 +1,57 @@
+{
+  "catalog_version": "1.0",
+  "description": "Content-addressed asset/rig/generator catalog. name@version -> content hash (computed at resolve time via object-hash over the entry's content). Namespaced by kind. Local-first, no service.",
+  "entries": {
+    "characters": {
+      "dragon": {
+        "id": "dragon",
+        "version": "1.0.0",
+        "kind": "rig",
+        "format": "dragonbones",
+        "uri": "rig://dragon/dragon.dbones.json",
+        "tags": ["m1", "creature", "ffd"],
+        "deps": [],
+        "manifest": {
+          "mounts": {},
+          "variants": {}
+        },
+        "provenance": {
+          "source": "pixi-dragonbones-runtime 'starter' demo armature (h1ve2)",
+          "license": "MIT"
+        }
+      }
+    },
+    "props": {},
+    "backgrounds": {
+      "bg_gradient": {
+        "id": "bg_gradient",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "svg",
+        "uri": "asset://bg_gradient.svg",
+        "tags": ["m1", "background", "parallax"],
+        "deps": [],
+        "provenance": {
+          "source": "authored",
+          "license": "CC0"
+        }
+      }
+    },
+    "generators": {
+      "axon_curve": {
+        "id": "axon_curve",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "svg",
+        "uri": "asset://axon_curve.svg#path",
+        "tags": ["m1", "bead-string", "path"],
+        "deps": [],
+        "provenance": {
+          "source": "authored",
+          "license": "CC0"
+        }
+      }
+    },
+    "kits": {}
+  }
+}
