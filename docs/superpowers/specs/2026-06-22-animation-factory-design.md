@@ -74,6 +74,7 @@ Verified against the 2026 landscape. Standards adopted so we extend rather than 
 | Schema definition + validation + types + JSON-Schema | **Zod** (single source → TS types + runtime validation + JSON-Schema export for the future LLM front-end) | `zod`, `zod-to-json-schema` |
 | Editorial/scene sequencing concepts | **Align Story IR with OTIO** (tracks/clips/transitions/markers); optional export adapter later — not a runtime dep | OpenTimelineIO (ASWF) |
 | Render + audio + mux + batch | **Remotion** | `remotion`, `@remotion/*` |
+| Reusable nested timelines (clips/environments) | **Remotion nested compositions** (pre-comp pattern) | reuse; see §13.3 |
 | Easing curves | Remotion `Easing` + `bezier-easing` | reuse |
 | Springs / secondary motion | Remotion `spring()` (+ `popmotion`) | reuse |
 | IK (where not using DragonBones) | `ikjs` / `IK.ts` | reuse |
@@ -206,6 +207,7 @@ Four complementary layer families, each the right tool for a kind of motion:
 | **rig** | constructed characters, **identity-stable**, posed by named clips (no-AI-drift guarantee) | DragonBones via pixi |
 | **shape** | vector shapes with morph/path/fill channels (coin→planet match-cuts) | React/SVG + flubber |
 | **generator** | procedural/organic/parametric structures (water, fire, smoke, clouds, particles, crowds, neuron bead-strings) — computed per-frame from `params + seed + frame` | React/SVG + d3-shape/noise |
+| **clip** | a reusable *nested composition* — a self-contained animated Scene-IR fragment (its own layers + timeline) placed/scaled/parameterized by the parent (a "brain-cell animation" dropped into many videos) | Remotion nested composition (§13.3) |
 
 ---
 
@@ -326,6 +328,44 @@ The library is the durable, compounding asset. It grows; past videos must not ch
 
 **Why the lockfile matters:** it reconciles "growing library" with "deterministic renders." Each video records the exact hashes it was built from, so improving a library rig never silently changes old videos. Composition and reuse reinforce each other: typed mount points + variant axes (§8.1) let presets compose rigs safely, and content-addressing makes a composed preset just another dedup-able entry — reuse compounds upward (parts → rigs → presets → scene templates).
 
+### 13.3 Reusable units at every granularity (nested compositions)
+
+The library holds reusable **kinds** at every granularity — not just static art, but finished *animations* and whole *scenes*. This is the "make a character / a brain-cell animation / a laboratory scene once, reuse in any video" requirement.
+
+| Kind | What it is |
+|---|---|
+| `asset` | static SVG/Lottie/image |
+| `rig` | skeletal DragonBones unit |
+| `preset` | a *composed* character/object (rig + parts + attachments + palette) |
+| **`clip`** | a reusable *animated* Scene-IR fragment with typed `params` + named slots (a "brain-cell animation") |
+| **`scene-template` / `environment`** | a composed scene: background + props layout + camera presets + named **anchors** to drop characters/clips into (a "laboratory") |
+| `generator` | parametric procedural component |
+| `stylekit` / `palette` / `easing-set` | look + motion constants |
+
+**Mechanism = nested compositions (reuse Remotion's native nesting; the After Effects "pre-comp" idea).** A `clip` is a self-contained sub-timeline placed/scaled/parameterized by its parent; an `environment` is a larger fragment exposing **anchors** (scene-scale analogue of rig mount points) where presets/clips drop in. The library is therefore **fractal**: part → rig → preset → clip → scene → video, every level a named, versioned, content-addressed entry — so a finished video is itself reusable.
+
+```jsonc
+// Scene IR: place a finished animation, parameterized (not copied)
+{ "id":"L_braincell", "type":"clip", "ref":"brain_cell_pulse@1.0.0", "z":6,
+  "at":"@reveal", "time_scale":1.0,
+  "args": { "color":"#4d9fff", "speed":1.2 },          // typed params
+  "overrides": { "L_caption": { "text":"neuron" } } }  // override inner slots by id
+```
+
+```yaml
+# Story IR: compose a new video from reusable units
+beats:
+  - id: b1
+    environment: laboratory                            # reuse the whole scene
+    place:
+      - { character: scientist, at: bench }            # reuse a composed character (preset)
+      - { clip: brain_cell_pulse, at: screen, args: { color: blue, speed: 1.2 } }  # reuse a finished animation
+    camera: establishing
+    say: "Inside every neuron…"
+```
+
+**Reuse with overrides, not copies:** `clip`/`environment` accept `args` + `overrides`, so one entry serves many videos without divergence. **Determinism:** a clip's output is a pure function of `(version + args + overrides + seed)`, and that tuple is folded into its content hash — so two parameterizations are distinct, correctly-cached entries, and pinning a version (lockfile) freezes a reused animation exactly.
+
 ---
 
 ## 14. Risks & Unknowns
@@ -357,7 +397,7 @@ The library is the durable, compounding asset. It grows; past videos must not ch
 4. Re-running produces a **byte-identical MP4** (same content hash) — proves determinism (Pixi + generator both seeded/frame-driven) + caching/golden tests.
 5. Scene IR validates against its Zod schema and is human-readable/diffable.
 
-**M2 (next):** compositional rigs (`attach` between rigs, `parts` selection, presets), rig instancing/crowds (DragonBones factory), more generators (water, particles), Lottie ingest, morph + filter channels, stagger. **M3+:** AI asset-gen (P3), TTS + lip-sync + captions (P4/P7), smart layout/transitions (P6/P9), LLM script-expander (P1).
+**M2 (next):** compositional rigs (`attach` between rigs, `parts` selection, presets), **reusable `clip` + `environment` nested compositions** (make-once/reuse-everywhere with args+overrides), rig instancing/crowds (DragonBones factory), more generators (water, particles), Lottie ingest, morph + filter channels, stagger. **M3+:** AI asset-gen (P3), TTS + lip-sync + captions (P4/P7), smart layout/transitions (P6/P9), LLM script-expander (P1).
 
 > Even at one rig, M1 resolves assets **through the library registry + `animation.lock`** (name@version → content hash), so the deterministic-addressing seam is exercised from the start; full composition (attach/presets/instancing) lands in M2.
 
