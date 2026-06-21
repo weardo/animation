@@ -75,6 +75,10 @@ Verified against the 2026 landscape. Standards adopted so we extend rather than 
 | Editorial/scene sequencing concepts | **Align Story IR with OTIO** (tracks/clips/transitions/markers); optional export adapter later — not a runtime dep | OpenTimelineIO (ASWF) |
 | Render + audio + mux + batch | **Remotion** | `remotion`, `@remotion/*` |
 | Reusable nested timelines (clips/environments) | **Remotion nested compositions** (pre-comp pattern) | reuse; see §13.3 |
+| Scene/clip transitions | `@remotion/transitions` | reuse |
+| Motion blur | `@remotion/motion-blur` | reuse |
+| GPU effects on the rig canvas | **Pixi filters** (glow/bloom/blur/displacement) | reuse |
+| Full-frame color grade / post | SVG/WebGL filters + FFmpeg filter pass | reuse |
 | Easing curves | Remotion `Easing` + `bezier-easing` | reuse |
 | Springs / secondary motion | Remotion `spring()` (+ `popmotion`) | reuse |
 | IK (where not using DragonBones) | `ikjs` / `IK.ts` | reuse |
@@ -193,7 +197,7 @@ Adopts Lottie's `{a,k}` animated-property model (`a`=animated?, `k`=value or key
 }
 ```
 
-**Key choices:** `{a,k}` unifies static and animated values; `parallax` + `camera` keyframes give 2.5D depth with no 3D engine; `rig_state` is a *thin pointer* (selects/sequences a rig's internal clips, never re-describes bones); rig layers compose via `parts` (intra-rig variant selection) and `attach` (inter-rig scene-graph parenting) — see §8.1; `e` names a StyleKit easing so no motion is ever accidentally linear; `provenance` enables content-hash skip + golden diff.
+**Key choices:** `{a,k}` unifies static and animated values; `parallax` + `camera` keyframes give 2.5D depth with no 3D engine; `rig_state` is a *thin pointer* (selects/sequences a rig's internal clips, never re-describes bones); rig layers compose via `parts` (intra-rig variant selection) and `attach` (inter-rig scene-graph parenting) — see §8.1; `e` names a StyleKit easing so no motion is ever accidentally linear; any layer may carry an animatable `effects[]` stack and a scene may carry a `post[]` grade (§11); `provenance` enables content-hash skip + golden diff.
 
 ---
 
@@ -266,7 +270,8 @@ A shared `StyleKit` module every scene draws from, so quality is a consistent, t
 | Shape transformation | **SVG path morph** (first-class, mid-scene) | `flubber` / MorphSVG |
 | 2.5D depth | **parallax + depth-of-field** (far layers blur/desaturate) + gentle camera push-in | per-layer `parallax` + camera keyframes |
 | Ambient richness | **generator library** (particles, dust, organic motion) | §10 |
-| Soft premium finish | **look layer** — soft shadows, glow, gradients, faint grain, per-scene limited palette | SVG filters + palette tokens |
+| Soft premium finish | **look layer** — soft shadows, glow, gradients, faint grain, per-scene limited palette | SVG filters + palette tokens (§11 `effects`/`post`) |
+| Premium motion feel | **motion blur** on fast moves (shutter-angle) — biggest lever vs stiff tweens | `@remotion/motion-blur` |
 
 ---
 
@@ -282,20 +287,37 @@ Initial set: `wave` (water surfaces), `bead-string` (neurons/chains with traveli
 
 ---
 
-## 11. Additional Channels
+## 11. Channels, Effects & Post-processing
 
 - **Morph channel** (`morph`): first-class, mid-scene path morphing on any vector/shape layer, with `fill` interpolating alongside. (flubber / MorphSVG.)
-- **Filter channel** (`filter`): animatable SVG filters — `turbulence` (feTurbulence + feDisplacementMap) for ripple/flow/shimmer/heat-haze, gooey merge, glow, soft shadow.
+- **Layer effects stack** (`effects[]`): an ordered, animatable per-layer effect stack — glow, drop-shadow, blur, color-adjust, displacement/`turbulence` (feTurbulence+feDisplacementMap for ripple/flow/heat-haze), gooey merge, and **motion blur**. (The earlier single `filter` channel folds into this stack.) Reuse: SVG filters (CPU, per-SVG-layer), **Pixi filters** (GPU, for the rig canvas), `@remotion/motion-blur`.
+- **Composition/scene post stack** (`post[]`): full-frame grade applied after compositing — color-grade/LUT, vignette, bloom, grain, chromatic aberration, light leaks. Reuse: SVG/WebGL filters + an FFmpeg post pass.
+- **Transitions**: wipes/slides/fades/custom between scenes and clips via **`@remotion/transitions`** (the `transition_in`/`transition_out` fields lower to these).
+
+```jsonc
+"effects": [ { "kind":"glow", "k":{"intensity":{"a":1,"k":[{"t":0,"s":0},{"t":12,"s":0.8}]}} },
+             { "kind":"drop_shadow", "blur":8, "opacity":0.25 },
+             { "kind":"motion_blur", "shutter":180 } ],
+"post":    [ { "kind":"color_grade","lut":"warm" }, { "kind":"vignette","amount":0.2 },
+             { "kind":"grain","amount":0.05 }, { "kind":"bloom","threshold":0.8 } ]
+```
+
+**Motion blur** is a StyleKit default on fast moves — it is the largest single quality lever separating premium motion graphics from stiff tweens, and Remotion provides it natively.
+
+> The visual effects model deliberately mirrors the audio model (§12): `effects[]` ↔ per-track audio FX, `post[]` ↔ the audio mix bus, and SFX-from-events ↔ `effects[]` triggered by animation — both picture and sound are driven by the same animation events for coherence.
 
 ---
 
-## 12. Audio / Narration (designed-for now, built later)
+## 12. Audio, Narration & Sound Design (designed-for now, built later)
 
 Remotion handles audio natively. The Scene IR reserves `audio[]` cues now; the later TTS pass fills them:
 
 - `<Audio>` for VO/music/SFX (multiple tracks, trim, per-frame volume); **muxed into the MP4 automatically** by the renderer.
 - **Word-level timing** via `@remotion/install-whisper-cpp` (local Whisper) → drives lip-sync visemes (attachment-swap timeline) *and* captions (`@remotion/captions`). Local + free.
 - TTS *generation* is external (any TTS, local or hosted, one-time/offline); Remotion handles placement/sync/mixing.
+- **Sound design synced to animation:** the lowering pass emits **SFX cues from animation events** (pop on appear, whoosh on camera move, impact on squash) so sound tracks motion automatically rather than being hand-placed. SFX are library entries (`asset` kind) like any other.
+- **Mixing:** per-track levels, music **ducking under VO**, and fades via Remotion per-frame `volume`; deeper processing (EQ/reverb/normalize) via prepared audio or an FFmpeg filter pass at mux.
+- **Audio-reactive visuals:** `@remotion/media-utils` `visualizeAudio`/`getAudioData` for beat-synced motion.
 
 ---
 
@@ -397,7 +419,7 @@ beats:
 4. Re-running produces a **byte-identical MP4** (same content hash) — proves determinism (Pixi + generator both seeded/frame-driven) + caching/golden tests.
 5. Scene IR validates against its Zod schema and is human-readable/diffable.
 
-**M2 (next):** compositional rigs (`attach` between rigs, `parts` selection, presets), **reusable `clip` + `environment` nested compositions** (make-once/reuse-everywhere with args+overrides), rig instancing/crowds (DragonBones factory), more generators (water, particles), Lottie ingest, morph + filter channels, stagger. **M3+:** AI asset-gen (P3), TTS + lip-sync + captions (P4/P7), smart layout/transitions (P6/P9), LLM script-expander (P1).
+**M2 (next):** compositional rigs (`attach` between rigs, `parts` selection, presets), **reusable `clip` + `environment` nested compositions** (make-once/reuse-everywhere with args+overrides), rig instancing/crowds (DragonBones factory), more generators (water, particles), Lottie ingest, morph channel, **layer `effects[]` + motion blur + `@remotion/transitions`**, stagger. **M3+:** full **audio + sound design** (TTS, lip-sync, captions, SFX-from-events, mixing — P4/P7), composition **`post[]`** grade, AI asset-gen (P3), smart layout (P6/P9), LLM script-expander (P1).
 
 > Even at one rig, M1 resolves assets **through the library registry + `animation.lock`** (name@version → content hash), so the deterministic-addressing seam is exercised from the start; full composition (attach/presets/instancing) lands in M2.
 
