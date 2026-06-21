@@ -20,8 +20,8 @@ Generating animation by AI image/video models is **unstable**: characters distor
 
 ### Non-goals (explicitly out of scope)
 
-- Real **fluid simulation** (Navier–Stokes/SPH) — wrong tool for stylized 2D.
-- Arbitrary **free-form mesh warp** beyond what DragonBones mesh deformation (FFD) provides — deferable as a later pass.
+- Physically-accurate **cloth/fluid simulation** (Navier–Stokes/SPH) — wrong tool for stylized 2D.
+- (Stylized **mesh / free-form deformation** is **in scope** via DragonBones FFD — see §8 — for bendy limbs, blobby wobble, and organic warping.)
 - Real-time interactivity / a game engine. Output is recorded video.
 - True 3D geometry. Depth is faked via 2.5D parallax (add a 3D backend only if a hard requirement ever appears).
 - AI generating frames or driving motion at runtime. AI only ever touches the *offline asset library* and (later) the *script→IR front-end*.
@@ -50,7 +50,7 @@ Rationale (given a solo developer, "don't build from scratch," license is a non-
 |---|---|---|
 | asset / shape / text | React + SVG | thin glue (ours) |
 | **Lottie** (pre-made vector loops: water, fire, ambient) | `@remotion/lottie` / `lottie-web` | ♻️ reuse |
-| **rig** (characters: skeletal + IK + mesh) | `pixi-dragonbones-runtime` in a Pixi `<canvas>` | ♻️ reuse |
+| **rig** (characters: skeletal + IK + **full mesh deformation/FFD**) | `pixi-dragonbones-runtime` in a Pixi `<canvas>` (committed render path) | ♻️ reuse |
 | **generator** (neurons, particles, smoke, crowds) | React/SVG + `d3-shape` + `simplex-noise` + `blobshape` | ours (thin) |
 
 **Determinism rule for sub-renderers:** every sub-renderer is driven by Remotion's `useCurrentFrame()` (DragonBones is *seeked* to `time = frame/fps`; Lottie to its frame), wrapped in `delayRender`/`continueRender`. No sub-renderer runs its own clock. This keeps the composite byte-reproducible.
@@ -208,7 +208,9 @@ Four complementary layer families, each the right tool for a kind of motion:
 
 ## 8. Character Rig Model (DragonBones)
 
-Adopt the **DragonBones JSON format** (free, MIT, code-generable) and render with `pixi-dragonbones-runtime` inside a Remotion-hosted Pixi canvas. DragonBones natively provides: bone hierarchy, **IK**, **mesh deformation (FFD)**, skins/slot-attachment swaps, and named animations — covering most of what we'd otherwise hand-roll, *including* partial bendy/blobby deformation.
+Adopt the **DragonBones JSON format** (free, MIT, code-generable) and render with `pixi-dragonbones-runtime` inside a Remotion-hosted Pixi canvas — **this is the committed rig render path** (chosen over a pure-SVG interpreter specifically to get full mesh deformation). DragonBones natively provides: bone hierarchy, **IK**, **full mesh deformation (FFD)**, skins/slot-attachment swaps, and named animations — covering most of what we'd otherwise hand-roll.
+
+**Full mesh deformation is in scope.** FFD lets bones deform a textured mesh (not just rigidly transform a sprite), which gives bendy/squashy limbs, blobby wobble, and organic warping (e.g. a character melting/stretching, the neuron string's wavy bending) without per-frame art. This is the capability the pure-SVG path could not provide, and the reason Pixi-canvas-in-Remotion is the committed choice.
 
 - **Identity guarantee:** art = fixed atlas; code only changes transforms + attachment swaps + bone poses ⇒ zero per-frame distortion, deterministic, diffable.
 - **Determinism in Remotion:** seek the armature to absolute time `frame/fps` each frame; wrap render in `delayRender`/`continueRender`.
@@ -274,7 +276,7 @@ Remotion handles audio natively. The Scene IR reserves `audio[]` cues now; the l
 ## 14. Risks & Unknowns
 
 1. **DragonBones-in-Remotion determinism (#1 de-risk).** Pixi runs in a canvas inside a React/headless-Chrome render; it must be seeked to `frame/fps` and gated by `delayRender`/`continueRender` to stay byte-reproducible. *Prototype this first.* (Replaces the old BeginFrame risk.)
-2. **Compositing three sub-renderers** (SVG + Lottie + Pixi) in one frame — moving parts, z-order, and color consistency. Mitigation: a single compositor component with explicit z-sorting; keep M1 to one rig + SVG only, add Lottie/generators in M2.
+2. **Compositing sub-renderers** (SVG generators + Pixi rig) in one frame — z-order and color consistency between a Pixi `<canvas>` and SVG layers. Mitigation: a single compositor component with explicit z-sorting; M1 exercises Pixi-rig + one SVG generator together (Lottie ingest added in M2).
 3. **Layout/timing solver is the real intelligence.** Going from semantic beats to non-overlapping positioned layers + camera moves is hard. Mitigation: ship a dumb deterministic layout (named anchor slots / templates) for M1; make P6–P9 smart later.
 4. **Two-IR contract drift.** Mitigation: Zod validation at every arrow, golden IR fixtures per pass, per-stage versioning in cache key.
 5. **AI asset-gen quality on a laptop** (later). Mitigation: it's offline/one-time; quantized models + human one-time cleanup of part layers (asset prep, not animation, so it doesn't violate "no manual animation tool").
@@ -283,27 +285,30 @@ Remotion handles audio natively. The Scene IR reserves `audio[]` cues now; the l
 
 ## 15. Milestone 1 — Minimal Vertical Slice
 
-**Goal:** smallest slice that exercises *every architectural seam* — Story IR → Scene IR → Remotion host (+ DragonBones sub-renderer) → MP4 — deterministically. No LLM, no TTS, no smart solver; free assets allowed.
+**Goal:** smallest slice that exercises *every architectural seam* — Story IR → Scene IR → Remotion host (+ DragonBones sub-renderer **with mesh deformation** + a **generator** sub-renderer) → MP4 — deterministically. No LLM, no TTS, no smart solver; free assets allowed.
 
 **Scope (one 5-second, 1920×1080, 30fps scene):**
-- One **DragonBones character** (free sample or Humaaans/Open Peeps parts bound to DragonBones slots): idle clip + damped-spring head bob + Poisson blink.
+- One **DragonBones character** (free sample or Humaaans/Open Peeps parts bound to DragonBones slots): idle clip + damped-spring head bob + Poisson blink, **plus one mesh-deformed (FFD) element** — e.g. a bendy/squashy limb or wobble — to prove full mesh deformation in the render path.
+- One **generator layer** — a `bead-string` (neuron chain): traveling pulse + wavy bending + blobby beads — to prove the procedural/organic generator family end-to-end.
 - One **background** layer with a `parallax` value (proves 2.5D depth).
 - One **camera move:** slow push-in (`zoom` 1.0→1.15) + slight pan, driving the parallax differential.
 - Authored as **Story IR YAML** (one beat) → run **P0, P2, P5, lite-P6, lite-P8, V** → emit Scene IR JSON.
-- **Render** via Remotion (`renderMedia`) with the DragonBones sub-renderer driven by `useCurrentFrame()` → `out.mp4`.
+- **Render** via Remotion (`renderMedia`), compositing the Pixi/DragonBones rig and the SVG generator, both driven by `useCurrentFrame()` → `out.mp4`.
 
 **Acceptance (done-when):**
 1. `script.yaml → out.mp4` runs with a single command; no manual steps in the animation loop.
 2. Character identity is pixel-stable across frames (eyes/body never drift) — visually confirmed.
-3. Re-running produces a **byte-identical MP4** (same content hash) — proves determinism + caching/golden tests.
-4. Scene IR validates against its Zod schema and is human-readable/diffable.
+3. **Mesh deformation animates correctly** (the FFD element bends/wobbles) and the **generator** renders its traveling pulse — visually confirmed.
+4. Re-running produces a **byte-identical MP4** (same content hash) — proves determinism (Pixi + generator both seeded/frame-driven) + caching/golden tests.
+5. Scene IR validates against its Zod schema and is human-readable/diffable.
 
-**M2 (next):** generator layers (neuron bead-string, water), Lottie ingest, morph + filter channels, stagger. **M3+:** AI asset-gen (P3), TTS + lip-sync + captions (P4/P7), smart layout/transitions (P6/P9), LLM script-expander (P1).
+**M2 (next):** more generators (water, particles, crowds), Lottie ingest, morph + filter channels, stagger. **M3+:** AI asset-gen (P3), TTS + lip-sync + captions (P4/P7), smart layout/transitions (P6/P9), LLM script-expander (P1).
 
 ---
 
 ## 16. Open Questions
 
-- Exact DragonBones↔Humaaans/Open Peeps binding workflow (auto-bind by layer name vs a small manifest).
-- Whether to render rigs as Pixi-canvas-in-Remotion (richest, mesh deform) or a pure-SVG DragonBones interpreter (simpler determinism, fewer features) — decide during the M1 de-risk prototype.
+- Exact DragonBones↔Humaaans/Open Peeps binding workflow (auto-bind by layer name vs a small manifest), including authoring the FFD mesh for free parts that don't ship with one.
 - Story IR DSL ergonomics: how much the human authors vs how much the lite layout/camera passes infer.
+
+*(Resolved: rig render path is **Pixi-canvas-in-Remotion with full mesh deformation** — §8.)*
