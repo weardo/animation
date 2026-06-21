@@ -262,6 +262,55 @@ export const MOTION_DEFAULTS = {
   motionBlurShutter: MOTION_BLUR_SHUTTER,
 } as const;
 
+// ---------------------------------------------------------------------------------------------
+// 4. Shading & Depth defaults (spec §11.1). A single scene LIGHT drives per-object supporting
+//    gradient shapes (contact shadow, form, rim, AO, glow) — default-ON so depth is the quality
+//    floor. Pure constants + a pure light-vector helper; the compositor (src/render/shading.tsx)
+//    consumes these. No clock / RNG.
+// ---------------------------------------------------------------------------------------------
+
+/** A scene light source. `dir` is a screen-space azimuth in degrees (0=+x right, 90=down, 270=up). */
+export interface Light {
+  dir: number;
+  elevation: number;
+  color: string;
+  intensity: number;
+  ambient: number;
+}
+
+/** Default scene light: warm key from the upper-right, soft ambient fill. */
+export const DEFAULT_LIGHT: Light = {
+  dir: 295, // up-and-to-the-right (y is screen-down, so sin(295°)<0 ⇒ upward)
+  elevation: 60,
+  color: DEFAULT_PALETTE.light,
+  intensity: 0.85,
+  ambient: 0.38,
+};
+
+/** Per-object shading toggles/strengths (spec §11.1). Defaults are ON (quality floor). */
+export interface ShadingSpec {
+  form: boolean;
+  contact_shadow: boolean;
+  rim: number;
+  ao: boolean;
+  glow: number;
+}
+
+/** Default-on shading: contact shadow + rim + AO; form is the scene-level wash; glow opt-in. */
+export const DEFAULT_SHADING: ShadingSpec = {
+  form: true,
+  contact_shadow: true,
+  rim: 0.3,
+  ao: true,
+  glow: 0,
+};
+
+/** Unit light vector in screen space (y-down). Points TOWARD the light source. */
+export function lightVector(dir: number): { x: number; y: number } {
+  const r = (dir * Math.PI) / 180;
+  return { x: Math.cos(r), y: Math.sin(r) };
+}
+
 /**
  * The complete StyleKit, for a single-import convenience. The named exports above are the
  * preferred entry points; this bundle mirrors the spec's "shared StyleKit module" framing.
