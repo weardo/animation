@@ -25,6 +25,7 @@ import {
   type AssetLayer,
   type RigLayer,
   type GeneratorLayer,
+  type RigClip,
   type Camera,
   type Transform,
   type AssetDef,
@@ -71,6 +72,32 @@ export const M1_REFS = {
  * (spec §15). A richer rig with a named "idle" would override this in its own lowering.
  */
 export const M1_RIG_ANIM = 'throw' as const;
+
+/**
+ * Per-rig clip plans. A rig declares its own internal named animations (DragonBones); the lowering
+ * pass selects/sequences them via `rig_state.clips` (a thin pointer, never re-describing bones —
+ * spec §6.2/§8). The default plan loops the rig's single demo anim ("throw"); a richer rig (the M2
+ * `blip` character) loops "idle" and fires an expressive "wave" mid-scene. Blink runs as host
+ * liveness (RigLayer eye-slot toggle) on top, so it is not sequenced here.
+ *
+ * Keyed by rig NAME (the part of the ref before `@`). Falls back to the default demo clip.
+ */
+const RIG_CLIP_PLANS: Record<string, (durationFrames: number) => RigClip[]> = {
+  blip: (durationFrames) => [
+    { anim: 'idle', loop: true },
+    // Expressive beat: wave once, starting ~40% in, then settle back to the looping idle.
+    { anim: 'wave', loop: false, at: Math.floor(durationFrames * 0.4) },
+    { anim: 'idle', loop: true, at: Math.floor(durationFrames * 0.4) + 48 },
+  ],
+};
+
+/** Resolve the clip plan for a rig ref (`name@version` or `name`). */
+function clipsForRig(rigRef: string, durationFrames: number): RigClip[] {
+  const name = rigRef.split('@')[0] ?? rigRef;
+  const plan = RIG_CLIP_PLANS[name];
+  if (plan) return plan(durationFrames);
+  return [{ anim: M1_RIG_ANIM, loop: true }];
+}
 
 /** Minimal structural view of the Library facade this pass needs (kept loose to avoid coupling). */
 export interface LibraryLike {
@@ -183,7 +210,7 @@ function buildBeadStringLayer(seed: number, pathUri: string): GeneratorLayer {
  * "pop" entrance (scale + opacity overshoot) makes the character appear with life (spec §9); the
  * idle clip loops so even a static shot feels alive. Centered, ground-anchored position.
  */
-function buildRigLayer(ref: string, w: number, h: number): RigLayer {
+function buildRigLayer(ref: string, w: number, h: number, clips: RigClip[]): RigLayer {
   const transform: Transform = {
     position: { a: 0, k: [w * 0.5, h * 0.62] },
     // "pop" entrance: scale 0→100 over 12 frames with the overshoot curve (StyleKit "pop").
@@ -209,7 +236,7 @@ function buildRigLayer(ref: string, w: number, h: number): RigLayer {
     z: 10,
     transform,
     rig_state: {
-      clips: [{ anim: M1_RIG_ANIM, loop: true }],
+      clips,
     },
   };
 }
@@ -251,6 +278,7 @@ function buildScene(
   at: number,
   durationFrames: number,
   hash: string,
+  rigDefKey: string,
   rigRef: string,
   beadPathUri: string,
   cfg: { w: number; h: number }
@@ -259,7 +287,7 @@ function buildScene(
   const layers: Layer[] = [
     buildBackgroundLayer(),
     buildBeadStringLayer(seed, beadPathUri),
-    buildRigLayer(rigRef, cfg.w, cfg.h),
+    buildRigLayer(rigDefKey, cfg.w, cfg.h, clipsForRig(rigRef, durationFrames)),
   ];
   // A single GSAP-style label at mid-scene (the "reveal" beat the spec example uses).
   const reveal = Math.floor(durationFrames / 2);
@@ -313,7 +341,7 @@ export function lowerStory(story: StoryIR, opts: LowerOptions = {}): SceneIR {
   let at = 0;
   for (const beat of story.beats) {
     scenes.push(
-      buildScene(beat, at, durationFrames, hash, 'narrator', beadPathDef.uri, { w, h })
+      buildScene(beat, at, durationFrames, hash, 'narrator', rigRef, beadPathDef.uri, { w, h })
     );
     at += durationFrames;
   }

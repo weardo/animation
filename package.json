@@ -7,6 +7,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build:m1": "tsx src/cli/render.ts examples/neuron.yaml out.mp4",
+    "build:character": "tsx src/cli/render.ts examples/character.yaml out.mp4",
+    "gen:blip": "node tools/gen-blip-rig.mjs",
     "studio": "remotion studio src/render/index.ts"
   },
   "dependencies": {

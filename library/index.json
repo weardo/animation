@@ -3,6 +3,30 @@
   "description": "Content-addressed asset/rig/generator catalog. name@version -> content hash (computed at resolve time via object-hash over the entry's content). Namespaced by kind. Local-first, no service.",
   "entries": {
     "characters": {
+      "blip": {
+        "id": "blip",
+        "version": "1.0.0",
+        "kind": "rig",
+        "format": "dragonbones",
+        "uri": "rig://blip/blip.dbones.json",
+        "tags": ["m2", "character", "kurzgesagt", "flat-vector", "ffd"],
+        "deps": [],
+        "manifest": {
+          "mounts": {
+            "handR": { "bone": "foreR" },
+            "handL": { "bone": "foreL" },
+            "head_top": { "bone": "head" }
+          },
+          "variants": {
+            "head": ["head"],
+            "outfit": ["body"]
+          }
+        },
+        "provenance": {
+          "source": "code-generated (tools/gen-blip-rig.mjs) — flat-vector primitives, authored FFD",
+          "license": "CC0"
+        }
+      },
       "dragon": {
         "id": "dragon",
         "version": "1.0.0",

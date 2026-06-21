@@ -23,6 +23,8 @@ import { fileURLToPath } from 'node:url';
 import { bundle } from '@remotion/bundler';
 import { selectComposition, renderMedia } from '@remotion/renderer';
 
+import { readFileSync } from 'node:fs';
+
 import { runPipeline, lowerStory, M1_REFS } from '../pipeline/index.js';
 import type { Frontend } from '../pipeline/index.js';
 import { parseStory } from '../pipeline/parse.js';
@@ -36,8 +38,23 @@ const PROJECT_ROOT = resolvePath(dirname(fileURLToPath(import.meta.url)), '..', 
 /** The Remotion entry that registers the SceneIR composition (registerRoot lives here). */
 const REMOTION_ENTRY = resolvePath(PROJECT_ROOT, 'src', 'render', 'index.ts');
 
-/** The library refs the M1 slice depends on — pinned into animation.lock for deterministic renders. */
-const M1_LOCK_REFS = [M1_REFS.background, M1_REFS.beadStringPath, M1_REFS.rig] as const;
+/**
+ * The library refs this render depends on — pinned into animation.lock for deterministic re-renders.
+ * The background + bead-string path are constant across the M1/M2 example slices; the RIG ref is
+ * derived from the script's first character (defaulting to the M1 rig) so a script that uses the M2
+ * `blip` character pins blip, not the demo dragon. Unversioned character `rig` names default to
+ * `@1.0.0` (matching the lowering pass's `rigRefForStory`).
+ */
+function lockRefsForScript(scriptPath: string): string[] {
+  const story = parseStory(readFileSync(scriptPath, 'utf8'));
+  const firstChar = Object.values(story.characters)[0];
+  const rigRef = firstChar
+    ? firstChar.rig.includes('@')
+      ? firstChar.rig
+      : `${firstChar.rig}@1.0.0`
+    : M1_REFS.rig;
+  return [M1_REFS.background, M1_REFS.beadStringPath, rigRef];
+}
 
 interface CliOptions {
   scriptPath: string;
@@ -81,7 +98,8 @@ async function main(): Promise<void> {
   writeFileSync(sceneJsonPath, JSON.stringify(sceneIR, null, 2) + '\n', 'utf8');
   console.log(`[build:m1] scene IR → ${sceneJsonPath}`);
 
-  const lockPath = library.writeLock(M1_LOCK_REFS);
+  const fullScriptPath = resolvePath(PROJECT_ROOT, scriptPath);
+  const lockPath = library.writeLock(lockRefsForScript(fullScriptPath));
   console.log(`[build:m1] library lock → ${lockPath}`);
 
   // --- 5. Bundle → select composition (calculateMetadata from IR config) → render. ---
@@ -130,7 +148,15 @@ async function main(): Promise<void> {
     // SOFTWARE GL backend (SwiftShader): hardware 'angle' rasterizes WebGL non-deterministically
     // across independent runs (GPU/driver float variance), breaking byte-identical determinism.
     // 'swangle' rasterizes in software → reproducible Pixi/DragonBones frames. Verified 2026-06-22.
-    chromiumOptions: { gl: 'swangle' },
+    //
+    // enableMultiProcessOnLinux:false → Chromium runs `--single-process` (renderer + GPU collapsed
+    // into ONE process). REQUIRED for FFD determinism: with the default multi-process layout the
+    // separate GPU process accumulates state, so a sub-pixel WebGL/FFD-mesh edge difference on one
+    // frame cascades into a WHOLE-FRAME divergence (incl. the SVG gradient) on later frames across
+    // independent runs. The bone-only M1 dragon tolerated multi-process; the FFD-on-every-frame M2
+    // `blip` character did not (112/150 frames differed). Single-process removes the cross-process
+    // scheduling variance → byte-identical decoded video across cold runs. Verified 2026-06-22 (M2.0).
+    chromiumOptions: { gl: 'swiftshader', enableMultiProcessOnLinux: false },
     // Pin the H.264 encode so the MUXED MP4 is byte-identical too, not just the source frames:
     // sequential single-pass encoding (no thread-scheduling variance) + fixed preset/crf.
     disallowParallelEncoding: true,

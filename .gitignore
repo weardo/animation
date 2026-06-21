@@ -16,6 +16,7 @@ out/
 .remotion/
 
 # Local / editor / OS
+.vscode/
 .claude/settings.local.json
 .env
 .env.*
