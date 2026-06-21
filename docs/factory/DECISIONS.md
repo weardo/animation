@@ -34,6 +34,11 @@ Append-only. One entry per significant decision/learning: **Context → Decision
 **Decision:** Layer `effects[]` + composition `post[]` (reuse SVG/Pixi/Remotion FX, `@remotion/transitions`, `@remotion/motion-blur`); audio mixing + SFX-from-animation-events. Both driven by the same animation events. Motion blur is a StyleKit default.
 **Rationale:** One event timeline drives picture and sound → coherence; everything reserved-in-IR-now, built M2/M3.
 
+## 2026-06-22 — M2.1 Shading & Depth compositor implemented (foreground, not workflow)
+**Context:** The M2 workflow stalled with slow render/verify loops (6–10 min idles); finished M2.1 in the foreground instead.
+**Decision:** Shading lives in `src/render/shading.tsx` (`SceneLook`, `ContactShadow`, `objectFilter`, resolvers) + `Scene.tsx`. Scene `light` defaults on (StyleKit `DEFAULT_LIGHT`); per-layer `shading` defaults on (`DEFAULT_SHADING`), background-exempt. Components: directional light wash + vignette (screen-space), per-object contact shadow (camera-tracked), silhouette-following rim/AO/glow via CSS `drop-shadow` (works on SVG layers AND the Pixi canvas). Visually verified on `blip`; a shaded frame is byte-identical across two separate processes (determinism held — static styles + deterministic anchor).
+**Deferred (honest):** true per-silhouette form-shade overlay (approximated by the scene wash + rim for now); gradient fills (typed, not yet rendered); far-layer atmospheric tint. **Process lesson:** a tight build→render→look loop is far faster in the foreground than in a render-heavy background workflow (logged under ADR/standard).
+
 ## 2026-06-22 — Shading & Depth is compositional, not post-processing
 **Context:** Kurzgesagt depth comes from each object carrying supporting gradient shapes (contact shadow, form shade, rim, AO, glow) consistent with one scene light — not from per-object filters.
 **Decision:** Add a Shading & Depth model (spec §11.1): a scene-level `light` as single source + a default-on per-layer `shading` that auto-generates supporting gradient shapes from silhouette + light + `z`; gradients are first-class animatable fills. Reuse SVG gradients/lighting filters + Pixi filters. M2 (look); fields reserved in Scene IR now.

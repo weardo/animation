@@ -356,7 +356,7 @@ Reuse: native SVG `<linearGradient>`/`<radialGradient>`, `feDropShadow`/`feGauss
 "fill":    { "gradient": { "type":"radial", "stops":[["#ffd86b",0],["#f08c2e",1]], "angle":120 } }
 ```
 
-Status: **M2 (look), reserved-in-IR now** — `light`/`shading`/gradient-fill fields exist in the Scene IR from the start so adding the model changes nothing upstream.
+Status: **M2 — IMPLEMENTED (2026-06-22).** Compositor (`src/render/shading.tsx` + `Scene.tsx`): scene-level directional light wash + vignette (`SceneLook`), per-object contact shadow seated by the light, and a silhouette-following rim/AO/glow CSS filter — default-on via StyleKit (`DEFAULT_LIGHT`/`DEFAULT_SHADING`), overridable per layer, background-exempt. Deterministic (static styles; byte-identical across separate processes). **Approximations / deferred:** per-object *form-shade masked to silhouette* is approximated by the scene-level directional wash + rim (not a true per-silhouette gradient overlay yet); **gradient fills** (first-class linear/radial on shape/generator layers) are typed in the IR but not yet rendered; far-layer atmospheric tint not yet added.
 
 ### 11.2 Transitions & match-cuts
 
