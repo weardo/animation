@@ -84,6 +84,8 @@ Verified against the 2026 landscape. Standards adopted so we extend rather than 
 | Word-level timing for lip-sync (later) | `@remotion/install-whisper-cpp` (local Whisper) | reuse, local/free |
 | v1 character/prop art | **Humaaans / Open Peeps / unDraw** (free, mix-and-match SVG parts) | reuse |
 | Content-hash caching | `object-hash` + cache dir (no DAG framework) | reuse |
+| Library / registry / versioning | content-addressed store + `library/index.json` catalog + `animation.lock` (npm-style); optional npm packaging — **no custom registry server** | reuse patterns; see §13.2 |
+| Many instances of one rig (crowds) | **DragonBones factory** (parse once, spawn many) | reuse |
 
 **Genuinely ours (small):** the semantic Story IR schema, the Scene IR's *extensions* over Lottie (camera-parallax, generator layers, rig refs, audio cues, morph/filter channels), the generator library, and the thin per-frame compositor glue.
 
@@ -94,7 +96,8 @@ Verified against the 2026 landscape. Standards adopted so we extend rather than 
 ```
 script.yaml
   → P0  Parse + validate          → Story IR (semantic: beats, characters, narration, intent)  [NOW]
-  → P2  Entity / asset resolver    → dedup characters & assets into defs                         [NOW]
+  → P2  Entity / asset resolver    → resolve name@version → content hash (via index + lockfile),
+                                      build dependency DAG, dedup, set up rig instancing → defs   [NOW]
   → P5  Scene builder (lowering)   → Scene IR (concrete layers, keyframes, camera)               [NOW]
   → P6  Layout (lite: named anchors) → positions, no-overlap                                     [NOW-lite]
   → P8  Camera director (lite)     → camera keyframes from beat intent                            [NOW-lite]
@@ -189,7 +192,7 @@ Adopts Lottie's `{a,k}` animated-property model (`a`=animated?, `k`=value or key
 }
 ```
 
-**Key choices:** `{a,k}` unifies static and animated values; `parallax` + `camera` keyframes give 2.5D depth with no 3D engine; `rig_state` is a *thin pointer* (selects/sequences a rig's internal clips, never re-describes bones); `e` names a StyleKit easing so no motion is ever accidentally linear; `provenance` enables content-hash skip + golden diff.
+**Key choices:** `{a,k}` unifies static and animated values; `parallax` + `camera` keyframes give 2.5D depth with no 3D engine; `rig_state` is a *thin pointer* (selects/sequences a rig's internal clips, never re-describes bones); rig layers compose via `parts` (intra-rig variant selection) and `attach` (inter-rig scene-graph parenting) — see §8.1; `e` names a StyleKit easing so no motion is ever accidentally linear; `provenance` enables content-hash skip + golden diff.
 
 ---
 
@@ -217,6 +220,34 @@ Adopt the **DragonBones JSON format** (free, MIT, code-generable) and render wit
 - **Lip-sync readiness (later):** reserve `viseme_*` mouth attachments in the skin; the TTS/Whisper stage generates an attachment-swap timeline from word timings — no rig changes, no new art.
 - **v1 art:** build rigs from free mix-and-match SVG parts (Humaaans / Open Peeps), bound to DragonBones slots by layer name.
 - **"Alive" defaults (StyleKit, see §9):** every character runs idle + breathing + Poisson blink + spring follow-through by default, so even static shots feel alive.
+
+### 8.1 Compositional rigs & objects
+
+There is **no separate "object" concept**: a prop with moving parts is a small rig, a static prop is an asset layer, a vehicle is a rig. Characters and objects live in the **same composition graph** and compose by the same rules. Composition happens at two levels:
+
+- **Intra-rig (inside one rig).** DragonBones supports **sub-armatures** (a slot's attachment can itself be a child armature) and **skins/slot-swaps**. A modular character (head A + body B + outfit C) is therefore *one self-contained rig* with variant axes; the runtime handles nesting transparently. The Scene IR only **selects parts** via a `parts` field on a rig layer.
+- **Inter-rig (between rigs in a scene).** The animation layer adds **scene-graph parenting/attachment**: a rig layer can `attach` to a named **bone or slot** of another layer (prop in hand, hat on head, character on vehicle). Transforms compose down the tree (camera → layer → parent bone → child). `attach.bone` follows a bone (own draw order); `attach.slot` injects into the parent's draw order.
+
+Each rig is **self-describing** via its library manifest, which declares **mount points** (bones/slots that may be attached to) and **variant axes** (swappable parts), so a rig is a typed black box, not something whose internals are poked:
+
+```jsonc
+{ "id":"person_base", "version":"1.2.0", "kind":"rig", "format":"dragonbones",
+  "mounts":   { "handR":{"bone":"handR"}, "head_top":{"bone":"head"} },
+  "variants": { "head":["head_round","head_oval"], "outfit":["lab_coat","hoodie"] },
+  "deps":     ["atlas/person_base@1.2.0"],
+  "provenance": { "source":"OpenPeeps", "license":"CC0" } }
+```
+
+Scene IR usage (part selection + attachment):
+
+```jsonc
+{ "id":"L_hero",  "type":"rig", "ref":"person_base",
+  "parts": { "head":"head_round", "outfit":"lab_coat", "palette":"warm" } }
+{ "id":"L_sword", "type":"rig", "ref":"sword", "z":11,
+  "attach": { "to":"L_hero", "bone":"handR", "inherit":["position","rotation","scale"] } }
+{ "id":"L_hat",   "type":"rig", "ref":"hat",
+  "attach": { "to":"L_hero", "slot":"head_top" } }
+```
 
 ---
 
@@ -266,10 +297,34 @@ Remotion handles audio natively. The Scene IR reserves `audio[]` cues now; the l
 
 ---
 
-## 13. Asset Strategy
+## 13. Asset & Rig Library — Strategy, Reuse & Composition
+
+### 13.1 Sourcing
 
 - **v1:** free/open vector assets — **Humaaans / Open Peeps** (mix-and-match SVG character parts), **unDraw** (props/scenes), free **Lottie** loops for ambient effects. This proves the rigged-character + render path with real on-style art, no drawing or AI required, and defines the rig-ready asset contract.
 - **Later (P3, offline, one-time):** AI asset-gen — local SDXL + style LoRA + IP-Adapter/ControlNet → layer decomposition (occlusion-aware) → background removal (`rembg`) → vectorization (`vtracer`) → rig-ready layered parts conforming to the same contract. AI never enters the animation loop.
+
+### 13.2 The library (reuse-first; package-manager patterns, not a custom registry)
+
+The library is the durable, compounding asset. It grows; past videos must not change. Mechanisms:
+
+| Concern | Mechanism |
+|---|---|
+| **Addressing** | human name + semver → resolved to a **content hash** (`object-hash`). `rig://person_base@1.2.0` ↔ `cache://sha256:…` |
+| **Catalog** | `library/index.json` — namespaced (`characters/ props/ backgrounds/ generators/ kits/`), tagged, carrying each entry's manifest metadata. Local-first, no service. |
+| **Deterministic re-renders** | `animation.lock` (npm-style lockfile) pins exact resolved hashes per project, so the library can evolve without altering past output; upgrades are opt-in per project. |
+| **Dedup + instancing** | P2 resolver builds the dependency DAG, dedups shared sub-assets, and uses the **DragonBones factory** to parse a rig once and spawn many instances (crowds, repeated props) from shared data. |
+| **Compounding reuse (presets/recipes)** | a **preset** is a named, reusable composed unit that references other entries — build a character/scene-template once, reuse everywhere; a preset is itself a cacheable library entry. |
+| **Sharing (optional)** | a library namespace may be published as an npm package / versioned folder — reuse npm, don't build a registry server. |
+
+```jsonc
+// kits/narrator_bird.preset.json — composed once, reused across stories
+{ "id":"narrator_bird", "kind":"preset", "base":"bird_base@2.0.0",
+  "parts": { "beak":"beak_short", "palette":"warm" },
+  "attachments": [ { "ref":"glasses@1.0.0", "mount":"head_top" } ] }
+```
+
+**Why the lockfile matters:** it reconciles "growing library" with "deterministic renders." Each video records the exact hashes it was built from, so improving a library rig never silently changes old videos. Composition and reuse reinforce each other: typed mount points + variant axes (§8.1) let presets compose rigs safely, and content-addressing makes a composed preset just another dedup-able entry — reuse compounds upward (parts → rigs → presets → scene templates).
 
 ---
 
@@ -302,7 +357,9 @@ Remotion handles audio natively. The Scene IR reserves `audio[]` cues now; the l
 4. Re-running produces a **byte-identical MP4** (same content hash) — proves determinism (Pixi + generator both seeded/frame-driven) + caching/golden tests.
 5. Scene IR validates against its Zod schema and is human-readable/diffable.
 
-**M2 (next):** more generators (water, particles, crowds), Lottie ingest, morph + filter channels, stagger. **M3+:** AI asset-gen (P3), TTS + lip-sync + captions (P4/P7), smart layout/transitions (P6/P9), LLM script-expander (P1).
+**M2 (next):** compositional rigs (`attach` between rigs, `parts` selection, presets), rig instancing/crowds (DragonBones factory), more generators (water, particles), Lottie ingest, morph + filter channels, stagger. **M3+:** AI asset-gen (P3), TTS + lip-sync + captions (P4/P7), smart layout/transitions (P6/P9), LLM script-expander (P1).
+
+> Even at one rig, M1 resolves assets **through the library registry + `animation.lock`** (name@version → content hash), so the deterministic-addressing seam is exercised from the start; full composition (attach/presets/instancing) lands in M2.
 
 ---
 
