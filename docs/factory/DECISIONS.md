@@ -39,6 +39,11 @@ Append-only. One entry per significant decision/learning: **Context → Decision
 **Decision:** Add a Shading & Depth model (spec §11.1): a scene-level `light` as single source + a default-on per-layer `shading` that auto-generates supporting gradient shapes from silhouette + light + `z`; gradients are first-class animatable fills. Reuse SVG gradients/lighting filters + Pixi filters. M2 (look); fields reserved in Scene IR now.
 **Rationale:** A single scene light makes the whole scene read as one coherent lit space; auto-derivation avoids hand-authoring shadow shapes (the manual labor we're eliminating). Quality floor → default-on. **Supersedes** the earlier assumption that StyleKit's drop-shadow/glow `effects` filters covered Kurzgesagt depth — they don't.
 
+## 2026-06-22 — Object detail is a render-budget problem; split by behavior
+**Context:** Kurzgesagt objects are hundreds of tiny shapes each. Treating all detail as live SVG DOM would crater laptop render times.
+**Decision:** Add a `scatter` generator for procedural detail (seeded, poisson-disc) and a detail×performance strategy (spec §10.1): bake static high-count detail (cached/content-hashed), Pixi `ParticleContainer` for animated high-count, `<symbol>`/`<use>` for motifs, bake surface-bound detail into rig textures (deforms via FFD), and a per-scene shape budget with logging (no silent truncation). Added as risk #6.
+**Rationale:** Detail density is a rendering-budget question, not an art one; splitting by behavior keeps it deterministic and laptop-viable. Authored multi-shape assets already work; the strategy is M2 + ongoing.
+
 ## 2026-06-22 — Build by milestone; M1 first
 **Context:** Avoid building ahead of validated architecture.
 **Decision:** M1 = minimal vertical slice proving every seam (script→mp4, DragonBones rig w/ mesh deform + bead-string generator + parallax camera, deterministic render, library+lockfile). M2/M3 staged in spec §15.

@@ -92,6 +92,7 @@ Verified against the 2026 landscape. Standards adopted so we extend rather than 
 | Content-hash caching | `object-hash` + cache dir (no DAG framework) | reuse |
 | Library / registry / versioning | content-addressed store + `library/index.json` catalog + `animation.lock` (npm-style); optional npm packaging — **no custom registry server** | reuse patterns; see §13.2 |
 | Many instances of one rig (crowds) | **DragonBones factory** (parse once, spawn many) | reuse |
+| High-count object detail (scatter + instancing) | `poisson-disc-sampling` (even scatter) + SVG `<symbol>`/`<use>` + **Pixi `ParticleContainer`** (animated) + baked sprites (static) | reuse; see §10.1 |
 
 **Genuinely ours (small):** the semantic Story IR schema, the Scene IR's *extensions* over Lottie (camera-parallax, generator layers, rig refs, audio cues, morph/filter channels), the generator library, and the thin per-frame compositor glue.
 
@@ -287,6 +288,25 @@ Initial set: `wave` (water surfaces), `bead-string` (neurons/chains with traveli
 
 **Default guidance:** for most shots prefer ingesting a free **Lottie** loop as an asset layer (e.g. water/fire); reach for a procedural generator only when it must react to camera/parallax or be parametrically controlled.
 
+### 10.1 Object detail (hundreds of small shapes) & the shape budget
+
+Kurzgesagt objects are densely detailed — many tiny shapes (craters, spots, foliage, sparkle, grain) per object. This is supported two ways, and is primarily a **render-budget** concern, not an art one.
+
+- **Authored detail:** an asset SVG or a rig part texture may contain arbitrarily many shapes (it is just art). Use SVG `<symbol>` + `<use>` for repeated motifs to keep markup small.
+- **Procedural detail:** a **`scatter` generator** distributes N small shapes over a region/path/surface with seeded variation (count, size/rotation jitter, palette color, optional per-element twinkle/drift). Reuse `poisson-disc-sampling` for even distribution; deterministic from `seed`.
+
+**Detail × performance strategy (laptop-honest, deterministic):**
+
+| Detail kind | Strategy | Rationale |
+|---|---|---|
+| static, high-count | **bake/flatten** → one cached, content-hashed group or rasterized sprite | one draw vs thousands of live DOM nodes |
+| animated, high-count | **Pixi `ParticleContainer`** (GPU instancing) on a canvas layer | scales to thousands; SVG DOM does not |
+| repeated motif | SVG `<symbol>` + `<use>` | dedup markup |
+| surface-bound (spots on a deforming creature) | **bake into the rig part texture** → deforms with FFD automatically | avoids animating thousands of shapes on a moving mesh |
+| any | a per-scene **shape budget**, with a logged warning when exceeded (no silent truncation) | matches the "no silent caps" rule; keeps laptop render times bounded |
+
+Status: **M2 + ongoing performance concern.** Authored multi-shape assets work from day one; the `scatter` generator, baking, and Pixi instancing land in M2. Determinism holds (seeded scatter, content-hashed bakes).
+
 ---
 
 ## 11. Channels, Effects & Post-processing
@@ -428,6 +448,7 @@ beats:
 3. **Layout/timing solver is the real intelligence.** Going from semantic beats to non-overlapping positioned layers + camera moves is hard. Mitigation: ship a dumb deterministic layout (named anchor slots / templates) for M1; make P6–P9 smart later.
 4. **Two-IR contract drift.** Mitigation: Zod validation at every arrow, golden IR fixtures per pass, per-stage versioning in cache key.
 5. **AI asset-gen quality on a laptop** (later). Mitigation: it's offline/one-time; quantized models + human one-time cleanup of part layers (asset prep, not animation, so it doesn't violate "no manual animation tool").
+6. **Shape-count / detail performance.** Hundreds of shapes per object × many objects × every frame can crater SVG-DOM render time on a laptop (§10.1). Mitigation: bake static detail (cached, content-hashed), Pixi `ParticleContainer` for animated detail, `<symbol>`/`<use>` for motifs, and a per-scene shape budget with logging. Prototype the SVG-vs-Pixi crossover threshold in M2.
 
 ---
 
@@ -450,7 +471,7 @@ beats:
 4. Re-running produces a **byte-identical MP4** (same content hash) — proves determinism (Pixi + generator both seeded/frame-driven) + caching/golden tests.
 5. Scene IR validates against its Zod schema and is human-readable/diffable.
 
-**M2 (next):** **Shading & Depth model** (§11.1 — scene `light` + default-on per-object supporting gradient shapes + gradient fills), compositional rigs (`attach` between rigs, `parts` selection, presets), **reusable `clip` + `environment` nested compositions** (make-once/reuse-everywhere with args+overrides), rig instancing/crowds (DragonBones factory), more generators (water, particles), Lottie ingest, morph channel, **layer `effects[]` + motion blur + `@remotion/transitions`**, stagger. **M3+:** full **audio + sound design** (TTS, lip-sync, captions, SFX-from-events, mixing — P4/P7), composition **`post[]`** grade, AI asset-gen (P3), smart layout (P6/P9), LLM script-expander (P1).
+**M2 (next):** **Shading & Depth model** (§11.1 — scene `light` + default-on per-object supporting gradient shapes + gradient fills), compositional rigs (`attach` between rigs, `parts` selection, presets), **reusable `clip` + `environment` nested compositions** (make-once/reuse-everywhere with args+overrides), rig instancing/crowds (DragonBones factory), object detail (`scatter` generator + baking + Pixi instancing + shape budget, §10.1), more generators (water, particles), Lottie ingest, morph channel, **layer `effects[]` + motion blur + `@remotion/transitions`**, stagger. **M3+:** full **audio + sound design** (TTS, lip-sync, captions, SFX-from-events, mixing — P4/P7), composition **`post[]`** grade, AI asset-gen (P3), smart layout (P6/P9), LLM script-expander (P1).
 
 > Even at one rig, M1 resolves assets **through the library registry + `animation.lock`** (name@version → content hash), so the deterministic-addressing seam is exercised from the start; full composition (attach/presets/instancing) lands in M2.
 
