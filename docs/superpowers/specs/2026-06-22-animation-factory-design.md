@@ -53,7 +53,7 @@ Rationale (given a solo developer, "don't build from scratch," license is a non-
 | **rig** (characters: skeletal + IK + **full mesh deformation/FFD**) | `pixi-dragonbones-runtime` in a Pixi `<canvas>` (committed render path) | ♻️ reuse |
 | **generator** (neurons, particles, smoke, crowds) | React/SVG + `d3-shape` + `simplex-noise` + `blobshape` | ours (thin) |
 
-**Determinism rule for sub-renderers:** every sub-renderer is driven by Remotion's `useCurrentFrame()` (DragonBones is *seeked* to `time = frame/fps`; Lottie to its frame), wrapped in `delayRender`/`continueRender`. No sub-renderer runs its own clock. This keeps the composite byte-reproducible.
+**Determinism rule for sub-renderers (verified recipe, 2026-06-22):** every sub-renderer is driven by Remotion's `useCurrentFrame()` (DragonBones is *seeked* to `time = frame/fps`; Lottie to its frame). For the Pixi/WebGL rig, byte-identical output across **cold, independent** runs requires all three: (1) **software GL** — `chromiumOptions.gl: 'swangle'` (hardware `'angle'` rasterizes non-deterministically across runs); (2) **`preserveDrawingBuffer: true`** on the Pixi init (so the screenshot reads the rendered buffer regardless of compositing timing); (3) **synchronous `continueRender`** right after `app.render()` (rAF-based gating interacts with Remotion's controlled frame clock and reintroduces non-determinism). No sub-renderer runs its own clock.
 
 ### Rejected / deferred engines
 
@@ -483,7 +483,7 @@ beats:
 
 ## 14. Risks & Unknowns
 
-1. **DragonBones-in-Remotion determinism (#1 de-risk).** Pixi runs in a canvas inside a React/headless-Chrome render; it must be seeked to `frame/fps` and gated by `delayRender`/`continueRender` to stay byte-reproducible. *Prototype this first.* (Replaces the old BeginFrame risk.)
+1. **DragonBones-in-Remotion determinism — RESOLVED in M1 (2026-06-22).** Pixi runs in a canvas inside a React/headless-Chrome render. The verified recipe is in §3 ("Determinism rule for sub-renderers"): **software GL (`swangle`) + `preserveDrawingBuffer:true` + synchronous `continueRender`**. NOTE: the M1 spike's initial claim (hardware `'angle'` + rAF gating) was **disproven by independent cross-run verification** — it held only within a single session; cold runs diverged (~all frames via GPU float variance, then ~3/150 via a paint-commit race). Lesson: always verify determinism across **separate process invocations**, not back-to-back in one run, and compare the **decoded video stream** (not just the container, which carries a wall-clock timestamp).
 2. **Compositing sub-renderers** (SVG generators + Pixi rig) in one frame — z-order and color consistency between a Pixi `<canvas>` and SVG layers. Mitigation: a single compositor component with explicit z-sorting; M1 exercises Pixi-rig + one SVG generator together (Lottie ingest added in M2).
 3. **Layout/timing solver is the real intelligence.** Going from semantic beats to non-overlapping positioned layers + camera moves is hard. Mitigation: ship a dumb deterministic layout (named anchor slots / templates) for M1; make P6–P9 smart later.
 4. **Two-IR contract drift.** Mitigation: Zod validation at every arrow, golden IR fixtures per pass, per-stage versioning in cache key.
