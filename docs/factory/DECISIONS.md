@@ -44,6 +44,11 @@ Append-only. One entry per significant decision/learning: **Context → Decision
 **Decision:** Add a `scatter` generator for procedural detail (seeded, poisson-disc) and a detail×performance strategy (spec §10.1): bake static high-count detail (cached/content-hashed), Pixi `ParticleContainer` for animated high-count, `<symbol>`/`<use>` for motifs, bake surface-bound detail into rig textures (deforms via FFD), and a per-scene shape budget with logging (no silent truncation). Added as risk #6.
 **Rationale:** Detail density is a rendering-budget question, not an art one; splitting by behavior keeps it deterministic and laptop-viable. Authored multi-shape assets already work; the strategy is M2 + ongoing.
 
+## 2026-06-22 — Visual-language systems: transitions/match-cuts, kinetic typography, color-script
+**Context:** Kurzgesagt storytelling relies on seamless idea-to-idea transitions (match-cuts), bold animated text, and an emotional color arc across beats.
+**Decision:** Add three first-class systems (spec §11.2–11.4): (1) transitions incl. `morph-match`, `match-cut` (shared element continuity via `match:{from,to}`), and `camera-continuous` — reuse `@remotion/transitions` + `flubber`; (2) a `text` layer (split from `asset`) with kinetic-reveal presets, auto-fit (`@remotion/layout-utils`), count-up, and later narration sync (Whisper + `@remotion/captions`); (3) a color-script where Story-IR beats carry `mood`/`palette`, Scene-IR palette tokens are the single source for all fills/gradients/`light.color`, and palettes interpolate across transitions in OKLab (`culori`/`d3-interpolate`).
+**Rationale:** All three generalize existing mechanisms (transitions/morph, layers+stagger, palette tokens) rather than adding subsystems; reuse-first; deterministic. M2 (M3 for narration-synced text). Fields reserved in IR now.
+
 ## 2026-06-22 — Build by milestone; M1 first
 **Context:** Avoid building ahead of validated architecture.
 **Decision:** M1 = minimal vertical slice proving every seam (script→mp4, DragonBones rig w/ mesh deform + bead-string generator + parallax camera, deterministic render, library+lockfile). M2/M3 staged in spec §15.

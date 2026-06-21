@@ -75,7 +75,9 @@ Verified against the 2026 landscape. Standards adopted so we extend rather than 
 | Editorial/scene sequencing concepts | **Align Story IR with OTIO** (tracks/clips/transitions/markers); optional export adapter later — not a runtime dep | OpenTimelineIO (ASWF) |
 | Render + audio + mux + batch | **Remotion** | `remotion`, `@remotion/*` |
 | Reusable nested timelines (clips/environments) | **Remotion nested compositions** (pre-comp pattern) | reuse; see §13.3 |
-| Scene/clip transitions | `@remotion/transitions` | reuse |
+| Scene/clip transitions + match-cuts | `@remotion/transitions` (+ `flubber` for morph-match) | reuse; see §11.2 |
+| Text fit/measure + captions + fonts | `@remotion/layout-utils`, `@remotion/captions`, `@remotion/google-fonts` | reuse; see §11.3 |
+| Palette interpolation (color-script) | `culori` / `d3-interpolate` (OKLab) | reuse; see §11.4 |
 | Motion blur | `@remotion/motion-blur` | reuse |
 | GPU effects on the rig canvas | **Pixi filters** (glow/bloom/blur/displacement) | reuse |
 | Full-frame color grade / post | SVG/WebGL filters + FFmpeg filter pass | reuse |
@@ -209,7 +211,8 @@ Four complementary layer families, each the right tool for a kind of motion:
 
 | Layer type | Use | Renderer |
 |---|---|---|
-| **asset / text** | fixed art, animate transforms (icons, logos, labels) | React/SVG |
+| **asset** | fixed art, animate transforms (icons, logos, props) | React/SVG |
+| **text** | typography with kinetic-reveal presets + auto-fit + (later) narration sync | React/SVG (§11.3) |
 | **rig** | constructed characters, **identity-stable**, posed by named clips (no-AI-drift guarantee) | DragonBones via pixi |
 | **shape** | vector shapes with morph/path/fill channels (coin→planet match-cuts) | React/SVG + flubber |
 | **generator** | procedural/organic/parametric structures (water, fire, smoke, clouds, particles, crowds, neuron bead-strings) — computed per-frame from `params + seed + frame` | React/SVG + d3-shape/noise |
@@ -355,6 +358,43 @@ Reuse: native SVG `<linearGradient>`/`<radialGradient>`, `feDropShadow`/`feGauss
 
 Status: **M2 (look), reserved-in-IR now** — `light`/`shading`/gradient-fill fields exist in the Scene IR from the start so adding the model changes nothing upstream.
 
+### 11.2 Transitions & match-cuts
+
+Scene/clip boundaries are first-class. `transition_in`/`transition_out` (and a `transition` between scenes) lower to concrete effects:
+
+| Kind | Mechanism |
+|---|---|
+| `cut` / `fade` / `wipe` / `slide` / `iris` | `@remotion/transitions` (reuse) |
+| `mask` / `shape-reveal` | SVG mask animated open (StyleKit easing) |
+| `morph-match` | a shape **morphs across the boundary** (coin→planet) via `flubber`/MorphSVG |
+| `match-cut` | a **shared element keeps position/scale/rotation across the cut** for continuity — linked by `match: { from:"L_x@sceneA", to:"L_y@sceneB" }` |
+| `camera-continuous` | the camera move carries across the cut (shared camera keyframes) |
+
+Match-cuts and camera-continuous transitions are the Kurzgesagt "seamless idea-to-idea" feel; both are deterministic (the compositor interpolates the linked element / camera across the boundary). **M2.**
+
+### 11.3 Text & kinetic typography
+
+A first-class `text` layer (split out from `asset` in the taxonomy): `{ type:"text", content, font, style, fit?, anim }`.
+
+- **Style:** palette-token color (ties into the color-script, §11.4), weight, size.
+- **Fit:** auto-size/wrap to a box via `@remotion/layout-utils` (`fitText`/`measureText`) so labels never overflow — no manual sizing.
+- **Animation presets (`anim`):** per-word / per-char **stagger reveals**, typewriter, pop-in, slide-up, and **number count-up** — built on StyleKit easing + the stagger system.
+- **Narration sync (later, M3):** word-timings from local Whisper drive per-word reveal/highlight; captions via `@remotion/captions`.
+- **Fonts:** bundled/local fonts (or `@remotion/google-fonts`), loaded via `delayRender` before render for determinism.
+
+Reuse: `@remotion/layout-utils`, `@remotion/captions`, `@remotion/google-fonts`. **M2** (kinetic reveals) / **M3** (narration-synced text).
+
+### 11.4 Color-script (palette-per-beat / mood)
+
+The emotional color arc of a video (warm intro → cold problem → hopeful resolution) is a **first-class color-script**, not ad-hoc per-shape colors.
+
+- **Story IR:** each beat may declare a `mood`/`palette` → the arc across the whole video.
+- **Scene IR:** `defs.palette` is a **token set**, and **every fill, gradient, and `light.color` references a token** (single source) — so swapping the palette recolors the entire scene coherently.
+- **Mood shifts:** palettes **interpolate across a transition** in a perceptual color space, so a mood change reads as a smooth global shift.
+- **Library:** named `palette` / `stylekit` entries are reusable units (§13).
+
+Reuse: `culori` / `d3-interpolate` (OKLab perceptual interpolation). Deterministic. **M2.**
+
 > The visual effects model deliberately mirrors the audio model (§12): `effects[]` ↔ per-track audio FX, `post[]` ↔ the audio mix bus, and SFX-from-events ↔ `effects[]` triggered by animation — both picture and sound are driven by the same animation events for coherence.
 
 ---
@@ -471,7 +511,7 @@ beats:
 4. Re-running produces a **byte-identical MP4** (same content hash) — proves determinism (Pixi + generator both seeded/frame-driven) + caching/golden tests.
 5. Scene IR validates against its Zod schema and is human-readable/diffable.
 
-**M2 (next):** **Shading & Depth model** (§11.1 — scene `light` + default-on per-object supporting gradient shapes + gradient fills), compositional rigs (`attach` between rigs, `parts` selection, presets), **reusable `clip` + `environment` nested compositions** (make-once/reuse-everywhere with args+overrides), rig instancing/crowds (DragonBones factory), object detail (`scatter` generator + baking + Pixi instancing + shape budget, §10.1), more generators (water, particles), Lottie ingest, morph channel, **layer `effects[]` + motion blur + `@remotion/transitions`**, stagger. **M3+:** full **audio + sound design** (TTS, lip-sync, captions, SFX-from-events, mixing — P4/P7), composition **`post[]`** grade, AI asset-gen (P3), smart layout (P6/P9), LLM script-expander (P1).
+**M2 (next):** **Shading & Depth model** (§11.1 — scene `light` + default-on per-object supporting gradient shapes + gradient fills), compositional rigs (`attach` between rigs, `parts` selection, presets), **reusable `clip` + `environment` nested compositions** (make-once/reuse-everywhere with args+overrides), rig instancing/crowds (DragonBones factory), object detail (`scatter` generator + baking + Pixi instancing + shape budget, §10.1), more generators (water, particles), Lottie ingest, morph channel, **layer `effects[]` + motion blur + transitions/match-cuts (§11.2)**, **kinetic typography (§11.3)**, **color-script / palette-per-beat (§11.4)**, stagger. **M3+:** full **audio + sound design** (TTS, lip-sync, captions, **narration-synced text**, SFX-from-events, mixing — P4/P7), composition **`post[]`** grade, AI asset-gen (P3), smart layout (P6/P9), LLM script-expander (P1).
 
 > Even at one rig, M1 resolves assets **through the library registry + `animation.lock`** (name@version → content hash), so the deterministic-addressing seam is exercised from the start; full composition (attach/presets/instancing) lands in M2.
 
