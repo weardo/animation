@@ -79,6 +79,7 @@ Verified against the 2026 landscape. Standards adopted so we extend rather than 
 | Motion blur | `@remotion/motion-blur` | reuse |
 | GPU effects on the rig canvas | **Pixi filters** (glow/bloom/blur/displacement) | reuse |
 | Full-frame color grade / post | SVG/WebGL filters + FFmpeg filter pass | reuse |
+| Gradients + per-object shading/depth | SVG `linear/radialGradient` + `feDropShadow`/`feGaussianBlur` (+ optional `feDiffuse/SpecularLighting`); Pixi filters on rig | reuse; see §11.1 |
 | Easing curves | Remotion `Easing` + `bezier-easing` | reuse |
 | Springs / secondary motion | Remotion `spring()` (+ `popmotion`) | reuse |
 | IK (where not using DragonBones) | `ikjs` / `IK.ts` | reuse |
@@ -197,7 +198,7 @@ Adopts Lottie's `{a,k}` animated-property model (`a`=animated?, `k`=value or key
 }
 ```
 
-**Key choices:** `{a,k}` unifies static and animated values; `parallax` + `camera` keyframes give 2.5D depth with no 3D engine; `rig_state` is a *thin pointer* (selects/sequences a rig's internal clips, never re-describes bones); rig layers compose via `parts` (intra-rig variant selection) and `attach` (inter-rig scene-graph parenting) — see §8.1; `e` names a StyleKit easing so no motion is ever accidentally linear; any layer may carry an animatable `effects[]` stack and a scene may carry a `post[]` grade (§11); `provenance` enables content-hash skip + golden diff.
+**Key choices:** `{a,k}` unifies static and animated values; `parallax` + `camera` keyframes give 2.5D depth with no 3D engine; `rig_state` is a *thin pointer* (selects/sequences a rig's internal clips, never re-describes bones); rig layers compose via `parts` (intra-rig variant selection) and `attach` (inter-rig scene-graph parenting) — see §8.1; `e` names a StyleKit easing so no motion is ever accidentally linear; any layer may carry an animatable `effects[]` stack and a scene may carry a `post[]` grade (§11); a scene carries one `light` and layers carry `shading` + gradient fills for per-object depth (§11.1); `provenance` enables content-hash skip + golden diff.
 
 ---
 
@@ -272,6 +273,7 @@ A shared `StyleKit` module every scene draws from, so quality is a consistent, t
 | Ambient richness | **generator library** (particles, dust, organic motion) | §10 |
 | Soft premium finish | **look layer** — soft shadows, glow, gradients, faint grain, per-scene limited palette | SVG filters + palette tokens (§11 `effects`/`post`) |
 | Premium motion feel | **motion blur** on fast moves (shutter-angle) — biggest lever vs stiff tweens | `@remotion/motion-blur` |
+| Per-object depth (the Kurzgesagt look) | **Shading & Depth** (§11.1) — default-on supporting gradient shapes (contact shadow, form shade, rim, AO, glow) from a single scene `light` + layer `z`; gradient fills everywhere | SVG gradients + lighting filters |
 
 ---
 
@@ -303,6 +305,35 @@ Initial set: `wave` (water surfaces), `bead-string` (neurons/chains with traveli
 ```
 
 **Motion blur** is a StyleKit default on fast moves — it is the largest single quality lever separating premium motion graphics from stiff tweens, and Remotion provides it natively.
+
+### 11.1 Shading & Depth (per-object supporting gradient shapes)
+
+Kurzgesagt depth is **compositional, not post-processing**: every object carries a small stack of supporting gradient shapes (contact shadow, form shade, rim, AO, glow), all consistent with one scene light. This is a **systematic, default-on layer of the compositor** — derived automatically per object, not hand-authored.
+
+- **Scene-level `light`** (single source): `{ dir, elevation, color, intensity, ambient }`.
+- **Per-layer `shading`** (default-on via StyleKit; overridable): generates supporting shapes from the object's silhouette + light + `z`:
+
+| Supporting shape | Purpose | Derived from |
+|---|---|---|
+| `contact_shadow` | seats the object on ground/bg (soft gradient blob) | silhouette + light dir + `z` |
+| `form` | volume on the body (lit→dark gradient overlay, masked to silhouette) | silhouette + light dir |
+| `rim` | bright edge on the lit side | silhouette + light dir |
+| `ao` | darkening where objects meet | overlap + `z` |
+| `glow` | emissive halo | object + intensity |
+
+- **Compositor per-object order (back→front):** `contact_shadow → object → form overlay → rim/highlight → glow`.
+- **Gradients are first-class, animatable fills** everywhere (linear/radial, palette-tokened): `fill: { gradient: { type, stops, angle } }`.
+- **Between-layer depth** (already in §9): far layers get atmospheric tint/desaturate + blur via parallax `z`.
+
+Reuse: native SVG `<linearGradient>`/`<radialGradient>`, `feDropShadow`/`feGaussianBlur` (soft shadows), optional `feDiffuseLighting`/`feSpecularLighting` (form), Pixi filters on the rig canvas. Deterministic — pure functions of `light + z + silhouette`.
+
+```jsonc
+"light":   { "dir":120, "elevation":60, "color":"#fff6e0", "intensity":0.8, "ambient":0.35 },
+"shading": { "form":true, "contact_shadow":true, "rim":0.3, "ao":true, "glow":0 },
+"fill":    { "gradient": { "type":"radial", "stops":[["#ffd86b",0],["#f08c2e",1]], "angle":120 } }
+```
+
+Status: **M2 (look), reserved-in-IR now** — `light`/`shading`/gradient-fill fields exist in the Scene IR from the start so adding the model changes nothing upstream.
 
 > The visual effects model deliberately mirrors the audio model (§12): `effects[]` ↔ per-track audio FX, `post[]` ↔ the audio mix bus, and SFX-from-events ↔ `effects[]` triggered by animation — both picture and sound are driven by the same animation events for coherence.
 
@@ -419,7 +450,7 @@ beats:
 4. Re-running produces a **byte-identical MP4** (same content hash) — proves determinism (Pixi + generator both seeded/frame-driven) + caching/golden tests.
 5. Scene IR validates against its Zod schema and is human-readable/diffable.
 
-**M2 (next):** compositional rigs (`attach` between rigs, `parts` selection, presets), **reusable `clip` + `environment` nested compositions** (make-once/reuse-everywhere with args+overrides), rig instancing/crowds (DragonBones factory), more generators (water, particles), Lottie ingest, morph channel, **layer `effects[]` + motion blur + `@remotion/transitions`**, stagger. **M3+:** full **audio + sound design** (TTS, lip-sync, captions, SFX-from-events, mixing — P4/P7), composition **`post[]`** grade, AI asset-gen (P3), smart layout (P6/P9), LLM script-expander (P1).
+**M2 (next):** **Shading & Depth model** (§11.1 — scene `light` + default-on per-object supporting gradient shapes + gradient fills), compositional rigs (`attach` between rigs, `parts` selection, presets), **reusable `clip` + `environment` nested compositions** (make-once/reuse-everywhere with args+overrides), rig instancing/crowds (DragonBones factory), more generators (water, particles), Lottie ingest, morph channel, **layer `effects[]` + motion blur + `@remotion/transitions`**, stagger. **M3+:** full **audio + sound design** (TTS, lip-sync, captions, SFX-from-events, mixing — P4/P7), composition **`post[]`** grade, AI asset-gen (P3), smart layout (P6/P9), LLM script-expander (P1).
 
 > Even at one rig, M1 resolves assets **through the library registry + `animation.lock`** (name@version → content hash), so the deterministic-addressing seam is exercised from the start; full composition (attach/presets/instancing) lands in M2.
 

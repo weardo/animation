@@ -34,6 +34,11 @@ Append-only. One entry per significant decision/learning: **Context → Decision
 **Decision:** Layer `effects[]` + composition `post[]` (reuse SVG/Pixi/Remotion FX, `@remotion/transitions`, `@remotion/motion-blur`); audio mixing + SFX-from-animation-events. Both driven by the same animation events. Motion blur is a StyleKit default.
 **Rationale:** One event timeline drives picture and sound → coherence; everything reserved-in-IR-now, built M2/M3.
 
+## 2026-06-22 — Shading & Depth is compositional, not post-processing
+**Context:** Kurzgesagt depth comes from each object carrying supporting gradient shapes (contact shadow, form shade, rim, AO, glow) consistent with one scene light — not from per-object filters.
+**Decision:** Add a Shading & Depth model (spec §11.1): a scene-level `light` as single source + a default-on per-layer `shading` that auto-generates supporting gradient shapes from silhouette + light + `z`; gradients are first-class animatable fills. Reuse SVG gradients/lighting filters + Pixi filters. M2 (look); fields reserved in Scene IR now.
+**Rationale:** A single scene light makes the whole scene read as one coherent lit space; auto-derivation avoids hand-authoring shadow shapes (the manual labor we're eliminating). Quality floor → default-on. **Supersedes** the earlier assumption that StyleKit's drop-shadow/glow `effects` filters covered Kurzgesagt depth — they don't.
+
 ## 2026-06-22 — Build by milestone; M1 first
 **Context:** Avoid building ahead of validated architecture.
 **Decision:** M1 = minimal vertical slice proving every seam (script→mp4, DragonBones rig w/ mesh deform + bead-string generator + parallax camera, deterministic render, library+lockfile). M2/M3 staged in spec §15.
