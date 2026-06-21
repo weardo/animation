@@ -24,4 +24,10 @@ out/
 npm-debug.log*
 .DS_Store
 
+# Prototype generated artifacts (shapes.mjs is the source; these are regenerated)
+prototype/frames/
+prototype/preview.html
+prototype/preview.svg
+prototype/anim.gif
+
 # Keep: library/ assets, library/index.json, animation.lock, golden fixtures, docs/
