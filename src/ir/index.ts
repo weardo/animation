@@ -36,6 +36,8 @@ export {
   ActionItemSchema,
   PlaceItemSchema,
   CameraIntentSchema,
+  DurationSchema,
+  StoryTransitionSchema,
 } from './story.js';
 export type {
   StoryIR,
@@ -45,6 +47,8 @@ export type {
   ActionItem,
   PlaceItem,
   CameraIntent,
+  Duration,
+  StoryTransition,
 } from './story.js';
 
 // Scene IR.
@@ -102,6 +106,7 @@ export type {
   Fill,
   Effect,
   Post,
+  Transition,
   AudioCue,
   Provenance,
 } from './scene.js';

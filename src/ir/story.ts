@@ -63,9 +63,62 @@ export const ActionItemSchema = z
   .strict();
 export type ActionItem = z.infer<typeof ActionItemSchema>;
 
-/** Camera *intent* — a named move, not pixels/frames (e.g. "slow_push_in", "hold"). */
-export const CameraIntentSchema = z.string().min(1);
+/** Camera *intent* — a named move, not pixels/frames (e.g. "slow_push_in", "hold").
+ *  Either a bare preset name (back-compat) or an object carrying the preset + free-form hints
+ *  (e.g. amount/target) the camera-director pass interprets. */
+export const CameraIntentSchema = z.union([
+  z.string().min(1),
+  z
+    .object({
+      /** Named camera move preset (e.g. "slow_push_in", "hold", "pan"). */
+      move: z.string().min(1),
+      /** Optional intensity hint (0..1+), interpreted by the camera-director pass. */
+      amount: z.number().optional(),
+      /** Optional free-form camera arguments. */
+      args: z.record(z.unknown()).optional(),
+    })
+    .strict(),
+]);
 export type CameraIntent = z.infer<typeof CameraIntentSchema>;
+
+/**
+ * A duration intent — either a number of seconds (`{ seconds }`) or frames (`{ frames }`).
+ * The lowering pass resolves to absolute `duration_frames` using the scene fps. Bare numbers
+ * are interpreted as SECONDS (the authoring-friendly unit at the Story-IR altitude).
+ */
+export const DurationSchema = z.union([
+  z.number().positive(),
+  z.object({ seconds: z.number().positive() }).strict(),
+  z.object({ frames: z.number().int().positive() }).strict(),
+]);
+export type Duration = z.infer<typeof DurationSchema>;
+
+/**
+ * A transition INTO a beat (plays at the boundary from the previous beat to this one).
+ * Expressive: `kind` + passthrough params. Lowers to the Scene-IR TransitionSchema and ultimately
+ * to `@remotion/transitions` (or SVG-mask / flubber morph / match-cut continuity — spec §11.2).
+ */
+export const StoryTransitionSchema = z
+  .object({
+    /** Transition family. `cut` = hard cut (no effect). */
+    kind: z.enum([
+      'cut',
+      'fade',
+      'wipe',
+      'slide',
+      'iris',
+      'mask',
+      'morph-match',
+      'match-cut',
+      'camera-continuous',
+    ]),
+    /** Direction for directional kinds (wipe/slide). */
+    dir: z.enum(['left', 'right', 'up', 'down']).optional(),
+    /** Transition length in frames (lowering may default this from the StyleKit). */
+    duration: z.number().int().positive().optional(),
+  })
+  .passthrough();
+export type StoryTransition = z.infer<typeof StoryTransitionSchema>;
 
 /**
  * A `place` entry — reserved for M2 environment composition (drop a preset/clip onto an anchor).
@@ -94,6 +147,17 @@ export const BeatSchema = z
     action: z.array(ActionItemSchema).optional(),
     /** Camera intent for this beat. */
     camera: CameraIntentSchema.optional(),
+    /**
+     * Transition INTO this beat (from the previous beat). Ignored on the first beat (nothing to
+     * transition from). Optional + back-compat: omitting it = a hard cut. (Spec §11.2.)
+     */
+    transition: StoryTransitionSchema.optional(),
+    /**
+     * Desired on-screen duration of this beat (seconds or frames). Optional: the lowering pass
+     * falls back to a default per-beat length when omitted. Drives each scene's `duration_frames`
+     * and its `at` offset on the global timeline (sequenced film).
+     */
+    duration: DurationSchema.optional(),
     // --- Reserved for later milestones (M2 environment composition) ---
     /** Reuse a whole scene-template/environment (reserved; M2). */
     environment: z.string().min(1).optional(),

@@ -18,15 +18,11 @@
 // function on its own. Either way the output validates against the Scene-IR Zod schema.
 
 import {
-  validateSceneIR,
-  type SceneIR,
-  type Scene,
   type Layer,
   type AssetLayer,
   type RigLayer,
   type GeneratorLayer,
   type RigClip,
-  type Camera,
   type Transform,
   type AssetDef,
   type RigDef,
@@ -36,6 +32,9 @@ import {
   type StoryIR,
   type Beat,
   type Character,
+  type CameraIntent,
+  type Transition,
+  type Duration,
 } from '../ir/index.js';
 import {
   DEFAULT_PALETTE,
@@ -43,6 +42,7 @@ import {
   MOTION_DEFAULTS,
 } from '../render/stylekit.js';
 import { storyHash, deriveSeed } from './parse.js';
+import type { LoweredSceneIR, LoweredScene } from './contract.js';
 
 /** This pass's id + version — folded into cache keys / provenance (spec §5). */
 export const PASS_ID = 'lower';
@@ -56,6 +56,21 @@ export const M1_CONFIG = {
   /** 5 seconds at 30fps. */
   durationFrames: 150,
 } as const;
+
+/**
+ * Default per-beat scene length when a beat declares no `duration` (spec task: "a sensible default
+ * e.g. 4s"). Expressed in SECONDS and resolved to frames against the scene fps so it scales with the
+ * config. The M1 single-beat slice overrides this via `M1_CONFIG.durationFrames` (5s) when the story
+ * has exactly one beat and the caller passed no override, preserving M1 byte-output (see lowerStory).
+ */
+export const DEFAULT_BEAT_SECONDS = 4 as const;
+
+/**
+ * Default transition length (frames) used when a beat carries a `transition` with no explicit
+ * `duration`. A hard `cut` is zero-length (no overlap). Kept here as the one StyleKit-adjacent
+ * tunable so every defaulted transition reads the same length. (Spec §11.2.)
+ */
+export const DEFAULT_TRANSITION_FRAMES = 15 as const;
 
 /** Default M1 catalog refs (name@version) the lowering pass resolves (matches library/index.json). */
 export const M1_REFS = {
@@ -97,6 +112,71 @@ function clipsForRig(rigRef: string, durationFrames: number): RigClip[] {
   const plan = RIG_CLIP_PLANS[name];
   if (plan) return plan(durationFrames);
   return [{ anim: M1_RIG_ANIM, loop: true }];
+}
+
+// --- beat duration + transition resolution ----------------------------------------------------
+
+/**
+ * Resolve a beat's `duration` intent into an absolute frame count. The Story IR duration is one of:
+ *   • a bare number          → SECONDS (the authoring-friendly Story-IR unit),
+ *   • `{ seconds }`          → SECONDS,
+ *   • `{ frames }`           → already frames.
+ * Seconds are converted with the scene `fps` and rounded to the nearest whole frame (deterministic).
+ * Returns `undefined` when the beat declares no duration, so the caller can apply its default.
+ */
+function resolveBeatFrames(
+  duration: Duration | undefined,
+  fps: number
+): number | undefined {
+  if (duration === undefined) return undefined;
+  if (typeof duration === 'number') return Math.max(1, Math.round(duration * fps));
+  if ('frames' in duration) return duration.frames;
+  return Math.max(1, Math.round(duration.seconds * fps));
+}
+
+/**
+ * Lower a beat's Story-IR `transition` into a Scene-IR `transition_in`, defaulting the `duration`
+ * (frames) when the author omitted it. A hard `cut` stays zero-overlap (no `duration`). Returns
+ * `undefined` when the beat has no transition (a plain hard cut at the boundary). Pure structural
+ * copy — passthrough fields (dir, from/to, match) carry through unchanged (spec §11.2).
+ */
+function resolveTransitionIn(beat: Beat): Transition | undefined {
+  const t = beat.transition;
+  if (!t) return undefined;
+  if (t.kind === 'cut') {
+    // A hard cut is a zero-length boundary; drop any duration so it never overlaps.
+    const { duration: _drop, ...rest } = t as Transition & { duration?: number };
+    return rest as Transition;
+  }
+  if (t.duration === undefined) {
+    return { ...t, duration: DEFAULT_TRANSITION_FRAMES } as Transition;
+  }
+  return t as Transition;
+}
+
+/**
+ * The overlap (in frames) a scene's leading transition consumes from the PREVIOUS scene's tail.
+ * `@remotion/transitions` plays a transition by overlapping the two adjacent scenes, so the global
+ * timeline shortens by this amount at every transitioned boundary. A `cut` (or no transition) is
+ * zero. The first scene never overlaps (nothing precedes it) — the caller guards that.
+ */
+function overlapFrames(transitionIn: Transition | undefined): number {
+  if (!transitionIn) return 0;
+  if (transitionIn.kind === 'cut') return 0;
+  return transitionIn.duration ?? DEFAULT_TRANSITION_FRAMES;
+}
+
+// --- camera intent extraction ------------------------------------------------------------------
+
+/**
+ * Extract a beat's camera INTENT (a keyword like "slow_push_in", or `{ move, amount, ... }`) for the
+ * lite camera-director pass (P8) to expand into concrete keyframes. Lowering deliberately emits the
+ * intent rather than baking camera here, so each beat's camera move is resolved per-scene by P8
+ * (spec §5/§8: lower emits intent; the camera pass owns the recipe). `undefined` → P8 applies its
+ * DEFAULT_INTENT ("hold").
+ */
+function cameraIntentForBeat(beat: Beat): CameraIntent | undefined {
+  return beat.camera;
 }
 
 /** Minimal structural view of the Library facade this pass needs (kept loose to avoid coupling). */
@@ -241,38 +321,15 @@ function buildRigLayer(ref: string, w: number, h: number, clips: RigClip[]): Rig
   };
 }
 
-// --- camera builder ---------------------------------------------------------------------------
-
-/**
- * The CAMERA: a slow push-in (zoom 1.0→1.15) + a slight pan, eased with the StyleKit "smooth"
- * curve over the whole scene (spec §15). The pan + per-layer parallax factors produce the 2.5D
- * depth differential. Pan magnitude scales with frame width so it reads the same at any resolution.
- */
-function buildCamera(durationFrames: number, w: number): Camera {
-  const end = durationFrames - 1;
-  // A gentle rightward+downward drift — "slight pan" (spec §15). ~3% of frame width.
-  const panX = Math.round(w * 0.03);
-  return {
-    position: {
-      a: 1,
-      k: [
-        { t: 0, s: [0, 0], e: 'smooth' },
-        { t: end, s: [panX, Math.round(panX * 0.4)] },
-      ],
-    },
-    zoom: {
-      a: 1,
-      k: [
-        { t: 0, s: 1.0, e: 'smooth' },
-        { t: end, s: 1.15 },
-      ],
-    },
-  };
-}
-
 // --- scene builder ----------------------------------------------------------------------------
 
-/** Lower one beat into one concrete scene (the M1 mapping: one beat → one scene). */
+/**
+ * Lower one beat into one scene placed on the GLOBAL timeline (one beat → one scene). Emits the
+ * scene's own layers (background + bead-string generator + rig), its `camera_intent` (the beat's
+ * camera move, expanded later by P8), its `duration_frames`, its global `at`, and its `transition_in`
+ * (lowered from the beat's `transition`). Returns a {@link LoweredScene} (camera still an intent);
+ * the lite camera pass concretizes it before the Scene-IR boundary.
+ */
 function buildScene(
   beat: Beat,
   at: number,
@@ -281,42 +338,74 @@ function buildScene(
   rigDefKey: string,
   rigRef: string,
   beadPathUri: string,
-  cfg: { w: number; h: number }
-): Scene {
+  cfg: { w: number; h: number },
+  transitionIn: Transition | undefined
+): LoweredScene {
+  // Honor the beat's `show` intent: the bead-string GENERATOR layer is emitted only for beats that
+  // actually introduce/keep it on screen (a `show[].generator === 'bead-string'`). This makes the
+  // film read as a story — e.g. an intro beat with no `show` shows just the character, and the neuron
+  // network appears in the beat that introduces it (spec §6.1: beats declare what is on screen). The
+  // background + rig (the protagonist) are present in every beat.
+  const showsBeadString = (beat.show ?? []).some((s) => s.generator === 'bead-string');
+  // Seed is derived from the story hash + the beat id + the layer handle, so every beat's generator
+  // gets a distinct, deterministic seed (no cross-beat seed collisions, no wall-clock).
   const seed = deriveSeed(hash, `${beat.id}:L_neuron`);
   const layers: Layer[] = [
     buildBackgroundLayer(),
-    buildBeadStringLayer(seed, beadPathUri),
+    ...(showsBeadString ? [buildBeadStringLayer(seed, beadPathUri)] : []),
     buildRigLayer(rigDefKey, cfg.w, cfg.h, clipsForRig(rigRef, durationFrames)),
   ];
   // A single GSAP-style label at mid-scene (the "reveal" beat the spec example uses).
   const reveal = Math.floor(durationFrames / 2);
-  return {
+  const scene: LoweredScene = {
     id: beat.id,
     at,
     duration_frames: durationFrames,
     labels: { reveal },
-    camera: buildCamera(durationFrames, cfg.w),
     layers,
   };
+  // Carry the beat's camera move as an INTENT for P8 to expand (omitted → P8 applies its default).
+  const intent = cameraIntentForBeat(beat);
+  if (intent !== undefined) scene.camera_intent = intent;
+  // Carry the beat's transition onto the scene's leading boundary (omitted on a hard cut / no
+  // transition — the compositor then renders a plain cut). The first scene drops it (no predecessor).
+  if (transitionIn) scene.transition_in = transitionIn;
+  return scene;
 }
 
 // --- the pass ---------------------------------------------------------------------------------
 
 /**
- * P5: lower a Story IR into a validated Scene IR.
+ * P5: lower a MULTI-BEAT Story IR into a sequenced, multi-scene Scene IR on the global timeline.
  *
- * Pure + deterministic: same `(story, opts)` ⇒ same Scene IR (generator seeds derive from the
- * story hash; all motion uses StyleKit easing refs; no wall-clock). Each beat becomes one scene;
- * `defs` is seeded once from the StyleKit + resolved library entries and shared by all scenes.
+ * MULTI-SCENE STORYTELLING (spec §11.2 / §15 M2): each beat becomes ONE scene, and the scenes are
+ * laid out back-to-back on the GLOBAL timeline with transitions between them:
+ *   • duration  — each scene's `duration_frames` comes from the beat's `duration` (seconds/frames),
+ *                 falling back to {@link DEFAULT_BEAT_SECONDS} (×fps). The single-beat M1 case keeps
+ *                 its 5s slice (M1_CONFIG) when no duration/override is given, preserving M1 output.
+ *   • at        — cumulative: scene[i].at = scene[i-1].at + scene[i-1].duration − overlap[i], where
+ *                 overlap[i] is the frames scene[i]'s `transition_in` overlaps the previous tail
+ *                 (0 for a hard cut / no transition; a transitioned boundary shortens the timeline).
+ *   • transition— each beat's `transition` lowers onto the scene's `transition_in` (the FIRST beat's
+ *                 transition is dropped — nothing precedes it).
+ *   • camera    — each beat's camera INTENT is carried as `camera_intent`; the lite camera pass (P8)
+ *                 expands it into concrete per-scene keyframes (so every beat gets its own move).
+ *   • total     — `config.duration_frames` = Σ duration_frames − Σ overlaps (the real film length on
+ *                 the timeline once transition overlaps are accounted for).
+ *
+ * Pure + deterministic: same `(story, opts)` ⇒ same Scene IR (generator seeds derive from the story
+ * hash; all motion uses StyleKit easing refs; no wall-clock, no RNG). `defs` is resolved once and
+ * shared by all scenes.
+ *
+ * Returns a {@link LoweredSceneIR}: scenes carry `camera_intent` (not yet a concrete camera), so the
+ * lite camera pass (P8) runs next; the final Zod Scene-IR boundary is `validate.ts` (V).
  *
  * @param story validated Story IR (from P0).
- * @param opts  optional library facade (P2) + duration override.
- * @returns the validated Scene IR (Remotion `inputProps`).
+ * @param opts  optional library facade (P2) + per-beat duration override.
+ * @returns the lowered Scene IR (camera as intent), ready for the layout+camera lite passes.
  */
-export function lowerStory(story: StoryIR, opts: LowerOptions = {}): SceneIR {
+export function lowerStory(story: StoryIR, opts: LowerOptions = {}): LoweredSceneIR {
   const lib = opts.library;
-  const durationFrames = opts.durationFrames ?? M1_CONFIG.durationFrames;
   const { w, h, fps } = M1_CONFIG;
 
   const hash = storyHash(story);
@@ -336,21 +425,53 @@ export function lowerStory(story: StoryIR, opts: LowerOptions = {}): SceneIR {
     rigs: { narrator: rigDef },
   };
 
-  // Lower each beat to a scene, laying them back-to-back on the global timeline.
-  const scenes: Scene[] = [];
+  // Per-beat duration default. A single-beat story with NO duration/override keeps the 5s M1 slice
+  // (M1_CONFIG.durationFrames) so the M1 vertical slice's output is unchanged. Multi-beat stories
+  // (or an explicit override) use the per-beat default of DEFAULT_BEAT_SECONDS × fps.
+  const singleBeat = story.beats.length === 1;
+  const beatDefaultFrames =
+    opts.durationFrames ??
+    (singleBeat ? M1_CONFIG.durationFrames : Math.round(DEFAULT_BEAT_SECONDS * fps));
+
+  // Lower each beat to a scene, sequencing them on the global timeline with transition overlaps.
+  const scenes: LoweredScene[] = [];
   let at = 0;
-  for (const beat of story.beats) {
+  let total = 0;
+  story.beats.forEach((beat, i) => {
+    // Resolve this scene's length: the beat's explicit duration, else the (possibly overridden)
+    // default. An explicit per-beat duration always wins over the default.
+    const durationFrames = resolveBeatFrames(beat.duration, fps) ?? beatDefaultFrames;
+
+    // The leading transition (dropped on the first scene — nothing precedes it). It overlaps the
+    // PREVIOUS scene's tail, so it shortens both this scene's `at` and the running total.
+    const transitionIn = i === 0 ? undefined : resolveTransitionIn(beat);
+    const overlap = overlapFrames(transitionIn);
+
+    // Pull this scene back over the previous tail by the overlap so the transition cross-fades.
+    at -= overlap;
+
     scenes.push(
-      buildScene(beat, at, durationFrames, hash, 'narrator', rigRef, beadPathDef.uri, { w, h })
+      buildScene(
+        beat,
+        at,
+        durationFrames,
+        hash,
+        'narrator',
+        rigRef,
+        beadPathDef.uri,
+        { w, h },
+        transitionIn
+      )
     );
+
     at += durationFrames;
-  }
+    // Total film length = sum of durations minus the overlaps consumed at each boundary.
+    total += durationFrames - overlap;
+  });
 
-  const totalFrames = durationFrames * story.beats.length;
-
-  const sceneIR = {
+  const loweredIR: LoweredSceneIR = {
     scene_ir_version: '1.0',
-    config: { w, h, fps, duration_frames: totalFrames },
+    config: { w, h, fps, duration_frames: total },
     defs,
     audio: [],
     scenes,
@@ -360,6 +481,5 @@ export function lowerStory(story: StoryIR, opts: LowerOptions = {}): SceneIR {
     },
   };
 
-  // Validate at the IR boundary (spec §4/§5): applies defaults + throws a labelled error on drift.
-  return validateSceneIR(sceneIR);
+  return loweredIR;
 }

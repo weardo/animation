@@ -294,11 +294,40 @@ export const StaggerGroupSchema = z
   })
   .strict();
 
+/**
+ * A scene-boundary transition. Expressive by design: a concrete `kind` + passthrough params so the
+ * compositor can read kind-specific fields (dir, from/to, match links) without a schema change.
+ * Lowers to `@remotion/transitions` (fade/wipe/slide/iris), an SVG mask (mask/shape-reveal),
+ * `flubber` (morph-match), or shared-element/camera continuity (match-cut / camera-continuous).
+ * Spec §11.2.
+ *
+ * Common (kind-specific) passthrough params the compositor may use:
+ *   - duration (frames)            — transition length
+ *   - dir: left|right|up|down      — wipe/slide direction
+ *   - from / to (asset or layer id)— morph-match endpoints
+ *   - match: { from, to }          — match-cut shared-element link ("L_x@sceneA" → "L_y@sceneB")
+ */
 export const TransitionSchema = z
   .object({
-    kind: z.string().min(1),
+    /** Transition family. `cut` = hard cut (a zero-length boundary; renders as no effect). */
+    kind: z.enum([
+      'cut',
+      'fade',
+      'wipe',
+      'slide',
+      'iris',
+      'mask',
+      'morph-match',
+      'match-cut',
+      'camera-continuous',
+    ]),
+    /** Direction for directional kinds (wipe/slide). */
+    dir: z.enum(['left', 'right', 'up', 'down']).optional(),
+    /** Transition length in frames. The compositor overlaps this with the adjacent scene. */
+    duration: z.number().int().positive().optional(),
   })
   .passthrough();
+export type Transition = z.infer<typeof TransitionSchema>;
 
 // --- scene ---
 
@@ -315,7 +344,20 @@ export const SceneSchema = z
     // --- reserved-now (unused in M1) ---
     light: LightSchema.optional(),
     stagger: z.array(StaggerGroupSchema).optional(),
+    /**
+     * Transition INTO this scene, played at its leading boundary (from the previous scene).
+     * The compositor overlaps `transition_in.duration` frames with the previous scene's tail.
+     * Omit (or `kind:'cut'`) on the first scene. (Spec §11.2.)
+     */
     transition_in: TransitionSchema.optional(),
+    /**
+     * Transition OUT of this scene, played at its trailing boundary (into the next scene).
+     * Redundant with the next scene's `transition_in` but useful when a scene owns its exit
+     * (e.g. a morph-match that originates here) or when authoring a scene in isolation. If both a
+     * scene's `transition_out` and the next scene's `transition_in` are set, the compositor treats
+     * `transition_in` (the inbound side) as authoritative.
+     */
+    transition_out: TransitionSchema.optional(),
   })
   .strict();
 export type Scene = z.infer<typeof SceneSchema>;
@@ -354,6 +396,13 @@ export const SceneIRSchema = z
     defs: DefsSchema,
     /** RESERVED (M3): empty in M1, filled by the later TTS pass. */
     audio: z.array(AudioCueSchema).default([]),
+    /**
+     * The sequenced film: one or more scenes laid out on the GLOBAL timeline. Each scene's `at` is
+     * its start frame and `duration_frames` its length; scenes play back-to-back (a scene's
+     * `transition_in.duration` overlaps the previous scene's tail). A single-scene film is the M1
+     * case and still validates. The lowering pass emits this array from the Story IR beats[], and
+     * the compositor sequences it (Remotion `<Series>`/`<TransitionSeries>`).
+     */
     scenes: z.array(SceneSchema).min(1),
     /** RESERVED (M3): full-frame post grade. */
     post: z.array(PostSchema).optional(),

@@ -122,12 +122,14 @@ export function cameraFromIntent(
   intent: CameraIntent,
   durationFrames: number
 ): Camera {
-  if (!isKnownIntent(intent)) {
+  // A camera intent is either a bare preset name or an object carrying `{ move, ... }`.
+  const move = typeof intent === 'string' ? intent : intent.move;
+  if (!isKnownIntent(move)) {
     throw new Error(
-      `unknown camera intent "${intent}". Known intents: ${Object.keys(RECIPES).join(', ')}.`
+      `unknown camera intent "${move}". Known intents: ${Object.keys(RECIPES).join(', ')}.`
     );
   }
-  return RECIPES[intent](durationFrames);
+  return RECIPES[move](durationFrames);
 }
 
 /**

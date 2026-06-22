@@ -1,0 +1,33 @@
+{
+  "project_version": "1.0",
+  "id": "blip-story",
+  "name": "Blip's Story",
+  "created": "2026-06-22T03:59:16.964Z",
+  "updated": "2026-06-22T03:59:16.964Z",
+  "config": {
+    "w": 1920,
+    "h": 1080,
+    "fps": 30,
+    "duration_frames": 366
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "9df6aa29b3b5754498b42f7390be84d890fd4c80",
+  "engine": "remotion@4.0.481",
+  "deps": [
+    "bg_gradient@1.0.0",
+    "axon_curve@1.0.0",
+    "blip@1.0.0"
+  ],
+  "assets": [
+    "assets/bg_gradient.svg",
+    "assets/axon_curve.svg",
+    "assets/characters/blip/blip.spec.json",
+    "assets/characters/blip/blip.preview.png"
+  ],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  }
+}
