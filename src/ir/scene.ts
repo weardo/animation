@@ -77,6 +77,14 @@ export const DefsSchema = z
     assets: AssetsSchema.default({}),
     rigs: RigsSchema.default({}),
     /**
+     * Resolved clip (nested-composition) DEFINITIONS, keyed by `defs.clips[ref]` (the Lottie `assets`
+     * precomp model). Each clip used in the scene appears ONCE here (deduped by lowering); every `clip`
+     * layer references one by `ref`, so N instances share one def. Recursive: a def's own `clip` layers
+     * resolve their refs into this same map (lowering recurses + cycle-detects). Defaulted empty for
+     * back-compat (a scene with no clips has none). M2 (nested composition).
+     */
+    clips: z.lazy(() => ClipsSchema).default({}),
+    /**
      * The RESOLVED stylekit (ADR-008 I2/I3). Lowering selects a `stylekit` library entry (default
      * "kurzgesagt"), seeds `palette`/`easings` from it, AND carries the whole resolved stylekit here
      * so render-time reads motion/liveness/shading/floor from the IR deterministically — no core
@@ -389,15 +397,100 @@ export const TextLayerSchema = z
   .strict();
 export type TextLayer = z.infer<typeof TextLayerSchema>;
 
-/** Discriminated union of all M1 layer types. */
+/**
+ * clip layer (M2 nested composition): a PRE-COMPOSITION instance — a reference to a shared clip
+ * definition (`defs.clips[ref]`, the Lottie `assets` precomp model) plus the per-instance overrides
+ * (`args` = the AE Essential-Graphics / .mogrt Master Properties) and a group `transform`/`effects`/
+ * `parallax` that move/affect the WHOLE unit. `from`/`duration_frames` give the local-timeline window
+ * (rendered as a Remotion `<Sequence>`, which resets the inner frame to 0). The clip's inner layers
+ * are NOT inlined here — they live ONCE in `defs.clips[ref].layers` and are shared by every instance
+ * (DRY, like a Lottie file with one precomp used many times), namespaced + per-instance-seeded at
+ * render time so two instances never collide and each is byte-identical (CLAUDE.md r.1).
+ *
+ * RECURSION: a clip def's own `layers` are the full {@link LayerSchema} union, which INCLUDES this
+ * ClipLayer — so a clip can contain a clip to any depth. The union below is therefore declared with
+ * `z.lazy` to break the self-reference. `args` is a free-form param override map (loose at the IR
+ * boundary, like generator/shape args; resolved by the renderer's `resolveParams`).
+ */
+/**
+ * A clip layer is a pre-composition INSTANCE. It carries NO nested `layers` of its own — those live
+ * ONCE on the DEFINITION ({@link ClipDefSchema}, stored in `defs.clips[ref]`); an instance only
+ * references a def by `ref` plus its per-instance `args`. So this is a plain strict object (no
+ * recursion needed at the instance level): the RECURSION (a clip containing a clip) lives entirely in
+ * the def's `layers`, which is the {@link LayerSchema} union — and that union includes `clip`, so a
+ * resolved def's `clip` layers re-enter the same dispatch. No `z.lazy` is required because the
+ * instance and the def are split (the def's `layers` are loose templates, validated post-substitution).
+ */
+export const ClipLayerSchema = z
+  .object({
+    type: z.literal('clip'),
+    ...layerBase,
+    /** defs.clips key — the shared precomp definition (resolved + deduped by lowering). */
+    ref: z.string().min(1),
+    /** Per-instance param overrides (the exposed Essential-Graphics controls). Loose at the boundary. */
+    args: z.record(z.unknown()).optional(),
+    /** Group transform applied to the whole unit (position/scale/rotation/opacity), `{a,k}`. */
+    transform: TransformSchema.optional(),
+    /** Parallax factor for the whole unit (2.5D depth), like an asset layer. */
+    parallax: z.number().optional(),
+    /** Local start frame within the parent timeline (Remotion `<Sequence from>`). */
+    from: z.number().int().optional(),
+    /** Local window length (Remotion `<Sequence durationInFrames>`); defaults to the def's length. */
+    duration_frames: z.number().int().positive().optional(),
+  })
+  .strict();
+export type ClipLayer = z.infer<typeof ClipLayerSchema>;
+
+/** Discriminated union of all layer types (M1 + the M2 `clip` precomp). */
 export const LayerSchema = z.discriminatedUnion('type', [
   AssetLayerSchema,
   RigLayerSchema,
   GeneratorLayerSchema,
   ShapeLayerSchema,
   TextLayerSchema,
+  ClipLayerSchema,
 ]);
 export type Layer = z.infer<typeof LayerSchema>;
+
+/**
+ * A clip DEFINITION — the shared precomp stored ONCE in `defs.clips[id]` (Lottie `assets` precomp).
+ * `params` are the EXPOSED, typed+defaulted controls (Essential-Graphics / .mogrt); `layers` are the
+ * Scene-IR layer TEMPLATES that may reference a param via `{ "$param": "name" }` (any value) or
+ * `"…{{name}}…"` (string interpolation), and may themselves be `clip` layers (nesting). `layers` is
+ * the recursive {@link LayerSchema} union, so a def can reference other clips. Only `$param`-wired
+ * props are overridable per instance — a prop not wired to a param is fixed by the clip author.
+ */
+export const ClipParamSchema = z
+  .object({
+    type: z.enum(['string', 'number', 'color', 'boolean', 'enum']),
+    /** The default value when an instance does not override it. Loose (per `type`). */
+    default: z.unknown().optional(),
+    /** For `enum`: the allowed values. */
+    options: z.array(z.unknown()).optional(),
+  })
+  .strict();
+export type ClipParam = z.infer<typeof ClipParamSchema>;
+
+export const ClipDefSchema = z
+  .object({
+    /** Exposed param controls: name → { type, default? }. */
+    params: z.record(ClipParamSchema).default({}),
+    /** The clip's own (local) length in frames. */
+    duration_frames: z.number().int().positive(),
+    /**
+     * The clip's layer TEMPLATES (recursive: may contain `clip` layers). Loosely typed at the IR
+     * boundary because templates carry un-substituted `$param`/`{{}}` references (any value), so they
+     * can't satisfy the strict {@link LayerSchema} until the renderer's pure `resolveParams`
+     * substitutes them. After substitution each becomes a real {@link LayerSchema} member (incl.
+     * `clip` → arbitrary nesting). Kept as loose records here; validated post-substitution at render.
+     */
+    layers: z.array(z.record(z.unknown())),
+  })
+  .strict();
+export type ClipDef = z.infer<typeof ClipDefSchema>;
+
+export const ClipsSchema = z.record(ClipDefSchema);
+export type Clips = z.infer<typeof ClipsSchema>;
 
 // --- reserved: stagger group + transition (defined now, unused in M1) ---
 

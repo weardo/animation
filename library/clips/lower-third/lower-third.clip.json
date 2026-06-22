@@ -1,0 +1,55 @@
+{
+  "params": {
+    "title": { "type": "string", "default": "Hello" },
+    "accent": { "type": "color", "default": "accent" },
+    "count": { "type": "number", "default": 0 }
+  },
+  "duration_frames": 90,
+  "layers": [
+    {
+      "type": "shape",
+      "id": "card",
+      "z": 1,
+      "shape": { "kind": "rect", "width": 520, "height": 120, "cornerRadius": 18 },
+      "fill": { "a": 0, "k": { "$param": "accent" } },
+      "stroke": { "color": "light", "width": 3 },
+      "transform": { "position": { "a": 0, "k": [0, 0] } }
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "z": 2,
+      "content": "{{title}}",
+      "color": "ink",
+      "align": "left",
+      "size": 48,
+      "weight": 700,
+      "font": "DejaVu Sans",
+      "fontUri": "asset://fonts/DejaVuSans.ttf",
+      "anim": { "preset": "rise", "duration": 20, "distance": 40 },
+      "transform": { "position": { "a": 0, "k": [-150, 0] } }
+    },
+    {
+      "type": "text",
+      "id": "stat",
+      "z": 2,
+      "content": "0",
+      "color": "ink",
+      "align": "left",
+      "size": 28,
+      "weight": 400,
+      "font": "DejaVu Sans",
+      "fontUri": "asset://fonts/DejaVuSans.ttf",
+      "anim": { "preset": "count_up", "from": 0, "to": { "$param": "count" }, "duration": 40, "suffix": "%" },
+      "transform": { "position": { "a": 0, "k": [-150, 38] } }
+    },
+    {
+      "type": "clip",
+      "id": "badge_inst",
+      "z": 3,
+      "ref": "badge",
+      "args": { "accent": { "$param": "accent" } },
+      "transform": { "position": { "a": 0, "k": [200, 0] }, "scale": { "a": 0, "k": 80 } }
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+# examples/clip-demo.yaml — the M2 NESTED COMPOSITION (clip) vertical slice.
+#
+# A `clip` is a PRE-COMPOSITION — modeled on AE pre-comp / Lottie precomposition (a SHARED def +
+# refId) + AE Essential-Graphics / .mogrt params (exposed, overridden per instance) + a Remotion
+# <Sequence> for the local timeline. Nothing here is invented: we only wire the convention into the IR.
+#
+# This story proves the three clip invariants:
+#   1. SHARED DEF, MANY INSTANCES — `lower-third` is placed TWICE with DIFFERENT args. The def lives
+#      ONCE in `defs.clips["lower-third"]`; each instance is one `clip` LAYER carrying its own args +
+#      placement. The two render DISTINCTLY (different title/accent/count) yet each reproducibly.
+#   2. NESTING (depth >= 2) — `lower-third` itself contains a `clip` layer (`badge`), so the scene has
+#      lower-third -> badge -> {shape, text, generator}. `defs.clips` holds BOTH defs (deduped +
+#      recursed); the render dispatches the nested clip through the SAME LayerView path.
+#   3. PER-INSTANCE SEEDING — `badge` contains a `scatter` generator whose seed is NOT baked in the
+#      shared def: it derives at render from the instance-namespaced id (`<clipLayerId>/spark`), so the
+#      two badges (one per lower-third) scatter DISTINCTLY yet each byte-identically across cold runs.
+#
+# Build it:
+#   tsx src/cli/render.ts examples/clip-demo.yaml --project clip-demo --name "Nested Composition"
+
+title: "Nested Composition"
+
+beats:
+  - id: titles
+    say: "One pre-comp, two instances — shared definition, per-instance parameters."
+    show:
+      # The gradient background: a plain asset at z=0, far parallax.
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+
+      # INSTANCE A of the lower-third clip (top-left). Its OWN args override the exposed params; the
+      # nested badge inside it receives `accent`/`count` threaded through.
+      - clip: lower-third
+        as: lt_a
+        at: top_left
+        args:
+          z: 10
+          title: "Neurons"
+          accent: accent
+          count: 86
+
+      # INSTANCE B of the SAME clip (bottom-right) with DIFFERENT args — distinct render, shared def.
+      - clip: lower-third
+        as: lt_b
+        at: bottom_right
+        from: 12
+        args:
+          z: 10
+          title: "Synapses"
+          accent: accent2
+          count: 42
+    camera: slow_push_in
+    duration: { seconds: 3 }

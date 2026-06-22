@@ -138,6 +138,47 @@
       }
     },
     "props": {},
+    "clips": {
+      "badge": {
+        "id": "badge",
+        "version": "1.0.0",
+        "kind": "clip",
+        "format": "clip",
+        "uri": "clip://badge",
+        "tags": [
+          "m2",
+          "clip",
+          "nested-composition",
+          "precomp"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "factory (M2 nested composition — clip design doc)",
+          "license": "CC0"
+        }
+      },
+      "lower-third": {
+        "id": "lower-third",
+        "version": "1.0.0",
+        "kind": "clip",
+        "format": "clip",
+        "uri": "clip://lower-third",
+        "tags": [
+          "m2",
+          "clip",
+          "nested-composition",
+          "precomp",
+          "lower-third"
+        ],
+        "deps": [
+          "badge@1.0.0"
+        ],
+        "provenance": {
+          "source": "factory (M2 nested composition — clip design doc)",
+          "license": "CC0"
+        }
+      }
+    },
     "backgrounds": {
       "bg_gradient": {
         "id": "bg_gradient",

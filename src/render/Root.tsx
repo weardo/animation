@@ -27,6 +27,7 @@ const PLACEHOLDER_SCENE_IR: SceneIR = {
     easings: {},
     assets: {},
     rigs: {},
+    clips: {},
     stylekit: NEUTRAL_STYLEKIT,
   },
   audio: [],

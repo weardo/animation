@@ -71,6 +71,9 @@ function lockRefsForScene(sceneIR: SceneIR): string[] {
   };
   for (const name of Object.keys(sceneIR.defs?.assets ?? {})) add(name);
   for (const name of Object.keys(sceneIR.defs?.rigs ?? {})) add(name);
+  // Clip (nested-composition) defs are content-addressed library entries too — pin each one (and its
+  // transitively-nested clips, all present in `defs.clips` after the recursive resolve) into the lock.
+  for (const name of Object.keys(sceneIR.defs?.clips ?? {})) add(name);
   return [...refs].sort();
 }
 

@@ -29,6 +29,7 @@ import { GeneratorLayer } from './GeneratorLayer.js';
 import { AssetLayer } from './AssetLayer.js';
 import { ShapeLayer } from './ShapeLayer.js';
 import { TextLayer } from './TextLayer.js';
+import { ClipLayer } from './ClipLayer.js';
 import { evalNumber, evalVec2 } from './eval.js';
 import { applyEffects, resolveEffects } from './effects.js';
 import { NEUTRAL_STYLEKIT, type Light, type StyleKit } from './stylekit.js';
@@ -111,7 +112,7 @@ export const Scene: React.FC<SceneProps> = ({ scene, defs }) => {
   );
 };
 
-interface LayerViewProps {
+export interface LayerViewProps {
   layer: Layer;
   defs: Defs;
   easings: Easings;
@@ -127,6 +128,7 @@ function renderSub(
   easings: Easings,
   parallaxOffset: readonly [number, number],
   stylekit: StyleKit,
+  light: Light,
 ): React.ReactNode {
   switch (layer.type) {
     case 'asset': {
@@ -178,6 +180,21 @@ function renderSub(
           <TextLayer layer={layer} palette={defs.palette} easings={easings} stylekit={stylekit} />
         </ParallaxWrapper>
       );
+    case 'clip': {
+      // Nested composition (M2). The clip layer's OWN group transform/opacity + the local-timeline
+      // `<Sequence>` + the per-instance namespacing/seeding + the RECURSIVE inner dispatch all live in
+      // <ClipLayer>; it renders the def's layers through the SAME LayerView path (this module), so a
+      // clip-in-a-clip composes with no special machinery. Wrapped in parallax like the other layers.
+      const clipDef = defs.clips?.[layer.ref];
+      if (!clipDef) {
+        throw new Error(`Scene IR: clip layer "${layer.id}" references unknown clip "${layer.ref}".`);
+      }
+      return (
+        <ParallaxWrapper offset={parallaxOffset} id={layer.id}>
+          <ClipLayer layer={layer} def={clipDef} defs={defs} easings={easings} light={light} stylekit={stylekit} />
+        </ParallaxWrapper>
+      );
+    }
     default: {
       const _exhaustive: never = layer;
       return _exhaustive;
@@ -194,12 +211,12 @@ function renderSub(
  * filters/gradients are static styles; the contact-shadow anchor is a deterministically-evaluated
  * position.
  */
-const LayerView: React.FC<LayerViewProps> = ({ layer, defs, easings, parallaxOffset, light, stylekit }) => {
+export const LayerView: React.FC<LayerViewProps> = ({ layer, defs, easings, parallaxOffset, light, stylekit }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
   const floor = stylekit.floor;
 
-  const sub = renderSub(layer, defs, easings, parallaxOffset, stylekit);
+  const sub = renderSub(layer, defs, easings, parallaxOffset, stylekit, light);
   const shading = resolveShading(layer.shading, stylekit.shading);
 
   // Floor toggle (I3): shading=false → skip ALL §11.1 shading (no object filter, no contact shadow).

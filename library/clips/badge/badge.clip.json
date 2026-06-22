@@ -1,0 +1,43 @@
+{
+  "params": {
+    "accent": { "type": "color", "default": "accent" }
+  },
+  "duration_frames": 90,
+  "layers": [
+    {
+      "type": "generator",
+      "id": "spark",
+      "z": 1,
+      "seed": 0,
+      "gen": "scatter",
+      "params": {
+        "motif": "star",
+        "count": 18,
+        "size": [2, 5],
+        "colors": [{ "$param": "accent" }, "light"],
+        "anim": "twinkle",
+        "anim_speed": 0.5,
+        "glow": true,
+        "opacity": 0.85
+      },
+      "transform": { "position": { "a": 0, "k": [0, 0] } }
+    },
+    {
+      "type": "shape",
+      "id": "disc",
+      "z": 2,
+      "shape": { "kind": "circle", "radius": 60 },
+      "fill": { "a": 0, "k": { "$param": "accent" } },
+      "stroke": { "color": "light", "width": 4 },
+      "transform": { "position": { "a": 0, "k": [0, 0] } }
+    },
+    {
+      "type": "shape",
+      "id": "pip",
+      "z": 3,
+      "shape": { "kind": "star", "points": 5, "innerRadius": 12, "outerRadius": 28 },
+      "fill": { "a": 0, "k": "light" },
+      "transform": { "position": { "a": 0, "k": [0, 0] } }
+    }
+  ]
+}

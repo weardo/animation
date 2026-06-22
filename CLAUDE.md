@@ -20,7 +20,7 @@ A code-driven, Kurzgesagt-style 2.5D animation pipeline: **a story script in →
 
 ## Layer taxonomy (one graph for characters *and* objects)
 
-`asset/text` (fixed art, animate transforms) · `rig` (provider-rendered generic layer — `provider` id + opaque `spec`; e.g. blob-creature/dragonbones) · `shape` (morph/path) · `generator` (procedural: water, fire, neurons, crowds) · `clip` (reusable nested composition) · `scene-template/environment` (composable scene). Compose **intra-rig** (parts/skins) and **inter-rig** (scene-graph `attach`). Reuse compounds: parts → rigs → presets → clips → scenes → videos.
+`asset/text` (fixed art, animate transforms) · `rig` (provider-rendered generic layer — `provider` id + opaque `spec`; e.g. blob-creature/dragonbones) · `shape` (morph/path) · `generator` (procedural: water, fire, neurons, crowds) · `clip` (reusable nested **pre-composition** — DONE: shared `defs.clips` def + `clip`-layer refs + Essential-Graphics `params`/`args` + Remotion `<Sequence>`; per-instance id-namespacing + seed derivation keeps two instances distinct yet byte-identical; recurses to any depth) · `scene-template/environment` (composable scene — the clip follow-on: a clip used as a backdrop). Compose **intra-rig** (parts/skins) and **inter-rig** (scene-graph `attach`). Reuse compounds: parts → rigs → presets → clips → scenes → videos.
 
 ## Repo layout
 

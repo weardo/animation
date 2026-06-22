@@ -2,8 +2,8 @@
   "project_version": "1.0",
   "id": "blip-intro",
   "name": "Meet Blip",
-  "created": "2026-06-22T10:36:00.892Z",
-  "updated": "2026-06-22T10:36:00.892Z",
+  "created": "2026-06-22T13:18:26.719Z",
+  "updated": "2026-06-22T13:18:26.719Z",
   "config": {
     "w": 1920,
     "h": 1080,
@@ -13,7 +13,7 @@
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "33155590a9679eafb197abe810c88470636c3c59",
+  "scene_ir_hash": "218c630444905782f4cbb895ffebe71bd8f134bb",
   "engine": "remotion@4.0.481",
   "deps": [
     "bg_gradient@1.0.0",

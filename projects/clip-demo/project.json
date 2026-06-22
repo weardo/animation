@@ -1,28 +1,28 @@
 {
   "project_version": "1.0",
-  "id": "shapes-demo",
-  "name": "Shapes Demo",
-  "created": "2026-06-22T13:22:07.681Z",
-  "updated": "2026-06-22T13:22:07.681Z",
+  "id": "clip-demo",
+  "name": "Nested Composition",
+  "created": "2026-06-22T13:20:53.119Z",
+  "updated": "2026-06-22T13:20:53.119Z",
   "config": {
     "w": 1920,
     "h": 1080,
     "fps": 30,
-    "duration_frames": 162
+    "duration_frames": 90
   },
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "c497f12daf69673055b8a67bacc3ff331d2732ef",
+  "scene_ir_hash": "8ea14fb91d065595e33f20236a8a2516bc8e626e",
   "engine": "remotion@4.0.481",
   "deps": [
+    "badge@1.0.0",
     "bg_gradient@1.0.0",
-    "blip@1.0.0"
+    "lower-third@1.0.0"
   ],
   "assets": [
     "assets/bg_gradient.svg",
-    "assets/characters/blip/blip.spec.json",
-    "assets/characters/blip/blip.preview.png"
+    "assets/fonts/DejaVuSans.ttf"
   ],
   "outputs": {
     "video": "media/out.mp4",

@@ -12,8 +12,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve as resolvePath } from 'node:path';
 
-import type { AssetDef, RigDef } from '../ir/index.js';
-import { StyleKitSchema, type StyleKit } from '../ir/index.js';
+import type { AssetDef, RigDef, ClipDef } from '../ir/index.js';
+import { StyleKitSchema, ClipDefSchema, type StyleKit } from '../ir/index.js';
 import type { Catalog } from './catalog.js';
 import {
   resolveRef,
@@ -139,6 +139,31 @@ export class Library {
     const path = resolvePath(this.rootDir, 'library', 'stylekits', `${name}.json`);
     const raw = JSON.parse(readFileSync(path, 'utf8')) as unknown;
     return StyleKitSchema.parse(raw);
+  }
+
+  /**
+   * Resolve a `clip` entry to a validated {@link ClipDef} (M2 nested composition). Mirrors
+   * {@link toStyleKit}: the catalog entry's URI is the engine-generic `clip://<name>` convention; the
+   * JSON DATA lives co-located at `library/clips/<name>/<name>.clip.json` and is parsed with
+   * {@link ClipDefSchema}. The lookup keys on the URI SCHEME (a data convention), never on any clip
+   * name in core. The resolved def is the SHARED precomp the lowering pass stores once in
+   * `defs.clips[ref]` (the Lottie `assets` precomp model).
+   */
+  toClip(ref: string): ClipDef {
+    // Default an unversioned ref (e.g. "lower-third") to `@1.0.0`, mirroring the rig/asset/stylekit
+    // paths, so a bare `clip: lower-third` in the story resolves against the catalog.
+    const r = this.get(ref.includes('@') ? ref : `${ref}@1.0.0`);
+    if (r.entry.kind !== 'clip') {
+      throw new Error(`ref ${r.key} is kind '${r.entry.kind}', expected 'clip'`);
+    }
+    if (!r.entry.uri) throw new Error(`clip entry ${r.key} has no uri`);
+    if (!r.entry.uri.startsWith('clip://')) {
+      throw new Error(`clip entry ${r.key} has unsupported uri '${r.entry.uri}' (expected clip://<name>)`);
+    }
+    const name = r.entry.uri.replace(/^clip:\/\//, '').split('/')[0] ?? '';
+    const path = resolvePath(this.rootDir, 'library', 'clips', name, `${name}.clip.json`);
+    const raw = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+    return ClipDefSchema.parse(raw);
   }
 
   /** Build a lockfile pinning the currently-cached resolutions, plus any extra refs. */

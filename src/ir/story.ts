@@ -68,8 +68,18 @@ export const ShowItemSchema = z
     text: z.string().optional(),
     /** Static asset to show (a `defs.assets` ref; a background is just a low-z, far-parallax asset). */
     asset: z.string().min(1).optional(),
-    /** Reusable clip to place (reserved; later). */
+    /**
+     * A reusable CLIP (nested pre-composition) to place — a library `name@version` whose def is
+     * resolved + deduped into `defs.clips` and instantiated as a `clip` layer (M2 nested composition,
+     * mirrors `shape`/`text`). The clip's EXPOSED params are overridden via the item's `args` (the AE
+     * Essential-Graphics / .mogrt model); `args` may also carry the group `transform` (z/scale/
+     * rotation/opacity), `parallax`, and `effects[]` that affect the WHOLE unit. `as` becomes the
+     * clip-layer id (which NAMESPACES the clip's internals + seeds its generators per instance), the
+     * optional `at` (an anchor) its placement, and the optional `from` its local start frame.
+     */
     clip: z.string().min(1).optional(),
+    /** Local start frame within the scene for a `clip` instance (Remotion `<Sequence from>`). */
+    from: z.number().int().optional(),
     /** A cast key to bring on screen as a rig/provider layer (the generic "actor" binding). */
     actor: z.string().min(1).optional(),
     /** Local handle other beats refer to (e.g. an `action.on` target). */

@@ -27,6 +27,8 @@ import {
   type GeneratorLayer,
   type ShapeLayer,
   type TextLayer,
+  type ClipLayer,
+  type ClipDef,
   type Effect,
   type RigClip,
   type Transform,
@@ -201,6 +203,8 @@ export interface LibraryLike {
   toRigDef(ref: string): RigDef;
   /** Resolve a `stylekit` library entry to a validated StyleKit (ADR-008 I2). */
   toStyleKit?(ref: string): StyleKit;
+  /** Resolve a `clip` library entry to a validated ClipDef (M2 nested composition). */
+  toClip?(ref: string): ClipDef;
   /** Optional: resolve a ref's content hash (used for provenance only). */
   hashOf?(ref: string): string;
 }
@@ -499,6 +503,71 @@ function buildTextLayer(item: ShowItem, index: number): LoweredLayer {
 }
 
 /**
+ * A first-class CLIP layer (M2 nested composition) lowered from a `show[].clip` directive — a
+ * PRE-COMPOSITION INSTANCE (mirrors {@link buildShapeLayer}/{@link buildTextLayer}). The clip's
+ * shared DEFINITION is resolved + deduped into `defs.clips` separately (see {@link collectClipDefs});
+ * here we only emit ONE `clip` LAYER per instance carrying the `ref`, the per-instance `args` (the
+ * exposed Essential-Graphics param overrides), the group `transform` (z/scale/rotation/opacity), a
+ * `parallax` factor, the local `from`/`duration_frames` window, and `effects[]` — all affecting the
+ * WHOLE unit. The def stays SHARED (DRY, the Lottie/AE model): we do NOT inline its layers per
+ * instance. The instance handle `as` becomes the clip-layer id, which the renderer uses to NAMESPACE
+ * the clip's inner layer ids + derive per-instance generator seeds (so two instances never collide
+ * and each is byte-identical). Pure structural lowering: no wall-clock, no RNG.
+ */
+function buildClipLayer(item: ShowItem, index: number): LoweredLayer {
+  const ref = item.clip!;
+  const args = (item.args ?? {}) as Record<string, unknown>;
+  const id = `L_clip_${item.as ?? `${refName(ref)}_${index}`}`;
+  const z = typeof args['z'] === 'number' ? (args['z'] as number) : 15;
+
+  // Group transform: scale/rotation/opacity from args (position comes from the anchor via layout). A
+  // bare number wraps as a static `{a:0,k}` channel; an authored `{a,k}` object passes straight
+  // through (so an effect like motion_blur has a real animated move to smear).
+  const transform: Transform = {};
+  const channel = (v: unknown): Transform['scale'] | undefined =>
+    typeof v === 'number' ? { a: 0, k: v } : v && typeof v === 'object' ? (v as Transform['scale']) : undefined;
+  const scaleCh = channel(args['scale']);
+  const rotationCh = channel(args['rotation']);
+  const opacityCh = channel(args['opacity']);
+  if (scaleCh) transform.scale = scaleCh;
+  if (rotationCh) transform.rotation = rotationCh;
+  if (opacityCh) transform.opacity = opacityCh;
+
+  // The clip's exposed-param overrides: everything in `args` EXCEPT the structural group keys, which
+  // are consumed above (z/scale/rotation/opacity/parallax/effects/from/duration_frames). What remains
+  // is the param override map forwarded verbatim to `defs.clips[ref].params` at render (resolveParams).
+  const STRUCTURAL = new Set([
+    'z', 'scale', 'rotation', 'opacity', 'parallax', 'effects', 'from', 'duration_frames',
+  ]);
+  const clipArgs: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(args)) {
+    if (!STRUCTURAL.has(k)) clipArgs[k] = v;
+  }
+
+  const parallax = typeof args['parallax'] === 'number' ? (args['parallax'] as number) : undefined;
+  const effects = Array.isArray(args['effects']) ? (args['effects'] as Effect[]) : undefined;
+  const from = typeof item.from === 'number' ? item.from : typeof args['from'] === 'number' ? (args['from'] as number) : undefined;
+  const durationFrames = typeof args['duration_frames'] === 'number' ? (args['duration_frames'] as number) : undefined;
+
+  const layer: ClipLayer = {
+    type: 'clip',
+    id,
+    ref: defKey(ref),
+    z,
+    ...(Object.keys(clipArgs).length > 0 ? { args: clipArgs } : {}),
+    ...(Object.keys(transform).length > 0 ? { transform } : {}),
+    ...(parallax !== undefined ? { parallax } : {}),
+    ...(from !== undefined ? { from } : {}),
+    ...(durationFrames !== undefined ? { duration_frames: durationFrames } : {}),
+    ...(effects && effects.length > 0 ? { effects } : {}),
+  };
+
+  // Carry the placement anchor (default "center") for the layout pass to resolve to a position.
+  const anchor = typeof item.at === 'string' ? item.at : 'center';
+  return { ...layer, anchor } as LoweredLayer;
+}
+
+/**
  * A generic RIG layer lowered from a `show[].actor` item. The named actor is resolved to its library
  * ref via the story's `cast` declaration; the rig def key is the ref's bare name (a `defs.rigs` key).
  * A StyleKit "pop" entrance (scale + opacity overshoot) makes the rig appear with life (spec §9);
@@ -593,10 +662,12 @@ function buildScene(
       layer = buildShapeLayer(item, i);
     } else if (item.text !== undefined) {
       layer = buildTextLayer(item, i);
+    } else if (item.clip !== undefined) {
+      layer = buildClipLayer(item, i);
     } else if (item.asset !== undefined) {
       layer = buildAssetLayer(item, i);
     }
-    // `clip` and other reserved fields produce no layer yet (declared-only, lowered in a later phase).
+    // Other reserved fields produce no layer yet (declared-only, lowered in a later phase).
     if (layer !== undefined) layers.push(layer);
   });
 
@@ -647,6 +718,74 @@ function collectDefs(story: StoryIR, lib: LibraryLike | undefined) {
   return { assets, rigs };
 }
 
+/**
+ * The maximum clip-nesting depth the resolver will descend before failing loudly. A guard against a
+ * pathological (or cyclic, though cycles are caught separately) chain of clips-containing-clips. Deep
+ * enough for any real composition; shallow enough to fail fast on a mistake.
+ */
+export const MAX_CLIP_DEPTH = 16 as const;
+
+/**
+ * Recursively resolve the SHARED clip DEFINITIONS the scenes reference, into `defs.clips` (the Lottie
+ * `assets` precomp model). For each `show[].clip` ref:
+ *   1. resolve it from the Library ONCE (deduped by `defKey` — N instances share one def);
+ *   2. store the resolved {@link ClipDef} in `defs.clips[key]`;
+ *   3. RECURSE: walk the def's own layer templates, and for every nested `clip` layer
+ *      ({ type:'clip', ref }) resolve THAT ref into `defs.clips` too — so a clip-containing-a-clip
+ *      lands every transitively-referenced def in the shared map (DRY).
+ *
+ * CYCLE DETECTION: a `visiting` set tracks the refs on the current resolution PATH; re-entering one is
+ * a cycle (clip A → clip B → clip A) and throws. A DEPTH CAP ({@link MAX_CLIP_DEPTH}) is a second
+ * guard. Already-resolved refs NOT on the current path are skipped (the dedup), so a diamond (two
+ * clips both using a third) resolves the third once without false-positiving as a cycle.
+ *
+ * Pure: a function of the story (+ Library). No wall-clock, no RNG. Without a Library (standalone
+ * lowering) there is no clip source, so the map is empty (clips are library-only in the MVP).
+ */
+function collectClipDefs(story: StoryIR, lib: LibraryLike | undefined): Record<string, ClipDef> {
+  const clips: Record<string, ClipDef> = {};
+  if (!lib?.toClip) return clips;
+  const toClip = lib.toClip.bind(lib);
+
+  // Resolve one ref + recurse into its nested clip layers. `visiting` is the current path (cycle
+  // guard); `depth` is the absolute nesting level (depth cap).
+  const resolve = (ref: string, visiting: Set<string>, depth: number): void => {
+    const key = defKey(ref);
+    if (depth > MAX_CLIP_DEPTH) {
+      throw new Error(`clip nesting exceeds MAX_CLIP_DEPTH (${MAX_CLIP_DEPTH}) at "${key}"`);
+    }
+    if (visiting.has(key)) {
+      throw new Error(
+        `clip dependency cycle detected: "${key}" re-entered along path [${[...visiting, key].join(' -> ')}]`,
+      );
+    }
+    if (key in clips) return; // dedup: already resolved (not on this path) → shared, resolve once.
+
+    const def = toClip(withVersion(ref));
+    clips[key] = def;
+
+    // Recurse into the def's nested `clip` layer templates. Templates are loose records; a nested clip
+    // is identified by `type === 'clip'` and carries a `ref`. Param-wired refs ({ $param } / "{{}}")
+    // are NOT resolvable at lowering (they're instance-time), so only literal string refs recurse.
+    const nextVisiting = new Set(visiting).add(key);
+    for (const tmpl of def.layers) {
+      if (tmpl && typeof tmpl === 'object' && (tmpl as Record<string, unknown>)['type'] === 'clip') {
+        const nestedRef = (tmpl as Record<string, unknown>)['ref'];
+        if (typeof nestedRef === 'string' && nestedRef.length > 0) {
+          resolve(nestedRef, nextVisiting, depth + 1);
+        }
+      }
+    }
+  };
+
+  for (const beat of story.beats) {
+    for (const item of beat.show ?? []) {
+      if (item.clip !== undefined) resolve(item.clip, new Set<string>(), 0);
+    }
+  }
+  return clips;
+}
+
 // --- the pass ---------------------------------------------------------------------------------
 
 /**
@@ -692,11 +831,15 @@ export function lowerStory(story: StoryIR, opts: LowerOptions = {}): LoweredScen
 
   // Resolve the def tables once (shared by all scenes) from ONLY the refs the story declares.
   const { assets, rigs } = collectDefs(story, lib);
+  // Clip (nested-composition) defs: resolved + deduped + recursed into `defs.clips` (the Lottie
+  // `assets` precomp model). Empty without a Library (clips are library-only in the MVP).
+  const clips = collectClipDefs(story, lib);
   const defs = {
     palette: paletteFromStyleKit(stylekit),
     easings: easingsFromStyleKit(stylekit),
     assets,
     rigs,
+    clips,
     stylekit,
   };
 
