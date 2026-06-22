@@ -114,13 +114,21 @@ export const Scene: React.FC<SceneProps> = ({ scene, defs: baseDefs, alpha }) =>
   // --- 3. Z-order: sort a COPY by `z` ascending (stable; higher z paints last → front) ---
   // P3 (alpha): drop full-scene backdrop layers in a transparent render so the alpha channel shows
   // through behind the foreground subjects (a no-op for an opaque render — the common case).
+  // Layers consumed as a track-matte SOURCE (another layer's `matte.from`) are NOT drawn standalone —
+  // they only provide the stencil (AE track-matte convention: the matte layer is hidden).
+  const matteSourceIds = useMemo(() => {
+    const s = new Set<string>();
+    for (const l of scene.layers) if (l.matte?.from) s.add(l.matte.from);
+    return s;
+  }, [scene.layers]);
   const ordered = useMemo(
     () =>
       scene.layers
         .map((l, i) => ({ l, i }))
         .filter(({ l }) => !alpha || !isBackdrop(l))
+        .filter(({ l }) => !matteSourceIds.has(l.id))
         .sort((a, b) => a.l.z - b.l.z || a.i - b.i),
-    [scene.layers, alpha],
+    [scene.layers, alpha, matteSourceIds],
   );
 
   // Layer-id index for inter-rig ATTACH resolution (spec §8.1): a child layer resolves its parent's

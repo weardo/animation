@@ -13,6 +13,9 @@ import React from 'react';
 import { AbsoluteFill, staticFile } from 'remotion';
 import type { AssetDef, BlendMode, Matte } from '../ir/index.js';
 
+/** Dedup the "unsupported layer matte" warning to once per message per process (no render impact). */
+const _matteWarned = new Set<string>();
+
 /** Wrap content in a `mix-blend-mode` layer (no-op for `normal`/undefined). */
 export function applyBlend(
   content: React.ReactNode,
@@ -85,59 +88,18 @@ export function applyMatte(
     }
   }
 
-  // --- SVG <mask>: handles LAYER mattes and inverted ASSET mattes ---
-  // The mask source is rendered into an SVG <mask>; its luminance gates the content. For an inverted
-  // matte we wrap the source in a white backdrop and `difference`-style invert via a filter.
-  const maskId = `matte-${layerId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
-  const { width, height } = opts;
-
-  let sourceNode: React.ReactNode = null;
-  if (matte.from && opts.matteSource != null) {
-    sourceNode = opts.matteSource;
-  } else if (matte.ref && opts.asset) {
-    const url = assetUrl(opts.asset.uri);
-    sourceNode = (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'fill' }} />
-    );
+  // --- LAYER mattes (matte.from) + INVERTED asset mattes: NOT supported on the SVG/Chromium backend ---
+  // These need the stencil rendered into an SVG <mask> via <foreignObject>, but headless Chromium
+  // renders foreignObject HTML into a mask as EMPTY (verified across 0×0 / full-size / luminance /
+  // alpha / xmlns variants) — which would HIDE the content entirely. Degrade GRACEFULLY: show the
+  // content UNMASKED + warn ONCE (never silently hide it). The reliable track matte today is a
+  // NON-inverted ASSET matte (the CSS `mask-image` path above) — author the stencil as an SVG/PNG
+  // asset (`matte.ref`). A proper layer matte (shape source → SVG `<clipPath>`) is a focused follow-up.
+  void opts.matteSource;
+  const why = `track-matte on "${layerId}" (${matte.from ? 'layer source' : 'inverted asset'}) is unsupported on this backend — showing UNMASKED. Use a non-inverted asset matte (matte.ref → mask SVG/PNG).`;
+  if (!_matteWarned.has(why)) {
+    _matteWarned.add(why);
+    console.warn('[matte] ' + why);
   }
-  if (sourceNode == null) return content;
-
-  // A `luminance` mask uses pixel luminance as alpha; `alpha` uses the source alpha. We express both
-  // via `maskType`. Invert: overlay a full white rect with `mix-blend-mode: difference` so bright↔dark.
-  const maskType = mode === 'luma' ? 'luminance' : 'alpha';
-
-  return (
-    <AbsoluteFill data-matte={layerId}>
-      <svg
-        width={width}
-        height={height}
-        viewBox={`0 0 ${width} ${height}`}
-        style={{ position: 'absolute', width: 0, height: 0 }}
-        aria-hidden
-      >
-        <defs>
-          <mask
-            id={maskId}
-            maskUnits="userSpaceOnUse"
-            style={{ maskType } as React.CSSProperties}
-          >
-            {invert && <rect x={0} y={0} width={width} height={height} fill="white" />}
-            <foreignObject
-              x={0}
-              y={0}
-              width={width}
-              height={height}
-              style={invert ? { mixBlendMode: 'difference' } : undefined}
-            >
-              <div style={{ width, height }}>{sourceNode}</div>
-            </foreignObject>
-          </mask>
-        </defs>
-      </svg>
-      <AbsoluteFill style={{ mask: `url(#${maskId})`, WebkitMask: `url(#${maskId})` }}>
-        {content}
-      </AbsoluteFill>
-    </AbsoluteFill>
-  );
+  return content;
 }
