@@ -19,6 +19,7 @@ import {
   AnimatedVec2Schema,
   ColorSchema,
 } from './animated.js';
+import { StyleKitSchema } from './stylekit.js';
 
 // --- defs ---
 
@@ -75,6 +76,14 @@ export const DefsSchema = z
     easings: EasingsSchema.default({}),
     assets: AssetsSchema.default({}),
     rigs: RigsSchema.default({}),
+    /**
+     * The RESOLVED stylekit (ADR-008 I2/I3). Lowering selects a `stylekit` library entry (default
+     * "kurzgesagt"), seeds `palette`/`easings` from it, AND carries the whole resolved stylekit here
+     * so render-time reads motion/liveness/shading/floor from the IR deterministically — no core
+     * constant imports at render. Optional for back-compat: an IR without it renders with renderer
+     * defaults (the neutral fallback at the seams).
+     */
+    stylekit: StyleKitSchema.optional(),
   })
   .strict();
 export type Defs = z.infer<typeof DefsSchema>;

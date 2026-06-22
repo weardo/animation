@@ -32,7 +32,7 @@ function resolveSpec(raw: Record<string, unknown> | undefined): CharacterSpec {
  * The blob-creature PROVIDER. Reads `rigDef.spec` (opaque to core), validates it as a CharacterSpec,
  * and draws the creature with `characterMarkup`. A pure function of (props + frame) — CLAUDE.md r.1.
  */
-export const BlobCreatureProvider: React.FC<ProviderProps> = ({ layer, rigDef, easings }) => {
+export const BlobCreatureProvider: React.FC<ProviderProps> = ({ layer, rigDef, easings, stylekit }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const easingTable: Easings = easings ?? {};
@@ -44,7 +44,11 @@ export const BlobCreatureProvider: React.FC<ProviderProps> = ({ layer, rigDef, e
   const opacityPct = evalNumber(t?.opacity, frame, easingTable, 100);
 
   const character = resolveSpec(rigDef.spec as Record<string, unknown> | undefined);
-  const markup = characterMarkup(character, frame, fps, layer.rig_state.clips);
+  // ADR-008 I3: honor the stylekit's quality-FLOOR liveness toggle. Default-alive (back-compat / no
+  // stylekit). When `floor.liveness` is false, the creature holds a static neutral pose (no bob/sway/
+  // breathe/blink) for a flat/technical look.
+  const liveness = stylekit?.floor?.liveness ?? true;
+  const markup = characterMarkup(character, frame, fps, layer.rig_state.clips, liveness);
 
   const wrapperStyle: React.CSSProperties = {
     position: 'absolute',

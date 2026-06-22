@@ -1,0 +1,31 @@
+{
+  "description": "Camera intent recipes as DATA (ADR-008 I4). Each preset is a from→to ramp over the scene's frame span: `position` is a pixel offset [x,y] relative to the resting frame centre; `zoom` is a multiplier (1.0 = neutral). The camera pass (src/pipeline/camera.ts) reads this table and expands a preset into concrete {a,k} keyframes generically — no magic numbers live in core code as the source of truth. A story may also pass ARBITRARY explicit position/zoom keyframes through its beat camera, bypassing this table entirely.",
+  "default": "hold",
+  "easing": "smooth",
+  "presets": {
+    "hold": {
+      "position": { "from": [0, 0], "to": [0, 0] },
+      "zoom": { "from": 1, "to": 1 }
+    },
+    "establishing": {
+      "position": { "from": [0, -20], "to": [0, 0] },
+      "zoom": { "from": 0.92, "to": 1.0 }
+    },
+    "slow_push_in": {
+      "position": { "from": [0, 0], "to": [60, 0] },
+      "zoom": { "from": 1.0, "to": 1.15 }
+    },
+    "slow_pull_out": {
+      "position": { "from": [0, 0], "to": [0, 0] },
+      "zoom": { "from": 1.15, "to": 1.0 }
+    },
+    "pan_left": {
+      "position": { "from": [0, 0], "to": [-80, 0] },
+      "zoom": { "from": 1, "to": 1 }
+    },
+    "pan_right": {
+      "position": { "from": [0, 0], "to": [80, 0] },
+      "zoom": { "from": 1, "to": 1 }
+    }
+  }
+}

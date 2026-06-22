@@ -43,12 +43,10 @@ import {
   type CameraIntent,
   type Transition,
   type Duration,
+  type StyleKit,
 } from '../ir/index.js';
 import type { LoweredLayer } from './contract.js';
-import {
-  DEFAULT_PALETTE,
-  DEFAULT_EASINGS,
-} from '../render/stylekit.js';
+import { NEUTRAL_STYLEKIT } from '../render/stylekit.js';
 import { storyHash, deriveSeed } from './parse.js';
 import type { LoweredSceneIR, LoweredScene } from './contract.js';
 
@@ -190,9 +188,17 @@ function cameraIntentForBeat(beat: Beat): CameraIntent | undefined {
 export interface LibraryLike {
   toAssetDef(ref: string): AssetDef;
   toRigDef(ref: string): RigDef;
+  /** Resolve a `stylekit` library entry to a validated StyleKit (ADR-008 I2). */
+  toStyleKit?(ref: string): StyleKit;
   /** Optional: resolve a ref's content hash (used for provenance only). */
   hashOf?(ref: string): string;
 }
+
+/**
+ * The default stylekit a story selects when it declares no `style` (ADR-008 I2). The Kurzgesagt look
+ * is now DATA (a library `stylekit` entry), so the default is its catalog NAME — not a core constant.
+ */
+export const DEFAULT_STYLEKIT_REF = 'kurzgesagt' as const;
 
 /** Options for {@link lowerStory}. All optional — the pass is runnable with none. */
 export interface LowerOptions {
@@ -207,21 +213,34 @@ export interface LowerOptions {
 // --- StyleKit → IR adapters -------------------------------------------------------------------
 
 /**
- * Convert the StyleKit `DEFAULT_EASINGS` table into a Scene-IR `defs.easings` map. Each value is
- * already either a cubic-bezier tuple or a known curve name — exactly the IR `EasingDef` union — so
- * this is a structural copy that pins the StyleKit curves into the scene (spec §6.2/§9).
+ * Resolve the story's selected stylekit (ADR-008 I2). A `style` ref (default {@link
+ * DEFAULT_STYLEKIT_REF} = "kurzgesagt") is resolved through the Library, which reads the DATA from
+ * `library/stylekits/<name>.json`. Without a Library (standalone lowering) the pass falls back to the
+ * STYLE-CLEAN {@link NEUTRAL_STYLEKIT} so it stays a pure, runnable function on its own. The resolved
+ * stylekit seeds `defs.palette`/`defs.easings` AND is carried whole as `defs.stylekit`.
  */
-function defaultEasings(): Easings {
+function resolveStyleKit(story: StoryIR, lib: LibraryLike | undefined): StyleKit {
+  const ref = story.style ?? DEFAULT_STYLEKIT_REF;
+  if (lib?.toStyleKit) return lib.toStyleKit(ref);
+  return NEUTRAL_STYLEKIT;
+}
+
+/**
+ * Seed a Scene-IR `defs.easings` map from the resolved stylekit's `defaultEasings`. Each value is
+ * already either a cubic-bezier tuple or a known curve name — exactly the IR `EasingDef` union — so
+ * this is a structural copy that pins the stylekit curves into the scene (spec §6.2/§9).
+ */
+function easingsFromStyleKit(sk: StyleKit): Easings {
   const out: Record<string, EasingDef> = {};
-  for (const [name, def] of Object.entries(DEFAULT_EASINGS)) {
+  for (const [name, def] of Object.entries(sk.defaultEasings)) {
     out[name] = Array.isArray(def) ? ([...def] as EasingDef) : (def as EasingDef);
   }
   return out;
 }
 
-/** The default palette tokens, copied into a Scene-IR `defs.palette` (spec §6.2/§9). */
-function defaultPalette(): Palette {
-  return { ...DEFAULT_PALETTE };
+/** Seed a Scene-IR `defs.palette` from the resolved stylekit's palette tokens (spec §6.2/§9). */
+function paletteFromStyleKit(sk: StyleKit): Palette {
+  return { ...sk.palette };
 }
 
 // --- ref helpers ------------------------------------------------------------------------------
@@ -599,13 +618,18 @@ export function lowerStory(story: StoryIR, opts: LowerOptions = {}): LoweredScen
 
   const hash = storyHash(story);
 
+  // I2/I3: resolve the selected stylekit (DATA; default "kurzgesagt"). It seeds palette/easings AND
+  // travels whole in `defs.stylekit` so render-time reads motion/liveness/shading/floor from the IR.
+  const stylekit = resolveStyleKit(story, lib);
+
   // Resolve the def tables once (shared by all scenes) from ONLY the refs the story declares.
   const { assets, rigs } = collectDefs(story, lib);
   const defs = {
-    palette: defaultPalette(),
-    easings: defaultEasings(),
+    palette: paletteFromStyleKit(stylekit),
+    easings: easingsFromStyleKit(stylekit),
     assets,
     rigs,
+    stylekit,
   };
 
   // Per-beat duration default: an explicit override, else DEFAULT_BEAT_SECONDS × fps.

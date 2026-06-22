@@ -55,6 +55,38 @@ export type {
   Aspect,
 } from './story.js';
 
+// StyleKit IR schema (ADR-008 I2) — pure Zod shape of a selectable house style (no render dep).
+export {
+  StyleKitSchema,
+  CubicBezierSchema,
+  StyleEasingDefSchema,
+  SpringConfigSchema,
+  IdleSchema,
+  BreathingSchema,
+  BlinkSchema,
+  StaggerSchema,
+  ParallaxSchema,
+  StyleMotionSchema,
+  StyleLightSchema,
+  StyleShadingSchema,
+  FloorSchema,
+} from './stylekit.js';
+export type {
+  StyleKit,
+  CubicBezier,
+  StyleEasingDef,
+  SpringConfig,
+  Idle,
+  Breathing,
+  Blink,
+  Stagger,
+  Parallax,
+  StyleMotion,
+  StyleLight,
+  StyleShading,
+  Floor,
+} from './stylekit.js';
+
 // Scene IR.
 export {
   SceneIRSchema,

@@ -1,0 +1,32 @@
+# examples/custom-camera-demo.yaml — ADR-008 I4 demo: ARBITRARY keyframed camera (not a preset).
+#
+# The Scene-IR camera is already general (`{a,k}` position + zoom). This story passes EXPLICIT camera
+# keyframes through the beat's `camera` field (position/zoom `{a,k}` channels) instead of a named
+# preset, so a front-end can author any move. The camera pass passes these through verbatim; the
+# recipe magic numbers for the NAMED presets live in DATA (library/camera/presets.json), not core.
+
+title: "Custom Camera Move"
+
+cast:
+  blip:
+    ref: blip
+
+beats:
+  - id: b1
+    say: "An arbitrary keyframed camera move."
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - actor: blip
+    # ARBITRARY explicit camera keyframes (I4a): a big diagonal pan + a punch-in zoom, easing-ref'd.
+    camera:
+      position:
+        a: 1
+        k:
+          - { t: 0, s: [-120, 80], e: smooth }
+          - { t: 119, s: [120, -40] }
+      zoom:
+        a: 1
+        k:
+          - { t: 0, s: 1.0, e: smooth }
+          - { t: 119, s: 1.4 }

@@ -1,14 +1,21 @@
 // P8 — Camera director (lite). Spec §5, §6.2 (camera = animated position + zoom with easing-ref'd
-// keyframes), §15 (M1: "one camera move: slow push-in + slight pan"). NOT a smart cinematographer
-// (that is the later P9) — this pass maps a beat's camera-INTENT keyword to concrete camera keyframes.
+// keyframes), §15. ADR-008 I4 — the camera RECIPE TABLE is DATA, not hardcoded core magic numbers.
 //
-// PURE + DETERMINISTIC (CLAUDE.md golden rule 1): output is a function of (intent, scene duration)
-// only — no wall-clock, no RNG. Each intent is a fixed recipe over the scene's frame span, so the
-// resulting keyframes are byte-stable.
+// This pass is the generic EXPANSION MECHANISM only. The recipe magic numbers (slow_push_in /
+// pan_* / establishing / hold offsets + zooms) live in DATA: `library/camera/presets.json`. The pass
+// reads that table and turns a beat's camera INTENT into concrete `{a,k}` camera keyframes. It also
+// passes ARBITRARY explicit keyframes straight through (I4a) — a front-end may author any move, not
+// just a named preset.
 //
-// Every produced keyframe carries an `e` easing ref into `defs.easings` (the StyleKit "smooth"
-// curve), so no camera move is ever accidentally linear (CLAUDE.md golden rule 7 / spec §9).
+// PURE + DETERMINISTIC (CLAUDE.md golden rule 1): output is a function of (intent, scene duration,
+// preset table) only — no wall-clock, no RNG. The table is read ONCE at module load from the data
+// file; each preset is a fixed from→to ramp over the scene's frame span, so the keyframes are
+// byte-stable. Every produced keyframe carries the table's easing ref into `defs.easings` (default
+// "smooth"), so no camera move is ever accidentally linear (spec §9).
 
+import { readFileSync } from 'node:fs';
+import { resolve as resolvePath, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type {
   AnimatedVec2,
   AnimatedNumber,
@@ -18,22 +25,52 @@ import type {
 import type { LoweredSceneIR, LoweredScene } from './contract.js';
 
 /** Pass identity for cache keys / provenance (spec §5: per-stage versioning). */
-export const CAMERA_PASS = 'camera@0.1' as const;
-
-/**
- * The StyleKit easing token every camera move uses. It must exist in `defs.easings` (the lowering
- * pass seeds `DEFAULT_EASINGS`, which includes "smooth"). Named, not inlined, so a palette/easing
- * swap re-tunes all camera motion coherently.
- */
-export const CAMERA_EASING = 'smooth' as const;
-
-/** Default camera intent when a beat declares none — a calm, locked frame. */
-export const DEFAULT_INTENT = 'hold' as const satisfies CameraIntent;
+export const CAMERA_PASS = 'camera@0.2' as const;
 
 // ---------------------------------------------------------------------------------------------
-// Intent recipes. Each recipe is a pure function of the scene's duration (in frames) → a concrete
-// `Camera` ({a,k} position + zoom). Pan offsets are in pixels relative to the resting frame center
-// (the compositor applies camera position as a translation); zoom is a multiplier (1.0 = neutral).
+// Recipe table — loaded from DATA (ADR-008 I4). The pass owns NO magic numbers; they live in
+// `library/camera/presets.json`. Each preset is a from→to ramp; the pass expands it generically.
+// ---------------------------------------------------------------------------------------------
+
+/** One DATA recipe: a position offset ramp + a zoom ramp (from→to over the scene's frame span). */
+interface PresetRecipe {
+  position: { from: readonly [number, number]; to: readonly [number, number] };
+  zoom: { from: number; to: number };
+}
+
+/** The whole DATA recipe document (library/camera/presets.json). */
+interface PresetTable {
+  default: string;
+  easing: string;
+  presets: Record<string, PresetRecipe>;
+}
+
+/**
+ * Locate `library/camera/presets.json`. The pass file lives at `src/pipeline/camera.ts`; the data
+ * file is at `<root>/library/camera/presets.json`. We resolve up two dirs from this module so the
+ * lookup is independent of the process cwd (a pure, deterministic path).
+ */
+const PRESETS_PATH = resolvePath(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  'library',
+  'camera',
+  'presets.json',
+);
+
+/** The recipe table, read ONCE from data at module load. Pure (no clock/RNG); the file is static. */
+const TABLE: PresetTable = JSON.parse(readFileSync(PRESETS_PATH, 'utf8')) as PresetTable;
+
+/** The easing token every preset move uses (from the DATA table). Must exist in `defs.easings`. */
+export const CAMERA_EASING: string = TABLE.easing;
+
+/** Default camera intent when a beat declares none — the DATA table's `default` (a calm, locked frame). */
+export const DEFAULT_INTENT: CameraIntent = TABLE.default;
+
+// ---------------------------------------------------------------------------------------------
+// Generic expansion mechanism. Builds animated `{a,k}` channels from a DATA recipe's from→to ramp.
+// Pan offsets are pixels relative to the resting frame centre; zoom is a multiplier (1.0 = neutral).
 // ---------------------------------------------------------------------------------------------
 
 /** Build a single-segment animated number from start→end across [0, dur]. */
@@ -66,70 +103,58 @@ function rampVec2(
   };
 }
 
-/** A camera recipe: scene duration → concrete camera channels. */
-type Recipe = (dur: number) => Camera;
-
-/**
- * The intent table. Keep these conservative and Kurzgesagt-tasteful: gentle, never-linear moves.
- *   • hold          — locked frame (no move). The safe default.
- *   • establishing  — start slightly wide and pulled out, ease toward neutral (settle the audience).
- *   • slow_push_in  — the M1 hero move: gentle zoom 1.0→1.15 plus a slight rightward pan (drives the
- *                     parallax differential, spec §15).
- *   • slow_pull_out — the inverse: ease out from a tight frame to neutral.
- *   • pan_left / pan_right — a small lateral drift at constant zoom.
- */
-const RECIPES = {
-  hold: (): Camera => ({
-    position: { a: 0, k: [0, 0] },
-    zoom: { a: 0, k: 1 },
-  }),
-  establishing: (dur): Camera => ({
-    position: rampVec2([0, -20], [0, 0], dur),
-    zoom: ramp(0.92, 1.0, dur),
-  }),
-  slow_push_in: (dur): Camera => ({
-    position: rampVec2([0, 0], [60, 0], dur),
-    zoom: ramp(1.0, 1.15, dur),
-  }),
-  slow_pull_out: (dur): Camera => ({
-    position: rampVec2([0, 0], [0, 0], dur),
-    zoom: ramp(1.15, 1.0, dur),
-  }),
-  pan_left: (dur): Camera => ({
-    position: rampVec2([0, 0], [-80, 0], dur),
-    zoom: { a: 0, k: 1 },
-  }),
-  pan_right: (dur): Camera => ({
-    position: rampVec2([0, 0], [80, 0], dur),
-    zoom: { a: 0, k: 1 },
-  }),
-} as const satisfies Record<string, Recipe>;
-
-/** A known camera intent keyword (key of {@link RECIPES}). */
-export type KnownIntent = keyof typeof RECIPES;
-
-/** True if `intent` is a known camera intent keyword. */
-export function isKnownIntent(intent: string): intent is KnownIntent {
-  return Object.prototype.hasOwnProperty.call(RECIPES, intent);
+/** Expand a DATA recipe into concrete camera channels for a scene of `dur` frames. */
+function expandRecipe(recipe: PresetRecipe, dur: number): Camera {
+  return {
+    position: rampVec2(recipe.position.from, recipe.position.to, dur),
+    zoom: ramp(recipe.zoom.from, recipe.zoom.to, dur),
+  };
 }
 
+/** A known camera intent keyword (a key in the DATA preset table). */
+export type KnownIntent = string;
+
+/** True if `intent` is a known camera intent keyword (present in the DATA table). */
+export function isKnownIntent(intent: string): boolean {
+  return Object.prototype.hasOwnProperty.call(TABLE.presets, intent);
+}
+
+/** Shape of the object-form camera intent (a named preset and/or arbitrary explicit keyframes). */
+type CameraIntentObject = Exclude<CameraIntent, string>;
+
 /**
- * Expand a camera intent keyword into concrete camera keyframes for a scene of `durationFrames`.
- * Throws on an unknown intent (spec: no silent fallback to a wrong move). An absent intent should
- * be normalized to {@link DEFAULT_INTENT} by the caller.
+ * Expand a camera intent into a concrete `Camera` for a scene of `durationFrames`.
+ *   • a bare preset NAME, or an object `{ move }`  → expanded from the DATA recipe table;
+ *   • an object carrying explicit `position`/`zoom` keyframes (I4a) → passed straight through
+ *     (those `{a,k}` channels win; the strict Scene-IR boundary validates them).
+ * Throws on an unknown preset name (spec: no silent fallback to a wrong move).
  */
 export function cameraFromIntent(
   intent: CameraIntent,
   durationFrames: number
 ): Camera {
-  // A camera intent is either a bare preset name or an object carrying `{ move, ... }`.
-  const move = typeof intent === 'string' ? intent : intent.move;
+  // ARBITRARY explicit keyframes (I4a): when the intent object carries position/zoom channels, use
+  // them verbatim — defaulting the missing axis to a neutral static channel. This lets a front-end
+  // author any move without a preset, with no recipe magic numbers involved.
+  if (typeof intent === 'object') {
+    const obj = intent as CameraIntentObject;
+    const hasExplicit = obj.position !== undefined || obj.zoom !== undefined;
+    if (hasExplicit) {
+      return {
+        position: (obj.position as AnimatedVec2) ?? { a: 0, k: [0, 0] },
+        zoom: (obj.zoom as AnimatedNumber) ?? { a: 0, k: 1 },
+      };
+    }
+  }
+
+  // Otherwise expand a named preset from the DATA table.
+  const move = typeof intent === 'string' ? intent : intent.move ?? TABLE.default;
   if (!isKnownIntent(move)) {
     throw new Error(
-      `unknown camera intent "${move}". Known intents: ${Object.keys(RECIPES).join(', ')}.`
+      `unknown camera intent "${move}". Known intents: ${Object.keys(TABLE.presets).join(', ')}.`
     );
   }
-  return RECIPES[move](durationFrames);
+  return expandRecipe(TABLE.presets[move] as PresetRecipe, durationFrames);
 }
 
 /**

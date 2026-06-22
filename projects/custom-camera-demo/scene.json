@@ -316,16 +316,16 @@
             {
               "t": 0,
               "s": [
-                0,
-                0
+                -120,
+                80
               ],
               "e": "smooth"
             },
             {
-              "t": 120,
+              "t": 119,
               "s": [
-                60,
-                0
+                120,
+                -40
               ]
             }
           ]
@@ -339,8 +339,8 @@
               "e": "smooth"
             },
             {
-              "t": 120,
-              "s": 1.15
+              "t": 119,
+              "s": 1.4
             }
           ]
         }
@@ -400,16 +400,6 @@
               {
                 "anim": "idle",
                 "loop": true
-              },
-              {
-                "anim": "wave",
-                "loop": false,
-                "at": 60
-              },
-              {
-                "anim": "idle",
-                "loop": true,
-                "at": 108
               }
             ]
           }
@@ -418,7 +408,7 @@
     }
   ],
   "provenance": {
-    "story_ir_hash": "sha1:528a6188e47d80d6920703a57db0279c0a88d904",
+    "story_ir_hash": "sha1:15e2f30e0164e413c952b6e504fe7915b24a2fd6",
     "passes": [
       "lower@2.0"
     ]

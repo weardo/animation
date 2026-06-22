@@ -150,12 +150,9 @@ interface MorphKeyframe {
   e?: string | undefined;
 }
 
-/** Resolve an easing reference (defs.easings name → curve, else direct StyleKit name). Never linear. */
+/** Resolve an easing reference against the scene's `defs.easings` (seeded from the stylekit). Never linear. */
 function resolveEasing(name: string | undefined, easings: Easings): EasingFunction {
-  if (!name) return easingFn('smooth');
-  const def = easings[name];
-  if (def === undefined) return easingFn(name);
-  return easingFn(def);
+  return easingFn(name ?? 'smooth', easings);
 }
 
 /**

@@ -24,15 +24,9 @@ interface AnimatedProp<V> {
   k: V | Keyframe<V>[];
 }
 
-/** Resolve an easing-name (into `defs.easings`) to a Remotion easing function; default smooth. */
+/** Resolve an easing-name against the scene's `defs.easings` (seeded from the stylekit); default smooth. */
 function resolveEasing(name: string | undefined, easings: Easings): EasingFunction {
-  if (!name) return easingFn('smooth'); // never linear by default (spec §9)
-  const def = easings[name];
-  if (def === undefined) {
-    // The name should resolve through defs.easings; fall back to a StyleKit name if it is one.
-    return easingFn(name);
-  }
-  return easingFn(def);
+  return easingFn(name ?? 'smooth', easings); // never linear by default (spec §9)
 }
 
 /**

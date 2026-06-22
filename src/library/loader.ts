@@ -13,6 +13,7 @@ import { readFileSync } from 'node:fs';
 import { resolve as resolvePath } from 'node:path';
 
 import type { AssetDef, RigDef } from '../ir/index.js';
+import { StyleKitSchema, type StyleKit } from '../ir/index.js';
 import type { Catalog } from './catalog.js';
 import {
   resolveRef,
@@ -115,6 +116,29 @@ export class Library {
       throw new Error(`asset entry ${r.key} has unsupported format '${fmt ?? '<none>'}'`);
     }
     return { uri: r.entry.uri, kind: fmt };
+  }
+
+  /**
+   * Resolve a `stylekit` entry to a validated {@link StyleKit} (ADR-008 I2). The catalog entry's URI
+   * is the engine-generic `stylekit://<name>` convention: the JSON DATA lives co-located at
+   * `library/stylekits/<name>.json` and is parsed with the StyleKit schema. Like `proc://` for rigs,
+   * the lookup keys on the URI SCHEME (a data convention), never on any look name in core.
+   */
+  toStyleKit(ref: string): StyleKit {
+    // Default an unversioned ref (e.g. "kurzgesagt") to `@1.0.0`, mirroring the rig/asset paths, so a
+    // bare `style: kurzgesagt` in the story resolves against the catalog.
+    const r = this.get(ref.includes('@') ? ref : `${ref}@1.0.0`);
+    if (r.entry.kind !== 'stylekit') {
+      throw new Error(`ref ${r.key} is kind '${r.entry.kind}', expected 'stylekit'`);
+    }
+    if (!r.entry.uri) throw new Error(`stylekit entry ${r.key} has no uri`);
+    if (!r.entry.uri.startsWith('stylekit://')) {
+      throw new Error(`stylekit entry ${r.key} has unsupported uri '${r.entry.uri}' (expected stylekit://<name>)`);
+    }
+    const name = r.entry.uri.replace(/^stylekit:\/\//, '').split('/')[0] ?? '';
+    const path = resolvePath(this.rootDir, 'library', 'stylekits', `${name}.json`);
+    const raw = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+    return StyleKitSchema.parse(raw);
   }
 
   /** Build a lockfile pinning the currently-cached resolutions, plus any extra refs. */

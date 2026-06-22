@@ -1,9 +1,9 @@
 {
   "project_version": "1.0",
-  "id": "blip-intro",
-  "name": "Meet Blip",
-  "created": "2026-06-22T10:36:00.892Z",
-  "updated": "2026-06-22T10:36:00.892Z",
+  "id": "custom-camera-demo",
+  "name": "custom-camera-demo",
+  "created": "2026-06-22T10:43:37.077Z",
+  "updated": "2026-06-22T10:43:37.077Z",
   "config": {
     "w": 1920,
     "h": 1080,
@@ -13,7 +13,7 @@
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "33155590a9679eafb197abe810c88470636c3c59",
+  "scene_ir_hash": "d02a100f79ad8e635e5f3ed9adaed93cd58f567f",
   "engine": "remotion@4.0.481",
   "deps": [
     "bg_gradient@1.0.0",

@@ -17,7 +17,7 @@
 // per-frame state; contributed implementations carry the determinism contract (CLAUDE.md r.1).
 
 import type { ComponentType, ReactNode } from 'react';
-import type { Easings, RigDef, RigLayer } from '../ir/index.js';
+import type { Easings, RigDef, RigLayer, StyleKit } from '../ir/index.js';
 import type { GeneratorComponent } from './generator.js';
 import { effects, generators, layerTypes, passes, providers, transitions } from './registry.js';
 
@@ -85,6 +85,13 @@ export interface ProviderProps {
   rigDef: RigDef;
   /** The scene easing table for resolving `{a,k}` channels. */
   easings?: Easings | undefined;
+  /**
+   * The resolved stylekit (ADR-008 I2/I3) the scene renders under (`defs.stylekit`). A provider reads
+   * `stylekit.motion` for liveness magnitudes and HONORS `stylekit.floor.liveness` — when false it
+   * skips idle/breathe/blink for a static/technical look. Optional for back-compat (absent → the
+   * provider's own defaults / always-alive). Domain-agnostic: core hands the whole stylekit through.
+   */
+  stylekit?: StyleKit | undefined;
 }
 
 /** A provider is a React component consuming {@link ProviderProps}. */

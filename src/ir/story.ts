@@ -91,17 +91,31 @@ export const ActionItemSchema = z
   .strict();
 export type ActionItem = z.infer<typeof ActionItemSchema>;
 
-/** Camera *intent* — a named move, not pixels/frames (e.g. "slow_push_in", "hold").
- *  Either a bare preset name (back-compat) or an object carrying the preset + free-form hints
- *  (e.g. amount/target) the camera-director pass interprets. */
+/**
+ * Camera *intent* (ADR-008 I4). One of:
+ *   • a bare preset NAME (e.g. "slow_push_in", "hold") — expanded by the camera pass from the DATA
+ *     recipe table (library/camera/presets.json), not a hardcoded core recipe;
+ *   • an object `{ move, amount?, args? }` — a named preset + free-form hints; OR
+ *   • an object carrying ARBITRARY explicit keyframes `{ position?, zoom? }` (`{a,k}` channels) that
+ *     pass straight through to the Scene-IR camera unchanged — so a front-end can author any move, not
+ *     just a named preset. When explicit channels are present, they win over `move`.
+ *
+ * The keyframe channels are loosely typed here (`z.unknown`-friendly via passthrough) so the Story-IR
+ * layer needs no `{a,k}` schema; the camera pass shapes them and the strict Scene-IR boundary (V)
+ * validates the final `camera`.
+ */
 export const CameraIntentSchema = z.union([
   z.string().min(1),
   z
     .object({
-      /** Named camera move preset (e.g. "slow_push_in", "hold", "pan"). */
-      move: z.string().min(1),
+      /** Named camera move preset (e.g. "slow_push_in", "hold", "pan"). Optional if keyframes given. */
+      move: z.string().min(1).optional(),
       /** Optional intensity hint (0..1+), interpreted by the camera-director pass. */
       amount: z.number().optional(),
+      /** ARBITRARY explicit camera position keyframes (`{a,k}` vec2). Passed through verbatim. */
+      position: z.unknown().optional(),
+      /** ARBITRARY explicit camera zoom keyframes (`{a,k}` number). Passed through verbatim. */
+      zoom: z.unknown().optional(),
       /** Optional free-form camera arguments. */
       args: z.record(z.unknown()).optional(),
     })
@@ -223,6 +237,13 @@ export const StoryIRSchema = z
     title: z.string().min(1),
     /** Optional output format (I1): aspect preset or explicit size + fps. Omitted → 1920×1080@30. */
     format: FormatSchema.optional(),
+    /**
+     * Optional STYLE selection (ADR-008 I2/I3): a `stylekit` library entry name (e.g. "kurzgesagt",
+     * "plain") that picks the whole house style — palette, easings, motion/liveness, shading, and the
+     * quality-FLOOR toggles. Omitted → "kurzgesagt" (the default look). Selecting "plain" turns the
+     * floor OFF for a flat/technical result. The style is DATA (library/stylekits/*.json), not core.
+     */
+    style: z.string().min(1).optional(),
     /** Named cast: generic refs/actors → a library entry (+ optional provider/palette intent). */
     cast: z.record(CastEntrySchema).default({}),
     beats: z.array(BeatSchema).min(1),

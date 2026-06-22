@@ -30,16 +30,28 @@ export function waveAngle(frame: number, fps: number, clips: readonly RigClip[],
   return rest - up * raise + waggle;
 }
 
-/** Build the animated SVG markup for a character at a frame. Drawn centred on local origin (0,0). */
-export function characterMarkup(spec: CharacterSpec, frame: number, fps: number, clips: readonly RigClip[]): string {
+/**
+ * Build the animated SVG markup for a character at a frame. Drawn centred on local origin (0,0).
+ *
+ * `liveness` (ADR-008 I3, default true) gates the always-alive idle: when false, the creature holds
+ * a STATIC neutral pose (no bob/sway/breathe/blink) for a flat/technical look. An authored wave clip
+ * (an explicit action, not ambient liveness) still plays so explicit motion is never suppressed.
+ */
+export function characterMarkup(
+  spec: CharacterSpec,
+  frame: number,
+  fps: number,
+  clips: readonly RigClip[],
+  liveness = true,
+): string {
   const t = frame / fps;
   const P = spec.palette;
   const m = spec.motion;
-  const bob = Math.sin(t * TAU * 0.45) * m.bob;
-  const sway = Math.sin(t * TAU * 0.3) * m.swayDeg;
-  const breathe = 1 + m.breathe * Math.sin((t * TAU) / 4);
+  const bob = liveness ? Math.sin(t * TAU * 0.45) * m.bob : 0;
+  const sway = liveness ? Math.sin(t * TAU * 0.3) * m.swayDeg : 0;
+  const breathe = liveness ? 1 + m.breathe * Math.sin((t * TAU) / 4) : 1;
   const bsx = 1 / Math.sqrt(breathe);
-  const eyeSy = frame % 132 < 5 || frame % 312 < 5 ? 0.12 : 1;
+  const eyeSy = liveness && (frame % 132 < 5 || frame % 312 < 5) ? 0.12 : 1;
   const armR = waveAngle(frame, fps, clips, spec.arms.rest, m.waveRaise);
   const armL = -spec.arms.rest - 2;
 

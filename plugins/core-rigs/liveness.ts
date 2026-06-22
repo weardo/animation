@@ -9,17 +9,14 @@
 // `random(seedString)` and noise uses `simplex-noise` seeded from the same seed. Two renders of the
 // same frame produce byte-identical overlays.
 //
-// Liveness TUNING is a later task (per the goal); this module just wires the hooks so motion EXISTS
-// and is correct/deterministic, drawing all magnitudes from the shared StyleKit constants.
+// Liveness magnitudes are DATA (ADR-008 I2): every function takes the stylekit motion sub-params
+// (idle / breathing / blink / spring) as arguments — it reads NO core constant. The caller threads
+// `stylekit.motion` from the Scene IR and HONORS `stylekit.floor.liveness` (skipping these overlays
+// when the floor is off).
 
 import { spring, random } from 'remotion';
 import { createNoise2D } from 'simplex-noise';
-import {
-  IDLE_DEFAULTS,
-  BREATHING_DEFAULTS,
-  BLINK_DEFAULTS,
-  SPRING_BOUNCY,
-} from '../../src/render/stylekit.js';
+import type { Idle, Breathing, Blink, SpringConfig } from '../../src/ir/index.js';
 
 /** A small additive offset applied to a DragonBones bone's `offset` transform for one frame. */
 export interface BoneOffset {
@@ -60,22 +57,28 @@ function seededNoise(seed: string): ReturnType<typeof createNoise2D> {
  *
  * Returns a bone offset (mostly Y translation + a touch of rotation) to add to the head bone.
  */
-export function headBob(frame: number, fps: number, seed: string): BoneOffset {
+export function headBob(
+  frame: number,
+  fps: number,
+  seed: string,
+  idle: Idle,
+  springBouncy: SpringConfig,
+): BoneOffset {
   const noise = seededNoise(`${seed}:headbob`);
   // Slow wandering target in [-1,1], sampled along the time axis.
-  const t = (frame / fps) * IDLE_DEFAULTS.swaySpeedHz;
+  const t = (frame / fps) * idle.swaySpeedHz;
   const target = noise(t, 0);
   // Spring the response so motion has follow-through (under-damped, bouncy appendage feel).
   const s = spring({
     frame,
     fps,
-    config: SPRING_BOUNCY,
+    config: springBouncy,
     // Re-target continuously by treating the spring as a smoother of the noise target: scale the
     // settled spring value (→1) by the current target. This is deterministic per frame.
   });
-  const amp = IDLE_DEFAULTS.driftAmplitudePx * 1.5;
+  const amp = idle.driftAmplitudePx * 1.5;
   const y = target * amp * s;
-  const rotation = target * IDLE_DEFAULTS.swayAmplitudeDeg * DEG2RAD * s;
+  const rotation = target * idle.swayAmplitudeDeg * DEG2RAD * s;
   return { x: 0, y, rotation };
 }
 
@@ -83,10 +86,10 @@ export function headBob(frame: number, fps: number, seed: string): BoneOffset {
  * Breathing: a slow vertical oscillation (chest/body rise-fall) as a small Y offset. Pure sine of
  * `frame/fps`, period from StyleKit. Applied to a body/torso bone.
  */
-export function breathing(frame: number, fps: number): BoneOffset {
-  const phase = (frame / fps) * (2 * Math.PI) / BREATHING_DEFAULTS.periodSeconds;
-  // amplitude is a scale-delta in StyleKit; reuse it as a few px of body lift for the bone overlay.
-  const y = Math.sin(phase) * BREATHING_DEFAULTS.amplitude * 60;
+export function breathing(frame: number, fps: number, breath: Breathing): BoneOffset {
+  const phase = (frame / fps) * (2 * Math.PI) / breath.periodSeconds;
+  // amplitude is a scale-delta in the stylekit; reuse it as a few px of body lift for the bone overlay.
+  const y = Math.sin(phase) * breath.amplitude * 60;
   return { x: 0, y, rotation: 0 };
 }
 
@@ -94,13 +97,13 @@ export function breathing(frame: number, fps: number): BoneOffset {
  * Idle micro-sway: seeded simplex sway (rotation) + positional drift on the whole armature, so the
  * character is never perfectly still. Pure function of frame + seed.
  */
-export function idleSway(frame: number, fps: number, seed: string): BoneOffset {
+export function idleSway(frame: number, fps: number, seed: string, idle: Idle): BoneOffset {
   const noise = seededNoise(`${seed}:idle`);
-  const ts = (frame / fps) * IDLE_DEFAULTS.swaySpeedHz;
-  const td = (frame / fps) * IDLE_DEFAULTS.driftSpeedHz;
-  const rotation = noise(ts, 0) * IDLE_DEFAULTS.swayAmplitudeDeg * DEG2RAD;
-  const x = noise(0, td) * IDLE_DEFAULTS.driftAmplitudePx;
-  const y = noise(td, 100) * IDLE_DEFAULTS.driftAmplitudePx;
+  const ts = (frame / fps) * idle.swaySpeedHz;
+  const td = (frame / fps) * idle.driftSpeedHz;
+  const rotation = noise(ts, 0) * idle.swayAmplitudeDeg * DEG2RAD;
+  const x = noise(0, td) * idle.driftAmplitudePx;
+  const y = noise(td, 100) * idle.driftAmplitudePx;
   return { x, y, rotation };
 }
 
@@ -125,7 +128,7 @@ export interface BlinkEvent {
 
 /**
  * Build the deterministic blink schedule for `[0, durationFrames)`.
- * λ (mean blinks/sec) and close duration come from StyleKit BLINK_DEFAULTS.
+ * λ (mean blinks/sec) and close duration come from the stylekit `blink` params (DATA, ADR-008 I2).
  *
  * Pure: depends only on (durationFrames, fps, seed). Same inputs ⇒ same schedule.
  */
@@ -133,8 +136,9 @@ export function blinkSchedule(
   durationFrames: number,
   fps: number,
   seed: string,
+  blink: Blink,
 ): BlinkEvent[] {
-  const lambdaPerFrame = BLINK_DEFAULTS.rateHz / fps; // expected blinks per frame
+  const lambdaPerFrame = blink.rateHz / fps; // expected blinks per frame
   if (lambdaPerFrame <= 0) return [];
   const events: BlinkEvent[] = [];
   let frame = 0;
@@ -153,9 +157,9 @@ export function blinkSchedule(
   return events;
 }
 
-/** True if a blink (eye-closed) is active at `frame`, given the schedule. */
-export function isBlinking(schedule: readonly BlinkEvent[], frame: number): boolean {
-  const close = BLINK_DEFAULTS.closeFrames;
+/** True if a blink (eye-closed) is active at `frame`, given the schedule + close duration. */
+export function isBlinking(schedule: readonly BlinkEvent[], frame: number, closeFrames: number): boolean {
+  const close = closeFrames;
   for (const ev of schedule) {
     if (frame >= ev.startFrame && frame < ev.startFrame + close) return true;
     if (ev.startFrame > frame) break; // schedule is sorted ascending

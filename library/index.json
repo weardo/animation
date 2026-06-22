@@ -176,6 +176,45 @@
         }
       }
     },
-    "kits": {}
+    "kits": {},
+    "stylekits": {
+      "kurzgesagt": {
+        "id": "kurzgesagt",
+        "version": "1.0.0",
+        "kind": "stylekit",
+        "format": "stylekit",
+        "uri": "stylekit://kurzgesagt",
+        "tags": [
+          "stylekit",
+          "kurzgesagt",
+          "default",
+          "quality-floor"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "factory (relocated from src/render/stylekit.ts — ADR-008 I2)",
+          "license": "CC0"
+        }
+      },
+      "plain": {
+        "id": "plain",
+        "version": "1.0.0",
+        "kind": "stylekit",
+        "format": "stylekit",
+        "uri": "stylekit://plain",
+        "tags": [
+          "stylekit",
+          "plain",
+          "flat",
+          "technical",
+          "floor-off"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "factory (ADR-008 I3 floor opt-out)",
+          "license": "CC0"
+        }
+      }
+    }
   }
 }

@@ -32,7 +32,8 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from 'remotion';
-import type { Easings, RigDef, RigLayer as RigLayerIR } from '../../src/ir/index.js';
+import type { Easings, RigDef, RigLayer as RigLayerIR, StyleKit } from '../../src/ir/index.js';
+import { NEUTRAL_STYLEKIT } from '../../src/render/stylekit.js';
 import { loadRig, disposeRig, type LoadedRig, type RigSources } from './dragonbones-loader.js';
 import { selectClip } from './clips.js';
 import {
@@ -67,6 +68,12 @@ export interface RigLayerProps {
   /** Scene `defs.easings` so transform keyframes resolve their `e` names (never linear). */
   easings?: Easings | undefined;
   /**
+   * The resolved stylekit (ADR-008 I2/I3). Drives the liveness magnitudes (`stylekit.motion`) and the
+   * `stylekit.floor.liveness` toggle — when false, idle/breathe/blink are SKIPPED (static rig for a
+   * flat/technical look). Absent → the neutral fallback (floor off → no liveness).
+   */
+  stylekit?: StyleKit | undefined;
+  /**
    * Explicit rig file sources. If omitted, the three files are derived from `rigDef.uri`'s base
    * name: `<base>_ske.json`, `<base>_tex.json`, `<base>_tex.png`, resolved via `staticFile`.
    */
@@ -97,11 +104,18 @@ export const RigLayer: React.FC<RigLayerProps> = ({
   layer,
   rigDef,
   easings,
+  stylekit,
   sources,
   armatureName,
 }) => {
   const frame = useCurrentFrame();
   const { fps, width, height, durationInFrames } = useVideoConfig();
+
+  // ADR-008 I2/I3: liveness magnitudes + the floor toggle come from the resolved stylekit (DATA),
+  // never a core constant. Absent → the neutral fallback (floor off → no liveness).
+  const sk: StyleKit = stylekit ?? NEUTRAL_STYLEKIT;
+  const motion = sk.motion;
+  const livenessOn = sk.floor.liveness;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const rigRef = useRef<LoadedRig | null>(null);
@@ -118,8 +132,8 @@ export const RigLayer: React.FC<RigLayerProps> = ({
   // Pre-compute the deterministic Poisson blink schedule for the whole scene span. Pure function of
   // (durationInFrames, fps, seed) → identical every render.
   const blinks: BlinkEvent[] = useMemo(
-    () => blinkSchedule(durationInFrames, fps, seed),
-    [durationInFrames, fps, seed],
+    () => (livenessOn ? blinkSchedule(durationInFrames, fps, seed, motion.blink) : []),
+    [durationInFrames, fps, seed, livenessOn, motion.blink],
   );
 
   const resolvedSources: RigSources = useMemo(
@@ -205,17 +219,23 @@ export const RigLayer: React.FC<RigLayerProps> = ({
     // (b) Flush the seeked pose (recomputes bone + slot + mesh/FFD transforms).
     armature.advanceTime(0);
 
-    // (c) StyleKit "alive" overlays (deterministic). Bone offsets are additive nudges on TOP of the
-    // seeked pose; blink toggles eye-slot visibility.
-    const head = addOffsets(headBob(f, fps, seed), idleSway(f, fps, seed));
-    const body = breathing(f, fps);
-    applyBoneOffset(rig, DEFAULT_HEAD_BONES, head);
-    applyBoneOffset(rig, DEFAULT_BODY_BONES, body);
-    applyBoneOffset(rig, DEFAULT_ROOT_BONES, idleSway(f, fps, `${seed}:root`));
-    applyBlink(rig, isBlinking(blinks, f));
+    // (c) "alive" overlays (deterministic), magnitudes from the stylekit (DATA). Bone offsets are
+    // additive nudges on TOP of the seeked pose; blink toggles eye-slot visibility. Floor toggle (I3):
+    // liveness=false → SKIP all overlays (rig holds its seeked pose) for a flat/technical look.
+    if (livenessOn) {
+      const head = addOffsets(
+        headBob(f, fps, seed, motion.idle, motion.springBouncy),
+        idleSway(f, fps, seed, motion.idle),
+      );
+      const body = breathing(f, fps, motion.breathing);
+      applyBoneOffset(rig, DEFAULT_HEAD_BONES, head);
+      applyBoneOffset(rig, DEFAULT_BODY_BONES, body);
+      applyBoneOffset(rig, DEFAULT_ROOT_BONES, idleSway(f, fps, `${seed}:root`, motion.idle));
+      applyBlink(rig, isBlinking(blinks, f, motion.blink.closeFrames));
 
-    // Re-flush so the overlay bone offsets propagate to slots/mesh before rendering.
-    armature.advanceTime(0);
+      // Re-flush so the overlay bone offsets propagate to slots/mesh before rendering.
+      armature.advanceTime(0);
+    }
 
     // (d) Render exactly once.
     rig.app.render();

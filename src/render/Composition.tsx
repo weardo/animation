@@ -39,9 +39,9 @@ import {
 import { fade } from '@remotion/transitions/fade';
 import { wipe, type WipeDirection } from '@remotion/transitions/wipe';
 import { slide, type SlideDirection } from '@remotion/transitions/slide';
-import type { SceneIR, Scene as SceneType, Transition } from '../ir/index.js';
+import type { SceneIR, Scene as SceneType, Transition, Easings } from '../ir/index.js';
 import { Scene } from './Scene.js';
-import { EASINGS } from './stylekit.js';
+import { easingFn } from './stylekit.js';
 
 export type SceneIRCompositionProps = SceneIR;
 
@@ -50,11 +50,18 @@ export type SceneIRCompositionProps = SceneIR;
 const DEFAULT_TRANSITION_FRAMES = 15;
 
 /**
- * The StyleKit "smooth" curve as a Remotion easing fn — used to time every transition so no
- * transition is ever linearly timed (spec §9 "no motion is ever linear"). Pure (frame → progress).
+ * The "smooth" easing fn used to time every transition so no transition is ever linearly timed
+ * (spec §9). Resolved from the scene's `defs.easings` (seeded from the selected stylekit), so a
+ * style swap re-tunes transitions coherently — NO hardcoded core curve. Falls back to a standard
+ * ease curve only if the table lacks "smooth" (keeps the renderer runnable on a bare IR).
  */
-const SMOOTH = EASINGS.smooth;
-const smoothEasing = Easing.bezier(SMOOTH[0], SMOOTH[1], SMOOTH[2], SMOOTH[3]);
+function smoothEasingFor(easings: Easings) {
+  try {
+    return easingFn('smooth', easings);
+  } catch {
+    return Easing.bezier(0.25, 0.1, 0.25, 1);
+  }
+}
 
 /** Map the IR transition `dir` (left/right/up/down) to a @remotion/transitions wipe direction. */
 function wipeDirection(dir: Transition['dir']): WipeDirection {
@@ -143,6 +150,7 @@ export const SceneIRComposition: React.FC<SceneIRCompositionProps> = (props) => 
   const sceneIR = props;
   const bg = sceneIR.defs.palette?.['bg'];
   const scenes = sceneIR.scenes;
+  const smoothEasing = smoothEasingFor(sceneIR.defs.easings ?? {});
 
   // Build the TransitionSeries children: for each scene a `.Sequence` (length = its duration_frames),
   // preceded — for every scene after the first whose `transition_in` is a real (non-`cut`)

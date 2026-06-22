@@ -1,0 +1,26 @@
+# examples/plain-demo.yaml — ADR-008 I3 demo: the FLOOR opt-out (flat/technical look).
+#
+# Identical scene to examples/character.yaml, but selects the `plain` stylekit (`style: plain`). The
+# `plain` stylekit turns the quality-FLOOR toggles OFF (liveness/parallax/shading/nonLinearMotion),
+# so the render is FLAT: no contact shadow / rim / AO / scene light wash, no parallax depth, and the
+# creature holds a static neutral pose (no breathe/sway/blink). Same compiler + renderer, different
+# DATA — the look is selectable, not hardcoded.
+
+title: "Plain Blip"
+style: plain
+
+cast:
+  blip:
+    ref: blip
+
+beats:
+  - id: b1
+    say: "A flat, technical look — quality floor off."
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - actor: blip
+    action:
+      - on: blip
+        do: wave
+    camera: slow_push_in

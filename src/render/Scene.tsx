@@ -30,7 +30,7 @@ import { AssetLayer } from './AssetLayer.js';
 import { ShapeLayer } from './ShapeLayer.js';
 import { evalNumber, evalVec2 } from './eval.js';
 import { applyEffects, resolveEffects } from './effects.js';
-import type { Light } from './stylekit.js';
+import { NEUTRAL_STYLEKIT, type Light, type StyleKit } from './stylekit.js';
 import {
   ContactShadow,
   objectFilter,
@@ -58,8 +58,12 @@ function layerParallax(layer: Layer): number {
 export const Scene: React.FC<SceneProps> = ({ scene, defs }) => {
   const frame = useCurrentFrame();
   const easings: Easings = defs.easings ?? {};
-  // Effective scene light (default-on StyleKit light when none authored) — drives all shading (§11.1).
-  const light = resolveLight(scene.light);
+  // ADR-008 I2/I3: read the SELECTED stylekit from the IR (defs.stylekit), not core constants. The
+  // neutral fallback keeps the renderer runnable on a bare IR. `floor` toggles gate the quality floor.
+  const stylekit: StyleKit = defs.stylekit ?? NEUTRAL_STYLEKIT;
+  const floor = stylekit.floor;
+  // Effective scene light from the stylekit (authored scene.light wins) — drives §11.1 shading.
+  const light = resolveLight(scene.light, stylekit.light);
 
   // --- 1. Camera (evaluated at this frame) → parent transform values ---
   const [camX, camY] = evalVec2(scene.camera.position, frame, easings, [0, 0]);
@@ -83,7 +87,8 @@ export const Scene: React.FC<SceneProps> = ({ scene, defs }) => {
       <AbsoluteFill style={cameraStyle}>
         {ordered.map(({ l }) => {
           // --- 2. Per-layer parallax counter-shift: cameraPosition * (1 - parallax) ---
-          const p = layerParallax(l);
+          // Floor toggle (I3): parallax=false → every layer rides the camera flat (no depth shift).
+          const p = floor.parallax ? layerParallax(l) : 1;
           const parallaxOffset: readonly [number, number] = [camX * (1 - p), camY * (1 - p)];
           return (
             <LayerView
@@ -93,12 +98,14 @@ export const Scene: React.FC<SceneProps> = ({ scene, defs }) => {
               easings={easings}
               parallaxOffset={parallaxOffset}
               light={light}
+              stylekit={stylekit}
             />
           );
         })}
       </AbsoluteFill>
       {/* --- Scene-level look (screen-space): directional light wash + vignette (§11.1) --- */}
-      <SceneLook light={scene.light} />
+      {/* Floor toggle (I3): shading=false → no scene-level light wash / vignette (flat look). */}
+      {floor.shading && <SceneLook light={scene.light} defaultLight={stylekit.light} />}
     </AbsoluteFill>
   );
 };
@@ -109,6 +116,7 @@ interface LayerViewProps {
   easings: Easings;
   parallaxOffset: readonly [number, number];
   light: Light;
+  stylekit: StyleKit;
 }
 
 /** Build the bare sub-renderer for a layer (no shading). Asset layers fold parallax themselves. */
@@ -117,6 +125,7 @@ function renderSub(
   defs: Defs,
   easings: Easings,
   parallaxOffset: readonly [number, number],
+  stylekit: StyleKit,
 ): React.ReactNode {
   switch (layer.type) {
     case 'asset': {
@@ -143,7 +152,7 @@ function renderSub(
       // "chart"…) through the engine's generic `providers` registry (populated by the provider
       // plugins) — core knows no rig "kind"/domain. `get` throws loudly on an unknown provider.
       const Provider = providers.get(rigDef.provider);
-      const inner = <Provider layer={layer} rigDef={rigDef} easings={easings} />;
+      const inner = <Provider layer={layer} rigDef={rigDef} easings={easings} stylekit={stylekit} />;
       return (
         <ParallaxWrapper offset={parallaxOffset} id={layer.id}>
           {inner}
@@ -174,20 +183,22 @@ function renderSub(
  * filters/gradients are static styles; the contact-shadow anchor is a deterministically-evaluated
  * position.
  */
-const LayerView: React.FC<LayerViewProps> = ({ layer, defs, easings, parallaxOffset, light }) => {
+const LayerView: React.FC<LayerViewProps> = ({ layer, defs, easings, parallaxOffset, light, stylekit }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
+  const floor = stylekit.floor;
 
-  const sub = renderSub(layer, defs, easings, parallaxOffset);
-  const shading = resolveShading(layer.shading);
+  const sub = renderSub(layer, defs, easings, parallaxOffset, stylekit);
+  const shading = resolveShading(layer.shading, stylekit.shading);
 
-  // The full-frame background (an asset with no authored position) gets no per-object shading.
+  // Floor toggle (I3): shading=false → skip ALL §11.1 shading (no object filter, no contact shadow).
+  // The full-frame background (an asset with no authored position) also gets no per-object shading.
   const isBackground = layer.type === 'asset' && layer.transform?.position === undefined;
-  const filter = isBackground ? undefined : objectFilter(shading, light);
+  const filter = !floor.shading || isBackground ? undefined : objectFilter(shading, light);
 
   // Contact shadow: floating subjects that sit in the scene — the rig (and any positioned object).
   let contact: React.ReactNode = null;
-  if (shading.contact_shadow && layer.type === 'rig') {
+  if (floor.shading && shading.contact_shadow && layer.type === 'rig') {
     const t = layer.transform;
     const [px, py] = evalVec2(t?.position, frame, easings, [width / 2, height * 0.6]);
     const scale = evalNumber(t?.scale, frame, easings, 100) / 100;

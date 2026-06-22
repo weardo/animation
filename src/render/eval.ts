@@ -27,14 +27,12 @@ interface AnimatedProp<V> {
 
 /**
  * Resolve an easing reference (a name into `defs.easings`) to a Remotion easing function.
- * Defaults to "smooth" when absent so motion is never accidentally linear (spec §9). If the name
- * is not in `defs.easings`, it is tried directly as a StyleKit curve name (e.g. "backOut").
+ * Defaults to "smooth" when absent so motion is never accidentally linear (spec §9). Names resolve
+ * against the scene's `defs.easings` (seeded from the selected stylekit); a name that aliases
+ * another name resolves recursively (e.g. "pop" → "backOut").
  */
 function resolveEasing(name: string | undefined, easings: Easings): EasingFunction {
-  if (!name) return easingFn('smooth');
-  const def = easings[name];
-  if (def === undefined) return easingFn(name);
-  return easingFn(def);
+  return easingFn(name ?? 'smooth', easings);
 }
 
 /**

@@ -11,6 +11,7 @@ import React from 'react';
 import { Composition } from 'remotion';
 import type { SceneIR } from '../ir/index.js';
 import { SceneIRComposition } from './Composition.js';
+import { NEUTRAL_STYLEKIT } from './stylekit.js';
 
 /** The id `renderMedia` / the CLI selects. */
 export const COMPOSITION_ID = 'SceneIR';
@@ -20,7 +21,14 @@ export const COMPOSITION_ID = 'SceneIR';
 const PLACEHOLDER_SCENE_IR: SceneIR = {
   scene_ir_version: '1.0',
   config: { w: 1920, h: 1080, fps: 30, duration_frames: 150 },
-  defs: { palette: { bg: '#1b2a4a' }, easings: {}, assets: {}, rigs: {} },
+  // STYLE-CLEAN placeholder (ADR-008): the neutral fallback stylekit, no house-style hex hardcoded.
+  defs: {
+    palette: { bg: NEUTRAL_STYLEKIT.palette['bg'] ?? '#202020' },
+    easings: {},
+    assets: {},
+    rigs: {},
+    stylekit: NEUTRAL_STYLEKIT,
+  },
   audio: [],
   scenes: [
     {

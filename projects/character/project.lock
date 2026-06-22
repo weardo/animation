@@ -2,13 +2,6 @@
   "lockfile_version": "1",
   "algorithm": "object-hash@sha1/v1",
   "refs": {
-    "axon_curve@1.0.0": {
-      "namespace": "generators",
-      "id": "axon_curve",
-      "version": "1.0.0",
-      "hash": "e67de644e49fb0619ac48315aab6e7ee58650615",
-      "deps": []
-    },
     "bg_gradient@1.0.0": {
       "namespace": "backgrounds",
       "id": "bg_gradient",
@@ -21,6 +14,13 @@
       "id": "blip",
       "version": "1.0.0",
       "hash": "0ee38acd75aca505e31c8e8c78c8de86475e4f9c",
+      "deps": []
+    },
+    "kurzgesagt@1.0.0": {
+      "namespace": "stylekits",
+      "id": "kurzgesagt",
+      "version": "1.0.0",
+      "hash": "c70eaa416ae16cd7b5d3667908f01b12f559c8be",
       "deps": []
     }
   }

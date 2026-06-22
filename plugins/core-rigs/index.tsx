@@ -27,9 +27,9 @@ import { parseManifest } from '../../src/engine/index.js';
 
 const manifest = parseManifest(manifestJson);
 
-/** DragonBones provider: forwards the full rig definition to the vendor <RigLayer>. */
-const DragonBonesProvider: React.FC<ProviderProps> = ({ layer, rigDef, easings }) => (
-  <RigLayer layer={layer} rigDef={rigDef} easings={easings} />
+/** DragonBones provider: forwards the full rig definition + the resolved stylekit to the vendor <RigLayer>. */
+const DragonBonesProvider: React.FC<ProviderProps> = ({ layer, rigDef, easings, stylekit }) => (
+  <RigLayer layer={layer} rigDef={rigDef} easings={easings} stylekit={stylekit} />
 );
 
 /** The core-rigs plugin: registers the vendor dragonbones provider under its id. */

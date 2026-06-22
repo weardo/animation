@@ -17,11 +17,17 @@
 
 import React from 'react';
 import { AbsoluteFill } from 'remotion';
-import { DEFAULT_LIGHT, DEFAULT_SHADING, lightVector, type Light, type ShadingSpec } from './stylekit.js';
+import { lightVector, type Light, type ShadingSpec } from './stylekit.js';
 
-/** Merge an authored (partial) light with the StyleKit default → the effective scene light. */
-export function resolveLight(light?: Partial<Light> | undefined): Light {
-  return { ...DEFAULT_LIGHT, ...(light ?? {}) };
+/**
+ * Merge an authored (partial) light over the DEFAULT light — which now comes from the SELECTED
+ * stylekit (`defs.stylekit.light`), passed in by the compositor (ADR-008 I2). No core light constant.
+ */
+export function resolveLight(
+  light: Partial<Light> | undefined,
+  defaultLight: Light,
+): Light {
+  return { ...defaultLight, ...(light ?? {}) };
 }
 
 /** The IR's per-layer shading shape (every field optional and possibly explicit-undefined). */
@@ -34,16 +40,21 @@ type ShadingInput = {
 };
 
 /**
- * Merge authored per-layer shading onto the default-on StyleKit shading. Field-by-field with `??`
- * (NOT a spread) so an explicit-`undefined` field falls back to the default instead of clobbering it.
+ * Merge authored per-layer shading onto the DEFAULT shading — which now comes from the SELECTED
+ * stylekit (`defs.stylekit.shading`), passed in by the compositor (ADR-008 I2). Field-by-field with
+ * `??` (NOT a spread) so an explicit-`undefined` field falls back to the default instead of
+ * clobbering it. No core shading constant.
  */
-export function resolveShading(s?: ShadingInput | undefined): ShadingSpec {
+export function resolveShading(
+  s: ShadingInput | undefined,
+  defaultShading: ShadingSpec,
+): ShadingSpec {
   return {
-    form: s?.form ?? DEFAULT_SHADING.form,
-    contact_shadow: s?.contact_shadow ?? DEFAULT_SHADING.contact_shadow,
-    rim: s?.rim ?? DEFAULT_SHADING.rim,
-    ao: s?.ao ?? DEFAULT_SHADING.ao,
-    glow: s?.glow ?? DEFAULT_SHADING.glow,
+    form: s?.form ?? defaultShading.form,
+    contact_shadow: s?.contact_shadow ?? defaultShading.contact_shadow,
+    rim: s?.rim ?? defaultShading.rim,
+    ao: s?.ao ?? defaultShading.ao,
+    glow: s?.glow ?? defaultShading.glow,
   };
 }
 
@@ -122,8 +133,11 @@ export const ContactShadow: React.FC<{
  * it tints rather than washes) plus a vignette for depth/premium finish. Screen-space — render this
  * ABOVE the world (outside the camera transform) so it stays put as the camera moves.
  */
-export const SceneLook: React.FC<{ light?: Partial<Light> | undefined }> = ({ light }) => {
-  const L = resolveLight(light);
+export const SceneLook: React.FC<{
+  light?: Partial<Light> | undefined;
+  defaultLight: Light;
+}> = ({ light, defaultLight }) => {
+  const L = resolveLight(light, defaultLight);
   const v = lightVector(L.dir);
   // gradient runs along the light direction: lit color at the source side → cool shade opposite.
   const angle = (Math.atan2(-v.y, -v.x) * 180) / Math.PI + 90;

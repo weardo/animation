@@ -1,0 +1,64 @@
+{
+  "easings": {
+    "linear": [0, 0, 1, 1],
+    "smooth": [0.25, 0.1, 0.25, 1],
+    "easeIn": [0.42, 0, 1, 1],
+    "easeOut": [0, 0, 0.58, 1],
+    "easeInOut": [0.42, 0, 0.58, 1]
+  },
+  "defaultEasings": {
+    "linear": [0, 0, 1, 1],
+    "smooth": [0.25, 0.1, 0.25, 1],
+    "easeIn": [0.42, 0, 1, 1],
+    "easeOut": [0, 0, 0.58, 1],
+    "easeInOut": [0.42, 0, 0.58, 1],
+    "pop": "smooth"
+  },
+  "palette": {
+    "bg": "#f4f4f4",
+    "bg2": "#e8e8e8",
+    "accent": "#3b82f6",
+    "accent2": "#10b981",
+    "ink": "#1f2937",
+    "light": "#ffffff",
+    "shadow": "#94a3b8"
+  },
+  "motion": {
+    "spring": { "stiffness": 100, "damping": 20, "mass": 1 },
+    "springHeavy": { "stiffness": 100, "damping": 20, "mass": 1 },
+    "springBouncy": { "stiffness": 100, "damping": 20, "mass": 1 },
+    "idle": {
+      "swayAmplitudeDeg": 0,
+      "swaySpeedHz": 0,
+      "driftAmplitudePx": 0,
+      "driftSpeedHz": 0,
+      "saccadeAmplitudeDeg": 0,
+      "saccadeMeanSeconds": 1
+    },
+    "breathing": { "amplitude": 0, "periodSeconds": 4 },
+    "blink": { "rateHz": 0, "closeFrames": 0 },
+    "stagger": { "offsetFrames": 0 },
+    "parallax": { "nearFactor": 1, "farFactor": 1 },
+    "motionBlurShutter": 180
+  },
+  "light": {
+    "dir": 270,
+    "elevation": 90,
+    "color": "#ffffff",
+    "intensity": 0,
+    "ambient": 1
+  },
+  "shading": {
+    "form": false,
+    "contact_shadow": false,
+    "rim": 0,
+    "ao": false,
+    "glow": 0
+  },
+  "floor": {
+    "liveness": false,
+    "parallax": false,
+    "shading": false,
+    "nonLinearMotion": false
+  }
+}
