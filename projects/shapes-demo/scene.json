@@ -1,0 +1,629 @@
+{
+  "scene_ir_version": "1.0",
+  "config": {
+    "w": 1920,
+    "h": 1080,
+    "fps": 30,
+    "duration_frames": 162
+  },
+  "defs": {
+    "palette": {
+      "bg": "#1b2a4a",
+      "bg2": "#24386b",
+      "accent": "#ffcf4d",
+      "accent2": "#4d9fff",
+      "ink": "#0d1b33",
+      "light": "#fff6e0",
+      "shadow": "#0a1326"
+    },
+    "easings": {
+      "smooth": [
+        0.4,
+        0,
+        0.2,
+        1
+      ],
+      "pop": "backOut",
+      "backOut": [
+        0.34,
+        1.56,
+        0.64,
+        1
+      ],
+      "anticipate": [
+        0.36,
+        0,
+        0.66,
+        -0.56
+      ],
+      "easeIn": [
+        0.4,
+        0,
+        1,
+        1
+      ],
+      "easeOut": [
+        0,
+        0,
+        0.2,
+        1
+      ],
+      "linear": [
+        0,
+        0,
+        1,
+        1
+      ]
+    },
+    "assets": {
+      "bg_gradient": {
+        "uri": "asset://bg_gradient.svg",
+        "kind": "svg"
+      }
+    },
+    "rigs": {
+      "narrator": {
+        "uri": "proc://blip",
+        "kind": "procedural",
+        "spec": {
+          "id": "blip",
+          "name": "Blip",
+          "palette": {
+            "body": "#4aa3ff",
+            "bodyDark": "#2f86e0",
+            "ink": "#16243f",
+            "belly": "#d6ecff",
+            "accent": "#ffce4a",
+            "white": "#ffffff",
+            "cheek": "#ff7eb0"
+          },
+          "head": {
+            "r": 66,
+            "cy": -66
+          },
+          "body": {
+            "rx": 70,
+            "ry": 68,
+            "cy": 28
+          },
+          "belly": {
+            "rx": 42,
+            "ry": 36,
+            "cy": 48
+          },
+          "eyes": {
+            "spacing": 26,
+            "cy": -74,
+            "r": 17,
+            "pupil": 8
+          },
+          "beak": {
+            "show": true,
+            "width": 24,
+            "depth": 16,
+            "cy": -50
+          },
+          "cheeks": {
+            "show": true,
+            "r": 9,
+            "spacing": 46,
+            "cy": -50
+          },
+          "arms": {
+            "width": 18,
+            "length": 66,
+            "shoulderY": 6,
+            "rest": 14
+          },
+          "legs": {
+            "width": 20,
+            "height": 40,
+            "spacing": 24,
+            "footRx": 23,
+            "footRy": 12,
+            "footCy": 120
+          },
+          "motion": {
+            "bob": 5,
+            "swayDeg": 1.6,
+            "breathe": 0.03,
+            "waveRaise": 150
+          }
+        }
+      }
+    }
+  },
+  "audio": [],
+  "scenes": [
+    {
+      "id": "primitives",
+      "at": 0,
+      "duration_frames": 90,
+      "labels": {
+        "reveal": 45
+      },
+      "camera": {
+        "position": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": [
+                0,
+                -20
+              ],
+              "e": "smooth"
+            },
+            {
+              "t": 90,
+              "s": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        "zoom": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": 0.92,
+              "e": "smooth"
+            },
+            {
+              "t": 90,
+              "s": 1
+            }
+          ]
+        }
+      },
+      "layers": [
+        {
+          "type": "asset",
+          "id": "L_bg",
+          "z": 0,
+          "ref": "bg_gradient",
+          "parallax": 0.2
+        },
+        {
+          "type": "generator",
+          "id": "L_scatter_stars",
+          "z": 1,
+          "gen": "scatter",
+          "seed": 2086550033,
+          "params": {
+            "motif": "star",
+            "count": 90,
+            "size": [
+              2,
+              6
+            ],
+            "colors": [
+              "light",
+              "accent"
+            ],
+            "anim": "twinkle",
+            "anim_speed": 0.4,
+            "glow": true,
+            "opacity": 0.8
+          }
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_star_top",
+          "z": 6,
+          "shape": {
+            "kind": "star",
+            "points": 5,
+            "innerRadius": 50,
+            "outerRadius": 110
+          },
+          "fill": {
+            "a": 0,
+            "k": "accent"
+          },
+          "stroke": {
+            "color": "light",
+            "width": 5
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                960,
+                270
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 70
+            }
+          }
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_circle_left",
+          "z": 6,
+          "shape": {
+            "kind": "circle",
+            "radius": 90
+          },
+          "fill": {
+            "gradient": {
+              "type": "linear",
+              "stops": [
+                [
+                  "accent",
+                  0
+                ],
+                [
+                  "accent2",
+                  1
+                ]
+              ],
+              "angle": 90
+            }
+          },
+          "stroke": {
+            "color": "ink",
+            "width": 3
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                480,
+                540
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 85
+            }
+          }
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_hex_right",
+          "z": 6,
+          "shape": {
+            "kind": "polygon",
+            "points": 6,
+            "radius": 95
+          },
+          "fill": {
+            "gradient": {
+              "type": "radial",
+              "stops": [
+                [
+                  "light",
+                  0
+                ],
+                [
+                  "accent2",
+                  1
+                ]
+              ]
+            }
+          },
+          "stroke": {
+            "color": "ink",
+            "width": 4
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                1440,
+                540
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 85
+            }
+          }
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_card_bl",
+          "z": 5,
+          "shape": {
+            "kind": "rect",
+            "width": 170,
+            "height": 110,
+            "cornerRadius": 22
+          },
+          "fill": {
+            "a": 0,
+            "k": "accent2"
+          },
+          "stroke": {
+            "color": "light",
+            "width": 3
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                480,
+                810
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 80
+            }
+          }
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_tri_br",
+          "z": 5,
+          "shape": {
+            "kind": "triangle",
+            "length": 170,
+            "direction": "up"
+          },
+          "fill": {
+            "a": 0,
+            "k": "accent"
+          },
+          "stroke": {
+            "color": "ink",
+            "width": 4
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                1440,
+                810
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 85
+            }
+          }
+        },
+        {
+          "type": "rig",
+          "id": "L_narr",
+          "z": 10,
+          "ref": "narrator",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                960,
+                669.6
+              ]
+            },
+            "scale": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "pop"
+                },
+                {
+                  "t": 12,
+                  "s": 100
+                }
+              ]
+            },
+            "opacity": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "pop"
+                },
+                {
+                  "t": 12,
+                  "s": 100
+                }
+              ]
+            }
+          },
+          "rig_state": {
+            "clips": [
+              {
+                "anim": "idle",
+                "loop": true
+              },
+              {
+                "anim": "wave",
+                "loop": false,
+                "at": 36
+              },
+              {
+                "anim": "idle",
+                "loop": true,
+                "at": 84
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "morph",
+      "at": 72,
+      "duration_frames": 90,
+      "labels": {
+        "reveal": 45
+      },
+      "camera": {
+        "position": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": [
+                0,
+                0
+              ],
+              "e": "smooth"
+            },
+            {
+              "t": 90,
+              "s": [
+                60,
+                0
+              ]
+            }
+          ]
+        },
+        "zoom": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": 1,
+              "e": "smooth"
+            },
+            {
+              "t": 90,
+              "s": 1.15
+            }
+          ]
+        }
+      },
+      "layers": [
+        {
+          "type": "asset",
+          "id": "L_bg",
+          "z": 0,
+          "ref": "bg_gradient",
+          "parallax": 0.2
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_star_to_heart",
+          "z": 6,
+          "morph": {
+            "a": 1,
+            "k": [
+              {
+                "t": 0,
+                "s": "M 142.65847744427305 0 L 183.80344510474617 93.36881039375368 L 285.31695488854604 103.6474508437579 L 209.2324335849338 171.63118960624632 L 230.82626528814401 271.3525491562421 L 142.65847744427305 220 L 54.49068960040209 271.3525491562421 L 76.0845213036123 171.63118960624632 L 0 103.64745084375791 L 101.51350978379992 93.36881039375368 L 142.65847744427305 0 Z",
+                "e": "smooth"
+              },
+              {
+                "t": 40,
+                "s": "M 154 280 C 89.60000000000001 193.2 0 168 0 70 C 0 36.4 36.400000000000006 0 77 0 C 117.6 0 140 19.6 154 47.6 C 168 19.6 196 0 231 0 C 271.6 0 308 36.4 308 70 C 308 168 218.39999999999998 193.2 154 280 Z"
+              }
+            ]
+          },
+          "fill": {
+            "a": 1,
+            "k": [
+              {
+                "t": 0,
+                "s": "accent",
+                "e": "smooth"
+              },
+              {
+                "t": 40,
+                "s": "accent2"
+              }
+            ]
+          },
+          "stroke": {
+            "color": "light",
+            "width": 4
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                960,
+                540
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 110
+            }
+          }
+        },
+        {
+          "type": "rig",
+          "id": "L_narr",
+          "z": 10,
+          "ref": "narrator",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                960,
+                669.6
+              ]
+            },
+            "scale": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "pop"
+                },
+                {
+                  "t": 12,
+                  "s": 100
+                }
+              ]
+            },
+            "opacity": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "pop"
+                },
+                {
+                  "t": 12,
+                  "s": 100
+                }
+              ]
+            }
+          },
+          "rig_state": {
+            "clips": [
+              {
+                "anim": "idle",
+                "loop": true
+              },
+              {
+                "anim": "wave",
+                "loop": false,
+                "at": 36
+              },
+              {
+                "anim": "idle",
+                "loop": true,
+                "at": 84
+              }
+            ]
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 18
+      }
+    }
+  ],
+  "provenance": {
+    "story_ir_hash": "sha1:09d13b68e80b9cb77bf0742586d141309de88840",
+    "passes": [
+      "lower@1.0"
+    ]
+  }
+}

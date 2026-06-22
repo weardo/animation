@@ -1,0 +1,158 @@
+# examples/shapes-demo.yaml — the ADR-003 #1 "Shapes & Paths" vertical slice (Tier A, deterministic).
+#
+# "Families are sockets; libraries are plugs": the `shape` layer adopts three free libraries instead
+# of hand-rolling vector geometry — @remotion/shapes (PRIMITIVES), flubber (path MORPH), and
+# @remotion/paths (path utilities). This 2-scene story exercises both halves of the socket:
+#
+#   SCENE 1 — PRIMITIVES.  The procedural `blip` character is ringed by several @remotion/shapes
+#     primitives, each showing a different fill/stroke treatment:
+#       • a STAR with a SOLID gold fill + an off-white stroke      (top)
+#       • a CIRCLE with a LINEAR GRADIENT (gold→blue, 90°)         (left)
+#       • a HEXAGON (polygon) with a RADIAL GRADIENT + ink stroke  (right)
+#       • a ROUNDED RECT with a solid blue fill                    (bottom-left)
+#       • a TRIANGLE with a solid accent fill + stroke             (bottom-right)
+#     This proves: primitive catalog, solid + linear + radial fills, strokes, and per-shape staging
+#     via the layout anchors — all composited with the character + a starfield scatter ambience.
+#
+#   SCENE 2 — MORPH.  One shape morphs from a 5-pointed STAR into a HEART while its FILL colour
+#     interpolates from gold (accent) to blue (accent2). The geometry is a `morph` channel of two
+#     @remotion/shapes path `d` strings (different point counts), flubber-interpolated at the current
+#     frame and eased through the StyleKit (never linear). The fill is an animated colour keyed on the
+#     same window so the colour change tracks the shape change.
+#
+# DETERMINISM: pure SVG/DOM (no Pixi, no software GL) → renders byte-identical on gl:'angle' (the
+# scatter-demo precedent). flubber is a deterministic geometric interpolator; gradient ids derive from
+# the layer id. Build it:
+#   tsx src/cli/render.ts examples/shapes-demo.yaml --project shapes-demo --name "Shapes & Morph"
+
+title: "Shapes & Morph"
+
+characters:
+  blip:
+    rig: blip
+    palette: warm
+
+beats:
+  # ----------------------------------------------------------------------------------------------
+  # SCENE 1 — a constellation of PRIMITIVES (solid + linear/radial gradient fills + strokes) ringing
+  # the procedural character. Each shape is placed on a layout anchor and sits ABOVE the background +
+  # starfield but composes with the character.
+  # ----------------------------------------------------------------------------------------------
+  - id: primitives
+    say: "Every shape is a socket; the library is the plug."
+    show:
+      # A calm starfield so the scene isn't empty space (reuses the scatter generator).
+      - generator: scatter
+        as: stars
+        args:
+          motif: star
+          count: 90
+          size: [2, 6]
+          colors: [light, accent]
+          anim: twinkle
+          anim_speed: 0.4
+          glow: true
+          opacity: 0.8
+
+      # STAR — solid gold fill + off-white stroke. Top of frame.
+      - shape: star
+        as: star_top
+        at: top
+        args:
+          z: 6
+          scale: 70
+          params: { points: 5, innerRadius: 50, outerRadius: 110 }
+          fill: { a: 0, k: accent }
+          stroke: { color: light, width: 5 }
+
+      # CIRCLE — LINEAR gradient (gold→blue at 90°). Left.
+      - shape: circle
+        as: circle_left
+        at: left
+        args:
+          z: 6
+          scale: 85
+          params: { radius: 90 }
+          fill:
+            gradient:
+              type: linear
+              stops: [[accent, 0.0], [accent2, 1.0]]
+              angle: 90
+          stroke: { color: ink, width: 3 }
+
+      # HEXAGON (polygon) — RADIAL gradient (light core → blue rim) + ink stroke. Right.
+      - shape: polygon
+        as: hex_right
+        at: right
+        args:
+          z: 6
+          scale: 85
+          params: { points: 6, radius: 95 }
+          fill:
+            gradient:
+              type: radial
+              stops: [[light, 0.0], [accent2, 1.0]]
+          stroke: { color: ink, width: 4 }
+
+      # ROUNDED RECT — solid blue fill. Bottom-left.
+      - shape: rect
+        as: card_bl
+        at: bottom_left
+        args:
+          z: 5
+          scale: 80
+          params: { width: 170, height: 110, cornerRadius: 22 }
+          fill: { a: 0, k: accent2 }
+          stroke: { color: light, width: 3 }
+
+      # TRIANGLE — solid gold fill + ink stroke. Bottom-right.
+      - shape: triangle
+        as: tri_br
+        at: bottom_right
+        args:
+          z: 5
+          scale: 85
+          params: { length: 170, direction: up }
+          fill: { a: 0, k: accent }
+          stroke: { color: ink, width: 4 }
+    camera: establishing
+    duration: { seconds: 3 }
+
+  # ----------------------------------------------------------------------------------------------
+  # SCENE 2 — a single shape MORPHS star → heart while its FILL interpolates gold → blue. The morph
+  # channel holds two @remotion/shapes path `d` strings (5-point star, then a heart) with DIFFERENT
+  # point counts; flubber resamples and interpolates them, eased by the StyleKit "smooth" curve. The
+  # fill is an animated colour keyed on the SAME frame window so colour tracks shape.
+  # ----------------------------------------------------------------------------------------------
+  - id: morph
+    say: "Now watch one become another — geometry and colour together."
+    show:
+      - shape: morph
+        as: star_to_heart
+        at: center
+        args:
+          z: 6
+          scale: 110
+          # Two real @remotion/shapes path `d` strings (star@t0 → heart@t40). flubber handles the
+          # differing point counts. `e: smooth` keeps the segment eased (never linear).
+          morph:
+            a: 1
+            k:
+              - t: 0
+                e: smooth
+                s: "M 142.65847744427305 0 L 183.80344510474617 93.36881039375368 L 285.31695488854604 103.6474508437579 L 209.2324335849338 171.63118960624632 L 230.82626528814401 271.3525491562421 L 142.65847744427305 220 L 54.49068960040209 271.3525491562421 L 76.0845213036123 171.63118960624632 L 0 103.64745084375791 L 101.51350978379992 93.36881039375368 L 142.65847744427305 0 Z"
+              - t: 40
+                s: "M 154 280 C 89.60000000000001 193.2 0 168 0 70 C 0 36.4 36.400000000000006 0 77 0 C 117.6 0 140 19.6 154 47.6 C 168 19.6 196 0 231 0 C 271.6 0 308 36.4 308 70 C 308 168 218.39999999999998 193.2 154 280 Z"
+          # Fill interpolates gold → blue across the same 0→40 window (colour tracks the morph).
+          fill:
+            a: 1
+            k:
+              - t: 0
+                e: smooth
+                s: accent
+              - t: 40
+                s: accent2
+          stroke: { color: light, width: 4 }
+    camera: slow_push_in
+    duration: { seconds: 3 }
+    transition: { kind: fade, duration: 18 }

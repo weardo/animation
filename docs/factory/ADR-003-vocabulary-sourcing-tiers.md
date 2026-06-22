@@ -39,7 +39,7 @@ A real editor (DaVinci/Kdenlive/AE) exposes hundreds of transitions, effects, sh
 
 Each item is built into its family, **adopting the Tier-A source**, and verified per `verify-render` (typecheck + cross-process decoded-stream determinism + visual frames). Tier-B items are deferred behind the GPU-determinism gate.
 
-1. **Shapes & paths** — adopt `@remotion/shapes` + `@remotion/paths` (replace hand-rolled primitives); add `shape` layer with fill/stroke/gradient + **morph** channel (flubber/MorphSVG).
+1. ✅ **Shapes & paths (DONE 2026-06-22)** — adopted `@remotion/shapes` (rect/circle/ellipse/triangle/star/polygon/pie/heart primitives) + `flubber` (path **morph**, differing point counts) + `@remotion/paths` (`getBoundingBox`); first-class `shape` layer in `src/render/ShapeLayer.tsx` with solid/linear/radial **gradient** fill (deterministic `<defs>` ids from layer id), **stroke**, the standard `{a,k}` transform, and a `morph` channel whose `fill` interpolates alongside — all StyleKit-eased (never linear). Wired through `<Scene>` so shapes get parallax + §11.1 shading. Verified per `verify-render`: typecheck clean + byte-identical decoded-stream MD5 across two cold render processes + frames reviewed (`projects/shapes-demo`: primitives + a mid-morph star→heart).
 2. **Effects channel** — implement the `effects[]` stack backed by **SVG/CSS filters** (blur, glow, drop-shadow, color-matrix/grade, turbulence/displacement, vignette, grain) + **motion blur** (`@remotion/motion-blur`).
 3. **Transitions expansion** — more `@remotion/transitions` presets + match-cut/camera-continuous (§11.2); wrap GL Transitions as a Tier-B presentation set (gated).
 4. **Generators expansion** — water, particles, fire/smoke, crowd (procedural) on top of scatter + bead-string.

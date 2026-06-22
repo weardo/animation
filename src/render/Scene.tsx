@@ -27,6 +27,7 @@ import { RigLayer } from '../rig/index.js';
 import { ProceduralRig } from './ProceduralRig.js';
 import { GeneratorLayer } from '../generators/index.js';
 import { AssetLayer } from './AssetLayer.js';
+import { ShapeLayer } from './ShapeLayer.js';
 import { evalNumber, evalVec2 } from './eval.js';
 import type { Light } from './stylekit.js';
 import {
@@ -151,8 +152,13 @@ function renderSub(
       );
     }
     case 'shape':
-      // Minimal placeholder (morph lands later); keep z-order/keys stable.
-      return <AbsoluteFill data-shape-layer={layer.id} />;
+      // First-class shape (ADR-003 #1): @remotion/shapes primitives + flubber morph + fill/gradient/
+      // stroke. Wrapped in parallax like rig/generator so it gets depth + the §11.1 shading/effects.
+      return (
+        <ParallaxWrapper offset={parallaxOffset} id={layer.id}>
+          <ShapeLayer layer={layer} palette={defs.palette} easings={easings} />
+        </ParallaxWrapper>
+      );
     default: {
       const _exhaustive: never = layer;
       return _exhaustive;

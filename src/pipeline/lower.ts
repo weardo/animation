@@ -18,10 +18,10 @@
 // function on its own. Either way the output validates against the Scene-IR Zod schema.
 
 import {
-  type Layer,
   type AssetLayer,
   type RigLayer,
   type GeneratorLayer,
+  type ShapeLayer,
   type RigClip,
   type Transform,
   type AssetDef,
@@ -31,11 +31,13 @@ import {
   type EasingDef,
   type StoryIR,
   type Beat,
+  type ShowItem,
   type Character,
   type CameraIntent,
   type Transition,
   type Duration,
 } from '../ir/index.js';
+import type { LoweredLayer } from './contract.js';
 import {
   DEFAULT_PALETTE,
   DEFAULT_EASINGS,
@@ -314,6 +316,55 @@ function buildScatterLayer(
 }
 
 /**
+ * A first-class SHAPE layer (ADR-003 #1) lowered from a `show[].shape` directive. "Families are
+ * sockets; libraries are plugs": the rendered geometry is a `@remotion/shapes` PRIMITIVE (kind +
+ * params) and/or a flubber-morphed path (`morph`), with a solid- or gradient-`fill` and optional
+ * `stroke` — all of which arrive in the item's free-form `args` and pass straight through to the
+ * Scene-IR `shape` layer (validated by the ShapeLayer Zod schema at the boundary; CLAUDE.md rule 5).
+ *
+ * The `as` handle becomes the layer id (stable → byte-identical re-renders); `z`/`scale`/`rotation`/
+ * `opacity` in `args` build the layer transform (a static `pop`-free transform here; the ShapeLayer
+ * evaluates animated `{a,k}` morph/fill itself). Placement is carried as a layout `anchor` (from the
+ * item's `at`), resolved to `transform.position` by the layout pass — so a shape stages like any
+ * other layer. Pure structural lowering: no wall-clock, no RNG.
+ */
+function buildShapeLayer(item: ShowItem, index: number): LoweredLayer {
+  const kind = item.shape!;
+  const args = (item.args ?? {}) as Record<string, unknown>;
+  const id = `L_shape_${item.as ?? `${kind}_${index}`}`;
+  const z = typeof args['z'] === 'number' ? (args['z'] as number) : 5;
+
+  // Geometry: an explicit `morph` channel wins; else the named primitive (unless the sentinel
+  // `morph` kind was used without a morph — then nothing draws, which we avoid by requiring args).
+  const morph = args['morph'] as ShapeLayer['morph'] | undefined;
+  const shape =
+    kind === 'morph'
+      ? (args['shape'] as ShapeLayer['shape'] | undefined)
+      : ({ kind, ...((args['params'] as Record<string, unknown>) ?? {}) } as ShapeLayer['shape']);
+
+  // Transform: static scale/rotation/opacity from args (position comes from the anchor via layout).
+  const transform: Transform = {};
+  if (typeof args['scale'] === 'number') transform.scale = { a: 0, k: args['scale'] as number };
+  if (typeof args['rotation'] === 'number') transform.rotation = { a: 0, k: args['rotation'] as number };
+  if (typeof args['opacity'] === 'number') transform.opacity = { a: 0, k: args['opacity'] as number };
+
+  const layer: ShapeLayer = {
+    type: 'shape',
+    id,
+    z,
+    ...(shape ? { shape } : {}),
+    ...(morph ? { morph } : {}),
+    ...(args['fill'] !== undefined ? { fill: args['fill'] as ShapeLayer['fill'] } : {}),
+    ...(args['stroke'] !== undefined ? { stroke: args['stroke'] as ShapeLayer['stroke'] } : {}),
+    ...(Object.keys(transform).length > 0 ? { transform } : {}),
+  };
+
+  // Carry the placement anchor (default "center") for the layout pass to resolve to a position.
+  const anchor = typeof item.at === 'string' ? item.at : 'center';
+  return { ...layer, anchor } as LoweredLayer;
+}
+
+/**
  * The DragonBones RIG layer with an idle clip (spec §15: identity-stable character). A StyleKit
  * "pop" entrance (scale + opacity overshoot) makes the character appear with life (spec §9); the
  * idle clip loops so even a static shot feels alive. Centered, ground-anchored position.
@@ -392,10 +443,18 @@ function buildScene(
       return buildScatterLayer(`L_scatter_${handle}`, scatterSeed, s.args ?? {});
     });
 
-  const layers: Layer[] = [
+  // SHAPE layers (ADR-003 #1): every `show[].shape` item becomes a first-class Scene-IR shape layer
+  // (a @remotion/shapes primitive and/or a flubber morph, with solid/gradient fill + stroke). Carried
+  // with a layout `anchor` so the layout pass stages it; no seed needed (shapes are deterministic).
+  const shapeLayers: LoweredLayer[] = (beat.show ?? [])
+    .filter((s) => typeof s.shape === 'string')
+    .map((s, i) => buildShapeLayer(s, i));
+
+  const layers: LoweredLayer[] = [
     buildBackgroundLayer(),
     ...scatterLayers,
     ...(showsBeadString ? [buildBeadStringLayer(seed, beadPathUri)] : []),
+    ...shapeLayers,
     buildRigLayer(rigDefKey, cfg.w, cfg.h, clipsForRig(rigRef, durationFrames)),
   ];
   // A single GSAP-style label at mid-scene (the "reveal" beat the spec example uses).

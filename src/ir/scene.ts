@@ -106,14 +106,37 @@ export const GradientFillSchema = z
   })
   .strict();
 
-/** A layer fill: a flat (animated) color or a gradient. RESERVED gradient form for M2. */
+export type GradientFill = z.infer<typeof GradientFillSchema>;
+
+/** A layer fill: a flat (animated) color or a gradient. */
 export const FillSchema = z.union([
   AnimatedColorSchema,
   z.object({ gradient: GradientFillSchema }).strict(),
 ]);
 export type Fill = z.infer<typeof FillSchema>;
 
-/** RESERVED (M2): morph channel — animated path `d` strings with fill interpolation. */
+/** A shape stroke: color (palette token or hex) + width in px. Both optional. */
+export const StrokeSchema = z
+  .object({
+    color: ColorSchema.optional(),
+    width: z.number().nonnegative().optional(),
+  })
+  .strict();
+export type Stroke = z.infer<typeof StrokeSchema>;
+
+/**
+ * A shape PRIMITIVE descriptor (ADR-003 #1): a `kind` selecting a `@remotion/shapes` constructor
+ * plus its free-form numeric params (validated loosely here; the renderer applies per-kind defaults).
+ * Kinds map 1:1 to `@remotion/shapes` makers: rect/circle/ellipse/triangle/star/polygon/pie/heart.
+ */
+export const ShapePrimitiveSchema = z
+  .object({
+    kind: z.enum(['rect', 'circle', 'ellipse', 'triangle', 'star', 'polygon', 'pie', 'heart']),
+  })
+  .passthrough();
+export type ShapePrimitive = z.infer<typeof ShapePrimitiveSchema>;
+
+/** Morph channel — animated path `d` strings (interpolated between keyframes with flubber). */
 export const MorphChannelSchema = animated(z.string().min(1));
 
 /** RESERVED (M2): a single per-layer effect (glow/drop_shadow/motion_blur/…). Loosely typed. */
@@ -263,14 +286,24 @@ export const GeneratorLayerSchema = z
   .strict();
 export type GeneratorLayer = z.infer<typeof GeneratorLayerSchema>;
 
-/** shape layer: vector shape carrying the (reserved) morph channel. Minimal in M1. */
+/**
+ * shape layer: a first-class vector shape (ADR-003 #1). It carries EITHER a `shape` PRIMITIVE
+ * descriptor (a `@remotion/shapes` kind + params → rect/circle/ellipse/triangle/star/polygon/pie/
+ * heart) OR a `morph` channel (animated path `d` strings, interpolated with flubber). `fill` is a
+ * solid (animated) color or a linear/radial gradient; `stroke` is optional. The `transform` is the
+ * standard `{a,k}` position/scale/rotation/opacity. When both `shape` and `morph` are present, the
+ * morph (path animation) takes precedence as the rendered geometry.
+ */
 export const ShapeLayerSchema = z
   .object({
     type: z.literal('shape'),
     ...layerBase,
-    /** RESERVED (M2): animated path morph. */
+    /** Primitive descriptor (kind + params) rendered via `@remotion/shapes`. */
+    shape: ShapePrimitiveSchema.optional(),
+    /** Animated path morph (`d` strings) interpolated with flubber. */
     morph: MorphChannelSchema.optional(),
     fill: FillSchema.optional(),
+    stroke: StrokeSchema.optional(),
     transform: TransformSchema.optional(),
   })
   .strict();

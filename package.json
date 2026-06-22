@@ -14,9 +14,12 @@
   },
   "dependencies": {
     "@remotion/cli": "4.0.481",
+    "@remotion/paths": "^4.0.481",
     "@remotion/renderer": "4.0.481",
+    "@remotion/shapes": "^4.0.481",
     "@remotion/transitions": "^4.0.481",
     "d3-shape": "3.2.0",
+    "flubber": "^0.4.2",
     "object-hash": "3.0.0",
     "pixi-dragonbones-runtime": "8.0.3",
     "pixi.js": "8.19.0",

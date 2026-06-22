@@ -1,0 +1,32 @@
+{
+  "project_version": "1.0",
+  "id": "shapes-demo",
+  "name": "Shapes & Morph",
+  "created": "2026-06-22T04:53:06.697Z",
+  "updated": "2026-06-22T04:53:06.697Z",
+  "config": {
+    "w": 1920,
+    "h": 1080,
+    "fps": 30,
+    "duration_frames": 162
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "900a1ba1f0d502129b78a90b3cecb07629227647",
+  "engine": "remotion@4.0.481",
+  "deps": [
+    "bg_gradient@1.0.0",
+    "axon_curve@1.0.0",
+    "blip@1.0.0"
+  ],
+  "assets": [
+    "assets/bg_gradient.svg",
+    "assets/characters/blip/blip.spec.json",
+    "assets/characters/blip/blip.preview.png"
+  ],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  }
+}

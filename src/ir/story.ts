@@ -33,6 +33,15 @@ export const ShowItemSchema = z
   .object({
     /** Generator name to spawn (M1). */
     generator: z.string().min(1).optional(),
+    /**
+     * A first-class vector SHAPE to show (ADR-003 #1). The value is the `@remotion/shapes` primitive
+     * kind (`rect`/`circle`/`ellipse`/`triangle`/`star`/`polygon`/`pie`/`heart`) — OR the sentinel
+     * `morph` for a path-morph shape whose geometry comes entirely from `args.morph`. The shape's
+     * look (params/fill/stroke/morph/z/scale/rotation/opacity) travels in the item's free-form
+     * `args`, interpreted by the lowering pass into a Scene-IR `shape` layer; `as` becomes the layer
+     * id and the optional positional `at` (an anchor name) its placement.
+     */
+    shape: z.string().min(1).optional(),
     /** Static asset to show (reserved; later). */
     asset: z.string().min(1).optional(),
     /** Reusable clip to place (reserved; later). */
@@ -41,7 +50,10 @@ export const ShowItemSchema = z
     character: z.string().min(1).optional(),
     /** Local handle other beats refer to (e.g. an `action.on` target). */
     as: z.string().min(1).optional(),
-    /** Free-form generator/asset arguments, interpreted by the lowering pass. */
+    /** Named layout anchor (e.g. "center", "left", "top_right") the lowering pass resolves to a
+     *  `transform.position` via the layout pass. Currently used to place `shape` items. */
+    at: z.string().min(1).optional(),
+    /** Free-form generator/asset/shape arguments, interpreted by the lowering pass. */
     args: z.record(z.unknown()).optional(),
   })
   .strict();
