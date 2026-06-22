@@ -31,6 +31,9 @@ export const ProjectManifestSchema = z
     engine: z.string(),
     /** Library deps this project pins (name@version refs; hashes live in project.lock). */
     deps: z.array(z.string()).default([]),
+    /** Source artifacts VENDORED into the bundle (relative paths under assets/) so the project is
+     *  self-contained and renders without the shared library (cf. OTIO .otiod media copy). */
+    assets: z.array(z.string()).default([]),
     /** Generated outputs (relative paths under the project; gitignored on disk). */
     outputs: z
       .object({ video: z.string().optional(), thumbnail: z.string().optional() })

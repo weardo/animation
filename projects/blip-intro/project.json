@@ -2,8 +2,8 @@
   "project_version": "1.0",
   "id": "blip-intro",
   "name": "Meet Blip",
-  "created": "2026-06-22T03:28:25.031Z",
-  "updated": "2026-06-22T03:28:25.031Z",
+  "created": "2026-06-22T03:34:26.450Z",
+  "updated": "2026-06-22T03:34:26.450Z",
   "config": {
     "w": 1920,
     "h": 1080,
@@ -19,6 +19,12 @@
     "bg_gradient@1.0.0",
     "axon_curve@1.0.0",
     "blip@1.0.0"
+  ],
+  "assets": [
+    "assets/bg_gradient.svg",
+    "assets/axon_curve.svg",
+    "assets/characters/blip/blip.spec.json",
+    "assets/characters/blip/blip.preview.png"
   ],
   "outputs": {
     "video": "media/out.mp4",

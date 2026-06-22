@@ -13,7 +13,7 @@
 // DETERMINISM: scene.json is the deterministic engine input; gl:'angle' (procedural scenes are SVG/
 // DOM-deterministic — NEVER software GL, which balloons Chromium CacheStorage and fills the disk).
 
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync } from 'node:fs';
 import { resolve as resolvePath, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
@@ -70,11 +70,51 @@ function parseArgs(argv: string[]): Args {
   return { target: positional[0] ?? 'examples/character.yaml', id: flag('--project'), name: flag('--name') };
 }
 
-/** Bundle + select + render a Scene IR to an mp4. Shared by both modes. */
-async function renderScene(sceneIR: SceneIR, videoOut: string): Promise<{ frames: number; w: number; h: number; fps: number }> {
+/**
+ * Vendor the project's source artifacts into `assets/` so the bundle is SELF-CONTAINED and renders
+ * without the shared library (cf. OTIO .otiod media copy / dotLottie asset bundling). Copies:
+ *   • every `asset://…` file the scene references (from public/) → assets/<path>  (runtime-needed)
+ *   • each procedural character's source spec + preview (from library/) → assets/characters/<id>/
+ * Returns the vendored relative paths (recorded in the manifest). assets/ doubles as the render
+ * publicDir, so the procedural spec (already inlined in scene.json) + these files are all it needs.
+ */
+function vendorAssets(sceneIR: SceneIR, paths: ProjectPaths): string[] {
+  const vendored: string[] = [];
+  const copy = (src: string, relInAssets: string): void => {
+    if (!existsSync(src)) return;
+    const dst = resolvePath(paths.dir, 'assets', relInAssets);
+    mkdirSync(dirname(dst), { recursive: true });
+    copyFileSync(src, dst);
+    vendored.push(`assets/${relInAssets}`);
+  };
+  // 1. asset:// files referenced anywhere in the scene (served from public/ at runtime)
+  const uris = new Set<string>();
+  JSON.stringify(sceneIR, (_k, v) => {
+    if (typeof v === 'string' && v.startsWith('asset://')) uris.add(v);
+    return v;
+  });
+  for (const uri of uris) {
+    const rel = uri.replace(/^asset:\/\//, '').split('#')[0] ?? '';
+    if (rel) copy(resolvePath(PROJECT_ROOT, 'public', rel), rel);
+  }
+  // 2. procedural character source (spec drives the look; spec is also inlined in scene.json)
+  const rigs = (sceneIR.defs?.rigs ?? {}) as Record<string, { kind?: string; uri?: string }>;
+  for (const def of Object.values(rigs)) {
+    if (def.kind === 'procedural' && def.uri) {
+      const id = def.uri.replace(/^proc:\/\//, '').split('/')[0] ?? '';
+      for (const f of [`${id}.spec.json`, `${id}.preview.png`]) {
+        copy(resolvePath(PROJECT_ROOT, 'library', 'characters', id, f), `characters/${id}/${f}`);
+      }
+    }
+  }
+  return vendored;
+}
+
+/** Bundle + select + render a Scene IR to an mp4, serving assets from `publicDir`. */
+async function renderScene(sceneIR: SceneIR, videoOut: string, publicDir: string): Promise<{ frames: number; w: number; h: number; fps: number }> {
   const serveUrl = await bundle({
     entryPoint: REMOTION_ENTRY,
-    publicDir: resolvePath(PROJECT_ROOT, 'public'),
+    publicDir,
     webpackOverride: (config) => ({
       ...config,
       resolve: {
@@ -144,6 +184,8 @@ async function main(): Promise<void> {
     writeSource(paths, readFileSync(storyPath, 'utf8'));
     writeSceneIR(paths, sceneIR);
     writeFileSync(paths.lock, JSON.stringify(library.buildLock(refs), null, 2) + '\n', 'utf8');
+    const assets = vendorAssets(sceneIR, paths); // make the bundle self-contained
+    console.log(`[render] vendored ${assets.length} source artifact(s) → projects/${id}/assets/`);
 
     const now = new Date().toISOString();
     const manifest: ProjectManifest = {
@@ -159,13 +201,14 @@ async function main(): Promise<void> {
       scene_ir_hash: objectHash(sceneIR),
       engine: ENGINE,
       deps: refs,
+      assets,
       outputs: { video: 'media/out.mp4', thumbnail: 'media/thumbnail.png' },
     };
     writeManifest(paths, manifest);
     console.log(`[render] project written → projects/${id}/`);
   }
 
-  const meta = await renderScene(sceneIR, paths.video);
+  const meta = await renderScene(sceneIR, paths.video, resolvePath(paths.dir, 'assets'));
   makeThumbnail(paths, Math.min(30, Math.max(0, meta.frames - 1)));
   console.log(`[render] done → ${paths.video}`);
 }
