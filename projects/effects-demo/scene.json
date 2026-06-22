@@ -1,0 +1,700 @@
+{
+  "scene_ir_version": "1.0",
+  "config": {
+    "w": 1920,
+    "h": 1080,
+    "fps": 30,
+    "duration_frames": 252
+  },
+  "defs": {
+    "palette": {
+      "bg": "#1b2a4a",
+      "bg2": "#24386b",
+      "accent": "#ffcf4d",
+      "accent2": "#4d9fff",
+      "ink": "#0d1b33",
+      "light": "#fff6e0",
+      "shadow": "#0a1326"
+    },
+    "easings": {
+      "smooth": [
+        0.4,
+        0,
+        0.2,
+        1
+      ],
+      "pop": "backOut",
+      "backOut": [
+        0.34,
+        1.56,
+        0.64,
+        1
+      ],
+      "anticipate": [
+        0.36,
+        0,
+        0.66,
+        -0.56
+      ],
+      "easeIn": [
+        0.4,
+        0,
+        1,
+        1
+      ],
+      "easeOut": [
+        0,
+        0,
+        0.2,
+        1
+      ],
+      "linear": [
+        0,
+        0,
+        1,
+        1
+      ]
+    },
+    "assets": {
+      "bg_gradient": {
+        "uri": "asset://bg_gradient.svg",
+        "kind": "svg"
+      }
+    },
+    "rigs": {
+      "narrator": {
+        "uri": "proc://blip",
+        "provider": "blob-creature",
+        "spec": {
+          "id": "blip",
+          "name": "Blip",
+          "palette": {
+            "body": "#4aa3ff",
+            "bodyDark": "#2f86e0",
+            "ink": "#16243f",
+            "belly": "#d6ecff",
+            "accent": "#ffce4a",
+            "white": "#ffffff",
+            "cheek": "#ff7eb0"
+          },
+          "head": {
+            "r": 66,
+            "cy": -66
+          },
+          "body": {
+            "rx": 70,
+            "ry": 68,
+            "cy": 28
+          },
+          "belly": {
+            "rx": 42,
+            "ry": 36,
+            "cy": 48
+          },
+          "eyes": {
+            "spacing": 26,
+            "cy": -74,
+            "r": 17,
+            "pupil": 8
+          },
+          "beak": {
+            "show": true,
+            "width": 24,
+            "depth": 16,
+            "cy": -50
+          },
+          "cheeks": {
+            "show": true,
+            "r": 9,
+            "spacing": 46,
+            "cy": -50
+          },
+          "arms": {
+            "width": 18,
+            "length": 66,
+            "shoulderY": 6,
+            "rest": 14
+          },
+          "legs": {
+            "width": 20,
+            "height": 40,
+            "spacing": 24,
+            "footRx": 23,
+            "footRy": 12,
+            "footCy": 120
+          },
+          "motion": {
+            "bob": 5,
+            "swayDeg": 1.6,
+            "breathe": 0.03,
+            "waveRaise": 150
+          }
+        }
+      }
+    }
+  },
+  "audio": [],
+  "scenes": [
+    {
+      "id": "glow_and_grade",
+      "at": 0,
+      "duration_frames": 90,
+      "labels": {
+        "reveal": 45
+      },
+      "camera": {
+        "position": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": [
+                0,
+                -20
+              ],
+              "e": "smooth"
+            },
+            {
+              "t": 90,
+              "s": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        "zoom": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": 0.92,
+              "e": "smooth"
+            },
+            {
+              "t": 90,
+              "s": 1
+            }
+          ]
+        }
+      },
+      "layers": [
+        {
+          "type": "asset",
+          "id": "L_bg",
+          "z": 0,
+          "ref": "bg_gradient",
+          "parallax": 0.2
+        },
+        {
+          "type": "generator",
+          "id": "L_gen_scatter_stars",
+          "z": 1,
+          "effects": [
+            {
+              "kind": "blur",
+              "radius": 3
+            },
+            {
+              "kind": "color_grade",
+              "brightness": 0.8,
+              "saturate": 1.4,
+              "hue": 18
+            }
+          ],
+          "gen": "scatter",
+          "seed": 1828393154,
+          "params": {
+            "motif": "star",
+            "count": 90,
+            "size": [
+              2,
+              6
+            ],
+            "colors": [
+              "light",
+              "accent"
+            ],
+            "anim": "twinkle",
+            "anim_speed": 0.4,
+            "opacity": 0.85,
+            "effects": [
+              {
+                "kind": "blur",
+                "radius": 3
+              },
+              {
+                "kind": "color_grade",
+                "brightness": 0.8,
+                "saturate": 1.4,
+                "hue": 18
+              }
+            ]
+          }
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_hero_star",
+          "z": 12,
+          "effects": [
+            {
+              "kind": "glow",
+              "color": "#ffd27f",
+              "radius": 12,
+              "intensity": 0.9
+            }
+          ],
+          "shape": {
+            "kind": "star",
+            "points": 5,
+            "innerRadius": 55,
+            "outerRadius": 120
+          },
+          "fill": {
+            "a": 0,
+            "k": "accent"
+          },
+          "stroke": {
+            "color": "light",
+            "width": 5
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                960,
+                540
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 90
+            }
+          }
+        },
+        {
+          "type": "rig",
+          "id": "L_narr",
+          "z": 10,
+          "ref": "narrator",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                960,
+                669.6
+              ]
+            },
+            "scale": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "pop"
+                },
+                {
+                  "t": 12,
+                  "s": 100
+                }
+              ]
+            },
+            "opacity": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "pop"
+                },
+                {
+                  "t": 12,
+                  "s": 100
+                }
+              ]
+            }
+          },
+          "rig_state": {
+            "clips": [
+              {
+                "anim": "idle",
+                "loop": true
+              },
+              {
+                "anim": "wave",
+                "loop": false,
+                "at": 36
+              },
+              {
+                "anim": "idle",
+                "loop": true,
+                "at": 84
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "ripple_and_vignette",
+      "at": 72,
+      "duration_frames": 90,
+      "labels": {
+        "reveal": 45
+      },
+      "camera": {
+        "position": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": [
+                0,
+                0
+              ],
+              "e": "smooth"
+            },
+            {
+              "t": 90,
+              "s": [
+                60,
+                0
+              ]
+            }
+          ]
+        },
+        "zoom": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": 1,
+              "e": "smooth"
+            },
+            {
+              "t": 90,
+              "s": 1.15
+            }
+          ]
+        }
+      },
+      "layers": [
+        {
+          "type": "asset",
+          "id": "L_bg",
+          "z": 0,
+          "ref": "bg_gradient",
+          "parallax": 0.2
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_rippled",
+          "z": 12,
+          "effects": [
+            {
+              "kind": "turbulence",
+              "frequency": 0.03,
+              "scale": 16,
+              "octaves": 2,
+              "seed": 7,
+              "animate": 1
+            },
+            {
+              "kind": "drop_shadow",
+              "dx": 0,
+              "dy": 14,
+              "blur": 18,
+              "color": "#0a0e18",
+              "opacity": 0.5
+            },
+            {
+              "kind": "grain",
+              "amount": 0.14,
+              "size": 0.9,
+              "seed": 11
+            },
+            {
+              "kind": "vignette",
+              "amount": 0.45,
+              "softness": 0.5
+            }
+          ],
+          "shape": {
+            "kind": "circle",
+            "radius": 130
+          },
+          "fill": {
+            "gradient": {
+              "type": "radial",
+              "stops": [
+                [
+                  "light",
+                  0
+                ],
+                [
+                  "accent2",
+                  1
+                ]
+              ]
+            }
+          },
+          "stroke": {
+            "color": "ink",
+            "width": 4
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                960,
+                540
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 100
+            }
+          }
+        },
+        {
+          "type": "rig",
+          "id": "L_narr",
+          "z": 10,
+          "ref": "narrator",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                960,
+                669.6
+              ]
+            },
+            "scale": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "pop"
+                },
+                {
+                  "t": 12,
+                  "s": 100
+                }
+              ]
+            },
+            "opacity": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "pop"
+                },
+                {
+                  "t": 12,
+                  "s": 100
+                }
+              ]
+            }
+          },
+          "rig_state": {
+            "clips": [
+              {
+                "anim": "idle",
+                "loop": true
+              },
+              {
+                "anim": "wave",
+                "loop": false,
+                "at": 36
+              },
+              {
+                "anim": "idle",
+                "loop": true,
+                "at": 84
+              }
+            ]
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 18
+      }
+    },
+    {
+      "id": "motion",
+      "at": 162,
+      "duration_frames": 90,
+      "labels": {
+        "reveal": 45
+      },
+      "camera": {
+        "position": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": [
+                0,
+                0
+              ],
+              "e": "smooth"
+            },
+            {
+              "t": 90,
+              "s": [
+                60,
+                0
+              ]
+            }
+          ]
+        },
+        "zoom": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": 1,
+              "e": "smooth"
+            },
+            {
+              "t": 90,
+              "s": 1.15
+            }
+          ]
+        }
+      },
+      "layers": [
+        {
+          "type": "asset",
+          "id": "L_bg",
+          "z": 0,
+          "ref": "bg_gradient",
+          "parallax": 0.2
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_dart",
+          "z": 12,
+          "effects": [
+            {
+              "kind": "motion_blur",
+              "layers": 6,
+              "lagInFrames": 1,
+              "trailOpacity": 0.45
+            }
+          ],
+          "shape": {
+            "kind": "triangle",
+            "length": 150,
+            "direction": "up"
+          },
+          "fill": {
+            "a": 0,
+            "k": "accent"
+          },
+          "stroke": {
+            "color": "light",
+            "width": 4
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                480,
+                540
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 80
+            },
+            "rotation": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "smooth"
+                },
+                {
+                  "t": 50,
+                  "s": 360
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "rig",
+          "id": "L_narr",
+          "z": 10,
+          "ref": "narrator",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                960,
+                669.6
+              ]
+            },
+            "scale": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "pop"
+                },
+                {
+                  "t": 12,
+                  "s": 100
+                }
+              ]
+            },
+            "opacity": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "pop"
+                },
+                {
+                  "t": 12,
+                  "s": 100
+                }
+              ]
+            }
+          },
+          "rig_state": {
+            "clips": [
+              {
+                "anim": "idle",
+                "loop": true
+              },
+              {
+                "anim": "wave",
+                "loop": false,
+                "at": 36
+              },
+              {
+                "anim": "idle",
+                "loop": true,
+                "at": 84
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "provenance": {
+    "story_ir_hash": "sha1:aeeefa055585ba62a09af2d235412d2ebefb62c6",
+    "passes": [
+      "lower@1.0"
+    ]
+  }
+}

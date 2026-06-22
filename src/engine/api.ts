@@ -4,10 +4,10 @@
 // single, swappable seam between "capability authored as a plugin" and "the registries the core owns"
 // (Blender-style register/unregister; ADR-005 "Plugin contract").
 //
-// Today TWO register methods are live (generators, providers — the existing built-ins are core
-// plugins) and FOUR are STUBS (effects / transitions / layer types / passes) — present with the right
-// shape so future plugins compile and wire in without a core change, but with no contributors yet. Do
-// NOT implement the stub capabilities now.
+// Today THREE register methods are live (generators, providers, effects — the existing built-ins plus
+// the core-effects plugin, ADR-003 #2) and THREE are STUBS (transitions / layer types / passes) —
+// present with the right shape so future plugins compile and wire in without a core change, but with
+// no contributors yet. Do NOT implement the stub capabilities now.
 //
 // ADR-006: the engine specializes in NOTHING. There is no "character style" extension point — a
 // "character" is just one PROVIDER among many. A provider renders a `rig` layer from an OPAQUE spec
@@ -16,10 +16,60 @@
 // DETERMINISM: the API only performs registration (pure data wiring). It owns no clock and no
 // per-frame state; contributed implementations carry the determinism contract (CLAUDE.md r.1).
 
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import type { Easings, RigDef, RigLayer } from '../ir/index.js';
 import type { GeneratorComponent } from '../generators/types.js';
 import { effects, generators, layerTypes, passes, providers, transitions } from './registry.js';
+
+/**
+ * An EFFECT (ADR-003 #2) is the engine's generic, composable per-layer look op. It is contributed by
+ * a plugin into the `effects` extension point and consumed by the compositor when it walks a layer's
+ * Scene-IR `effects[]` stack. The engine owns ONLY this generic contract — it knows nothing about any
+ * specific effect (blur/glow/grade/…); those live entirely in the `core-effects` plugin (no domain
+ * leakage to core, ADR-005/006).
+ *
+ * An effect's {@link EffectImpl.build} is a PURE function of (params, frame) → an {@link EffectContribution}.
+ * Three independent contribution channels compose cleanly with the existing §11.1 shading + parallax:
+ *
+ *   1. `filterPrimitives` — SVG <filter> primitive(s) (feGaussianBlur, feColorMatrix, feTurbulence +
+ *      feDisplacementMap, …). The compositor CHAINS them: it threads each effect's input/output
+ *      `result` names so the stack composites in `effects[]` order inside one deterministic <filter>.
+ *   2. `cssFilter` — a CSS `filter` fragment (e.g. `brightness(1.2)`), concatenated in order. Used for
+ *      cheap ops that have a direct CSS form (and for silhouette-following drop-shadow glow).
+ *   3. `wrap` — wraps the whole layer subtree (used by motion_blur's @remotion/motion-blur <Trail>).
+ *
+ * DETERMINISM (CLAUDE.md r.1): `build` is a pure function of (params, frame) — no clock, no RNG. The
+ * frame is passed IN so an effect's parameters can themselves be animated by the compositor; the effect
+ * never reads a clock. SVG/CSS filters + motion-blur are frame-deterministic on the CPU raster default.
+ */
+export interface EffectContribution {
+  /**
+   * SVG <filter> primitive builder(s), each a pure function of (inResult, outResult) → a filter
+   * primitive node. `inResult` is the prior stage's output (or `SourceGraphic` for the first); the
+   * builder MUST set its `in=` to `inResult` and its `result=` to `outResult` so the compositor can
+   * chain effects in `effects[]` order. May contribute several primitives (e.g. turbulence+displace).
+   */
+  filterPrimitives?: ReadonlyArray<(inResult: string, outResult: string) => ReactNode>;
+  /** A CSS `filter` fragment (e.g. "brightness(1.2) saturate(0.8)"), concatenated in stack order. */
+  cssFilter?: string;
+  /** Wrap the entire layer subtree (e.g. motion_blur's <Trail>). Applied outermost, in stack order. */
+  wrap?: (node: ReactNode) => ReactNode;
+}
+
+/**
+ * An effect implementation registered under its Scene-IR `kind` (e.g. "blur", "glow", "motion_blur").
+ * The plugin narrows the loose `{ kind, ...params }` IR entry with its OWN Zod (`parse`) and produces
+ * a deterministic {@link EffectContribution} from the validated params at `frame`.
+ */
+export interface EffectImpl {
+  /**
+   * Validate + narrow this effect's loose IR params (the `{ kind, ...params }` object minus `kind`).
+   * Throws on invalid params (loud failure, matching the registry contract). Returns the typed params.
+   */
+  parse(params: Record<string, unknown>): unknown;
+  /** Pure (params, frame) → contribution. `params` is the value returned by {@link EffectImpl.parse}. */
+  build(params: unknown, frame: number): EffectContribution;
+}
 
 /**
  * A PROVIDER renders a Scene-IR `rig` layer (ADR-006). It is a React component the compositor
@@ -57,10 +107,15 @@ export interface EngineAPI {
    */
   registerProvider(id: string, component: ProviderComponent): void;
 
-  // --- STUB extension points (shape only; no consumers wired yet — do not implement now) ---
+  /**
+   * Register an `effects[]` channel op under its Scene-IR `kind` (ADR-003 #2). The {@link EffectImpl}
+   * validates its own params (in-plugin Zod) and produces a deterministic {@link EffectContribution}
+   * (SVG <filter> primitives / CSS filter fragment / layer wrapper) the compositor composites in order.
+   * The core owns ONLY the generic registry + this contract; specific effects live in a plugin.
+   */
+  registerEffect(kind: string, impl: EffectImpl): void;
 
-  /** STUB: register an effects[] channel op. No consumer yet. */
-  registerEffect(name: string, effect: unknown): void;
+  // --- STUB extension points (shape only; no consumers wired yet — do not implement now) ---
 
   /** STUB: register a scene-boundary transition presentation. No consumer yet. */
   registerTransition(kind: string, transition: unknown): void;
@@ -79,7 +134,7 @@ export interface EngineAPI {
 export const engineApi: EngineAPI = {
   registerGenerator: (name, component) => void generators.register(name, component),
   registerProvider: (id, component) => void providers.register(id, component),
-  registerEffect: (name, effect) => void effects.register(name, effect),
+  registerEffect: (kind, impl) => void effects.register(kind, impl),
   registerTransition: (kind, transition) => void transitions.register(kind, transition),
   registerLayerType: (type, impl) => void layerTypes.register(type, impl),
   registerPass: (name, pass) => void passes.register(name, pass),

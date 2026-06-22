@@ -13,7 +13,7 @@
 // the resolved capability set is identical across cold processes (CLAUDE.md r.1).
 
 import type { GeneratorComponent } from '../generators/types.js';
-import type { ProviderComponent } from './api.js';
+import type { EffectImpl, ProviderComponent } from './api.js';
 
 /** A generic, typed name→value registry. The single building block for every extension point. */
 export class Registry<T> {
@@ -67,8 +67,9 @@ export class Registry<T> {
 // `widget`) renders a `rig` layer from an OPAQUE spec it validates itself. Core knows no "character"/
 // "style" — only "a rig layer → a provider id → the provider renders it".
 //
-// FOUR are STUBS — defined now with the SAME shape so future backlog items (ADR-003 / ADR-005) plug
-// in WITHOUT touching the core, but left empty (no contributors yet). Do NOT implement these now.
+// THREE are populated today (generators, providers, effects — effects via the core-effects plugin,
+// ADR-003 #2). THREE remain STUBS — defined now with the SAME shape so future backlog items plug in
+// WITHOUT touching the core, but left empty (no contributors yet). Do NOT implement these now.
 
 /** Generator implementations: `gen` name → component (e.g. "scatter", "water"). */
 export const generators = new Registry<GeneratorComponent>('generator');
@@ -76,10 +77,14 @@ export const generators = new Registry<GeneratorComponent>('generator');
 /** Providers: provider id → component (e.g. "blob-creature", "dragonbones", future "chart"). */
 export const providers = new Registry<ProviderComponent>('provider');
 
-// --- STUB extension points (defined, empty; future capability plugs in here). ---
+/**
+ * Effects: `effects[]` channel op kind → {@link EffectImpl} (e.g. "blur", "glow", "motion_blur").
+ * Populated by the core-effects plugin (ADR-003 #2). A registered effect validates its own params and
+ * produces a deterministic SVG-filter / CSS-filter / wrapper contribution the compositor composites.
+ */
+export const effects = new Registry<EffectImpl>('effect');
 
-/** STUB: effects[] channel ops (SVG-filter / motion-blur packs). Shape only; no contributors yet. */
-export const effects = new Registry<unknown>('effect');
+// --- STUB extension points (defined, empty; future capability plugs in here). ---
 
 /** STUB: scene-boundary transition presentations. Shape only; no contributors yet. */
 export const transitions = new Registry<unknown>('transition');

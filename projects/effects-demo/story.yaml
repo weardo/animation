@@ -1,0 +1,139 @@
+# examples/effects-demo.yaml — the ADR-003 #2 "effects[] channel" vertical slice (Tier A, deterministic).
+#
+# "Families are sockets; libraries are plugs": the per-layer `effects[]` stack is the engine's generic
+# `effects` extension point (a STUB in core) populated by the `core-effects` PLUGIN — every concrete
+# effect (blur/glow/drop_shadow/color_grade/turbulence/vignette/grain/motion_blur) lives in the plugin,
+# not the core. The compositor (src/render/effects.tsx) walks each layer's `effects[]` IN ORDER and
+# composes three deterministic channels: chained SVG <filter> primitives, concatenated CSS filter
+# fragments, and outermost wrappers (motion_blur's @remotion/motion-blur <Trail>, vignette overlay).
+#
+# This 3-scene story authors `effects[]` directly on shape/generator layers (via `args.effects`) so
+# the lowering pass passes them straight through to the Scene-IR layer (validated by each registered
+# effect's own Zod at render time). Each scene exercises a different slice of the stack:
+#
+#   SCENE 1 — GLOW + a BLURRED, COLOR-GRADED background.  A gold STAR carries a single `glow`
+#     (emissive bloom via feGaussianBlur + feColorMatrix flood + feMerge). Behind it a starfield
+#     scatter is pushed into depth with a `blur` then a cool `color_grade` (lower brightness, higher
+#     saturate, slight hue shift) — proving SVG-filter (blur) + CSS-filter (color_grade) compose in one
+#     layer's stack.
+#
+#   SCENE 2 — TURBULENCE + a DROP_SHADOW + GRAIN, under a VIGNETTE.  A circle ripples through a
+#     `turbulence` displacement (feTurbulence + feDisplacementMap, seeded → deterministic), then a
+#     `drop_shadow` (CSS) casts it off the surface, then `grain` (seeded feTurbulence overlay) adds
+#     film texture, then a `vignette` (wrapper overlay) darkens the corners — a full multi-channel stack
+#     on ONE layer (SVG chain → CSS → SVG → wrapper), composed in authored order.
+#
+#   SCENE 3 — MOTION_BLUR on a moving element.  A triangle is animated across the frame and wrapped in
+#     `motion_blur` (@remotion/motion-blur <Trail>): N lagged copies fade over the trail — the canonical
+#     fast-move smear, frame-deterministic (Trail samples prior frames, no clock/RNG).
+#
+# DETERMINISM: pure SVG/DOM (no Pixi, no software GL) → CPU raster renders byte-identical. Every filter
+# id derives from the layer id; turbulence/grain seed their feTurbulence with a fixed `seed`; Trail is a
+# pure function of frame. Build it:
+#   tsx src/cli/render.ts examples/effects-demo.yaml --project effects-demo --name "Effects" --frames auto
+
+title: "Effects"
+
+characters:
+  blip:
+    rig: blip
+    palette: warm
+
+beats:
+  # ----------------------------------------------------------------------------------------------
+  # SCENE 1 — a glowing STAR over a blurred + color-graded starfield. Shows glow (SVG filter chain)
+  # plus a two-effect stack (blur → color_grade = SVG filter + CSS filter) composing on one layer.
+  # ----------------------------------------------------------------------------------------------
+  - id: glow_and_grade
+    say: "An effect is a socket; the plugin is the plug."
+    show:
+      # A starfield pushed into depth: blurred (SVG feGaussianBlur) THEN color-graded (CSS filter).
+      - generator: scatter
+        as: stars
+        args:
+          motif: star
+          count: 90
+          size: [2, 6]
+          colors: [light, accent]
+          anim: twinkle
+          anim_speed: 0.4
+          opacity: 0.85
+          effects:
+            - { kind: blur, radius: 3 }
+            - { kind: color_grade, brightness: 0.8, saturate: 1.4, hue: 18 }
+
+      # A gold STAR with an emissive GLOW bloom (feGaussianBlur + feColorMatrix flood + feMerge).
+      - shape: star
+        as: hero_star
+        at: center
+        args:
+          z: 12
+          scale: 90
+          params: { points: 5, innerRadius: 55, outerRadius: 120 }
+          fill: { a: 0, k: accent }
+          stroke: { color: light, width: 5 }
+          effects:
+            - { kind: glow, color: "#ffd27f", radius: 12, intensity: 0.9 }
+    camera: establishing
+    duration: { seconds: 3 }
+    transition: { kind: fade, duration: 18 }
+
+  # ----------------------------------------------------------------------------------------------
+  # SCENE 2 — a rippling CIRCLE with a full multi-channel stack: turbulence (SVG displacement) →
+  # drop_shadow (CSS) → grain (SVG overlay) → vignette (wrapper). Composed in authored order, proving
+  # all three contribution channels chain cleanly on a single layer.
+  # ----------------------------------------------------------------------------------------------
+  - id: ripple_and_vignette
+    say: "Stack them in order — geometry, light, and texture together."
+    show:
+      - shape: circle
+        as: rippled
+        at: center
+        args:
+          z: 12
+          scale: 100
+          params: { radius: 130 }
+          fill:
+            gradient:
+              type: radial
+              stops: [[light, 0.0], [accent2, 1.0]]
+          stroke: { color: ink, width: 4 }
+          effects:
+            # 1. ripple the geometry (seeded feTurbulence + feDisplacementMap; animate flows the noise)
+            - { kind: turbulence, frequency: 0.03, scale: 16, octaves: 2, seed: 7, animate: 1 }
+            # 2. cast it off the surface (CSS drop-shadow)
+            - { kind: drop_shadow, dx: 0, dy: 14, blur: 18, color: "#0a0e18", opacity: 0.5 }
+            # 3. film grain over the silhouette (seeded feTurbulence overlay)
+            - { kind: grain, amount: 0.14, size: 0.9, seed: 11 }
+            # 4. darken the corners (radial-gradient wrapper overlay)
+            - { kind: vignette, amount: 0.45, softness: 0.5 }
+    camera: slow_push_in
+    duration: { seconds: 3 }
+    transition: { kind: fade, duration: 18 }
+
+  # ----------------------------------------------------------------------------------------------
+  # SCENE 3 — a MOTION-BLURRED moving TRIANGLE. The triangle sweeps across the frame and is wrapped in
+  # @remotion/motion-blur <Trail>: lagged, fading copies smear the fast move (frame-deterministic).
+  # ----------------------------------------------------------------------------------------------
+  - id: motion
+    say: "And when it moves fast — it leaves a trail."
+    show:
+      - shape: triangle
+        as: dart
+        at: left
+        args:
+          z: 12
+          scale: 80
+          params: { length: 150, direction: up }
+          fill: { a: 0, k: accent }
+          stroke: { color: light, width: 4 }
+          # Sweep across the frame so the motion blur has something to smear (StyleKit-eased move).
+          rotation:
+            a: 1
+            k:
+              - { t: 0, s: 0, e: smooth }
+              - { t: 50, s: 360 }
+          effects:
+            - { kind: motion_blur, layers: 6, lagInFrames: 1, trailOpacity: 0.45 }
+    camera: slow_push_in
+    duration: { seconds: 3 }

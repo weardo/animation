@@ -22,6 +22,7 @@ import {
   type RigLayer,
   type GeneratorLayer,
   type ShapeLayer,
+  type Effect,
   type RigClip,
   type Transform,
   type AssetDef,
@@ -303,7 +304,8 @@ function buildGeneratorLayer(
   id: string,
   gen: string,
   seed: number,
-  params: Record<string, unknown>
+  params: Record<string, unknown>,
+  effects?: Effect[]
 ): GeneratorLayer {
   return {
     type: 'generator',
@@ -314,6 +316,9 @@ function buildGeneratorLayer(
     seed,
     // Free-form, validated by the generator's own Zod schema at render time. Empty args → defaults.
     params,
+    // Authored per-layer effects[] stack (ADR-003 #2) — pass straight through; each entry's params
+    // are validated by its registered effect's own Zod at render time (CLAUDE.md rule 5).
+    ...(effects && effects.length > 0 ? { effects } : {}),
   };
 }
 
@@ -344,11 +349,18 @@ function buildShapeLayer(item: ShowItem, index: number): LoweredLayer {
       ? (args['shape'] as ShapeLayer['shape'] | undefined)
       : ({ kind, ...((args['params'] as Record<string, unknown>) ?? {}) } as ShapeLayer['shape']);
 
-  // Transform: static scale/rotation/opacity from args (position comes from the anchor via layout).
+  // Transform: scale/rotation/opacity from args (position comes from the anchor via layout). A bare
+  // number is wrapped as a static `{a:0,k}` channel; an authored `{a,k}` object passes straight through
+  // (so an effect like motion_blur has a real animated move to smear). The ShapeLayer evaluates these.
   const transform: Transform = {};
-  if (typeof args['scale'] === 'number') transform.scale = { a: 0, k: args['scale'] as number };
-  if (typeof args['rotation'] === 'number') transform.rotation = { a: 0, k: args['rotation'] as number };
-  if (typeof args['opacity'] === 'number') transform.opacity = { a: 0, k: args['opacity'] as number };
+  const channel = (v: unknown): Transform['scale'] | undefined =>
+    typeof v === 'number' ? { a: 0, k: v } : v && typeof v === 'object' ? (v as Transform['scale']) : undefined;
+  const scaleCh = channel(args['scale']);
+  const rotationCh = channel(args['rotation']);
+  const opacityCh = channel(args['opacity']);
+  if (scaleCh) transform.scale = scaleCh;
+  if (rotationCh) transform.rotation = rotationCh;
+  if (opacityCh) transform.opacity = opacityCh;
 
   const layer: ShapeLayer = {
     type: 'shape',
@@ -358,6 +370,10 @@ function buildShapeLayer(item: ShowItem, index: number): LoweredLayer {
     ...(morph ? { morph } : {}),
     ...(args['fill'] !== undefined ? { fill: args['fill'] as ShapeLayer['fill'] } : {}),
     ...(args['stroke'] !== undefined ? { stroke: args['stroke'] as ShapeLayer['stroke'] } : {}),
+    // Authored per-layer effects[] stack (ADR-003 #2): pass `args.effects` straight through to the
+    // Scene-IR layer `effects[]`. Each entry is `{ kind, ...params }`; the registered effect validates
+    // its own params at render time (CLAUDE.md rule 5). Layers without effects are left untouched.
+    ...(Array.isArray(args['effects']) ? { effects: args['effects'] as Effect[] } : {}),
     ...(Object.keys(transform).length > 0 ? { transform } : {}),
   };
 
@@ -447,7 +463,9 @@ function buildScene(
       const gen = s.generator;
       const handle = s.as ?? `${gen}_${i}`;
       const genSeed = deriveSeed(hash, `${beat.id}:${gen}:${handle}`);
-      return buildGeneratorLayer(`L_gen_${gen}_${handle}`, gen, genSeed, s.args ?? {});
+      const gArgs = (s.args ?? {}) as Record<string, unknown>;
+      const gEffects = Array.isArray(gArgs['effects']) ? (gArgs['effects'] as Effect[]) : undefined;
+      return buildGeneratorLayer(`L_gen_${gen}_${handle}`, gen, genSeed, s.args ?? {}, gEffects);
     });
 
   // SHAPE layers (ADR-003 #1): every `show[].shape` item becomes a first-class Scene-IR shape layer

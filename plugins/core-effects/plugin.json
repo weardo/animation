@@ -1,0 +1,10 @@
+{
+  "id": "core-effects",
+  "version": "1.0.0",
+  "contributes": ["effects"],
+  "license": "MIT",
+  "provenance": {
+    "author": "animation-factory",
+    "source": "built-in"
+  }
+}

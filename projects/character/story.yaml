@@ -1,0 +1,28 @@
+# examples/character.yaml — M2.0 character slice: the code-generated "blip" rig as the lead.
+#
+# Replaces the M1 'starter' hand with a real, reusable flat-vector Kurzgesagt character (a blue blob
+# creature) built entirely from code (tools/gen-blip-rig.mjs) — bones hierarchy, blink/viseme
+# attachment swaps, and an AUTHORED FFD breathe/squash deform on the body mesh. The lowering pass
+# sequences its named clips (idle loop → wave → idle); the host RigLayer adds StyleKit liveness
+# (breathing, sway, Poisson blink) on top.
+#
+# Authored as semantic intent only (no frames/coordinates); the pipeline lowers it to a Scene IR and
+# Remotion renders it deterministically. Run: `npm run build:character`.
+
+title: "Meet Blip"
+
+characters:
+  blip:
+    rig: blip # → library characters/blip@1.0.0 (DragonBones 'blip' armature; idle/blink/wave)
+    palette: warm
+
+beats:
+  - id: b1
+    say: "Hi! I'm Blip — a code-generated neuron."
+    action:
+      - on: blip
+        do: wave # expressive clip with the authored FFD squash beat
+    show:
+      - generator: bead-string
+        as: neuron_chain # the neuron chain alongside the character
+    camera: slow_push_in

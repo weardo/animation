@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@remotion/cli": "4.0.481",
+    "@remotion/motion-blur": "^4.0.481",
     "@remotion/paths": "^4.0.481",
     "@remotion/renderer": "4.0.481",
     "@remotion/shapes": "^4.0.481",

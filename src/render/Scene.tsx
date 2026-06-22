@@ -28,6 +28,7 @@ import { providers } from '../engine/index.js';
 import { AssetLayer } from './AssetLayer.js';
 import { ShapeLayer } from './ShapeLayer.js';
 import { evalNumber, evalVec2 } from './eval.js';
+import { applyEffects, resolveEffects } from './effects.js';
 import type { Light } from './stylekit.js';
 import {
   ContactShadow,
@@ -204,10 +205,16 @@ const LayerView: React.FC<LayerViewProps> = ({ layer, defs, easings, parallaxOff
     sub
   );
 
+  // Authored per-layer effects[] stack (ADR-003 #2) — composited ON TOP of the §11.1 shading + the
+  // parallax wrappers, in `effects[]` order. Resolved through the engine `effects` registry (the
+  // core-effects plugin). Layers without `effects[]` are returned unchanged (backward-compatible).
+  const resolved = resolveEffects(layer.id, layer.effects, frame);
+  const composed = applyEffects(resolved, layer.id, shaded);
+
   return (
     <>
       {contact}
-      {shaded}
+      {composed}
     </>
   );
 };

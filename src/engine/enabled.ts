@@ -10,16 +10,20 @@
 import type { Plugin } from './plugin.js';
 import { coreGeneratorsPlugin } from '../../plugins/core-generators/index.js';
 import { coreRigsPlugin } from '../../plugins/core-rigs/index.js';
+import { coreEffectsPlugin } from '../../plugins/core-effects/index.js';
 import { blobCreaturePlugin } from '../../plugins/blob-creature/index.js';
 
 /**
  * The active core plugins, applied in order by `loadPlugins()`:
  *   • core-generators — all built-in generators (bead-string/scatter/water/particles/fire/crowd)
  *   • core-rigs       — the dragonbones provider
+ *   • core-effects    — the built-in `effects[]` channel ops (blur/glow/drop_shadow/color_grade/
+ *                       turbulence/displace/vignette/grain/motion_blur) (ADR-003 #2)
  *   • blob-creature   — the `blob-creature` provider (renders a rig layer from its opaque spec)
  */
 export const ENABLED_PLUGINS: readonly Plugin[] = [
   coreGeneratorsPlugin,
   coreRigsPlugin,
+  coreEffectsPlugin,
   blobCreaturePlugin,
 ];

@@ -21,6 +21,8 @@ export {
   type EngineAPI,
   type ProviderComponent,
   type ProviderProps,
+  type EffectImpl,
+  type EffectContribution,
 } from './api.js';
 
 // Plugin + manifest contract.
