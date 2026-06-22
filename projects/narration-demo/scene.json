@@ -316,25 +316,25 @@
     {
       "id": "narration-b1",
       "kind": "narration",
-      "src": "audio://audio/eca40af789994dc7.wav",
+      "src": "audio://audio/565b0ada8aad8a18.wav",
       "at": 0,
-      "duration_frames": 29,
+      "duration_frames": 58,
       "transcript": "Meet Blip."
     },
     {
       "id": "narration-b2",
       "kind": "narration",
-      "src": "audio://audio/ed0446bccf78b12b.wav",
+      "src": "audio://audio/5a24e17a3444ddd7.wav",
       "at": 120,
-      "duration_frames": 65,
+      "duration_frames": 74,
       "transcript": "Blip explores the neuron network."
     },
     {
       "id": "narration-b3",
       "kind": "narration",
-      "src": "audio://audio/f734d6bad83c6bd1.wav",
+      "src": "audio://audio/cf945a31aa866209.wav",
       "at": 240,
-      "duration_frames": 52,
+      "duration_frames": 78,
       "transcript": "And that is how it works."
     }
   ],
