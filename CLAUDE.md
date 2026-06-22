@@ -24,7 +24,9 @@ A code-driven, Kurzgesagt-style 2.5D animation pipeline: **a story script in →
 
 ## Repo layout
 
-`src/ir` (Zod IR) · `src/library` (registry/resolver/lockfile) · `src/pipeline` (passes) · `src/rig` (Pixi+DragonBones runtime) · `src/generators` (procedural) · `src/render` (compositor + Remotion entry) · `src/cli` · `library/` (catalog) · `examples/` (scripts) · `docs/` (spec, factory standard).
+`src/ir` (Zod IR) · `src/library` (registry/resolver/lockfile) · `src/factory` (data-driven asset gen: CharacterSpec → builder) · `src/project` (project bundle: manifest + scene + lock) · `src/pipeline` (passes) · `src/render` (compositor + Remotion entry + procedural/DragonBones rig providers) · `src/generators` (procedural) · `src/cli` · `library/` (shared asset catalog) · `projects/<id>/` (reproducible video bundles) · `examples/` (source scripts + specs) · `docs/` (spec, ADRs, factory standard).
+
+**Three pillars (ADR-001):** the **engine** (generic; renders any provider) · the **library** (shared, content-addressed, versioned reusable assets) · the **project** (`projects/<id>/`: one reproducible video = manifest + scene.json + project.lock + media). library : project :: npm package : app. Providers (procedural / dragonbones / …) sit behind one `AssetProvider`-style interface; procedural (SVG/DOM) is preferred — deterministic on any GL backend, no software-GL disk bloat.
 
 ---
 
