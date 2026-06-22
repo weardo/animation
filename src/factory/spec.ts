@@ -13,6 +13,12 @@ export const CharacterSpecSchema = z
   .object({
     id: z.string().min(1),
     name: z.string().min(1),
+    /**
+     * The character STYLE that builds this spec's markup (ADR-005 "Character styles"). Resolved at
+     * render time from the engine's `characterStyles` registry (a style ships as a plugin, e.g. the
+     * default `blob-creature`). Optional → defaults to `blob-creature` so existing specs are unchanged.
+     */
+    style: z.string().min(1).default('blob-creature'),
     /** Flat palette (Kurzgesagt: saturated body + dark ink outline + accent for beak/feet). */
     palette: z
       .object({

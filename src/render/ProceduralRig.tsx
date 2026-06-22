@@ -13,8 +13,8 @@ import React from 'react';
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from 'remotion';
 import type { Easings, RigLayer as RigLayerIR } from '../ir/index.js';
 import { evalNumber, evalVec2 } from './eval.js';
-import { characterMarkup } from '../factory/character.js';
 import { parseSpec, BLIP_SPEC, type CharacterSpec } from '../factory/spec.js';
+import { characterStyles } from '../engine/index.js';
 
 export interface ProceduralRigProps {
   layer: RigLayerIR;
@@ -45,7 +45,11 @@ export const ProceduralRig: React.FC<ProceduralRigProps> = ({ layer, spec, easin
   const opacityPct = evalNumber(t?.opacity, frame, easingTable, 100);
 
   const character = resolveSpec(spec);
-  const markup = characterMarkup(character, frame, fps, layer.rig_state.clips);
+  // ADR-005: resolve the character-STYLE builder from the engine registry (populated by the
+  // blob-creature plugin) by the spec's `style` (defaults to "blob-creature"). `get` throws loudly
+  // on an unknown style — no silent fallback.
+  const buildMarkup = characterStyles.get(character.style);
+  const markup = buildMarkup(character, frame, fps, layer.rig_state.clips);
 
   const wrapperStyle: React.CSSProperties = {
     position: 'absolute',

@@ -14,7 +14,15 @@
 // `renderMedia({ entryPoint: 'src/render/index.ts', composition: 'SceneIR' })`).
 
 import { registerRoot } from 'remotion';
+import { loadPlugins } from '../engine/index.js';
 import { RemotionRoot } from './Root.js';
+
+// ADR-005: load the enabled CORE plugins BEFORE registering the root, so the engine's extension-point
+// registries (generators / rig providers / character styles) are populated before any composition
+// renders inside the Remotion bundle. This is the one place the bundle entry turns the enabled-plugin
+// list (engine/enabled.ts) into resolved capability. Idempotent (last-wins) + pure data wiring, so it
+// preserves determinism (CLAUDE.md r.1) and the resolved set is identical across cold processes.
+loadPlugins();
 
 registerRoot(RemotionRoot);
 

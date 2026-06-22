@@ -1,33 +1,26 @@
-// Generator registry. Spec §10: "adding a generator = adding one module, no IR or pipeline
-// changes." The compositor resolves a Scene IR `generator.gen` string to a component via this map.
-// Registration is the ONLY wiring step a new generator needs (add-generator skill step 3).
+// Generator registry — now a thin DELEGATE over the engine's `generators` extension point (ADR-005).
+// The canonical name→component map lives in src/engine/registry.ts and is POPULATED by the
+// core-generators plugin (plugins/core-generators) via the EngineAPI — there is NO parallel registry.
+// This module keeps the historical helper API (getGenerator/hasGenerator/generatorNames/
+// registerGenerator) so existing consumers (GeneratorLayer, the add-generator skill) are unchanged,
+// but every call now reads/writes the single engine registry.
+//
+// Spec §10: "adding a generator = adding one module, no IR or pipeline changes." Under ADR-005 the
+// one wiring step is `api.registerGenerator` inside a (core or third-party) plugin, replacing the
+// former static map here. The engine Registry's `get` already throws loudly on an unknown name (no
+// silent fallback), preserving the old contract.
 
 import type { GeneratorComponent } from './types.js';
-import { BeadString } from './bead-string.js';
-import { Scatter } from './scatter.js';
-import { Water } from './water.js';
-import { Particles } from './particles.js';
-import { Fire } from './fire.js';
-import { Crowd } from './crowd.js';
-
-/** Name → component. Keys MUST match the Scene IR `generator.gen` field (e.g. "bead-string"). */
-const REGISTRY: Record<string, GeneratorComponent> = {
-  'bead-string': BeadString,
-  scatter: Scatter,
-  water: Water,
-  particles: Particles,
-  fire: Fire,
-  crowd: Crowd,
-};
+import { generators } from '../engine/registry.js';
 
 /** All registered generator names (for diagnostics / validation). */
 export function generatorNames(): string[] {
-  return Object.keys(REGISTRY);
+  return generators.names();
 }
 
 /** True if a generator name is registered. */
 export function hasGenerator(name: string): boolean {
-  return Object.prototype.hasOwnProperty.call(REGISTRY, name);
+  return generators.has(name);
 }
 
 /**
@@ -35,20 +28,13 @@ export function hasGenerator(name: string): boolean {
  * (never silently renders nothing) — consistent with the "no silent fallbacks" rule.
  */
 export function getGenerator(name: string): GeneratorComponent {
-  const gen = REGISTRY[name];
-  if (!gen) {
-    throw new Error(
-      `Unknown generator "${name}". Registered: ${generatorNames().join(', ') || '(none)'}.`,
-    );
-  }
-  return gen;
+  return generators.get(name);
 }
 
 /**
- * Register (or override) a generator at runtime. Returns the registry for chaining. Intended for
- * tests and future dynamic registration; the static map above is the canonical M1 wiring.
+ * Register (or override) a generator at runtime — delegates to the engine registry. Intended for
+ * tests and dynamic registration; the canonical wiring is `api.registerGenerator` in a plugin.
  */
-export function registerGenerator(name: string, component: GeneratorComponent): typeof REGISTRY {
-  REGISTRY[name] = component;
-  return REGISTRY;
+export function registerGenerator(name: string, component: GeneratorComponent): void {
+  generators.register(name, component);
 }

@@ -19,8 +19,13 @@ import { execFileSync } from 'node:child_process';
 import objectHash from 'object-hash';
 
 import { parseSpec, type CharacterSpec } from '../factory/spec.js';
-import { characterMarkup } from '../factory/character.js';
+import { characterStyles, loadPlugins } from '../engine/index.js';
 import type { RigClip } from '../ir/index.js';
+
+// Populate the engine registries (ADR-005) so the offline preview resolves the character-STYLE
+// builder the same way the runtime compositor does — via the characterStyles registry, not a direct
+// import. Pure data wiring; preserves determinism.
+loadPlugins();
 
 const ROOT = resolvePath(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const PREVIEW_FRAME = 18; // mid-idle (eyes open, gentle breathe) — deterministic
@@ -29,7 +34,7 @@ const IDLE: RigClip[] = [{ anim: 'idle', loop: true }];
 
 /** A 480×480 preview SVG: the character on the Kurzgesagt night-blue gradient. */
 function previewSvg(spec: CharacterSpec): string {
-  const inner = characterMarkup(spec, PREVIEW_FRAME, FPS, IDLE);
+  const inner = characterStyles.get(spec.style)(spec, PREVIEW_FRAME, FPS, IDLE);
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 480 480">` +
     `<defs><radialGradient id="bg" cx="50%" cy="34%" r="80%">` +

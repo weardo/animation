@@ -1,6 +1,14 @@
 # ADR-005 — Plugin architecture: minimal core, capability via plugins, data in the library
 
-**Date:** 2026-06-22 · **Status:** Accepted — the unifying architecture. Generalizes ADR-001 (providers) and ADR-004 (generators). Implement as a near-term foundation before the bulk of Tier-A capability is added.
+**Date:** 2026-06-22 · **Status:** Accepted — the unifying architecture. Generalizes ADR-001 (providers) and ADR-004 (generators). **Foundation DONE (2026-06-22)** — see "Foundation status" below; the rest of the backlog (effects/transitions/text/color/styles capability + presets) is now authored AS PLUGINS.
+
+## Foundation status (DONE — 2026-06-22)
+
+The minimal plugin system is built and dogfooded; all six committed demos render byte-identically. Shipped:
+- **Engine core** (`src/engine/`): a generic `Registry<T>` (register/has/names/`get`-throws-loudly) · the seven extension-point registries (3 live + 4 stubs) · the `EngineAPI` plugins register through · the `Plugin`/`plugin.json` Zod-validated manifest contract · the `loadPlugins` loader (manifest re-validate → topological `deps` order → `register(api)`) · the `ENABLED_PLUGINS` config.
+- **Built-ins migrated to CORE PLUGINS** (`plugins/`): **core-generators** (bead-string/scatter/water/particles/fire/crowd → `generators`), **core-rigs** (procedural + dragonbones → `rigProviders`), **blob-creature** (the default character style = `characterMarkup` → `characterStyles`). The old hardcoded seams now delegate to the engine registries: `src/generators/registry.ts` is a thin delegate; `src/render/Scene.tsx` resolves the rig `kind` via `rigProviders.get`; `ProceduralRig`/`factory-gen` resolve the style via `characterStyles.get(spec.style)` (CharacterSpec gained an optional `style` field defaulting to `blob-creature`). The Remotion bundle entry (`src/render/index.ts`) and `factory-gen` call `loadPlugins()` before render so runtime + offline resolve capability identically.
+- **STUBS left empty** (no contributors, no consumers): `effects` · `transitions` · `layerTypes` · `passes`. Defined with the right shape so future backlog items plug in without a core change. NOT implemented.
+- **Verified** (`verify-render`): `tsc --noEmit` clean; the five committed projects (blip-intro, blip-story, generators-demo, scatter-demo, shapes-demo) + neuron-demo (dragonbones provider) render byte-identically across two SEPARATE cold processes (caches cleared between); the pip factory preview PNG is byte-identical (only the spec's new `style` field changes its hash).
 
 ## Context
 
@@ -44,4 +52,6 @@ Plugins MUST obey the golden rules (deterministic, seeded, frame-driven). The co
 
 ## Backlog (supersedes ADR-004's standalone item)
 
-**Plugin foundation** (near-term, before the bulk of Tier-A): define `EngineAPI` + the extension-point registries + `plugin.json` + the loader/enabled-config; migrate generators + providers to **core plugins**; fold ADR-004 (generator presets) in. After that, **every new capability — effects, transitions, text, color, styles — is authored as a plugin**, and presets/assets as library data.
+**Plugin foundation** — ✅ **DONE (2026-06-22)**: `EngineAPI` + the extension-point registries + `plugin.json` + the loader/enabled-config built (`src/engine/`); generators + rig providers + the `blob-creature` character style migrated to **core plugins** (`plugins/`); demos byte-identical (see "Foundation status"). The ADR-004 generator-preset layer (catalog `generator-preset` kind + resolver expansion + `factory:gen-preset`) remains its own backlog item — a preset is library data the core-generators plugin's implementations are the code peer of.
+
+After this foundation, **every new capability — effects, transitions, text, color, styles, IR passes — is authored AS A PLUGIN** contributing into the matching extension point (the four stub registries already exist for effects/transitions/layerTypes/passes), and presets/assets stay library data. New Tier-A backlog items (ADR-003) are scoped as plugins, not core edits.

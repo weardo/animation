@@ -1,0 +1,10 @@
+{
+  "id": "core-rigs",
+  "version": "1.0.0",
+  "contributes": ["rigProviders"],
+  "license": "MIT",
+  "provenance": {
+    "author": "animation-factory",
+    "source": "built-in"
+  }
+}

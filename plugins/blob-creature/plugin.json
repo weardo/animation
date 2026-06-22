@@ -1,0 +1,10 @@
+{
+  "id": "blob-creature",
+  "version": "1.0.0",
+  "contributes": ["characterStyles"],
+  "license": "MIT",
+  "provenance": {
+    "author": "animation-factory",
+    "source": "built-in"
+  }
+}

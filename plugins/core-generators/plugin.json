@@ -1,0 +1,10 @@
+{
+  "id": "core-generators",
+  "version": "1.0.0",
+  "contributes": ["generators"],
+  "license": "MIT",
+  "provenance": {
+    "author": "animation-factory",
+    "source": "built-in"
+  }
+}
