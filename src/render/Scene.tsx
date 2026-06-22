@@ -140,7 +140,7 @@ function renderSub(
       // Provider dispatch (ADR-001): code-only procedural character vs vendor DragonBones skeleton.
       const inner =
         rigDef.kind === 'procedural' ? (
-          <ProceduralRig layer={layer} rigUri={rigDef.uri} easings={easings} />
+          <ProceduralRig layer={layer} spec={rigDef.spec} easings={easings} />
         ) : (
           <RigLayer layer={layer} rigDef={rigDef} easings={easings} />
         );

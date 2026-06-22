@@ -31,4 +31,7 @@ prototype/preview.html
 prototype/preview.svg
 prototype/anim.gif
 
+# Factory: keep .spec.json + .preview.png (shareable artifacts); ignore the intermediate preview SVG
+library/**/*.preview.svg
+
 # Keep: library/ assets, library/index.json, animation.lock, golden fixtures, docs/

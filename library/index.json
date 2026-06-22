@@ -9,23 +9,54 @@
         "kind": "rig",
         "format": "procedural",
         "uri": "proc://blip",
-        "tags": ["m2", "character", "kurzgesagt", "flat-vector", "ffd"],
+        "tags": [
+          "m2",
+          "character",
+          "kurzgesagt",
+          "flat-vector",
+          "ffd"
+        ],
         "deps": [],
         "manifest": {
           "mounts": {
-            "handR": { "bone": "foreR" },
-            "handL": { "bone": "foreL" },
-            "head_top": { "bone": "head" }
+            "head_top": {
+              "bone": "head"
+            },
+            "handR": {
+              "bone": "armR"
+            },
+            "handL": {
+              "bone": "armL"
+            }
           },
           "variants": {
-            "head": ["head"],
-            "outfit": ["body"]
+            "palette": [
+              "body",
+              "bodyDark",
+              "ink",
+              "belly",
+              "accent",
+              "white",
+              "cheek"
+            ]
+          },
+          "clips": [
+            "idle",
+            "blink",
+            "wave"
+          ],
+          "bounds": {
+            "w": 206,
+            "h": 252
           }
         },
         "provenance": {
-          "source": "code-generated (tools/gen-blip-rig.mjs) — flat-vector primitives, authored FFD",
+          "source": "factory",
+          "generator": "factory-gen",
+          "spec_hash": "d16f4dbeb4c542b404191eb600fa2e538441b8cf",
           "license": "CC0"
-        }
+        },
+        "preview": "characters/blip/blip.preview.png"
       },
       "dragon": {
         "id": "dragon",
@@ -33,7 +64,11 @@
         "kind": "rig",
         "format": "dragonbones",
         "uri": "rig://dragon/dragon.dbones.json",
-        "tags": ["m1", "creature", "ffd"],
+        "tags": [
+          "m1",
+          "creature",
+          "ffd"
+        ],
         "deps": [],
         "manifest": {
           "mounts": {},
@@ -43,6 +78,60 @@
           "source": "pixi-dragonbones-runtime 'starter' demo armature (h1ve2)",
           "license": "MIT"
         }
+      },
+      "pip": {
+        "id": "pip",
+        "version": "1.0.0",
+        "kind": "rig",
+        "format": "procedural",
+        "uri": "proc://pip",
+        "tags": [
+          "procedural",
+          "character",
+          "kurzgesagt",
+          "factory"
+        ],
+        "deps": [],
+        "manifest": {
+          "mounts": {
+            "head_top": {
+              "bone": "head"
+            },
+            "handR": {
+              "bone": "armR"
+            },
+            "handL": {
+              "bone": "armL"
+            }
+          },
+          "variants": {
+            "palette": [
+              "body",
+              "bodyDark",
+              "ink",
+              "belly",
+              "accent",
+              "white",
+              "cheek"
+            ]
+          },
+          "clips": [
+            "idle",
+            "blink",
+            "wave"
+          ],
+          "bounds": {
+            "w": 178,
+            "h": 260
+          }
+        },
+        "provenance": {
+          "source": "factory",
+          "generator": "factory-gen",
+          "spec_hash": "673028bc93ffb86bd8958cbec1bfa7c00c0c0df4",
+          "license": "CC0"
+        },
+        "preview": "characters/pip/pip.preview.png"
       }
     },
     "props": {},
@@ -53,7 +142,11 @@
         "kind": "asset",
         "format": "svg",
         "uri": "asset://bg_gradient.svg",
-        "tags": ["m1", "background", "parallax"],
+        "tags": [
+          "m1",
+          "background",
+          "parallax"
+        ],
         "deps": [],
         "provenance": {
           "source": "authored",
@@ -68,7 +161,11 @@
         "kind": "asset",
         "format": "svg",
         "uri": "asset://axon_curve.svg#path",
-        "tags": ["m1", "bead-string", "path"],
+        "tags": [
+          "m1",
+          "bead-string",
+          "path"
+        ],
         "deps": [],
         "provenance": {
           "source": "authored",

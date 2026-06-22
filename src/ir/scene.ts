@@ -54,6 +54,9 @@ export const RigDefSchema = z
   .object({
     uri: z.string().min(1),
     kind: z.enum(['dragonbones', 'procedural']),
+    /** For `procedural` rigs: the embedded CharacterSpec (loose here to avoid an ir→factory cycle;
+     *  validated by the factory's parseSpec at the compositor). Travels in the Scene IR (shareable). */
+    spec: z.record(z.unknown()).optional(),
   })
   .strict();
 export type RigDef = z.infer<typeof RigDefSchema>;

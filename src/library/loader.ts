@@ -9,6 +9,9 @@
 // No network. Resolution is pure over the catalog; the only side effects are explicit
 // lockfile reads/writes the caller requests.
 
+import { readFileSync } from 'node:fs';
+import { resolve as resolvePath } from 'node:path';
+
 import type { AssetDef, RigDef } from '../ir/index.js';
 import type { Catalog } from './catalog.js';
 import {
@@ -81,6 +84,13 @@ export class Library {
     // The entry `format` selects the provider (ADR-001): 'procedural' (code-only shape character)
     // or 'dragonbones' (vendor skeleton). Default to dragonbones for back-compat.
     const fmt = r.entry.format === 'procedural' ? 'procedural' : 'dragonbones';
+    if (fmt === 'procedural') {
+      // Embed the CharacterSpec so it travels in the Scene IR (shareable; the compositor renders it).
+      const id = r.entry.uri.replace(/^proc:\/\//, '').split('/')[0] ?? '';
+      const specPath = resolvePath(this.rootDir, 'library', 'characters', id, `${id}.spec.json`);
+      const spec = JSON.parse(readFileSync(specPath, 'utf8')) as Record<string, unknown>;
+      return { uri: r.entry.uri, kind: fmt, spec };
+    }
     return { uri: r.entry.uri, kind: fmt };
   }
 

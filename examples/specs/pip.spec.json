@@ -1,0 +1,13 @@
+{
+  "id": "pip",
+  "name": "Pip",
+  "palette": { "body": "#7bd66a", "bodyDark": "#4fae45", "ink": "#16321f", "belly": "#e9ffd9", "accent": "#ff9f4a", "white": "#ffffff", "cheek": "#ff9ec2" },
+  "head": { "r": 74, "cy": -58 },
+  "body": { "rx": 62, "ry": 58, "cy": 34 },
+  "belly": { "rx": 38, "ry": 32, "cy": 50 },
+  "eyes": { "spacing": 30, "cy": -66, "r": 20, "pupil": 10 },
+  "beak": { "show": false, "width": 20, "depth": 14, "cy": -44 },
+  "cheeks": { "show": true, "r": 12, "spacing": 52, "cy": -44 },
+  "arms": { "width": 20, "length": 54, "shoulderY": 10, "rest": 18 },
+  "legs": { "width": 22, "height": 30, "spacing": 26, "footRx": 26, "footRy": 13, "footCy": 112 }
+}
