@@ -12,6 +12,10 @@ out/
 *.mp4
 *.webm
 
+# Project media outputs (regenerable from scene.json + project.lock; the project descriptor,
+# story.yaml, scene.json and project.lock ARE tracked for reproducibility).
+projects/*/media/
+
 # Remotion
 .remotion/
 
