@@ -1,8 +1,34 @@
 # Animation Factory — Design Spec
 
 **Date:** 2026-06-22
-**Status:** Draft for review
+**Status:** In build — M1 complete; M2 in progress. **§0 reconciles the spec with what's actually built** (the design evolved via `docs/factory/ADR-001`, `ADR-002`, and `docs/factory/DECISIONS.md`).
 **Topic:** A code-driven, Kurzgesagt-style 2.5D animation pipeline that turns a story script into a rendered video.
+
+---
+
+## 0. Current State (reconciled 2026-06-22)
+
+Where this section conflicts with later sections, **this section wins** (later sections are the original design; the system has since evolved). Detail lives in `ADR-001`, `ADR-002`, and `DECISIONS.md`.
+
+### Three pillars (ADR-001)
+- **Engine** (generic): timeline · compositor · camera/parallax · shading · render host (Remotion) · determinism. Knows a layer *contract*, never how pixels are made.
+- **Library** (shared): content-addressed, versioned, reusable assets (characters, generators, backgrounds) — `library/index.json` catalog + per-entry manifests.
+- **Project** (per-video): `projects/<id>/` = a **self-contained, reproducible bundle** — `project.json` (manifest) · `story.yaml` (source) · `scene.json` (compiled timeline) · `project.lock` (pinned deps) · `assets/` (vendored sources) · `media/` (outputs). `library : project :: npm package : app`. Container follows **OTIO `.otiod` / dotLottie** (manifest + timeline + vendored assets; dir form now, zip later).
+
+### Providers (ADR-001)
+Rig/character layers dispatch by provider `kind`: **`procedural` (PRIMARY)** — code-only shape-composition characters from a data-driven CharacterSpec (`src/factory`), pure SVG/DOM; and **`dragonbones` (optional/legacy)** — vendor skeletons via Pixi. New sources = new providers behind one interface; no engine/IR change. **Procedural is preferred**: deterministic on any GL backend, no vendor mesh, no software-GL disk bloat.
+
+### Asset factory (ADR-002 — built)
+`factory:gen <spec.json>` → validate CharacterSpec (Zod) → generalized builder (`characterMarkup`) → write canonical spec + `rsvg` preview + register a content-addressed library entry. **One builder + N specs = N characters** (blip, pip). Data-driven specs now; AI-assisted spec generation is a future front-end.
+
+### Determinism (updated)
+Same Scene IR ⇒ byte-identical video. Render with **`gl: 'angle'`** — procedural scenes are SVG/DOM-deterministic (the GL backend doesn't affect them). **DO NOT use software GL** (`'swiftshader'`/`'swangle'`): it balloons Chromium CacheStorage to ~26GB and crashes (DECISIONS 2026-06-22). Software GL was only ever needed for WebGL/DragonBones FFD determinism — another reason procedural is primary.
+
+### Build status
+- **DONE:** pipeline (parse→lower→layout→camera→validate) · Remotion render · library + per-project lockfile · **Shading & Depth (§11.1)** · procedural provider + **asset factory** + **projects** · determinism/disk fixes.
+- **NEXT (M2):** **multi-scene storytelling + transitions (§11.2)** · object/prop specs · `scatter` + more generators (§10/§10.1) · `clip`/`environment` (§13.3) · `attach`/`parts` (§8.1) · motion blur/effects (§11) · color-script (§11.4) · kinetic typography (§11.3).
+- **LATER (M3):** audio + sound design (P4/P7) · LLM script-expander (P1) · smart layout (P6/P9) · `post[]` grade · AI asset-gen (P3).
+- **ADR follow-ups:** formalize `AssetProvider`/`LibraryResolver` TS interfaces · `factory bundle`/`list` · OTIO export.
 
 ---
 
@@ -21,7 +47,7 @@ Generating animation by AI image/video models is **unstable**: characters distor
 ### Non-goals (explicitly out of scope)
 
 - Physically-accurate **cloth/fluid simulation** (Navier–Stokes/SPH) — wrong tool for stylized 2D.
-- (Stylized **mesh / free-form deformation** is **in scope** via DragonBones FFD — see §8 — for bendy limbs, blobby wobble, and organic warping.)
+- (Stylized **mesh / free-form deformation** is available via the *optional* DragonBones provider, but the **primary path is procedural** — squash/stretch + organic shapes from code, §0. DragonBones FFD is legacy, not required.)
 - Real-time interactivity / a game engine. Output is recorded video.
 - True 3D geometry. Depth is faked via 2.5D parallax (add a 3D backend only if a hard requirement ever appears).
 - AI generating frames or driving motion at runtime. AI only ever touches the *offline asset library* and (later) the *script→IR front-end*.
