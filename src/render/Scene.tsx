@@ -28,6 +28,7 @@ import { providers } from '../engine/index.js';
 import { GeneratorLayer } from './GeneratorLayer.js';
 import { AssetLayer } from './AssetLayer.js';
 import { ShapeLayer } from './ShapeLayer.js';
+import { TextLayer } from './TextLayer.js';
 import { evalNumber, evalVec2 } from './eval.js';
 import { applyEffects, resolveEffects } from './effects.js';
 import { NEUTRAL_STYLEKIT, type Light, type StyleKit } from './stylekit.js';
@@ -165,6 +166,16 @@ function renderSub(
       return (
         <ParallaxWrapper offset={parallaxOffset} id={layer.id}>
           <ShapeLayer layer={layer} palette={defs.palette} easings={easings} />
+        </ParallaxWrapper>
+      );
+    case 'text':
+      // First-class TYPOGRAPHY (core layer kind): a thin adapter over the Remotion ecosystem — a
+      // vendored LOCAL font (no CDN), @remotion/layout-utils for box-fit, and interpolate/spring +
+      // StyleKit easing for the kinetic presets. Wrapped in parallax like rig/shape/generator so it
+      // gets depth + the §11.1 shading/effects, and receives the stylekit (floor.nonLinearMotion).
+      return (
+        <ParallaxWrapper offset={parallaxOffset} id={layer.id}>
+          <TextLayer layer={layer} palette={defs.palette} easings={easings} stylekit={stylekit} />
         </ParallaxWrapper>
       );
     default: {

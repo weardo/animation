@@ -177,6 +177,46 @@
       }
     },
     "kits": {},
+    "fonts": {
+      "dejavu-sans": {
+        "id": "dejavu-sans",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "font",
+        "uri": "asset://fonts/DejaVuSans.ttf",
+        "tags": [
+          "font",
+          "text",
+          "sans",
+          "default",
+          "vendored-local"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "DejaVu Sans 2.37 (Bitstream Vera derivative) — vendored from /usr/share/fonts/TTF/DejaVuSans.ttf",
+          "license": "Bitstream Vera + public-domain (free, permissive)"
+        }
+      },
+      "dejavu-sans-bold": {
+        "id": "dejavu-sans-bold",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "font",
+        "uri": "asset://fonts/DejaVuSans-Bold.ttf",
+        "tags": [
+          "font",
+          "text",
+          "sans",
+          "bold",
+          "vendored-local"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "DejaVu Sans Bold 2.37 (Bitstream Vera derivative) — vendored from /usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
+          "license": "Bitstream Vera + public-domain (free, permissive)"
+        }
+      }
+    },
     "stylekits": {
       "kurzgesagt": {
         "id": "kurzgesagt",

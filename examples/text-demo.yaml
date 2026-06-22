@@ -1,0 +1,67 @@
+# examples/text-demo.yaml — the TEXT/TYPOGRAPHY vertical slice. Text is a GENERIC core layer kind
+# (the taxonomy lists asset/text), implemented as a THIN ADAPTER over the Remotion ecosystem: a
+# VENDORED LOCAL font (DejaVu Sans, no CDN), @remotion/layout-utils for box-fit, and interpolate/
+# spring + StyleKit easing for the kinetic presets. This 2-scene story exercises every preset.
+#
+# DETERMINISM: pure DOM text + a local @font-face held by delayRender until the glyphs are ready
+# before paint → byte-identical on CPU raster across cold processes. Build it:
+#   tsx src/cli/render.ts examples/text-demo.yaml --project text-demo --name "Typography"
+
+title: "Typography"
+
+beats:
+  # SCENE 1 — entrances: a rising title, a staggered subtitle, a fade line.
+  - id: titles
+    say: "Text is a socket; the font is the plug."
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - text: "ANIMATION FACTORY"
+        as: title
+        at: top
+        args:
+          size: 120
+          weight: 700
+          color: accent
+          align: center
+          anim: { preset: rise, duration: 22, distance: 60 }
+      - text: "code in, video out"
+        as: subtitle
+        at: center
+        args:
+          size: 56
+          color: light
+          align: center
+          anim: { preset: stagger, unit: word, stagger: 4, duration: 16, distance: 24, delay: 18 }
+      - text: "a deterministic 2.5D pipeline"
+        as: tagline
+        at: bottom
+        args:
+          size: 36
+          color: accent2
+          align: center
+          anim: { preset: fade, duration: 24, delay: 40 }
+
+  # SCENE 2 — typewriter + count_up.
+  - id: numbers
+    transition: { kind: fade }
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - text: "rendering frames..."
+        as: typed
+        at: top
+        args:
+          size: 64
+          color: light
+          align: center
+          anim: { preset: typewriter, cps: 18 }
+      - text: ""
+        as: counter
+        at: center
+        args:
+          size: 200
+          weight: 700
+          color: accent
+          align: center
+          anim: { preset: count_up, from: 0, to: 1920, duration: 60, suffix: "px" }

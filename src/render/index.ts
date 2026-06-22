@@ -28,6 +28,8 @@ export { Scene } from './Scene.js';
 export type { SceneProps } from './Scene.js';
 export { AssetLayer } from './AssetLayer.js';
 export type { AssetLayerProps } from './AssetLayer.js';
+export { TextLayer } from './TextLayer.js';
+export type { TextLayerProps } from './TextLayer.js';
 export { evalNumber, evalVec2 } from './eval.js';
 
 // Re-export StyleKit (lives in src/render) so consumers import the house style from one place.

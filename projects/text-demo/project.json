@@ -1,0 +1,29 @@
+{
+  "project_version": "1.0",
+  "id": "text-demo",
+  "name": "Typography",
+  "created": "2026-06-22T11:46:02.270Z",
+  "updated": "2026-06-22T11:46:02.270Z",
+  "config": {
+    "w": 1920,
+    "h": 1080,
+    "fps": 30,
+    "duration_frames": 225
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "b719ceff4e49b58c99752f6daba99bb4f3726d1b",
+  "engine": "remotion@4.0.481",
+  "deps": [
+    "bg_gradient@1.0.0"
+  ],
+  "assets": [
+    "assets/bg_gradient.svg",
+    "assets/fonts/DejaVuSans.ttf"
+  ],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  }
+}

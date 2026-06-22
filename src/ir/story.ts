@@ -58,6 +58,14 @@ export const ShowItemSchema = z
      * id and the optional positional `at` (an anchor name) its placement.
      */
     shape: z.string().min(1).optional(),
+    /**
+     * A first-class TEXT/TYPOGRAPHY layer to show (the generic `text` core layer kind — every video
+     * tool has text). The value is the literal text CONTENT to render; its look (font/size/weight/
+     * color/align/box/lineHeight/tracking) and kinetic `anim` preset travel in the item's free-form
+     * `args`, interpreted by the lowering pass into a Scene-IR `text` layer. `as` becomes the layer id
+     * and the optional positional `at` (an anchor name) its placement.
+     */
+    text: z.string().optional(),
     /** Static asset to show (a `defs.assets` ref; a background is just a low-z, far-parallax asset). */
     asset: z.string().min(1).optional(),
     /** Reusable clip to place (reserved; later). */

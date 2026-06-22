@@ -325,12 +325,77 @@ export const ShapeLayerSchema = z
   .strict();
 export type ShapeLayer = z.infer<typeof ShapeLayerSchema>;
 
+/**
+ * A kinetic-typography animation channel for a text layer. `preset` selects an entrance/behaviour
+ * built on the Remotion `interpolate`/`spring`/`Series` primitives + StyleKit easing (never linear,
+ * unless `floor.nonLinearMotion=false`):
+ *   • none      — static (no motion).
+ *   • fade      — opacity 0→1 over `duration` frames, eased.
+ *   • rise      — translateY (`distance` px) + fade in, eased.
+ *   • stagger   — per-`unit` (char|word) entrance offset by index × `stagger` frames (a cascade).
+ *   • typewriter— reveal characters over time at `cps` chars/second from `delay`.
+ *   • count_up  — animate the rendered NUMBER from `from`→`to` over `duration` frames (eased),
+ *                 formatted with `decimals` and optional `prefix`/`suffix`.
+ * Params are loose (passthrough) — the renderer reads per-preset fields with sane defaults; the IR
+ * boundary keeps them flexible (CLAUDE.md rule 5).
+ */
+export const TextAnimSchema = z
+  .object({
+    preset: z.enum(['none', 'fade', 'rise', 'stagger', 'typewriter', 'count_up']),
+  })
+  .passthrough();
+export type TextAnim = z.infer<typeof TextAnimSchema>;
+
+/**
+ * text layer: first-class TYPOGRAPHY as a GENERIC core primitive (the taxonomy lists asset/text).
+ * A thin adapter over the Remotion ecosystem — `@remotion/layout-utils` (fitText/measureText) for
+ * box-fit, a VENDORED LOCAL font loaded via @font-face + `delayRender` (deterministic, offline; no
+ * CDN), and `interpolate`/`spring` for the kinetic presets — composed with the SAME camera + §11.1
+ * shading + parallax wrappers as every other layer.
+ *
+ * `color` reuses the shape/asset `fill` convention: a palette token (resolved via `defs.palette`) OR a
+ * hex string. `box` requests fit-to-box layout (fitText scales the font to `box.w`). `font` is a
+ * font-family NAME; `fontUri` (lowering-supplied) is the vendored font FILE the renderer @font-face's
+ * — embedding it in the IR as an `asset://…` URI means the project bundler auto-vendors it.
+ */
+export const TextLayerSchema = z
+  .object({
+    type: z.literal('text'),
+    ...layerBase,
+    /** The text to render. For `count_up` this is overridden by the animated number. */
+    content: z.string(),
+    /** Font-family name (matches the @font-face family the renderer registers). */
+    font: z.string().min(1).optional(),
+    /** Vendored font FILE URI (e.g. `asset://fonts/DejaVuSans.ttf`) the renderer @font-face's. */
+    fontUri: z.string().min(1).optional(),
+    /** Font size in px (ignored when `box` drives fit-to-box layout). */
+    size: z.number().positive().optional(),
+    /** Font weight — numeric (100..900) or a CSS keyword ("normal"/"bold"). */
+    weight: z.union([z.number(), z.string()]).optional(),
+    /** Text color: a `defs.palette` token OR a hex string (the fill/color convention). */
+    color: ColorSchema.optional(),
+    /** Horizontal alignment. */
+    align: z.enum(['left', 'center', 'right']).optional(),
+    /** Line height multiplier (unitless). */
+    lineHeight: z.number().positive().optional(),
+    /** Letter spacing (tracking) in px. */
+    tracking: z.number().optional(),
+    /** Fit-to-box: the renderer scales the font (fitText) so the text fits this width/height. */
+    box: z.object({ w: z.number().positive(), h: z.number().positive() }).strict().optional(),
+    /** Kinetic-typography animation channel (entrance/behaviour). */
+    anim: TextAnimSchema.optional(),
+    transform: TransformSchema.optional(),
+  })
+  .strict();
+export type TextLayer = z.infer<typeof TextLayerSchema>;
+
 /** Discriminated union of all M1 layer types. */
 export const LayerSchema = z.discriminatedUnion('type', [
   AssetLayerSchema,
   RigLayerSchema,
   GeneratorLayerSchema,
   ShapeLayerSchema,
+  TextLayerSchema,
 ]);
 export type Layer = z.infer<typeof LayerSchema>;
 

@@ -26,6 +26,7 @@ import {
   type RigLayer,
   type GeneratorLayer,
   type ShapeLayer,
+  type TextLayer,
   type Effect,
   type RigClip,
   type Transform,
@@ -119,6 +120,16 @@ export const DEFAULT_RIG_CLIP = 'idle' as const;
  * catalog entry's own `provider`, so this value never reaches a real render.
  */
 export const DEFAULT_RIG_PROVIDER = 'rig' as const;
+
+/**
+ * The DEFAULT text font — a VENDORED LOCAL font (no CDN, deterministic + offline). It is DATA, not a
+ * hardcoded style VALUE: the family NAME the renderer registers via @font-face, and the on-disk FILE
+ * URI (`asset://fonts/…`) the renderer loads. Embedding the URI in the text layer means the project
+ * bundler's generic `asset://` vendoring copies the font into the self-contained bundle automatically.
+ * A story may override the family via `args.font` (and supply its own `args.fontUri`).
+ */
+export const DEFAULT_TEXT_FONT = 'DejaVu Sans' as const;
+export const DEFAULT_TEXT_FONT_URI = 'asset://fonts/DejaVuSans.ttf' as const;
 
 // --- beat duration + transition resolution ----------------------------------------------------
 
@@ -433,6 +444,61 @@ function buildShapeLayer(item: ShowItem, index: number): LoweredLayer {
 }
 
 /**
+ * A first-class TEXT layer lowered from a `show[].text` directive — TYPOGRAPHY as a GENERIC core
+ * layer kind (mirrors {@link buildShapeLayer}). The item's value is the literal `content`; its look
+ * (font/size/weight/color/align/lineHeight/tracking/box) and kinetic `anim` preset arrive in the
+ * free-form `args` and pass straight through to the Scene-IR `text` layer (validated by the
+ * TextLayer Zod schema at the boundary; CLAUDE.md rule 5). The default font is the VENDORED LOCAL
+ * font (DATA, not a style value) — its FILE URI is embedded so the bundler auto-vendors it. `z`/
+ * `scale`/`rotation`/`opacity` build the transform; placement is a layout `anchor` (from `at`).
+ * Pure structural lowering: no wall-clock, no RNG. No domain names.
+ */
+function buildTextLayer(item: ShowItem, index: number): LoweredLayer {
+  const content = item.text ?? '';
+  const args = (item.args ?? {}) as Record<string, unknown>;
+  const id = `L_text_${item.as ?? `text_${index}`}`;
+  const z = typeof args['z'] === 'number' ? (args['z'] as number) : 20;
+
+  // Transform: scale/rotation/opacity from args (position comes from the anchor via layout). A bare
+  // number wraps as a static `{a:0,k}` channel; an authored `{a,k}` object passes straight through.
+  const transform: Transform = {};
+  const channel = (v: unknown): Transform['scale'] | undefined =>
+    typeof v === 'number' ? { a: 0, k: v } : v && typeof v === 'object' ? (v as Transform['scale']) : undefined;
+  const scaleCh = channel(args['scale']);
+  const rotationCh = channel(args['rotation']);
+  const opacityCh = channel(args['opacity']);
+  if (scaleCh) transform.scale = scaleCh;
+  if (rotationCh) transform.rotation = rotationCh;
+  if (opacityCh) transform.opacity = opacityCh;
+
+  const font = typeof args['font'] === 'string' ? (args['font'] as string) : DEFAULT_TEXT_FONT;
+  const fontUri = typeof args['fontUri'] === 'string' ? (args['fontUri'] as string) : DEFAULT_TEXT_FONT_URI;
+
+  const layer: TextLayer = {
+    type: 'text',
+    id,
+    z,
+    content,
+    font,
+    fontUri,
+    ...(typeof args['size'] === 'number' ? { size: args['size'] as number } : {}),
+    ...(args['weight'] !== undefined ? { weight: args['weight'] as TextLayer['weight'] } : {}),
+    ...(args['color'] !== undefined ? { color: args['color'] as TextLayer['color'] } : {}),
+    ...(args['align'] !== undefined ? { align: args['align'] as TextLayer['align'] } : {}),
+    ...(typeof args['lineHeight'] === 'number' ? { lineHeight: args['lineHeight'] as number } : {}),
+    ...(typeof args['tracking'] === 'number' ? { tracking: args['tracking'] as number } : {}),
+    ...(args['box'] !== undefined ? { box: args['box'] as TextLayer['box'] } : {}),
+    ...(args['anim'] !== undefined ? { anim: args['anim'] as TextLayer['anim'] } : {}),
+    ...(Array.isArray(args['effects']) ? { effects: args['effects'] as Effect[] } : {}),
+    ...(Object.keys(transform).length > 0 ? { transform } : {}),
+  };
+
+  // Carry the placement anchor (default "center") for the layout pass to resolve to a position.
+  const anchor = typeof item.at === 'string' ? item.at : 'center';
+  return { ...layer, anchor } as LoweredLayer;
+}
+
+/**
  * A generic RIG layer lowered from a `show[].actor` item. The named actor is resolved to its library
  * ref via the story's `cast` declaration; the rig def key is the ref's bare name (a `defs.rigs` key).
  * A StyleKit "pop" entrance (scale + opacity overshoot) makes the rig appear with life (spec §9);
@@ -525,6 +591,8 @@ function buildScene(
       layer = buildGeneratorLayer(item, beat.id, hash, i);
     } else if (item.shape !== undefined) {
       layer = buildShapeLayer(item, i);
+    } else if (item.text !== undefined) {
+      layer = buildTextLayer(item, i);
     } else if (item.asset !== undefined) {
       layer = buildAssetLayer(item, i);
     }
