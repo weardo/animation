@@ -62,6 +62,7 @@ interface Args {
   id?: string | undefined;
   name?: string | undefined;
   frames?: string | undefined;
+  gpu: boolean;
 }
 function parseArgs(argv: string[]): Args {
   const positional = argv.filter((a) => !a.startsWith('-'));
@@ -71,7 +72,7 @@ function parseArgs(argv: string[]): Args {
     if (n === '--frames' && i >= 0 && (argv[i + 1] === undefined || argv[i + 1]!.startsWith('-'))) return 'auto';
     return i >= 0 ? argv[i + 1] : undefined;
   };
-  return { target: positional[0] ?? 'examples/character.yaml', id: flag('--project'), name: flag('--name'), frames: flag('--frames') };
+  return { target: positional[0] ?? 'examples/character.yaml', id: flag('--project'), name: flag('--name'), frames: flag('--frames'), gpu: argv.includes('--gpu') };
 }
 
 /**
@@ -114,11 +115,13 @@ function vendorAssets(sceneIR: SceneIR, paths: ProjectPaths): string[] {
   return vendored;
 }
 
-// NO gl → CPU rasterization: procedural scenes use no WebGL. Hardware 'angle' (GPU raster) is
-// non-deterministic for blur/alpha-heavy SVG (particles/fire); software 'swiftshader' balloons the
-// disk; CPU raster is deterministic AND disk-safe. Shared by video + stills. (Verified 2026-06-22.)
-const CHROMIUM = {} as const;
-const DETERMINISM = { imageFormat: 'png', concurrency: Math.max(1, cpus().length - 2), chromiumOptions: CHROMIUM } as const;
+// Render TIER (ADR-003 / DECISIONS): CPU raster (default) is byte-deterministic + disk-safe and is
+// the canonical/shareable record. GPU ('angle', the iGPU) is faster but only PERCEPTUALLY identical
+// (blur/alpha-heavy SVG composites in slightly different order/precision run-to-run, ~47-50dB PSNR =
+// visually lossless). Opt into GPU with --gpu for speed/previews; verify those perceptually (SSIM/
+// PSNR via tools/perceptual-diff.mjs), not byte-exact. NEVER software GL (swiftshader → disk balloon).
+const chromiumOpts = (gpu: boolean) => (gpu ? { gl: 'angle' as const } : {});
+const CONCURRENCY = Math.max(1, cpus().length - 2);
 
 /** Bundle the project + select the composition for a Scene IR. Shared by video + stills. */
 async function prepare(sceneIR: SceneIR, publicDir: string) {
@@ -138,18 +141,22 @@ async function prepare(sceneIR: SceneIR, publicDir: string) {
   return { serveUrl, composition, inputProps };
 }
 
-/** Render the full Scene IR to an mp4. */
-async function renderScene(sceneIR: SceneIR, videoOut: string, publicDir: string): Promise<{ frames: number }> {
+/** Render the full Scene IR to an mp4. `gpu` opts into the fast (perceptual) iGPU tier. */
+async function renderScene(sceneIR: SceneIR, videoOut: string, publicDir: string, gpu: boolean): Promise<{ frames: number }> {
   const { serveUrl, composition, inputProps } = await prepare(sceneIR, publicDir);
-  console.log(`[render] video ${composition.width}x${composition.height}@${composition.fps} (${composition.durationInFrames}f) → ${videoOut}`);
+  console.log(`[render] video ${composition.width}x${composition.height}@${composition.fps} (${composition.durationInFrames}f) [${gpu ? 'GPU/perceptual' : 'CPU/byte-exact'}] → ${videoOut}`);
   await renderMedia({
     composition,
     serveUrl,
     codec: 'h264',
     outputLocation: videoOut,
     inputProps,
-    ...DETERMINISM,
-    disallowParallelEncoding: true, // single-pass encode → byte-identical mp4
+    imageFormat: 'png',
+    concurrency: CONCURRENCY,
+    chromiumOptions: chromiumOpts(gpu),
+    // CPU tier pins single-pass encode for byte-identical mp4; GPU tier is perceptual anyway, so let
+    // the encoder parallelize for more speed.
+    disallowParallelEncoding: !gpu,
     x264Preset: 'faster',
     crf: 18,
     colorSpace: 'bt709',
@@ -162,14 +169,14 @@ async function renderScene(sceneIR: SceneIR, videoOut: string, publicDir: string
  * video. Verify correctness + determinism on frames in seconds; render the video only for final
  * validation. Frames are byte-identical to the corresponding video frames (same scene IR + CPU raster).
  */
-async function renderStills(sceneIR: SceneIR, framesDir: string, frameList: number[], publicDir: string): Promise<string[]> {
+async function renderStills(sceneIR: SceneIR, framesDir: string, frameList: number[], publicDir: string, gpu: boolean): Promise<string[]> {
   const { serveUrl, composition, inputProps } = await prepare(sceneIR, publicDir);
   mkdirSync(framesDir, { recursive: true });
   const out: string[] = [];
   for (const frame of frameList) {
     const f = Math.min(Math.max(0, frame), composition.durationInFrames - 1);
     const output = resolvePath(framesDir, `frame-${String(f).padStart(4, '0')}.png`);
-    await renderStill({ composition, serveUrl, output, frame: f, inputProps, imageFormat: 'png', chromiumOptions: CHROMIUM });
+    await renderStill({ composition, serveUrl, output, frame: f, inputProps, imageFormat: 'png', chromiumOptions: chromiumOpts(gpu) });
     out.push(output);
   }
   console.log(`[render] ${out.length} still(s) → ${framesDir}`);
@@ -195,7 +202,7 @@ function makeThumbnail(p: ProjectPaths, frame: number): void {
 }
 
 async function main(): Promise<void> {
-  const { target, id: idFlag, name, frames } = parseArgs(process.argv.slice(2));
+  const { target, id: idFlag, name, frames, gpu } = parseArgs(process.argv.slice(2));
 
   let paths: ProjectPaths;
   let sceneIR: SceneIR;
@@ -253,12 +260,12 @@ async function main(): Promise<void> {
   // FAST PATH: --frames renders stills only (verification), skipping the slow video encode.
   if (frames !== undefined) {
     const list = parseFrames(frames, sceneIR.config.duration_frames);
-    const out = await renderStills(sceneIR, resolvePath(paths.mediaDir, 'frames'), list, publicDir);
+    const out = await renderStills(sceneIR, resolvePath(paths.mediaDir, 'frames'), list, publicDir, gpu);
     console.log(`[render] frames done → ${out.length} PNG(s) at ${list.join(',')}`);
     return;
   }
 
-  const meta = await renderScene(sceneIR, paths.video, publicDir);
+  const meta = await renderScene(sceneIR, paths.video, publicDir, gpu);
   makeThumbnail(paths, Math.min(30, Math.max(0, meta.frames - 1)));
   console.log(`[render] done → ${paths.video}`);
 }

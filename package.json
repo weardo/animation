@@ -11,6 +11,7 @@
     "build:blip": "tsx src/cli/render.ts examples/character.yaml --project blip-intro --name \"Meet Blip\"",
     "build:neuron": "tsx src/cli/render.ts examples/neuron.yaml --project neuron-demo --name \"Neuron\"",
     "factory:gen": "tsx src/cli/factory-gen.ts",
+    "compare": "node tools/perceptual-diff.mjs",
     "studio": "remotion studio src/render/index.ts"
   },
   "dependencies": {
