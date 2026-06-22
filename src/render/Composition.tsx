@@ -32,7 +32,7 @@
 // No Date.now / Math.random; the transition easing is a fixed StyleKit cubic-bezier.
 
 import React from 'react';
-import { AbsoluteFill, Easing, useVideoConfig } from 'remotion';
+import { AbsoluteFill, Audio, Easing, Sequence, staticFile, useVideoConfig } from 'remotion';
 import {
   TransitionSeries,
   linearTiming,
@@ -99,6 +99,37 @@ function presentationFor(
   return fade() as TransitionPresentation<Record<string, unknown>>;
 }
 
+/**
+ * Resolve an audio cue `src` (`audio://…` / `asset://…` / bare path) to a Remotion `staticFile` URL
+ * under the render publicDir (assets/). Mirrors the asset-layer resolver: a `scheme://` prefix is
+ * stripped, the rest is a path relative to public/. The narration wavs are vendored into assets/audio/.
+ */
+function resolveAudioUrl(src: string): string {
+  const path = src.includes('://') ? src.slice(src.indexOf('://') + 3) : src;
+  return staticFile(path);
+}
+
+/**
+ * The narration AUDIO track. Each AudioCue is a Remotion <Audio> inside a <Sequence from={cue.at}> so
+ * it starts at the BEAT's global timeline frame. Remotion MUXES this into the encode automatically
+ * (h264 + aac) when <Audio> is present — we do NOT reimplement audio mixing (ADR-003: never
+ * reimplement a Remotion primitive). DETERMINISM: the wav is a FIXED, content-addressed file produced
+ * OFFLINE (golden rule 2), so the decoded audio stream is byte-identical across renders. An alpha
+ * render (delivery/compositing) drops audio — the canonical muxed record is the default h264 mp4.
+ * The `volume` prop is the hook for later ducking (music bed); narration plays at full volume now.
+ */
+const NarrationTrack: React.FC<{ cues: SceneIR['audio'] }> = ({ cues }) => (
+  <>
+    {(cues ?? [])
+      .filter((cue) => cue.kind === 'narration' && typeof cue.src === 'string')
+      .map((cue) => (
+        <Sequence key={cue.id} from={cue.at} durationInFrames={Math.max(1, cue.duration_frames)} layout="none">
+          <Audio src={resolveAudioUrl(cue.src as string)} />
+        </Sequence>
+      ))}
+  </>
+);
+
 /** One scene segment, rendered by the existing per-frame <Scene> compositor. `alpha` drops backdrops. */
 const SceneSegment: React.FC<{ scene: SceneType; defs: SceneIR['defs']; alpha?: boolean | undefined }> = ({
   scene,
@@ -158,6 +189,9 @@ export const SceneIRComposition: React.FC<SceneIRCompositionProps> = (props) => 
   return (
     <AbsoluteFill style={bg ? { backgroundColor: bg } : undefined}>
       <TransitionSeries>{children}</TransitionSeries>
+      {/* Narration track (M3): <Audio> cues muxed by Remotion. Dropped on an alpha (compositing) render
+          — the canonical muxed record is the default h264 mp4 (audio belongs to the finished film). */}
+      {!alpha && <NarrationTrack cues={sceneIR.audio} />}
     </AbsoluteFill>
   );
 };

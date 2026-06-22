@@ -40,3 +40,4 @@ library/**/*.preview.svg
 
 # Keep: library/ assets, library/index.json, animation.lock, golden fixtures, docs/
 .render-tmp/
+.venv-tts/

@@ -28,6 +28,8 @@ import type { Frontend } from '../pipeline/index.js';
 import { parseStory } from '../pipeline/parse.js';
 import { Library } from '../library/index.js';
 import type { SceneIR, Format } from '../ir/index.js';
+import { applyNarration } from './narrate-pass.js';
+import type { NarrateEngine } from './narrate.js';
 import { COMPOSITION_ID } from '../render/Root.js';
 import {
   projectPaths,
@@ -131,6 +133,11 @@ interface Args {
   format?: Format | undefined;
   /** P3: output container/codec/alpha selection. */
   out: OutSpec;
+  /** M3 narration: synthesize TTS from beats' `say` into audio[] cues. `--no-audio` skips it. */
+  audio: boolean;
+  engine?: NarrateEngine | undefined;
+  voice?: string | undefined;
+  wpm?: number | undefined;
 }
 
 /**
@@ -202,7 +209,14 @@ function parseArgs(argv: string[]): Args {
   const format = Object.keys(fmt).length > 0 ? fmt : undefined;
   // P3: --format (container/output) is distinct from the I1 --aspect/--fps size override above.
   const out = resolveOutSpec(flag('--format'), flag('--codec'), argv.includes('--alpha'));
-  return { target: positional[0] ?? 'examples/character.yaml', id: flag('--project'), name: flag('--name'), frames: flag('--frames'), gpu: argv.includes('--gpu'), format, out };
+  // M3 narration: on by default in the compile path; --no-audio skips TTS (existing silent demos /
+  // CI). --engine (espeak-ng|coqui) + --voice + --wpm tune the OFFLINE synth; the cached wav is the
+  // deterministic artifact regardless. ENGINE env override: NARRATE_ENGINE.
+  const audio = !argv.includes('--no-audio');
+  const engine = (flag('--engine') ?? process.env['NARRATE_ENGINE']) as NarrateEngine | undefined;
+  const voice = flag('--voice') ?? process.env['NARRATE_VOICE'];
+  const wpm = num('--wpm');
+  return { target: positional[0] ?? 'examples/character.yaml', id: flag('--project'), name: flag('--name'), frames: flag('--frames'), gpu: argv.includes('--gpu'), format, out, audio, engine, voice, wpm };
 }
 
 /**
@@ -381,7 +395,7 @@ function makeThumbnail(p: ProjectPaths, frame: number): void {
 }
 
 async function main(): Promise<void> {
-  const { target, id: idFlag, name, frames, gpu, format, out } = parseArgs(process.argv.slice(2));
+  const { target, id: idFlag, name, frames, gpu, format, out, audio, engine, voice, wpm } = parseArgs(process.argv.slice(2));
 
   let paths: ProjectPaths;
   let sceneIR: SceneIR;
@@ -405,6 +419,21 @@ async function main(): Promise<void> {
     const library = Library.open(PROJECT_ROOT);
     console.log(`[render] compiling '${target}' → project '${id}'`);
     sceneIR = runPipeline(storyPath, { rootDir: PROJECT_ROOT, frontend: libraryFrontend(library, format), cacheKeyExtra: format });
+
+    // M3 NARRATION (OFFLINE asset-gen; golden rule 2). When beats carry `say` and audio isn't disabled,
+    // synthesize TTS into the project's self-contained assets/audio/ (content-addressed, cached) and
+    // emit `audio[]` cues onto the timeline at each beat's scene start. The cached wav is the
+    // deterministic artifact (golden rule 1), so the muxed video re-renders byte-identically. The wavs
+    // are generated DIRECTLY into the render publicDir (assets/), so no extra vendor step is needed.
+    if (audio) {
+      const story = parseStory(readFileSync(storyPath, 'utf8'));
+      const hasSay = story.beats.some((b) => b.say?.trim());
+      if (hasSay) {
+        const assetsDir = resolvePath(paths.dir, 'assets');
+        mkdirSync(assetsDir, { recursive: true });
+        sceneIR = applyNarration(sceneIR, story, { engine, voice, wpm, assetsDir, rootDir: PROJECT_ROOT });
+      }
+    }
 
     const refs = lockRefsForScene(sceneIR);
     writeSource(paths, readFileSync(storyPath, 'utf8'));

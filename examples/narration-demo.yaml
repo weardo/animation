@@ -1,0 +1,56 @@
+# examples/narration-demo.yaml — the M3 narration MVP demo (audio).
+#
+# A short 3-beat story where EVERY beat carries a `say` line. The compile path (src/cli/render.ts)
+# runs the OFFLINE narrate step (golden rule 2: TTS never touches frames/runtime — it produces a
+# cached, content-addressed wav at BUILD time, exactly like the vendored font / factory:gen source
+# material). Each beat's `say` becomes a Scene-IR audio[] cue (kind:"narration") anchored at that
+# beat's scene start; Remotion <Audio> plays it and renderMedia MUXES it into the mp4 (h264 + aac).
+#
+# DETERMINISM (golden rule 1): the cached wav is the deterministic artifact — the espeak-ng engine
+# runs ONCE (skip-if-exists), so a re-render replays the FIXED wav and the muxed audio + video streams
+# are byte-identical even though a TTS engine may be stochastic.
+#
+# Run: tsx src/cli/render.ts examples/narration-demo.yaml --project narration-demo --name "Narration"
+
+title: "Narration"
+
+cast:
+  blip:
+    ref: blip # → library characters/blip@1.0.0 (procedural blob-creature rig)
+    palette: warm
+
+beats:
+  - id: b1
+    say: "Meet Blip."
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - actor: blip
+    action:
+      - on: blip
+        do: wave
+    camera: slow_push_in
+
+  - id: b2
+    say: "Blip explores the neuron network."
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - generator: bead-string
+        as: neuron_chain
+      - actor: blip
+    action:
+      - on: blip
+        do: idle
+    camera: slow_push_in
+
+  - id: b3
+    say: "And that is how it works."
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - actor: blip
+    action:
+      - on: blip
+        do: wave
+    camera: slow_push_in

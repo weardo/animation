@@ -1,0 +1,35 @@
+# examples/character.yaml — M2.0 character slice: the code-generated "blip" rig as the lead.
+#
+# Replaces the M1 'starter' hand with a real, reusable flat-vector Kurzgesagt character (a blue blob
+# creature) built entirely from code (tools/gen-blip-rig.mjs) — bones hierarchy, blink/viseme
+# attachment swaps, and an AUTHORED FFD breathe/squash deform on the body mesh. The lowering pass
+# sequences its named clips (idle loop → wave → idle); the host RigLayer adds StyleKit liveness
+# (breathing, sway, Poisson blink) on top.
+#
+# DOMAIN-AGNOSTIC (ADR-007): the story DECLARES its whole scene via `show[]` — there is no implicit
+# background or rig. The lowering pass injects nothing; this beat shows a gradient background asset
+# (low z, far parallax) and brings the `blip` cast ref on screen as a rig layer.
+#
+# Authored as semantic intent only (no frames/coordinates); the pipeline lowers it to a Scene IR and
+# Remotion renders it deterministically. Run: `npm run build:blip`.
+
+title: "Meet Blip"
+
+cast:
+  blip:
+    ref: blip # → library characters/blip@1.0.0 (rig entry; the provider is derived from the catalog)
+    palette: warm
+
+beats:
+  - id: b1
+    say: "Hi! I'm Blip — a code-generated character."
+    show:
+      # The gradient background: a plain asset at z=0 with a far (static) parallax factor.
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      # Bring the cast ref on screen as a rig layer (z=10, staged at the default anchor).
+      - actor: blip
+    action:
+      - on: blip
+        do: wave # expressive clip with the authored FFD squash beat
+    camera: slow_push_in
