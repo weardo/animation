@@ -9,11 +9,13 @@
 #   s2  DRIFTING DUST        motif=dot,  denser, anim=drift               → motes adrift in light
 #   s3  FAINT BLOB FOLIAGE   motif=blob, low opacity, gentle pulse        → a soft cloud/leaf band
 #
-# HOW IT WIRES (no IR/pipeline change beyond the scatter lowering): each beat's `show[]` lists a
+# HOW IT WIRES (ADR-007 domain-agnostic: every layer is DECLARED, nothing injected): each beat's
+# `show[]` lists a gradient background (asset, z=0), the `generator: bead-string` neuron, a
 # `generator: scatter` item with `as:` (a handle → deterministic seed + stable layer id) and `args:`
-# (the scatter's free-form params, validated by the generator's own Zod schema at render time). The
-# lowering pass emits one low-z (z=1) generator layer per scatter item, so it composites BEHIND the
-# bead-string (z=4) and the `blip` rig (z=10) but ABOVE the gradient background (z=0). Colors are
+# (the scatter's free-form params, validated by the generator's own Zod schema at render time), then
+# the `blip` cast ref as a rig (`actor: blip`). The lowering pass emits one low-z (z=1) generator
+# layer per scatter item, so it composites BEHIND the bead-string and the `blip` rig (z=10) but ABOVE
+# the gradient background (z=0). Colors are
 # palette TOKENS (light/accent/accent2/bg2) resolved against `defs.palette`. Transitions cross-fade
 # between scenes so the ambience visibly MORPHS from sky → dust → foliage.
 #
@@ -22,9 +24,9 @@
 
 title: "Scatter Demo"
 
-characters:
+cast:
   blip:
-    rig: blip
+    ref: blip
     palette: warm
 
 beats:
@@ -32,6 +34,8 @@ beats:
   - id: s1
     say: "A quiet night, full of stars."
     show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
       - generator: bead-string
         as: neuron_chain
       - generator: scatter
@@ -46,6 +50,7 @@ beats:
           anim_speed: 0.4
           glow: true              # soft halo on the brighter stars
           opacity: 0.9
+      - actor: blip
     camera: establishing
     duration: { seconds: 3 }
 
@@ -53,6 +58,8 @@ beats:
   - id: s2
     say: "Motes of dust drift through the light."
     show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
       - generator: bead-string
         as: neuron_chain
       - generator: scatter
@@ -68,6 +75,7 @@ beats:
           anim_speed: 0.25
           drift_amount: 9
           opacity: 0.55
+      - actor: blip
     camera: slow_push_in
     duration: { seconds: 4 }
     transition: { kind: fade, duration: 18 }
@@ -76,6 +84,8 @@ beats:
   - id: s3
     say: "And a soft canopy breathes overhead."
     show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
       - generator: bead-string
         as: neuron_chain
       - generator: scatter
@@ -92,6 +102,7 @@ beats:
           anim: pulse             # the canopy gently breathes
           anim_speed: 0.18
           opacity: 0.35           # faint — it's ambience, behind everything
+      - actor: blip
     camera: slow_pull_out
     duration: { seconds: 3 }
     transition: { kind: fade, duration: 18 }

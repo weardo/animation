@@ -8,6 +8,10 @@
 // The old hardcoded `rigDef.kind === 'procedural' ? … : …` dispatch in src/render/Scene.tsx is gone;
 // the compositor now resolves `rigDef.provider` through the `providers` registry uniformly.
 //
+// ADR-007: the entire DragonBones runtime (RigLayer + loader + clips + liveness + animated-eval) lives
+// in THIS plugin (the local files alongside this index), not in core — the dependency arrow points
+// plugin→core (delete-the-plugin test). Core keeps only the generic provider dispatch in Scene.tsx.
+//
 // PROVIDER PROPS: the engine's uniform `ProviderProps` is `{ layer, rigDef, easings }`. The dragonbones
 // provider forwards the full rig definition to the vendor <RigLayer>.
 //
@@ -16,7 +20,7 @@
 
 import React from 'react';
 import type { EngineAPI, Plugin, ProviderProps } from '../../src/engine/index.js';
-import { RigLayer } from '../../src/rig/index.js';
+import { RigLayer } from './runtime.js';
 
 import manifestJson from './plugin.json' with { type: 'json' };
 import { parseManifest } from '../../src/engine/index.js';

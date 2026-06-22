@@ -6,12 +6,12 @@
 // easing name through the StyleKit (`easingFn`) so NO segment is ever accidentally linear (spec §9).
 //
 // PURE / DETERMINISTIC: a function of (prop, frame, easings) only. Reused by <RigLayer> to resolve
-// its `transform` channels (position/scale/rotation/opacity) per frame. Kept local to src/rig per
-// the task scope; a shared compositor evaluator can later supersede it without changing this API.
+// its `transform` channels (position/scale/rotation/opacity) per frame. Kept local to the core-rigs
+// plugin; a shared compositor evaluator can later supersede it without changing this API.
 
 import { interpolate } from 'remotion';
-import type { Easings } from '../ir/index.js';
-import { easingFn, type EasingFunction } from '../render/stylekit.js';
+import type { Easings } from '../../src/ir/index.js';
+import { easingFn, type EasingFunction } from '../../src/render/stylekit.js';
 
 /** The generic `{a,k}` shape this evaluator accepts (number- or vector-valued). */
 interface Keyframe<V> {

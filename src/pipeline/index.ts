@@ -41,11 +41,14 @@ export {
   PASS_VERSION as PARSE_PASS_VERSION,
 } from './parse.js';
 
-// P5 — lowering: Story IR → Scene IR.
+// P5 — lowering: Story IR → Scene IR (domain-agnostic; ADR-007).
 export {
   lowerStory,
-  M1_CONFIG,
-  M1_REFS,
+  RENDER_CONFIG,
+  DEFAULT_BEAT_SECONDS,
+  DEFAULT_TRANSITION_FRAMES,
+  DEFAULT_RIG_CLIP,
+  DEFAULT_RIG_PROVIDER,
   PASS_ID as LOWER_PASS_ID,
   PASS_VERSION as LOWER_PASS_VERSION,
 } from './lower.js';

@@ -81,13 +81,20 @@ export class Library {
       throw new Error(`ref ${r.key} is kind '${r.entry.kind}', expected 'rig'`);
     }
     if (!r.entry.uri) throw new Error(`rig entry ${r.key} has no uri`);
-    // ADR-006: the rig def carries a `provider` id (NOT a domain "kind"). The catalog entry names it
-    // explicitly via `provider`; otherwise it is derived from `format` for back-compat — a
-    // 'procedural' entry is rendered by the `blob-creature` provider, anything else by 'dragonbones'.
-    const provider =
-      r.entry.provider ?? (r.entry.format === 'procedural' ? 'blob-creature' : 'dragonbones');
-    if (provider === 'blob-creature') {
-      // Embed the opaque provider spec so it travels in the Scene IR (the provider validates/renders).
+    // ADR-006/007: the rig def carries a `provider` id (NOT a domain "kind"), named by the catalog
+    // entry as DATA — core knows no provider plugin by name. The provider itself validates/renders the
+    // opaque spec. We require the entry to declare its provider (no core fallback that guesses a plugin
+    // name from `format` — that would re-introduce provider knowledge into the engine).
+    const provider = r.entry.provider;
+    if (!provider) {
+      throw new Error(
+        `rig entry ${r.key} has no 'provider' (the catalog entry must name the provider plugin that renders it)`
+      );
+    }
+    // A `proc://` URI is the engine-generic convention for "this entry carries an inlined sidecar spec
+    // co-located with it" — embed it so the opaque spec travels in the Scene IR (the named provider
+    // validates/renders it). Keyed on the URI SCHEME (data convention), not on any provider name.
+    if (r.entry.uri.startsWith('proc://')) {
       const id = r.entry.uri.replace(/^proc:\/\//, '').split('/')[0] ?? '';
       const specPath = resolvePath(this.rootDir, 'library', 'characters', id, `${id}.spec.json`);
       const spec = JSON.parse(readFileSync(specPath, 'utf8')) as Record<string, unknown>;

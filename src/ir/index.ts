@@ -30,7 +30,7 @@ export type {
 // Story IR.
 export {
   StoryIRSchema,
-  CharacterSchema,
+  CastEntrySchema,
   BeatSchema,
   ShowItemSchema,
   ActionItemSchema,
@@ -41,7 +41,7 @@ export {
 } from './story.js';
 export type {
   StoryIR,
-  Character,
+  CastEntry,
   Beat,
   ShowItem,
   ActionItem,

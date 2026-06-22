@@ -2,13 +2,6 @@
   "lockfile_version": "1",
   "algorithm": "object-hash@sha1/v1",
   "refs": {
-    "axon_curve@1.0.0": {
-      "namespace": "generators",
-      "id": "axon_curve",
-      "version": "1.0.0",
-      "hash": "e67de644e49fb0619ac48315aab6e7ee58650615",
-      "deps": []
-    },
     "bg_gradient@1.0.0": {
       "namespace": "backgrounds",
       "id": "bg_gradient",

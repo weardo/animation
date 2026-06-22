@@ -1,21 +1,25 @@
-// Pipeline pass P5 — Lowering: Story IR → Scene IR. Spec §5, §6.2, §15 (M1 vertical slice).
+// Pipeline pass P5 — Lowering: Story IR → Scene IR. Spec §5, §6.2. ADR-007 (domain-agnostic compiler).
 //
 // A PURE function: `(StoryIR, opts?) → SceneIR`. Seeded RNG only (seeds derived from the story
 // hash via P0's `deriveSeed`), no wall-clock, no Math.random, no I/O. It turns each semantic beat
-// into a concrete scene of layers + keyframes + a camera move, drawing all motion/look constants
-// from the StyleKit so quality is the floor (spec §9), and emits easing *refs* (names into
-// `defs.easings`) on every keyframe so no segment is ever accidentally linear (spec §6.2/§9).
+// into a concrete scene of layers + keyframes + a camera intent, drawing all motion/look constants
+// from the StyleKit so quality is the floor (spec §9), and emitting easing *refs* (names into
+// `defs.easings`) so no segment is ever accidentally linear (spec §6.2/§9).
 //
-// M1 scope (spec §15): one beat → one scene containing
-//   • a parallax BACKGROUND asset layer (proves 2.5D depth),
-//   • a bead-string GENERATOR layer (seeded; proves the procedural generator family),
-//   • a DragonBones RIG layer with an idle clip (identity-stable character),
-//   • a CAMERA with a slow push-in (zoom 1.0→1.15) + a slight pan (drives the parallax differential).
+// DOMAIN-AGNOSTIC (ADR-007 decision #1): the pass knows only GENERIC layer KINDS — it does NOT know
+// any specific generator, rig, or subject domain. A scene's layers are built ONLY
+// from what the beat DECLARES in `show[]` (each item → an asset / generator / shape / rig layer,
+// generically) plus generic structural concerns (timeline `at`/`duration`, transitions, camera
+// intent, layout anchors). Nothing is force-injected: a background, a generator, or a rig appears
+// in a scene if and only if the story declares it. Default per-scene clip/duration are GENERIC
+// (no domain names). Each `show[]` item's free-form `args` flow straight through to the IR layer and
+// are validated by that family's own Zod at render time (CLAUDE.md rule 5 — params loose at the IR
+// boundary; "families are sockets, libraries are plugs").
 //
 // Library resolution: if a `Library` (P2 facade) is supplied, asset/rig defs are filled from the
-// resolved catalog entries (name@version → uri), exercising the content-addressing seam (spec §15).
-// Without one, the pass falls back to deterministic synthetic `defs` so it stays a pure, runnable
-// function on its own. Either way the output validates against the Scene-IR Zod schema.
+// resolved catalog entries (name@version → uri + provider). Without one, the pass falls back to
+// deterministic synthetic `defs` so it stays a pure, runnable function on its own. Either way the
+// output validates against the Scene-IR Zod schema.
 
 import {
   type AssetLayer,
@@ -33,7 +37,8 @@ import {
   type StoryIR,
   type Beat,
   type ShowItem,
-  type Character,
+  type ActionItem,
+  type CastEntry,
   type CameraIntent,
   type Transition,
   type Duration,
@@ -42,80 +47,53 @@ import type { LoweredLayer } from './contract.js';
 import {
   DEFAULT_PALETTE,
   DEFAULT_EASINGS,
-  MOTION_DEFAULTS,
 } from '../render/stylekit.js';
 import { storyHash, deriveSeed } from './parse.js';
 import type { LoweredSceneIR, LoweredScene } from './contract.js';
 
 /** This pass's id + version — folded into cache keys / provenance (spec §5). */
 export const PASS_ID = 'lower';
-export const PASS_VERSION = '1.0';
+export const PASS_VERSION = '2.0';
 
-/** The render config for the M1 slice: one 5-second, 1920×1080, 30fps scene (spec §15). */
-export const M1_CONFIG = {
+/**
+ * The default render config: a 1920×1080, 30fps film. Generic — no domain assumptions. A scene's
+ * length comes from its beat's `duration` (or the generic per-beat default below); the film's total
+ * `duration_frames` is the sum of scene lengths minus transition overlaps.
+ */
+export const RENDER_CONFIG = {
   w: 1920,
   h: 1080,
   fps: 30,
-  /** 5 seconds at 30fps. */
-  durationFrames: 150,
 } as const;
 
 /**
- * Default per-beat scene length when a beat declares no `duration` (spec task: "a sensible default
- * e.g. 4s"). Expressed in SECONDS and resolved to frames against the scene fps so it scales with the
- * config. The M1 single-beat slice overrides this via `M1_CONFIG.durationFrames` (5s) when the story
- * has exactly one beat and the caller passed no override, preserving M1 byte-output (see lowerStory).
+ * Default per-beat scene length when a beat declares no `duration`. Expressed in SECONDS and
+ * resolved to frames against the scene fps so it scales with the config. Generic — no domain names.
  */
 export const DEFAULT_BEAT_SECONDS = 4 as const;
 
 /**
  * Default transition length (frames) used when a beat carries a `transition` with no explicit
- * `duration`. A hard `cut` is zero-length (no overlap). Kept here as the one StyleKit-adjacent
- * tunable so every defaulted transition reads the same length. (Spec §11.2.)
+ * `duration`. A hard `cut` is zero-length (no overlap). The one StyleKit-adjacent tunable so every
+ * defaulted transition reads the same length. (Spec §11.2.)
  */
 export const DEFAULT_TRANSITION_FRAMES = 15 as const;
 
-/** Default M1 catalog refs (name@version) the lowering pass resolves (matches library/index.json). */
-export const M1_REFS = {
-  background: 'bg_gradient@1.0.0',
-  beadStringPath: 'axon_curve@1.0.0',
-  /** Fallback rig if a beat declares no character (the M1 sample rig). */
-  rig: 'dragon@1.0.0',
-} as const;
+/**
+ * Generic default rig animation/clip. When a beat brings a rig on screen but declares NO `action`
+ * driving it, the pass loops this single clip so the rig is alive (a looping idle). It is a GENERIC
+ * clip name (no domain anim like "throw"); a richer rig declares its own clips and the story's
+ * `action[]` selects/sequences them. Conventionally a rig's library manifest lists `idle` first.
+ */
+export const DEFAULT_RIG_CLIP = 'idle' as const;
 
 /**
- * The DragonBones animation the M1 rig clip drives. The bundled 'starter' demo armature (spec
- * spike) ships exactly one animation, "throw", whose hand/finger slots are skinned meshes that
- * deform under bone motion — this is the M1 "mesh-deformed (FFD) element" acceptance criterion
- * (spec §15). A richer rig with a named "idle" would override this in its own lowering.
+ * The synthetic provider id stamped on a rig def ONLY on the standalone (no-Library) fallback path,
+ * where no catalog entry exists to name the real provider. It is a GENERIC placeholder — core names
+ * no specific provider plugin (ADR-007). The real (library) path always carries the resolved
+ * catalog entry's own `provider`, so this value never reaches a real render.
  */
-export const M1_RIG_ANIM = 'throw' as const;
-
-/**
- * Per-rig clip plans. A rig declares its own internal named animations (DragonBones); the lowering
- * pass selects/sequences them via `rig_state.clips` (a thin pointer, never re-describing bones —
- * spec §6.2/§8). The default plan loops the rig's single demo anim ("throw"); a richer rig (the M2
- * `blip` character) loops "idle" and fires an expressive "wave" mid-scene. Blink runs as host
- * liveness (RigLayer eye-slot toggle) on top, so it is not sequenced here.
- *
- * Keyed by rig NAME (the part of the ref before `@`). Falls back to the default demo clip.
- */
-const RIG_CLIP_PLANS: Record<string, (durationFrames: number) => RigClip[]> = {
-  blip: (durationFrames) => [
-    { anim: 'idle', loop: true },
-    // Expressive beat: wave once, starting ~40% in, then settle back to the looping idle.
-    { anim: 'wave', loop: false, at: Math.floor(durationFrames * 0.4) },
-    { anim: 'idle', loop: true, at: Math.floor(durationFrames * 0.4) + 48 },
-  ],
-};
-
-/** Resolve the clip plan for a rig ref (`name@version` or `name`). */
-function clipsForRig(rigRef: string, durationFrames: number): RigClip[] {
-  const name = rigRef.split('@')[0] ?? rigRef;
-  const plan = RIG_CLIP_PLANS[name];
-  if (plan) return plan(durationFrames);
-  return [{ anim: M1_RIG_ANIM, loop: true }];
-}
+export const DEFAULT_RIG_PROVIDER = 'rig' as const;
 
 // --- beat duration + transition resolution ----------------------------------------------------
 
@@ -175,8 +153,7 @@ function overlapFrames(transitionIn: Transition | undefined): number {
  * Extract a beat's camera INTENT (a keyword like "slow_push_in", or `{ move, amount, ... }`) for the
  * lite camera-director pass (P8) to expand into concrete keyframes. Lowering deliberately emits the
  * intent rather than baking camera here, so each beat's camera move is resolved per-scene by P8
- * (spec §5/§8: lower emits intent; the camera pass owns the recipe). `undefined` → P8 applies its
- * DEFAULT_INTENT ("hold").
+ * (spec §5/§8). `undefined` → P8 applies its DEFAULT_INTENT ("hold").
  */
 function cameraIntentForBeat(beat: Beat): CameraIntent | undefined {
   return beat.camera;
@@ -194,7 +171,7 @@ export interface LibraryLike {
 export interface LowerOptions {
   /** Library facade (P2). When present, defs are filled from resolved catalog entries. */
   library?: LibraryLike;
-  /** Override the per-scene duration in frames (default {@link M1_CONFIG}.durationFrames). */
+  /** Override the per-scene duration in frames (default: {@link DEFAULT_BEAT_SECONDS} × fps). */
   durationFrames?: number;
 }
 
@@ -218,6 +195,23 @@ function defaultPalette(): Palette {
   return { ...DEFAULT_PALETTE };
 }
 
+// --- ref helpers ------------------------------------------------------------------------------
+
+/** The bare name part of a `name@version` ref (or the ref itself if unversioned). */
+function refName(ref: string): string {
+  return ref.split('@')[0] ?? ref;
+}
+
+/** Default an unversioned ref name to `@1.0.0` so the catalog resolves it; pass `name@x.y.z` through. */
+function withVersion(ref: string): string {
+  return ref.includes('@') ? ref : `${ref}@1.0.0`;
+}
+
+/** A Scene-IR `defs` key for a ref (the bare name — stable, human-diffable). */
+function defKey(ref: string): string {
+  return refName(ref);
+}
+
 // --- def resolution ---------------------------------------------------------------------------
 
 /**
@@ -225,115 +219,126 @@ function defaultPalette(): Palette {
  * so the pass runs standalone. The synthetic uri is a pure function of the ref name.
  */
 function resolveAsset(ref: string, lib: LibraryLike | undefined): AssetDef {
-  if (lib) return lib.toAssetDef(ref);
-  const name = ref.split('@')[0] ?? ref;
-  return { uri: `asset://${name}.svg`, kind: 'svg' };
+  // The Library resolves strictly by `name@version`; default an unversioned story ref to `@1.0.0`
+  // (mirroring the rig path) so a bare `asset: bg_gradient` declaration resolves against the catalog.
+  if (lib) return lib.toAssetDef(withVersion(ref));
+  return { uri: `asset://${refName(ref)}.svg`, kind: 'svg' };
 }
 
-/** Resolve a rig def from the library, or synthesize a deterministic fallback. */
+/**
+ * Resolve a rig def from the library, or synthesize a deterministic fallback. The fallback provider
+ * is the generic {@link DEFAULT_RIG_PROVIDER}; the Library overrides it from the catalog entry.
+ */
 function resolveRig(ref: string, lib: LibraryLike | undefined): RigDef {
   if (lib) return lib.toRigDef(ref);
-  const name = ref.split('@')[0] ?? ref;
-  return { uri: `rig://${name}.dbones.json`, provider: 'dragonbones' };
+  return { uri: `rig://${refName(ref)}.rig.json`, provider: DEFAULT_RIG_PROVIDER };
 }
+
+// --- rig clip planning (author-declared, generic default) -------------------------------------
 
 /**
- * Pick the rig ref for a beat: the first declared character's rig (resolved to name@version), or
- * the M1 fallback rig. A character's `rig` may omit a version (`name` or `name@x.y.z`); we default
- * an unversioned name to `@1.0.0` so the M1 catalog resolves it.
+ * Build a rig's `rig_state.clips` from the beat's `action[]` items that target this rig's HANDLE.
+ * Each such action's `do` is the rig's internal animation name (a thin pointer — lowering never
+ * re-describes bones; spec §6.2/§8): the first action loops as the base clip, later actions fire as
+ * one-shots spaced across the scene, then settle back to the looping base. When NO action targets
+ * the rig, the pass loops the GENERIC {@link DEFAULT_RIG_CLIP} so the rig is still alive.
+ *
+ * Pure + deterministic: frame offsets are a function of the scene length and the action index only.
+ * No hardcoded per-rig table, no domain anim names — the clips come from the STORY (or the generic
+ * default), never from the compiler.
  */
-function rigRefForStory(story: StoryIR): string {
-  const first: Character | undefined = Object.values(story.characters)[0];
-  if (!first) return M1_REFS.rig;
-  return first.rig.includes('@') ? first.rig : `${first.rig}@1.0.0`;
+function clipsForRig(handle: string, actions: ActionItem[], durationFrames: number): RigClip[] {
+  const mine = actions.filter((a) => a.on === handle);
+  if (mine.length === 0) {
+    return [{ anim: DEFAULT_RIG_CLIP, loop: true }];
+  }
+  // Base looping clip: the generic default, so the rig idles before/after expressive beats.
+  const clips: RigClip[] = [{ anim: DEFAULT_RIG_CLIP, loop: true }];
+  // Each authored action fires as a one-shot, evenly spaced across the scene, then returns to idle.
+  const span = Math.max(1, mine.length);
+  mine.forEach((a, i) => {
+    const at = Math.floor((durationFrames * (i + 1)) / (span + 1));
+    clips.push({ anim: a.do, loop: false, at });
+    clips.push({ anim: DEFAULT_RIG_CLIP, loop: true, at: at + 48 });
+  });
+  return clips;
 }
 
-// --- layer builders ---------------------------------------------------------------------------
+// --- generic per-show[] layer builders --------------------------------------------------------
 
-/** The parallax BACKGROUND asset layer (spec §15: proves 2.5D depth). z=0, far parallax. */
-function buildBackgroundLayer(): AssetLayer {
-  return {
+/**
+ * A generic ASSET layer lowered from a `show[].asset` item. The item's `args` may set `z` (z-order),
+ * `parallax` (2.5D depth factor; default 0 = static far), and a layout `at` anchor (placement). The
+ * authored `asset` name becomes the layer `ref` (a `defs.assets` key); free-form `effects[]` pass
+ * straight through. A background is just an asset declared with low z + a far parallax factor — no
+ * special builder.
+ */
+function buildAssetLayer(item: ShowItem, index: number): LoweredLayer {
+  const ref = item.asset!;
+  const args = (item.args ?? {}) as Record<string, unknown>;
+  const id = `L_asset_${item.as ?? `${refName(ref)}_${index}`}`;
+  const z = typeof args['z'] === 'number' ? (args['z'] as number) : 0;
+  const parallax = typeof args['parallax'] === 'number' ? (args['parallax'] as number) : 0;
+  const effects = Array.isArray(args['effects']) ? (args['effects'] as Effect[]) : undefined;
+  const layer: AssetLayer = {
     type: 'asset',
-    id: 'L_bg',
-    ref: 'bg_gradient',
-    z: 0,
-    // Far layer → low parallax factor (moves least with the camera) for depth (StyleKit bounds).
-    parallax: MOTION_DEFAULTS.parallax.farFactor + 0.1,
+    id,
+    ref: refName(ref),
+    z,
+    parallax,
+    ...(effects && effects.length > 0 ? { effects } : {}),
   };
-}
-
-/**
- * The bead-string GENERATOR layer (spec §15: a neuron chain — traveling pulse + wavy bending +
- * blobby beads). Seeded deterministically from the story hash + the layer handle. Params follow the
- * Scene-IR example (spec §6.2): pulse propagation `phase = frame*speed − index*phase_step`.
- */
-function buildBeadStringLayer(seed: number, pathUri: string): GeneratorLayer {
-  return {
-    type: 'generator',
-    id: 'L_neuron',
-    gen: 'bead-string',
-    z: 4,
-    seed,
-    path: pathUri,
-    params: {
-      beads: 9,
-      bead_radius: 14,
-      blobbiness: 0.35,
-      pulse: { amp: 0.25, speed: 1.4, phase_step: 0.6 },
-      wave: { amp: 10, speed: 0.8 },
-      gooey: true,
-      fill: 'accent',
-      glow: true,
-    },
-  };
+  // An explicit `at` stages the asset; a background typically omits it (no position needed).
+  if (typeof item.at === 'string') return { ...layer, anchor: item.at } as LoweredLayer;
+  return layer;
 }
 
 /**
  * A generic procedural GENERATOR layer (spec §10/§10.1) lowered from a `show[].generator` item —
- * `scatter` (the Kurzgesagt "hundreds of tiny shapes" ambience), `water`, `particles`, `fire`,
- * `crowd`, or any future registered generator EXCEPT `bead-string` (which has its own M1 builder).
- * "Families are sockets; libraries are plugs": the lowering pass does NOT know any generator's
- * params — it just forwards the authored `gen` name + the item's free-form `args` and assigns a
- * deterministic seed (story hash + beat id + handle) and a LOW z so the field composites BEHIND the
- * bead-string (z=4) and the protagonist rig (z=10) but ABOVE the background (z=0). Each generator's
- * own Zod schema validates the params at render time (CLAUDE.md rule 5: params stay loose at the IR
- * boundary). This is how each beat gets its own DISTINCT world (ocean / void / hearth / stadium)
- * with NO IR or compositor change — the registry resolves `gen` → component on the render side.
+ * any registered generator (scatter / water / particles / fire / crowd / chains / …). "Families
+ * are sockets; libraries are plugs": the lowering pass does NOT know any generator's params — it
+ * forwards the authored `gen` name + the item's free-form `args` and assigns a deterministic seed
+ * (story hash + beat id + handle). Each generator's own Zod schema validates the params at render
+ * time. The registry resolves `gen` → component on the render side, so each beat gets its own world
+ * with NO IR or compositor change. z/path come from `args` (generic, author-controlled).
  */
 function buildGeneratorLayer(
-  id: string,
-  gen: string,
-  seed: number,
-  params: Record<string, unknown>,
-  effects?: Effect[]
-): GeneratorLayer {
-  return {
+  item: ShowItem,
+  beatId: string,
+  hash: string,
+  index: number
+): LoweredLayer {
+  const gen = item.generator!;
+  const handle = item.as ?? `${gen}_${index}`;
+  const id = `L_gen_${gen}_${handle}`;
+  const seed = deriveSeed(hash, `${beatId}:${gen}:${handle}`);
+  const args = (item.args ?? {}) as Record<string, unknown>;
+  const z = typeof args['z'] === 'number' ? (args['z'] as number) : 1;
+  const path = typeof args['path'] === 'string' ? (args['path'] as string) : undefined;
+  const effects = Array.isArray(args['effects']) ? (args['effects'] as Effect[]) : undefined;
+  const layer: GeneratorLayer = {
     type: 'generator',
     id,
     gen,
-    // Low z: behind the neuron chain (z=4) and the character (z=10), above the background (z=0).
-    z: 1,
+    z,
     seed,
     // Free-form, validated by the generator's own Zod schema at render time. Empty args → defaults.
-    params,
-    // Authored per-layer effects[] stack (ADR-003 #2) — pass straight through; each entry's params
-    // are validated by its registered effect's own Zod at render time (CLAUDE.md rule 5).
+    params: args,
+    ...(path ? { path } : {}),
     ...(effects && effects.length > 0 ? { effects } : {}),
   };
+  if (typeof item.at === 'string') return { ...layer, anchor: item.at } as LoweredLayer;
+  return layer;
 }
 
 /**
- * A first-class SHAPE layer (ADR-003 #1) lowered from a `show[].shape` directive. "Families are
- * sockets; libraries are plugs": the rendered geometry is a `@remotion/shapes` PRIMITIVE (kind +
- * params) and/or a flubber-morphed path (`morph`), with a solid- or gradient-`fill` and optional
- * `stroke` — all of which arrive in the item's free-form `args` and pass straight through to the
- * Scene-IR `shape` layer (validated by the ShapeLayer Zod schema at the boundary; CLAUDE.md rule 5).
- *
- * The `as` handle becomes the layer id (stable → byte-identical re-renders); `z`/`scale`/`rotation`/
- * `opacity` in `args` build the layer transform (a static `pop`-free transform here; the ShapeLayer
- * evaluates animated `{a,k}` morph/fill itself). Placement is carried as a layout `anchor` (from the
- * item's `at`), resolved to `transform.position` by the layout pass — so a shape stages like any
- * other layer. Pure structural lowering: no wall-clock, no RNG.
+ * A first-class SHAPE layer (ADR-003 #1) lowered from a `show[].shape` directive. The rendered
+ * geometry is a `@remotion/shapes` PRIMITIVE (kind + params) and/or a flubber-morphed path (`morph`),
+ * with a solid- or gradient-`fill` and optional `stroke` — all arriving in the item's free-form
+ * `args` and passing straight through to the Scene-IR `shape` layer (validated by the ShapeLayer Zod
+ * schema at the boundary; CLAUDE.md rule 5). `z`/`scale`/`rotation`/`opacity` in `args` build the
+ * transform; placement is carried as a layout `anchor` (from the item's `at`). Pure structural
+ * lowering: no wall-clock, no RNG.
  */
 function buildShapeLayer(item: ShowItem, index: number): LoweredLayer {
   const kind = item.shape!;
@@ -341,8 +346,8 @@ function buildShapeLayer(item: ShowItem, index: number): LoweredLayer {
   const id = `L_shape_${item.as ?? `${kind}_${index}`}`;
   const z = typeof args['z'] === 'number' ? (args['z'] as number) : 5;
 
-  // Geometry: an explicit `morph` channel wins; else the named primitive (unless the sentinel
-  // `morph` kind was used without a morph — then nothing draws, which we avoid by requiring args).
+  // Geometry: an explicit `morph` channel wins; else the named primitive (the sentinel `morph` kind
+  // draws nothing without a morph, which we avoid by requiring args).
   const morph = args['morph'] as ShapeLayer['morph'] | undefined;
   const shape =
     kind === 'morph'
@@ -350,8 +355,8 @@ function buildShapeLayer(item: ShowItem, index: number): LoweredLayer {
       : ({ kind, ...((args['params'] as Record<string, unknown>) ?? {}) } as ShapeLayer['shape']);
 
   // Transform: scale/rotation/opacity from args (position comes from the anchor via layout). A bare
-  // number is wrapped as a static `{a:0,k}` channel; an authored `{a,k}` object passes straight through
-  // (so an effect like motion_blur has a real animated move to smear). The ShapeLayer evaluates these.
+  // number is wrapped as a static `{a:0,k}` channel; an authored `{a,k}` object passes straight
+  // through (so an effect like motion_blur has a real animated move to smear).
   const transform: Transform = {};
   const channel = (v: unknown): Transform['scale'] | undefined =>
     typeof v === 'number' ? { a: 0, k: v } : v && typeof v === 'object' ? (v as Transform['scale']) : undefined;
@@ -370,9 +375,6 @@ function buildShapeLayer(item: ShowItem, index: number): LoweredLayer {
     ...(morph ? { morph } : {}),
     ...(args['fill'] !== undefined ? { fill: args['fill'] as ShapeLayer['fill'] } : {}),
     ...(args['stroke'] !== undefined ? { stroke: args['stroke'] as ShapeLayer['stroke'] } : {}),
-    // Authored per-layer effects[] stack (ADR-003 #2): pass `args.effects` straight through to the
-    // Scene-IR layer `effects[]`. Each entry is `{ kind, ...params }`; the registered effect validates
-    // its own params at render time (CLAUDE.md rule 5). Layers without effects are left untouched.
     ...(Array.isArray(args['effects']) ? { effects: args['effects'] as Effect[] } : {}),
     ...(Object.keys(transform).length > 0 ? { transform } : {}),
   };
@@ -383,13 +385,32 @@ function buildShapeLayer(item: ShowItem, index: number): LoweredLayer {
 }
 
 /**
- * The DragonBones RIG layer with an idle clip (spec §15: identity-stable character). A StyleKit
- * "pop" entrance (scale + opacity overshoot) makes the character appear with life (spec §9); the
- * idle clip loops so even a static shot feels alive. Centered, ground-anchored position.
+ * A generic RIG layer lowered from a `show[].actor` item. The named actor is resolved to its library
+ * ref via the story's `cast` declaration; the rig def key is the ref's bare name (a `defs.rigs` key).
+ * A StyleKit "pop" entrance (scale + opacity overshoot) makes the rig appear with life (spec §9);
+ * `rig_state.clips` come from the beat's `action[]` targeting this handle, else the generic looping
+ * default ({@link clipsForRig}). z/at come from `args` (generic). The layer id is derived from the
+ * handle so re-renders are byte-identical.
+ *
+ * Returns `undefined` (skips the layer) when the named actor is not in the cast — lowering never
+ * invents a rig the story did not declare (ADR-007: nothing force-injected).
  */
-function buildRigLayer(ref: string, w: number, h: number, clips: RigClip[]): RigLayer {
+function buildRigLayer(
+  item: ShowItem,
+  story: StoryIR,
+  actions: ActionItem[],
+  durationFrames: number
+): LoweredLayer | undefined {
+  const actorName = item.actor!;
+  const entry: CastEntry | undefined = story.cast[actorName];
+  if (!entry) return undefined;
+  const handle = item.as ?? actorName;
+  const rigRef = withVersion(entry.ref);
+  const args = (item.args ?? {}) as Record<string, unknown>;
+  const z = typeof args['z'] === 'number' ? (args['z'] as number) : 10;
+  const id = `L_rig_${handle}`;
+
   const transform: Transform = {
-    position: { a: 0, k: [w * 0.5, h * 0.62] },
     // "pop" entrance: scale 0→100 over 12 frames with the overshoot curve (StyleKit "pop").
     scale: {
       a: 1,
@@ -406,83 +427,64 @@ function buildRigLayer(ref: string, w: number, h: number, clips: RigClip[]): Rig
       ],
     },
   };
-  return {
+
+  const effects = Array.isArray(args['effects']) ? (args['effects'] as Effect[]) : undefined;
+  const layer: RigLayer = {
     type: 'rig',
-    id: 'L_narr',
-    ref,
-    z: 10,
+    id,
+    ref: defKey(rigRef),
+    z,
     transform,
-    rig_state: {
-      clips,
-    },
+    rig_state: { clips: clipsForRig(handle, actions, durationFrames) },
+    ...(effects && effects.length > 0 ? { effects } : {}),
   };
+  // Placement: an explicit `at`, else a generic default staging anchor for a standing subject.
+  const anchor = typeof item.at === 'string' ? item.at : 'bench';
+  return { ...layer, anchor } as LoweredLayer;
 }
 
 // --- scene builder ----------------------------------------------------------------------------
 
 /**
- * Lower one beat into one scene placed on the GLOBAL timeline (one beat → one scene). Emits the
- * scene's own layers (background + bead-string generator + rig), its `camera_intent` (the beat's
- * camera move, expanded later by P8), its `duration_frames`, its global `at`, and its `transition_in`
- * (lowered from the beat's `transition`). Returns a {@link LoweredScene} (camera still an intent);
- * the lite camera pass concretizes it before the Scene-IR boundary.
+ * Lower one beat into one scene placed on the GLOBAL timeline (one beat → one scene). The scene's
+ * layers are built ENTIRELY from the beat's declared `show[]` items — each item becomes an asset /
+ * generator / shape / rig layer GENERICALLY, dispatched by which field it sets. Nothing is
+ * force-injected: a background, a generator, or a rig is present iff the story declares it. Layers
+ * are emitted in `show[]` order (z-order is author-controlled via `args.z`). The scene also carries
+ * its `camera_intent` (the beat's camera move, expanded later by P8), its `duration_frames`, its
+ * global `at`, and its `transition_in` (lowered from the beat's `transition`).
  */
 function buildScene(
   beat: Beat,
   at: number,
   durationFrames: number,
   hash: string,
-  rigDefKey: string,
-  rigRef: string,
-  beadPathUri: string,
-  cfg: { w: number; h: number },
+  story: StoryIR,
   transitionIn: Transition | undefined
 ): LoweredScene {
-  // Honor the beat's `show` intent: the bead-string GENERATOR layer is emitted only for beats that
-  // actually introduce/keep it on screen (a `show[].generator === 'bead-string'`). This makes the
-  // film read as a story — e.g. an intro beat with no `show` shows just the character, and the neuron
-  // network appears in the beat that introduces it (spec §6.1: beats declare what is on screen). The
-  // background + rig (the protagonist) are present in every beat.
-  const showsBeadString = (beat.show ?? []).some((s) => s.generator === 'bead-string');
-  // Seed is derived from the story hash + the beat id + the layer handle, so every beat's generator
-  // gets a distinct, deterministic seed (no cross-beat seed collisions, no wall-clock).
-  const seed = deriveSeed(hash, `${beat.id}:L_neuron`);
+  const show = beat.show ?? [];
+  const actions = beat.action ?? [];
 
-  // GENERATOR ambience (spec §10/§10.1): a beat may declare one or more `show[].generator` items
-  // (scatter / water / particles / fire / crowd / any registered generator EXCEPT `bead-string`,
-  // which has its own M1 builder above). Each becomes a low-z procedural layer whose look comes from
-  // the item's free-form `args`; each gets a distinct deterministic seed keyed by its name+handle and
-  // a stable layer id (`L_gen_<gen>_<handle>`) so re-renders are byte-identical. The authored
-  // `s.generator` flows straight through as the IR `gen` name — the registry resolves it to a
-  // component on the render side. Distinct per beat → per-scene variety (each beat its own world).
-  const generatorLayers: GeneratorLayer[] = (beat.show ?? [])
-    .filter((s): s is typeof s & { generator: string } =>
-      typeof s.generator === 'string' && s.generator !== 'bead-string'
-    )
-    .map((s, i) => {
-      const gen = s.generator;
-      const handle = s.as ?? `${gen}_${i}`;
-      const genSeed = deriveSeed(hash, `${beat.id}:${gen}:${handle}`);
-      const gArgs = (s.args ?? {}) as Record<string, unknown>;
-      const gEffects = Array.isArray(gArgs['effects']) ? (gArgs['effects'] as Effect[]) : undefined;
-      return buildGeneratorLayer(`L_gen_${gen}_${handle}`, gen, genSeed, s.args ?? {}, gEffects);
-    });
+  // Build one layer per show[] item, generically dispatched by which field is set. The first set
+  // field wins (a single item declares a single layer kind). Items that declare nothing renderable
+  // (e.g. a reserved `clip` field, or an `actor` not in the cast) are skipped.
+  const layers: LoweredLayer[] = [];
+  show.forEach((item, i) => {
+    let layer: LoweredLayer | undefined;
+    if (item.actor !== undefined) {
+      layer = buildRigLayer(item, story, actions, durationFrames);
+    } else if (item.generator !== undefined) {
+      layer = buildGeneratorLayer(item, beat.id, hash, i);
+    } else if (item.shape !== undefined) {
+      layer = buildShapeLayer(item, i);
+    } else if (item.asset !== undefined) {
+      layer = buildAssetLayer(item, i);
+    }
+    // `clip` and other reserved fields produce no layer yet (declared-only, lowered in a later phase).
+    if (layer !== undefined) layers.push(layer);
+  });
 
-  // SHAPE layers (ADR-003 #1): every `show[].shape` item becomes a first-class Scene-IR shape layer
-  // (a @remotion/shapes primitive and/or a flubber morph, with solid/gradient fill + stroke). Carried
-  // with a layout `anchor` so the layout pass stages it; no seed needed (shapes are deterministic).
-  const shapeLayers: LoweredLayer[] = (beat.show ?? [])
-    .filter((s) => typeof s.shape === 'string')
-    .map((s, i) => buildShapeLayer(s, i));
-
-  const layers: LoweredLayer[] = [
-    buildBackgroundLayer(),
-    ...generatorLayers,
-    ...(showsBeadString ? [buildBeadStringLayer(seed, beadPathUri)] : []),
-    ...shapeLayers,
-    buildRigLayer(rigDefKey, cfg.w, cfg.h, clipsForRig(rigRef, durationFrames)),
-  ];
-  // A single GSAP-style label at mid-scene (the "reveal" beat the spec example uses).
+  // A single GSAP-style label at mid-scene (a generic "reveal" point the camera/timing can key off).
   const reveal = Math.floor(durationFrames / 2);
   const scene: LoweredScene = {
     id: beat.id,
@@ -495,37 +497,67 @@ function buildScene(
   const intent = cameraIntentForBeat(beat);
   if (intent !== undefined) scene.camera_intent = intent;
   // Carry the beat's transition onto the scene's leading boundary (omitted on a hard cut / no
-  // transition — the compositor then renders a plain cut). The first scene drops it (no predecessor).
+  // transition — the compositor renders a plain cut). The first scene drops it (no predecessor).
   if (transitionIn) scene.transition_in = transitionIn;
   return scene;
+}
+
+// --- def collection ---------------------------------------------------------------------------
+
+/**
+ * Walk every beat's `show[]` and collect the asset + rig defs the scenes actually reference, keyed
+ * by their `defs` key (bare name). Only DECLARED refs are resolved — the pass never adds a def for a
+ * layer the story did not declare (ADR-007). Pure: a function of the story (+ optional library).
+ */
+function collectDefs(story: StoryIR, lib: LibraryLike | undefined) {
+  const assets: Record<string, AssetDef> = {};
+  const rigs: Record<string, RigDef> = {};
+  for (const beat of story.beats) {
+    for (const item of beat.show ?? []) {
+      if (item.asset !== undefined) {
+        const key = defKey(item.asset);
+        if (!(key in assets)) assets[key] = resolveAsset(item.asset, lib);
+      }
+      if (item.actor !== undefined) {
+        const entry = story.cast[item.actor];
+        if (entry) {
+          const rigRef = withVersion(entry.ref);
+          const key = defKey(rigRef);
+          if (!(key in rigs)) rigs[key] = resolveRig(rigRef, lib);
+        }
+      }
+    }
+  }
+  return { assets, rigs };
 }
 
 // --- the pass ---------------------------------------------------------------------------------
 
 /**
- * P5: lower a MULTI-BEAT Story IR into a sequenced, multi-scene Scene IR on the global timeline.
+ * P5: lower a Story IR into a sequenced, multi-scene Scene IR on the global timeline.
  *
- * MULTI-SCENE STORYTELLING (spec §11.2 / §15 M2): each beat becomes ONE scene, and the scenes are
- * laid out back-to-back on the GLOBAL timeline with transitions between them:
+ * Each beat becomes ONE scene; scenes are laid out back-to-back on the GLOBAL timeline with
+ * transitions between them:
+ *   • layers    — built ENTIRELY from each beat's declared `show[]` items (asset / generator / shape
+ *                 / rig, generically). Nothing is force-injected (ADR-007).
  *   • duration  — each scene's `duration_frames` comes from the beat's `duration` (seconds/frames),
- *                 falling back to {@link DEFAULT_BEAT_SECONDS} (×fps). The single-beat M1 case keeps
- *                 its 5s slice (M1_CONFIG) when no duration/override is given, preserving M1 output.
+ *                 falling back to {@link DEFAULT_BEAT_SECONDS} (×fps) or an explicit override.
  *   • at        — cumulative: scene[i].at = scene[i-1].at + scene[i-1].duration − overlap[i], where
  *                 overlap[i] is the frames scene[i]'s `transition_in` overlaps the previous tail
- *                 (0 for a hard cut / no transition; a transitioned boundary shortens the timeline).
+ *                 (0 for a hard cut / no transition).
  *   • transition— each beat's `transition` lowers onto the scene's `transition_in` (the FIRST beat's
  *                 transition is dropped — nothing precedes it).
  *   • camera    — each beat's camera INTENT is carried as `camera_intent`; the lite camera pass (P8)
- *                 expands it into concrete per-scene keyframes (so every beat gets its own move).
- *   • total     — `config.duration_frames` = Σ duration_frames − Σ overlaps (the real film length on
- *                 the timeline once transition overlaps are accounted for).
+ *                 expands it into concrete per-scene keyframes.
+ *   • total     — `config.duration_frames` = Σ duration_frames − Σ overlaps.
  *
  * Pure + deterministic: same `(story, opts)` ⇒ same Scene IR (generator seeds derive from the story
- * hash; all motion uses StyleKit easing refs; no wall-clock, no RNG). `defs` is resolved once and
- * shared by all scenes.
+ * hash; all motion uses StyleKit easing refs; no wall-clock, no RNG). `defs` is resolved once from
+ * only the refs the story declares, and shared by all scenes.
  *
- * Returns a {@link LoweredSceneIR}: scenes carry `camera_intent` (not yet a concrete camera), so the
- * lite camera pass (P8) runs next; the final Zod Scene-IR boundary is `validate.ts` (V).
+ * Returns a {@link LoweredSceneIR}: scenes carry `camera_intent` (not yet a concrete camera) and may
+ * carry layout `anchor`s, so the lite layout (P6) + camera (P8) passes run next; the final Zod
+ * Scene-IR boundary is `validate.ts` (V).
  *
  * @param story validated Story IR (from P0).
  * @param opts  optional library facade (P2) + per-beat duration override.
@@ -533,66 +565,40 @@ function buildScene(
  */
 export function lowerStory(story: StoryIR, opts: LowerOptions = {}): LoweredSceneIR {
   const lib = opts.library;
-  const { w, h, fps } = M1_CONFIG;
+  const { w, h, fps } = RENDER_CONFIG;
 
   const hash = storyHash(story);
-  const rigRef = rigRefForStory(story);
 
-  // Resolve the def tables once (shared by all scenes). The bead-string places along the axon path;
-  // we keep the asset's `#path` fragment for the generator's `path` field (spec §6.2 example).
-  const bgDef = resolveAsset(M1_REFS.background, lib);
-  const beadPathDef = resolveAsset(M1_REFS.beadStringPath, lib);
-  const rigDef = resolveRig(rigRef, lib);
-
+  // Resolve the def tables once (shared by all scenes) from ONLY the refs the story declares.
+  const { assets, rigs } = collectDefs(story, lib);
   const defs = {
     palette: defaultPalette(),
     easings: defaultEasings(),
-    assets: { bg_gradient: bgDef },
-    // The rig layers reference the def by the key 'narrator' (spec §6.2 example uses that handle).
-    rigs: { narrator: rigDef },
+    assets,
+    rigs,
   };
 
-  // Per-beat duration default. A single-beat story with NO duration/override keeps the 5s M1 slice
-  // (M1_CONFIG.durationFrames) so the M1 vertical slice's output is unchanged. Multi-beat stories
-  // (or an explicit override) use the per-beat default of DEFAULT_BEAT_SECONDS × fps.
-  const singleBeat = story.beats.length === 1;
-  const beatDefaultFrames =
-    opts.durationFrames ??
-    (singleBeat ? M1_CONFIG.durationFrames : Math.round(DEFAULT_BEAT_SECONDS * fps));
+  // Per-beat duration default: an explicit override, else DEFAULT_BEAT_SECONDS × fps.
+  const beatDefaultFrames = opts.durationFrames ?? Math.round(DEFAULT_BEAT_SECONDS * fps);
 
   // Lower each beat to a scene, sequencing them on the global timeline with transition overlaps.
   const scenes: LoweredScene[] = [];
   let at = 0;
   let total = 0;
   story.beats.forEach((beat, i) => {
-    // Resolve this scene's length: the beat's explicit duration, else the (possibly overridden)
-    // default. An explicit per-beat duration always wins over the default.
+    // This scene's length: the beat's explicit duration, else the (possibly overridden) default.
     const durationFrames = resolveBeatFrames(beat.duration, fps) ?? beatDefaultFrames;
 
-    // The leading transition (dropped on the first scene — nothing precedes it). It overlaps the
-    // PREVIOUS scene's tail, so it shortens both this scene's `at` and the running total.
+    // The leading transition (dropped on the first scene). It overlaps the PREVIOUS scene's tail.
     const transitionIn = i === 0 ? undefined : resolveTransitionIn(beat);
     const overlap = overlapFrames(transitionIn);
 
     // Pull this scene back over the previous tail by the overlap so the transition cross-fades.
     at -= overlap;
 
-    scenes.push(
-      buildScene(
-        beat,
-        at,
-        durationFrames,
-        hash,
-        'narrator',
-        rigRef,
-        beadPathDef.uri,
-        { w, h },
-        transitionIn
-      )
-    );
+    scenes.push(buildScene(beat, at, durationFrames, hash, story, transitionIn));
 
     at += durationFrames;
-    // Total film length = sum of durations minus the overlaps consumed at each boundary.
     total += durationFrames - overlap;
   });
 

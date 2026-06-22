@@ -14,7 +14,8 @@
 // FILL is a solid (animated) color OR a linear/radial GRADIENT. Gradients lower to an SVG <defs>
 // <linearGradient>/<radialGradient> whose id is derived DETERMINISTICALLY from the layer id, so two
 // shape layers never collide and the markup is byte-identical every run. Palette tokens (defs.palette)
-// resolve through `resolveFill` (shared with the generator family). STROKE is an optional color+width.
+// resolve through the engine's `resolveFill` (shared with the generator family). STROKE is an optional
+// color+width.
 //
 // TRANSFORM is the standard `{a,k}` position/scale/rotation/opacity, evaluated with the same StyleKit
 // easing (`eval.ts`) as asset/rig/generator layers, so a shape rides the camera + shading wrappers
@@ -48,7 +49,7 @@ const flubberInterpolate: FlubberInterpolate =
   flubberMod.interpolate ?? flubberMod.default?.interpolate!;
 import { getBoundingBox } from '@remotion/paths';
 import type { Easings, Palette, ShapeLayer as ShapeLayerIR } from '../ir/index.js';
-import { resolveFill } from '../generators/types.js';
+import { resolveFill } from '../engine/index.js';
 import { evalNumber, evalVec2 } from './eval.js';
 import { easingFn, type EasingFunction } from './stylekit.js';
 

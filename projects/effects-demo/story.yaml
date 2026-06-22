@@ -34,10 +34,9 @@
 
 title: "Effects"
 
-characters:
-  blip:
-    rig: blip
-    palette: warm
+# DOMAIN-AGNOSTIC (ADR-007): no cast is declared — this demo shows only shapes + generators + their
+# effects[] stacks, so no rig/character appears. Every layer is DECLARED per beat via `show[]`
+# (the compiler injects nothing, not even a background).
 
 beats:
   # ----------------------------------------------------------------------------------------------
@@ -47,6 +46,9 @@ beats:
   - id: glow_and_grade
     say: "An effect is a socket; the plugin is the plug."
     show:
+      # The gradient background: a plain asset at z=0, far parallax.
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
       # A starfield pushed into depth: blurred (SVG feGaussianBlur) THEN color-graded (CSS filter).
       - generator: scatter
         as: stars
@@ -86,6 +88,8 @@ beats:
   - id: ripple_and_vignette
     say: "Stack them in order — geometry, light, and texture together."
     show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
       - shape: circle
         as: rippled
         at: center
@@ -118,6 +122,8 @@ beats:
   - id: motion
     say: "And when it moves fast — it leaves a trail."
     show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
       - shape: triangle
         as: dart
         at: left

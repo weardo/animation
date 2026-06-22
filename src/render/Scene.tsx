@@ -14,8 +14,9 @@
 //      camera. This is exactly the spec's "offset by camera position * (1 - parallax)".
 //   3. Z-ORDER. Layers are sorted by `z` ascending (higher = front) and stacked in that order.
 //   4. DISPATCH by layer `type` to the right sub-renderer: `asset` → <AssetLayer>, `generator` →
-//      <GeneratorLayer> (src/generators), `rig` → <RigLayer> (src/rig). Each sub-renderer reads the
-//      frame clock itself and resolves its own `{a,k}` channels with StyleKit easing.
+//      the generic <GeneratorLayer> (resolves the `gen` id through the engine `generators` registry),
+//      `rig` → the provider resolved from `rigDef.provider` via the engine `providers` registry. Each
+//      sub-renderer reads the frame clock itself and resolves its own `{a,k}` channels with StyleKit.
 //
 // DETERMINISM (CLAUDE.md r.1): pure function of (scene, defs) + `useCurrentFrame()`. No Date.now /
 // Math.random; every animated value flows through the seeded/StyleKit-eased evaluator (eval.ts).
@@ -23,8 +24,8 @@
 import React, { useMemo } from 'react';
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from 'remotion';
 import type { Defs, Easings, Layer, Scene as SceneIR } from '../ir/index.js';
-import { GeneratorLayer } from '../generators/index.js';
 import { providers } from '../engine/index.js';
+import { GeneratorLayer } from './GeneratorLayer.js';
 import { AssetLayer } from './AssetLayer.js';
 import { ShapeLayer } from './ShapeLayer.js';
 import { evalNumber, evalVec2 } from './eval.js';

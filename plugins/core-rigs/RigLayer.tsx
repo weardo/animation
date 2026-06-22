@@ -32,7 +32,7 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from 'remotion';
-import type { Easings, RigDef, RigLayer as RigLayerIR } from '../ir/index.js';
+import type { Easings, RigDef, RigLayer as RigLayerIR } from '../../src/ir/index.js';
 import { loadRig, disposeRig, type LoadedRig, type RigSources } from './dragonbones-loader.js';
 import { selectClip } from './clips.js';
 import {

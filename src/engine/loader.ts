@@ -1,11 +1,13 @@
-// Plugin loader (ADR-005 "Discovery/loading"). `loadPlugins` is the ONE place the engine turns a list
-// of enabled plugins into populated extension-point registries: it validates each plugin's manifest,
-// orders by declared `deps`, then calls `register(api)` so each plugin wires its contributions in.
+// Plugin loader (ADR-005 "Discovery/loading"; ADR-007 code-location cleanup). `loadPlugins` is the ONE
+// place the engine turns a list of enabled plugins into populated extension-point registries: it
+// validates each plugin's manifest, orders by declared `deps`, then calls `register(api)` so each
+// plugin wires its contributions in.
 //
 // Loaded ONCE at module init / before render (idempotent — re-registering the same name just last-
-// wins; see Registry). The set of enabled CORE plugins lives in enabled.ts. Keeping load in one call
-// makes the resolved capability set a pure function of the enabled list → identical across cold
-// processes, preserving determinism (CLAUDE.md r.1; verify-render gates every plugin).
+// wins; see Registry). The engine core names NO plugin: the caller (the composition root /
+// render-entry, outside src/) supplies the enabled-plugin list (plugins/enabled.ts). Keeping load in
+// one call makes the resolved capability set a pure function of the supplied list → identical across
+// cold processes, preserving determinism (CLAUDE.md r.1; verify-render gates every plugin).
 
 import { engineApi, type EngineAPI } from './api.js';
 import { parseManifest, type Plugin } from './plugin.js';
@@ -58,12 +60,12 @@ function orderByDeps(plugins: readonly Plugin[]): Plugin[] {
  * its manifest (Zod — fail loudly on a malformed plugin), then call `register(api)`. Returns the
  * applied order + a snapshot of the contributed names per registry.
  *
- * @param plugins the enabled plugins (default: the enabled CORE plugins from enabled.ts).
+ * @param plugins the enabled plugins to load (the caller — the composition root — supplies these; the
+ *                engine names no plugin). See plugins/enabled.ts for the built-in list.
  * @param api     the EngineAPI to register into (default: the engine's bound instance).
  */
-export function loadPlugins(plugins?: readonly Plugin[], api: EngineAPI = engineApi): LoadResult {
-  const enabled = plugins ?? ENABLED_PLUGINS;
-  const ordered = orderByDeps(enabled);
+export function loadPlugins(plugins: readonly Plugin[], api: EngineAPI = engineApi): LoadResult {
+  const ordered = orderByDeps(plugins);
 
   for (const plugin of ordered) {
     // Re-validate the manifest at load (a hand-edited plugin.json must fail here, not at render).
@@ -78,6 +80,3 @@ export function loadPlugins(plugins?: readonly Plugin[], api: EngineAPI = engine
 
   return { loaded: ordered.map((p) => p.manifest.id), contributions };
 }
-
-// Imported last to avoid an import cycle in tooling: enabled.ts may import Plugin types from here.
-import { ENABLED_PLUGINS } from './enabled.js';

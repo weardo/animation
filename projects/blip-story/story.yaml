@@ -7,6 +7,11 @@
 #   b3  A pulse travels down the chain.       the network fires/pulses (held, intimate frame)    [fade]
 #   b4  Billions of signals → a thought.      the closing beat pulls back out                    [slide ←]
 #
+# DOMAIN-AGNOSTIC (ADR-007): every layer is DECLARED — the compiler injects nothing. Each beat's
+# `show[]` lists its gradient background (asset, z=0, far parallax), then the bead-string neuron
+# generator (where the network is present), then the `blip` cast ref as a rig. Re-declaring the same
+# handles per beat keeps the character + network continuous across the four scenes.
+#
 # HOW IT BECOMES A FILM (the multi-scene contract this exercises):
 #   • each beat lowers to ONE scene with its own duration, camera move, and look;
 #   • the per-beat `transition` lowers to that scene's `transition_in`, and the compositor overlaps it
@@ -14,23 +19,27 @@
 #   • `config.duration_frames` = Σ scene.duration_frames − Σ transition overlaps.
 #
 # ASSETS USED (all existing): the PROCEDURAL `blip` character (PRIMARY provider — pure SVG/DOM, so the
-# render is deterministic on gl:'angle' with no software-GL disk bloat), the `bead-string` neuron
-# generator, and the gradient background. Authored as semantic INTENT only (no frames/coordinates).
+# render is deterministic), the `bead-string` neuron generator, and the gradient background. Authored
+# as semantic INTENT only (no frames/coordinates).
 #
 # Build it as a project (compiles + vendors assets + renders one continuous mp4):
 #   tsx src/cli/render.ts examples/story.yaml --project blip-story --name "Blip's Story"
 
 title: "Blip's Story"
 
-characters:
+cast:
   blip:
-    rig: blip
+    ref: blip
     palette: warm
 
 beats:
   # b1 — Blip appears. No inbound transition (nothing precedes the first scene).
   - id: b1
     say: "This is Blip."
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - actor: blip
     camera: establishing
     duration: { seconds: 3 }
 
@@ -38,8 +47,11 @@ beats:
   - id: b2
     say: "Inside Blip's head is a network of neurons."
     show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
       - generator: bead-string
         as: neuron_chain
+      - actor: blip
     camera: slow_push_in
     duration: { seconds: 4 }
     transition: { kind: fade, duration: 18 }
@@ -48,8 +60,11 @@ beats:
   - id: b3
     say: "When one fires, a pulse races down the chain."
     show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
       - generator: bead-string
         as: neuron_chain
+      - actor: blip
     action:
       - on: neuron_chain
         do: pulse_travel
@@ -61,8 +76,11 @@ beats:
   - id: b4
     say: "Billions of these signals become a single thought."
     show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
       - generator: bead-string
         as: neuron_chain
+      - actor: blip
     camera: slow_pull_out
     duration: { seconds: 3 }
     transition: { kind: slide, dir: left, duration: 18 }

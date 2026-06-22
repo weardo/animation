@@ -23,7 +23,7 @@ import { bundle } from '@remotion/bundler';
 import { selectComposition, renderMedia, renderStill } from '@remotion/renderer';
 import objectHash from 'object-hash';
 
-import { runPipeline, lowerStory, M1_REFS } from '../pipeline/index.js';
+import { runPipeline, lowerStory } from '../pipeline/index.js';
 import type { Frontend } from '../pipeline/index.js';
 import { parseStory } from '../pipeline/parse.js';
 import { Library } from '../library/index.js';
@@ -42,15 +42,27 @@ import {
 } from '../project/index.js';
 
 const PROJECT_ROOT = resolvePath(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const REMOTION_ENTRY = resolvePath(PROJECT_ROOT, 'src', 'render', 'index.ts');
+// The composition root (render-entry.tsx) loads the enabled plugins before registering the Remotion
+// root; it lives at the repo root so the engine core (src/) names no plugin (ADR-007).
+const REMOTION_ENTRY = resolvePath(PROJECT_ROOT, 'render-entry.tsx');
 const ENGINE = 'remotion@4.0.481';
 
-/** Library refs a story pins into its project.lock (background + bead-string path + the rig). */
-function lockRefsForScript(scriptPath: string): string[] {
-  const story = parseStory(readFileSync(scriptPath, 'utf8'));
-  const firstChar = Object.values(story.characters)[0];
-  const rigRef = firstChar ? (firstChar.rig.includes('@') ? firstChar.rig : `${firstChar.rig}@1.0.0`) : M1_REFS.rig;
-  return [M1_REFS.background, M1_REFS.beadStringPath, rigRef];
+/**
+ * The library refs a compiled scene pins into its `project.lock` — DOMAIN-AGNOSTIC (ADR-007 #4).
+ * Walks the Scene IR's resolved `defs` (the asset + rig defs the lowering pass emitted from ONLY the
+ * refs the story declared) and reconstructs each as a `name@version` ref. Nothing hardcoded: a scene
+ * with no rig pins no rig; a scene with three assets pins three. Def keys are bare names, so we pin
+ * the canonical `name@1.0.0` (matching how lowering resolves an unversioned story ref). Sorted +
+ * deduped for a stable, diffable lock.
+ */
+function lockRefsForScene(sceneIR: SceneIR): string[] {
+  const refs = new Set<string>();
+  const add = (name: string): void => {
+    refs.add(name.includes('@') ? name : `${name}@1.0.0`);
+  };
+  for (const name of Object.keys(sceneIR.defs?.assets ?? {})) add(name);
+  for (const name of Object.keys(sceneIR.defs?.rigs ?? {})) add(name);
+  return [...refs].sort();
 }
 
 function libraryFrontend(library: Library): Frontend {
@@ -102,22 +114,24 @@ function vendorAssets(sceneIR: SceneIR, paths: ProjectPaths): string[] {
     const rel = uri.replace(/^asset:\/\//, '').split('#')[0] ?? '';
     if (rel) copy(resolvePath(PROJECT_ROOT, 'public', rel), rel);
   }
-  // 2. procedural character source (spec drives the look; spec is also inlined in scene.json).
-  // ADR-006: the rig def carries a `provider` id (no domain "kind"); blob-creature is the procedural
-  // (proc://) provider whose spec/preview source artifacts we vendor for a self-contained bundle.
+  // 2. Rig source material, vendored for a self-contained bundle. Keyed on the rig URI SCHEME (a
+  // generic data convention), NOT on any provider plugin name — core names no provider (ADR-007):
+  //   • proc://<id>      — an inlined-spec entry: vendor its co-located <id>.spec.json + preview.
+  //   • rig://<dir>/<base>.dbones.json — a skeletal-rig sidecar set: vendor the <base>_{ske,tex}.json
+  //                        + <base>_tex.png the runtime loads from public/ via `staticFile`.
+  // The spec itself is also inlined in scene.json; this copies the on-disk source the bundle needs.
   const rigs = (sceneIR.defs?.rigs ?? {}) as Record<string, { provider?: string; uri?: string }>;
   for (const def of Object.values(rigs)) {
-    if (def.provider === 'blob-creature' && def.uri) {
+    if (!def.uri) continue;
+    if (def.uri.startsWith('proc://')) {
       const id = def.uri.replace(/^proc:\/\//, '').split('/')[0] ?? '';
       for (const f of [`${id}.spec.json`, `${id}.preview.png`]) {
         copy(resolvePath(PROJECT_ROOT, 'library', 'characters', id, f), `characters/${id}/${f}`);
       }
-    } else if (def.provider === 'dragonbones' && def.uri) {
-      // The dragonbones provider loads its three source files from public/ via `staticFile`
-      // (RigLayer.deriveSources): `rig://<dir>/<base>.dbones.json` → <dir>/<base>_{ske,tex}.json
-      // + <dir>/<base>_tex.png. Vendor them into the project's assets/ (the render publicDir) so the
-      // bundle is self-contained — the parallel of vendoring blob-creature's spec/preview above.
-      const noScheme = def.uri.includes('://') ? def.uri.slice(def.uri.indexOf('://') + 3) : def.uri;
+    } else if (def.uri.includes('://')) {
+      // A sidecar-set rig URI (`rig://<dir>/<base>.dbones.json`): vendor the runtime's three source
+      // files from public/ (parallel to the inlined-spec branch above).
+      const noScheme = def.uri.slice(def.uri.indexOf('://') + 3);
       const slash = noScheme.lastIndexOf('/');
       const dir = slash >= 0 ? noScheme.slice(0, slash + 1) : '';
       const fileName = slash >= 0 ? noScheme.slice(slash + 1) : noScheme;
@@ -242,7 +256,7 @@ async function main(): Promise<void> {
     console.log(`[render] compiling '${target}' → project '${id}'`);
     sceneIR = runPipeline(storyPath, { rootDir: PROJECT_ROOT, frontend: libraryFrontend(library) });
 
-    const refs = lockRefsForScript(storyPath);
+    const refs = lockRefsForScene(sceneIR);
     writeSource(paths, readFileSync(storyPath, 'utf8'));
     writeSceneIR(paths, sceneIR);
     writeFileSync(paths.lock, JSON.stringify(library.buildLock(refs), null, 2) + '\n', 'utf8');

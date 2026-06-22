@@ -61,77 +61,7 @@
         "kind": "svg"
       }
     },
-    "rigs": {
-      "narrator": {
-        "uri": "proc://blip",
-        "provider": "blob-creature",
-        "spec": {
-          "id": "blip",
-          "name": "Blip",
-          "palette": {
-            "body": "#4aa3ff",
-            "bodyDark": "#2f86e0",
-            "ink": "#16243f",
-            "belly": "#d6ecff",
-            "accent": "#ffce4a",
-            "white": "#ffffff",
-            "cheek": "#ff7eb0"
-          },
-          "head": {
-            "r": 66,
-            "cy": -66
-          },
-          "body": {
-            "rx": 70,
-            "ry": 68,
-            "cy": 28
-          },
-          "belly": {
-            "rx": 42,
-            "ry": 36,
-            "cy": 48
-          },
-          "eyes": {
-            "spacing": 26,
-            "cy": -74,
-            "r": 17,
-            "pupil": 8
-          },
-          "beak": {
-            "show": true,
-            "width": 24,
-            "depth": 16,
-            "cy": -50
-          },
-          "cheeks": {
-            "show": true,
-            "r": 9,
-            "spacing": 46,
-            "cy": -50
-          },
-          "arms": {
-            "width": 18,
-            "length": 66,
-            "shoulderY": 6,
-            "rest": 14
-          },
-          "legs": {
-            "width": 20,
-            "height": 40,
-            "spacing": 24,
-            "footRx": 23,
-            "footRy": 12,
-            "footCy": 120
-          },
-          "motion": {
-            "bob": 5,
-            "swayDeg": 1.6,
-            "breathe": 0.03,
-            "waveRaise": 150
-          }
-        }
-      }
-    }
+    "rigs": {}
   },
   "audio": [],
   "scenes": [
@@ -181,10 +111,10 @@
       "layers": [
         {
           "type": "asset",
-          "id": "L_bg",
+          "id": "L_asset_bg_gradient_0",
           "z": 0,
           "ref": "bg_gradient",
-          "parallax": 0.2
+          "parallax": 0
         },
         {
           "type": "generator",
@@ -203,7 +133,7 @@
             }
           ],
           "gen": "scatter",
-          "seed": 1828393154,
+          "seed": 167555943,
           "params": {
             "motif": "star",
             "count": 90,
@@ -271,67 +201,6 @@
               "k": 90
             }
           }
-        },
-        {
-          "type": "rig",
-          "id": "L_narr",
-          "z": 10,
-          "ref": "narrator",
-          "transform": {
-            "position": {
-              "a": 0,
-              "k": [
-                960,
-                669.6
-              ]
-            },
-            "scale": {
-              "a": 1,
-              "k": [
-                {
-                  "t": 0,
-                  "s": 0,
-                  "e": "pop"
-                },
-                {
-                  "t": 12,
-                  "s": 100
-                }
-              ]
-            },
-            "opacity": {
-              "a": 1,
-              "k": [
-                {
-                  "t": 0,
-                  "s": 0,
-                  "e": "pop"
-                },
-                {
-                  "t": 12,
-                  "s": 100
-                }
-              ]
-            }
-          },
-          "rig_state": {
-            "clips": [
-              {
-                "anim": "idle",
-                "loop": true
-              },
-              {
-                "anim": "wave",
-                "loop": false,
-                "at": 36
-              },
-              {
-                "anim": "idle",
-                "loop": true,
-                "at": 84
-              }
-            ]
-          }
         }
       ]
     },
@@ -381,10 +250,10 @@
       "layers": [
         {
           "type": "asset",
-          "id": "L_bg",
+          "id": "L_asset_bg_gradient_0",
           "z": 0,
           "ref": "bg_gradient",
-          "parallax": 0.2
+          "parallax": 0
         },
         {
           "type": "shape",
@@ -455,67 +324,6 @@
               "k": 100
             }
           }
-        },
-        {
-          "type": "rig",
-          "id": "L_narr",
-          "z": 10,
-          "ref": "narrator",
-          "transform": {
-            "position": {
-              "a": 0,
-              "k": [
-                960,
-                669.6
-              ]
-            },
-            "scale": {
-              "a": 1,
-              "k": [
-                {
-                  "t": 0,
-                  "s": 0,
-                  "e": "pop"
-                },
-                {
-                  "t": 12,
-                  "s": 100
-                }
-              ]
-            },
-            "opacity": {
-              "a": 1,
-              "k": [
-                {
-                  "t": 0,
-                  "s": 0,
-                  "e": "pop"
-                },
-                {
-                  "t": 12,
-                  "s": 100
-                }
-              ]
-            }
-          },
-          "rig_state": {
-            "clips": [
-              {
-                "anim": "idle",
-                "loop": true
-              },
-              {
-                "anim": "wave",
-                "loop": false,
-                "at": 36
-              },
-              {
-                "anim": "idle",
-                "loop": true,
-                "at": 84
-              }
-            ]
-          }
         }
       ],
       "transition_in": {
@@ -569,10 +377,10 @@
       "layers": [
         {
           "type": "asset",
-          "id": "L_bg",
+          "id": "L_asset_bg_gradient_0",
           "z": 0,
           "ref": "bg_gradient",
-          "parallax": 0.2
+          "parallax": 0
         },
         {
           "type": "shape",
@@ -626,75 +434,14 @@
               ]
             }
           }
-        },
-        {
-          "type": "rig",
-          "id": "L_narr",
-          "z": 10,
-          "ref": "narrator",
-          "transform": {
-            "position": {
-              "a": 0,
-              "k": [
-                960,
-                669.6
-              ]
-            },
-            "scale": {
-              "a": 1,
-              "k": [
-                {
-                  "t": 0,
-                  "s": 0,
-                  "e": "pop"
-                },
-                {
-                  "t": 12,
-                  "s": 100
-                }
-              ]
-            },
-            "opacity": {
-              "a": 1,
-              "k": [
-                {
-                  "t": 0,
-                  "s": 0,
-                  "e": "pop"
-                },
-                {
-                  "t": 12,
-                  "s": 100
-                }
-              ]
-            }
-          },
-          "rig_state": {
-            "clips": [
-              {
-                "anim": "idle",
-                "loop": true
-              },
-              {
-                "anim": "wave",
-                "loop": false,
-                "at": 36
-              },
-              {
-                "anim": "idle",
-                "loop": true,
-                "at": 84
-              }
-            ]
-          }
         }
       ]
     }
   ],
   "provenance": {
-    "story_ir_hash": "sha1:aeeefa055585ba62a09af2d235412d2ebefb62c6",
+    "story_ir_hash": "sha1:ca51397f394097871df95a7223b662f36c134f8e",
     "passes": [
-      "lower@1.0"
+      "lower@2.0"
     ]
   }
 }

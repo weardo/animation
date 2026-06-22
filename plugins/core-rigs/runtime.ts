@@ -1,4 +1,4 @@
-// Rig layer (src/rig) — Pixi v8 + pixi-dragonbones-runtime canvas driven by Remotion's
+// Rig runtime (core-rigs plugin) — Pixi v8 + pixi-dragonbones-runtime canvas driven by Remotion's
 // useCurrentFrame, implementing the committed determinism pattern (spike-proven; spec §8, §8.1, §14.1):
 //   autoStart:false + sharedTicker:false + ticker.stop(); init ONCE (cached in refs); per frame
 //   absolute-seek state.currentTime = frame/fps, advanceTime(0) to flush, StyleKit "alive" overlays

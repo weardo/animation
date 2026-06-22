@@ -10,19 +10,13 @@
 //   • eval.ts            — `{a,k}` property evaluator with StyleKit easing (camera + transforms).
 //   • stylekit.ts        — the Kurzgesagt "house style" constants/easings (consumed throughout).
 //
-// This file is the import target for Remotion's entry (`remotion studio src/render/index.ts` and
-// `renderMedia({ entryPoint: 'src/render/index.ts', composition: 'SceneIR' })`).
+// This is the COMPOSITOR surface (pure core — it names no plugin). The bundler entry that loads the
+// enabled plugins BEFORE this module registers the root is `render-entry.tsx` (repo root, the
+// composition root): it calls `loadPlugins(ENABLED_PLUGINS)` then imports this module. Remotion's
+// entry point therefore is `render-entry.tsx`, not this file (ADR-007 code-location cleanup).
 
 import { registerRoot } from 'remotion';
-import { loadPlugins } from '../engine/index.js';
 import { RemotionRoot } from './Root.js';
-
-// ADR-005: load the enabled CORE plugins BEFORE registering the root, so the engine's extension-point
-// registries (generators / providers) are populated before any composition
-// renders inside the Remotion bundle. This is the one place the bundle entry turns the enabled-plugin
-// list (engine/enabled.ts) into resolved capability. Idempotent (last-wins) + pure data wiring, so it
-// preserves determinism (CLAUDE.md r.1) and the resolved set is identical across cold processes.
-loadPlugins();
 
 registerRoot(RemotionRoot);
 

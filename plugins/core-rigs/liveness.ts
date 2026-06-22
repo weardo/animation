@@ -19,7 +19,7 @@ import {
   BREATHING_DEFAULTS,
   BLINK_DEFAULTS,
   SPRING_BOUNCY,
-} from '../render/stylekit.js';
+} from '../../src/render/stylekit.js';
 
 /** A small additive offset applied to a DragonBones bone's `offset` transform for one frame. */
 export interface BoneOffset {

@@ -62,7 +62,7 @@
       }
     },
     "rigs": {
-      "narrator": {
+      "blip": {
         "uri": "proc://blip",
         "provider": "blob-creature",
         "spec": {
@@ -181,17 +181,17 @@
       "layers": [
         {
           "type": "asset",
-          "id": "L_bg",
+          "id": "L_asset_bg_gradient_0",
           "z": 0,
           "ref": "bg_gradient",
-          "parallax": 0.2
+          "parallax": 0
         },
         {
           "type": "generator",
           "id": "L_gen_water_ocean",
           "z": 1,
           "gen": "water",
-          "seed": 1588447230,
+          "seed": 190756617,
           "params": {
             "bands": 3,
             "amplitude": 34,
@@ -218,9 +218,9 @@
         },
         {
           "type": "rig",
-          "id": "L_narr",
+          "id": "L_rig_blip",
           "z": 10,
-          "ref": "narrator",
+          "ref": "blip",
           "transform": {
             "position": {
               "a": 0,
@@ -263,16 +263,6 @@
               {
                 "anim": "idle",
                 "loop": true
-              },
-              {
-                "anim": "wave",
-                "loop": false,
-                "at": 36
-              },
-              {
-                "anim": "idle",
-                "loop": true,
-                "at": 84
               }
             ]
           }
@@ -325,17 +315,17 @@
       "layers": [
         {
           "type": "asset",
-          "id": "L_bg",
+          "id": "L_asset_bg_gradient_0",
           "z": 0,
           "ref": "bg_gradient",
-          "parallax": 0.2
+          "parallax": 0
         },
         {
           "type": "generator",
           "id": "L_gen_particles_motes",
           "z": 1,
           "gen": "particles",
-          "seed": 1864466241,
+          "seed": 198721527,
           "params": {
             "count": 160,
             "direction": "up",
@@ -357,9 +347,9 @@
         },
         {
           "type": "rig",
-          "id": "L_narr",
+          "id": "L_rig_blip",
           "z": 10,
-          "ref": "narrator",
+          "ref": "blip",
           "transform": {
             "position": {
               "a": 0,
@@ -402,16 +392,6 @@
               {
                 "anim": "idle",
                 "loop": true
-              },
-              {
-                "anim": "wave",
-                "loop": false,
-                "at": 48
-              },
-              {
-                "anim": "idle",
-                "loop": true,
-                "at": 96
               }
             ]
           }
@@ -445,17 +425,17 @@
       "layers": [
         {
           "type": "asset",
-          "id": "L_bg",
+          "id": "L_asset_bg_gradient_0",
           "z": 0,
           "ref": "bg_gradient",
-          "parallax": 0.2
+          "parallax": 0
         },
         {
           "type": "generator",
           "id": "L_gen_fire_hearth",
           "z": 1,
           "gen": "fire",
-          "seed": 1731110144,
+          "seed": 1281174924,
           "params": {
             "flames": 4,
             "height": 300,
@@ -484,9 +464,9 @@
         },
         {
           "type": "rig",
-          "id": "L_narr",
+          "id": "L_rig_blip",
           "z": 10,
-          "ref": "narrator",
+          "ref": "blip",
           "transform": {
             "position": {
               "a": 0,
@@ -529,16 +509,6 @@
               {
                 "anim": "idle",
                 "loop": true
-              },
-              {
-                "anim": "wave",
-                "loop": false,
-                "at": 48
-              },
-              {
-                "anim": "idle",
-                "loop": true,
-                "at": 96
               }
             ]
           }
@@ -582,17 +552,17 @@
       "layers": [
         {
           "type": "asset",
-          "id": "L_bg",
+          "id": "L_asset_bg_gradient_0",
           "z": 0,
           "ref": "bg_gradient",
-          "parallax": 0.2
+          "parallax": 0
         },
         {
           "type": "generator",
           "id": "L_gen_crowd_stands",
           "z": 1,
           "gen": "crowd",
-          "seed": 21115364,
+          "seed": 1148170747,
           "params": {
             "count": 220,
             "region": {
@@ -622,9 +592,9 @@
         },
         {
           "type": "rig",
-          "id": "L_narr",
+          "id": "L_rig_blip",
           "z": 10,
-          "ref": "narrator",
+          "ref": "blip",
           "transform": {
             "position": {
               "a": 0,
@@ -667,16 +637,6 @@
               {
                 "anim": "idle",
                 "loop": true
-              },
-              {
-                "anim": "wave",
-                "loop": false,
-                "at": 36
-              },
-              {
-                "anim": "idle",
-                "loop": true,
-                "at": 84
               }
             ]
           }
@@ -690,9 +650,9 @@
     }
   ],
   "provenance": {
-    "story_ir_hash": "sha1:1851d031b6a8b81578e5d7b7cc2747937e2eff05",
+    "story_ir_hash": "sha1:3990e5be723b48bba80c7331000b2a189f7ea357",
     "passes": [
-      "lower@1.0"
+      "lower@2.0"
     ]
   }
 }

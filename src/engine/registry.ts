@@ -1,7 +1,9 @@
 // Engine extension-point registries (ADR-005). The engine core owns a set of typed REGISTRIES;
 // plugins contribute implementations into them via the EngineAPI (api.ts). This generalises the two
-// seeds that already exist — `src/generators/registry.ts` (generator name→component) and the rig
-// `kind` dispatch in `src/render/Scene.tsx` (procedural vs dragonbones) — into one uniform mechanism.
+// seeds that historically existed — a generator name→component map and the rig dispatch in
+// `src/render/Scene.tsx` (procedural vs dragonbones) — into one uniform mechanism. The generator
+// implementations now live in the core-generators plugin; core owns only the `GeneratorComponent`
+// contract (engine/generator.ts) and this registry.
 //
 // A Registry is a small typed name→value map with register / get / has / names. `get` THROWS on an
 // unknown name (no silent fallback — a Scene-IR typo fails loudly, matching the existing generator
@@ -12,7 +14,7 @@
 // populated ONCE at module init / before render (see loader.ts), so registration order is fixed and
 // the resolved capability set is identical across cold processes (CLAUDE.md r.1).
 
-import type { GeneratorComponent } from '../generators/types.js';
+import type { GeneratorComponent } from './generator.js';
 import type { EffectImpl, ProviderComponent } from './api.js';
 
 /** A generic, typed name→value registry. The single building block for every extension point. */
@@ -59,7 +61,7 @@ export class Registry<T> {
 // --- The named extension points the engine core owns (ADR-005 / ADR-006 "Extension points"). ---
 //
 // TWO are populated today (they have real contributors — the existing built-ins are core plugins):
-//   • generators  — generator name → React component  (was src/generators/registry.ts)
+//   • generators  — generator name → React component  (populated by the core-generators plugin)
 //   • providers   — provider id    → React component  (was the Scene.tsx kind dispatch; ADR-006)
 //
 // ADR-006: the engine specializes in NOTHING. The former `rigProviders` and `characterStyles` collapse

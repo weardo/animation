@@ -25,6 +25,13 @@ export {
   type EffectContribution,
 } from './api.js';
 
+// Generator extension-point contract (the generic socket; implementations live in a plugin).
+export {
+  resolveFill,
+  type GeneratorComponent,
+  type GeneratorComponentProps,
+} from './generator.js';
+
 // Plugin + manifest contract.
 export {
   PluginManifestSchema,
@@ -37,6 +44,6 @@ export {
   type Provenance,
 } from './plugin.js';
 
-// Loader + enabled core-plugin list.
+// Loader. The enabled-plugin list is NOT a core concern — it lives with the plugins (plugins/
+// enabled.ts) and is supplied to `loadPlugins` by the composition root (render-entry).
 export { loadPlugins, type LoadResult } from './loader.js';
-export { ENABLED_PLUGINS } from './enabled.js';

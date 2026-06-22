@@ -64,6 +64,7 @@
         "version": "1.0.0",
         "kind": "rig",
         "format": "dragonbones",
+        "provider": "dragonbones",
         "uri": "rig://dragon/dragon.dbones.json",
         "tags": [
           "m1",

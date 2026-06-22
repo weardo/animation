@@ -1,24 +1,38 @@
-# examples/neuron.yaml — the M1 vertical-slice Story IR (spec §6.1, §15).
+# examples/neuron.yaml — the M1 vertical-slice Story IR, re-authored for the domain-agnostic
+# compiler (spec §6.1, §15; ADR-007).
 #
-# ONE beat, authored as high-level semantic intent only (no frames, no coordinates): a narrator
-# character, a bead-string neuron chain, and a slow camera push-in. The pipeline (P0 parse →
-# P5 lower → lite layout/camera → V validate) turns this into a concrete Scene IR, which Remotion
-# renders to out.mp4. See `npm run build:m1`.
+# ONE beat, authored as high-level semantic intent only (no frames, no coordinates). The compiler no
+# longer bakes the neuron demo in — this is now *a story that DECLARES a neuron*: every layer comes
+# from this beat's `show[]`. We show a gradient background (low z, far parallax), a bead-string neuron
+# chain generator, and a narrator character brought on as a rig, then a slow camera push-in. The
+# pipeline (P0 parse → P5 lower → lite layout/camera → V validate) turns this into a concrete Scene
+# IR, which Remotion renders to out.mp4. See `npm run build:neuron`.
 #
-# The narrator's `rig: dragon` resolves through the library catalog (dragon@1.0.0 → content hash),
-# exercising the deterministic content-addressing seam even at one rig (spec §15).
+# The narrator's cast `ref: dragon` resolves through the library catalog (dragon@1.0.0 → content
+# hash + the dragonbones provider), exercising the deterministic content-addressing seam (spec §15).
 
 title: "How neurons talk"
 
-characters:
+cast:
   narrator:
-    rig: dragon # → library characters/dragon@1.0.0 (DragonBones 'starter' armature, anim "throw")
+    ref: dragon # → library characters/dragon@1.0.0 (DragonBones 'starter' armature; provider derived)
     palette: warm
 
 beats:
   - id: b1
     say: "Your brain is a network of neurons."
     show:
+      # Gradient background: a plain asset at z=0, far (static) parallax.
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      # The bead-string neuron chain: traveling pulse + wavy bending + blobby beads (generator family).
       - generator: bead-string
-        as: neuron_chain # traveling pulse + wavy bending + blobby beads (generator family)
+        as: neuron_chain
+      # Bring the narrator cast ref on screen as a rig layer (z=10, default staging anchor).
+      - actor: narrator
+    action:
+      # Drive the dragon armature's own clip ("throw" — the only animation the 'starter' armature
+      # ships). A thin pointer the lowering pass forwards into the rig's clip plan (spec §6.2/§8).
+      - on: narrator
+        do: throw
     camera: slow_push_in # zoom 1.0 → 1.15 + a slight pan, driving the parallax differential

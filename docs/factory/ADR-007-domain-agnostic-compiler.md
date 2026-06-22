@@ -1,6 +1,22 @@
 # ADR-007 — Domain-agnostic compiler: purge the M1 demo from the pipeline; relocate plugin code into plugins
 
-**Date:** 2026-06-22 · **Status:** Accepted — completes ADR-005/006. The engine must specialize in NOTHING in the FRONT-END (parse → lower) and in code LOCATION, not just the compositor.
+**Date:** 2026-06-22 · **Status:** DONE — completes ADR-005/006. The engine must specialize in NOTHING in the FRONT-END (parse → lower) and in code LOCATION, not just the compositor.
+
+## Status: DONE (2026-06-22)
+
+**What moved / changed:**
+- **Lowering pass genericized** (`src/pipeline/lower.ts`): deleted `M1_REFS`, `buildBeadStringLayer`, the forced `background+bead+rig`, `narrator`/`L_neuron`/`L_narr`, `M1_RIG_ANIM`, `RIG_CLIP_PLANS[blip]`, and all `bead-string` special-casing. A scene's layers are now built ENTIRELY from each beat's declared `show[]` (asset/generator/shape/rig, generically); nothing is force-injected. Per-scene clip/duration defaults are GENERIC (`idle`, seconds×fps). `DEFAULT_RIG_PROVIDER` is a neutral placeholder (`'rig'`) used only on the no-library standalone path — core names no provider plugin.
+- **Story IR demoted `characters`** (`src/ir/story.ts`): replaced the hardcoded `characters` entity with a generic `cast` (named refs → a library entry + optional provider). A `show[].actor` binds a layer to a cast key; "character" is just a cast entry whose ref resolves to a rig. No `neuron`/`bead`/`character:` vocabulary in the schema.
+- **Plugin code relocated** (already physical): `src/generators/* → plugins/core-generators/`, `src/rig/* → plugins/core-rigs/`. Core keeps only the generic sockets — `src/render/GeneratorLayer.tsx` + `src/engine/generator.ts` (the `GeneratorComponentProps` contract) + the provider-dispatch in `src/render/Scene.tsx`. The plugin manifest (`plugins/enabled.ts`) + the composition root (`render-entry.tsx`) live OUTSIDE `src/`, so the engine names no plugin.
+- **Generic CLI lock** (`src/cli/render.ts`): `lockRefsForScene` walks the compiled Scene IR's `defs` and pins exactly the refs the story referenced (was the hardcoded `[background, beadStringPath, rig]`).
+- **Provider knowledge removed from core** (the last leaks the ADR-006 grep missed): `src/library/loader.ts` now REQUIRES the catalog entry's `provider` (no `format→provider` guess that named `blob-creature`/`dragonbones`) and embeds an inlined spec keyed on the `proc://` URI SCHEME, not a provider name. `src/cli/render.ts#vendorAssets` keys source-file vendoring on the URI scheme (`proc://` vs other `://`), not on a provider id. The `dragon` catalog entry gained an explicit `provider: dragonbones` (data, not core code).
+- **Examples re-authored** (`examples/*.yaml`) so each declares its own layers via `show[]`; all demo projects re-compiled.
+
+**Verified invariants:**
+1. **DOMAIN-CLEAN:** `src/` code lines contain ZERO `neuron`/`bead`/`blip`/`pip`/`dragon`/`axon`/`narrator`/`M1_REFS`/`M1_RIG_ANIM`/`blob-creature` (only doc comments mention them, which the ADR permits). Grep clean.
+2. **DELETE-THE-PLUGIN:** `grep "from .*plugins/" src/` is empty; moving `plugins/core-generators/` + `plugins/core-rigs/` aside leaves `src/` typechecking (`tsc --noEmit` EXIT 0). The dependency arrow is plugin→core.
+3. **DETERMINISM:** `render <project> --frames auto` (CPU raster) across two cold processes gave byte-identical stills for neuron-demo (dragonbones provider) and generators-demo (seeded generators). Output legitimately differs from pre-ADR-007 bytes (scenes are now author-declared) — reproducibility, not equality with old output, is the gate.
+4. **CORRECT VISUALS:** all six demos render their declared layers (blip character, neuron bead-chain + dragonbones rig, generators, shapes, scatter, effects) — entirely from their story `show[]`.
 
 ## Context — the leak ADR-006 missed
 

@@ -1,20 +1,20 @@
-// core-generators — the built-in generators shipped AS A CORE PLUGIN (ADR-005 "Built-ins ship as
-// core plugins"). It contributes every M1/M2 generator (bead-string/scatter/water/particles/fire/
-// crowd) into the engine's `generators` extension point via `api.registerGenerator`. This is the
-// dogfooding of the plugin system: the old hardcoded name→component map in src/generators/registry.ts
-// is now POPULATED by this plugin (registry.ts delegates to the engine registry — no parallel system).
+// core-generators — the built-in generators shipped AS A CORE PLUGIN (ADR-005/007). It OWNS the
+// generator implementations (bead-string/scatter/water/particles/fire/crowd + their geometry/RNG/Zod
+// params — all in THIS directory) and contributes them into the engine's `generators` extension point
+// via `api.registerGenerator`. ADR-007: the code lives here, NOT in core — the engine owns only the
+// generic `GeneratorComponent` contract (engine/generator.ts) and the `generators` registry; the
+// dependency arrow points plugin→core, never core→plugin (delete-the-plugin test).
 //
 // DETERMINISM (CLAUDE.md r.1): `register` is pure data wiring (it only names→component-binds). Each
-// generator is itself a pure function of (params + seed + frame) — unchanged by this migration, so
-// the demos render byte-identically.
+// generator is itself a pure function of (params + seed + frame) — unchanged by this relocation.
 
 import type { EngineAPI, Plugin } from '../../src/engine/index.js';
-import { BeadString } from '../../src/generators/bead-string.js';
-import { Scatter } from '../../src/generators/scatter.js';
-import { Water } from '../../src/generators/water.js';
-import { Particles } from '../../src/generators/particles.js';
-import { Fire } from '../../src/generators/fire.js';
-import { Crowd } from '../../src/generators/crowd.js';
+import { BeadString } from './bead-string.js';
+import { Scatter } from './scatter.js';
+import { Water } from './water.js';
+import { Particles } from './particles.js';
+import { Fire } from './fire.js';
+import { Crowd } from './crowd.js';
 
 import manifestJson from './plugin.json' with { type: 'json' };
 import { parseManifest } from '../../src/engine/index.js';

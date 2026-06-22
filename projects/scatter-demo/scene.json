@@ -62,7 +62,7 @@
       }
     },
     "rigs": {
-      "narrator": {
+      "blip": {
         "uri": "proc://blip",
         "provider": "blob-creature",
         "spec": {
@@ -181,17 +181,25 @@
       "layers": [
         {
           "type": "asset",
-          "id": "L_bg",
+          "id": "L_asset_bg_gradient_0",
           "z": 0,
           "ref": "bg_gradient",
-          "parallax": 0.2
+          "parallax": 0
+        },
+        {
+          "type": "generator",
+          "id": "L_gen_bead-string_neuron_chain",
+          "z": 1,
+          "gen": "bead-string",
+          "seed": 2069769983,
+          "params": {}
         },
         {
           "type": "generator",
           "id": "L_gen_scatter_starfield",
           "z": 1,
           "gen": "scatter",
-          "seed": 1228963173,
+          "seed": 596147612,
           "params": {
             "motif": "star",
             "count": 140,
@@ -211,35 +219,10 @@
           }
         },
         {
-          "type": "generator",
-          "id": "L_neuron",
-          "z": 4,
-          "gen": "bead-string",
-          "seed": 461796813,
-          "path": "asset://axon_curve.svg#path",
-          "params": {
-            "beads": 9,
-            "bead_radius": 14,
-            "blobbiness": 0.35,
-            "pulse": {
-              "amp": 0.25,
-              "speed": 1.4,
-              "phase_step": 0.6
-            },
-            "wave": {
-              "amp": 10,
-              "speed": 0.8
-            },
-            "gooey": true,
-            "fill": "accent",
-            "glow": true
-          }
-        },
-        {
           "type": "rig",
-          "id": "L_narr",
+          "id": "L_rig_blip",
           "z": 10,
-          "ref": "narrator",
+          "ref": "blip",
           "transform": {
             "position": {
               "a": 0,
@@ -282,16 +265,6 @@
               {
                 "anim": "idle",
                 "loop": true
-              },
-              {
-                "anim": "wave",
-                "loop": false,
-                "at": 36
-              },
-              {
-                "anim": "idle",
-                "loop": true,
-                "at": 84
               }
             ]
           }
@@ -344,17 +317,25 @@
       "layers": [
         {
           "type": "asset",
-          "id": "L_bg",
+          "id": "L_asset_bg_gradient_0",
           "z": 0,
           "ref": "bg_gradient",
-          "parallax": 0.2
+          "parallax": 0
+        },
+        {
+          "type": "generator",
+          "id": "L_gen_bead-string_neuron_chain",
+          "z": 1,
+          "gen": "bead-string",
+          "seed": 1245208269,
+          "params": {}
         },
         {
           "type": "generator",
           "id": "L_gen_scatter_dust",
           "z": 1,
           "gen": "scatter",
-          "seed": 1216520444,
+          "seed": 554563202,
           "params": {
             "motif": "dot",
             "count": 420,
@@ -375,35 +356,10 @@
           }
         },
         {
-          "type": "generator",
-          "id": "L_neuron",
-          "z": 4,
-          "gen": "bead-string",
-          "seed": 447689661,
-          "path": "asset://axon_curve.svg#path",
-          "params": {
-            "beads": 9,
-            "bead_radius": 14,
-            "blobbiness": 0.35,
-            "pulse": {
-              "amp": 0.25,
-              "speed": 1.4,
-              "phase_step": 0.6
-            },
-            "wave": {
-              "amp": 10,
-              "speed": 0.8
-            },
-            "gooey": true,
-            "fill": "accent",
-            "glow": true
-          }
-        },
-        {
           "type": "rig",
-          "id": "L_narr",
+          "id": "L_rig_blip",
           "z": 10,
-          "ref": "narrator",
+          "ref": "blip",
           "transform": {
             "position": {
               "a": 0,
@@ -446,16 +402,6 @@
               {
                 "anim": "idle",
                 "loop": true
-              },
-              {
-                "anim": "wave",
-                "loop": false,
-                "at": 48
-              },
-              {
-                "anim": "idle",
-                "loop": true,
-                "at": 96
               }
             ]
           }
@@ -499,17 +445,25 @@
       "layers": [
         {
           "type": "asset",
-          "id": "L_bg",
+          "id": "L_asset_bg_gradient_0",
           "z": 0,
           "ref": "bg_gradient",
-          "parallax": 0.2
+          "parallax": 0
+        },
+        {
+          "type": "generator",
+          "id": "L_gen_bead-string_neuron_chain",
+          "z": 1,
+          "gen": "bead-string",
+          "seed": 360737315,
+          "params": {}
         },
         {
           "type": "generator",
           "id": "L_gen_scatter_foliage",
           "z": 1,
           "gen": "scatter",
-          "seed": 1990778838,
+          "seed": 1147944220,
           "params": {
             "motif": "blob",
             "region": {
@@ -536,35 +490,10 @@
           }
         },
         {
-          "type": "generator",
-          "id": "L_neuron",
-          "z": 4,
-          "gen": "bead-string",
-          "seed": 666223732,
-          "path": "asset://axon_curve.svg#path",
-          "params": {
-            "beads": 9,
-            "bead_radius": 14,
-            "blobbiness": 0.35,
-            "pulse": {
-              "amp": 0.25,
-              "speed": 1.4,
-              "phase_step": 0.6
-            },
-            "wave": {
-              "amp": 10,
-              "speed": 0.8
-            },
-            "gooey": true,
-            "fill": "accent",
-            "glow": true
-          }
-        },
-        {
           "type": "rig",
-          "id": "L_narr",
+          "id": "L_rig_blip",
           "z": 10,
-          "ref": "narrator",
+          "ref": "blip",
           "transform": {
             "position": {
               "a": 0,
@@ -607,16 +536,6 @@
               {
                 "anim": "idle",
                 "loop": true
-              },
-              {
-                "anim": "wave",
-                "loop": false,
-                "at": 36
-              },
-              {
-                "anim": "idle",
-                "loop": true,
-                "at": 84
               }
             ]
           }
@@ -629,9 +548,9 @@
     }
   ],
   "provenance": {
-    "story_ir_hash": "sha1:383d2a96e3c146e04d33b2ba90af8fc8bacad3ab",
+    "story_ir_hash": "sha1:efcbeb578e6c66350e83ab9260b747e9d4c9b63c",
     "passes": [
-      "lower@1.0"
+      "lower@2.0"
     ]
   }
 }

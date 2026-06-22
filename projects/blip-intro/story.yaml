@@ -6,23 +6,30 @@
 # sequences its named clips (idle loop → wave → idle); the host RigLayer adds StyleKit liveness
 # (breathing, sway, Poisson blink) on top.
 #
+# DOMAIN-AGNOSTIC (ADR-007): the story DECLARES its whole scene via `show[]` — there is no implicit
+# background or rig. The lowering pass injects nothing; this beat shows a gradient background asset
+# (low z, far parallax) and brings the `blip` cast ref on screen as a rig layer.
+#
 # Authored as semantic intent only (no frames/coordinates); the pipeline lowers it to a Scene IR and
-# Remotion renders it deterministically. Run: `npm run build:character`.
+# Remotion renders it deterministically. Run: `npm run build:blip`.
 
 title: "Meet Blip"
 
-characters:
+cast:
   blip:
-    rig: blip # → library characters/blip@1.0.0 (DragonBones 'blip' armature; idle/blink/wave)
+    ref: blip # → library characters/blip@1.0.0 (rig entry; the provider is derived from the catalog)
     palette: warm
 
 beats:
   - id: b1
-    say: "Hi! I'm Blip — a code-generated neuron."
+    say: "Hi! I'm Blip — a code-generated character."
+    show:
+      # The gradient background: a plain asset at z=0 with a far (static) parallax factor.
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      # Bring the cast ref on screen as a rig layer (z=10, staged at the default anchor).
+      - actor: blip
     action:
       - on: blip
         do: wave # expressive clip with the authored FFD squash beat
-    show:
-      - generator: bead-string
-        as: neuron_chain # the neuron chain alongside the character
     camera: slow_push_in

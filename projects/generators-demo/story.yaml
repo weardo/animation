@@ -10,11 +10,12 @@
 #   g3  FIRE      — Blip beside a flickering flame with rising smoke.            [fade]   (hold)
 #   g4  CROWD     — Blip in front of a packed stadium of tiny bobbing creatures. [slide ←](slow pull-out)
 #
-# HOW IT WIRES (no IR/pipeline change — exactly like scatter-story.yaml): each beat's `show[]` lists a
-# `generator: <name>` item with `as:` (handle → deterministic seed + stable layer id) and `args:` (the
-# generator's free-form params, validated by THAT generator's own Zod schema at render time). The
-# lowering pass emits one low-z generator layer per item, compositing BEHIND the `blip` rig (z=10) and
-# ABOVE the gradient background (z=0). Colors are palette TOKENS (bg/bg2/accent/accent2/ink/light)
+# HOW IT WIRES (ADR-007 domain-agnostic: every layer is DECLARED, nothing injected): each beat's
+# `show[]` lists a gradient background (asset, z=0), a `generator: <name>` item with `as:` (handle →
+# deterministic seed + stable layer id) and `args:` (the generator's free-form params, validated by
+# THAT generator's own Zod schema at render time), then the `blip` cast ref as a rig (`actor: blip`).
+# The lowering pass emits one low-z generator layer per item, compositing BEHIND the `blip` rig (z=10)
+# and ABOVE the gradient background (z=0). Colors are palette TOKENS (bg/bg2/accent/accent2/ink/light)
 # resolved against `defs.palette`. Per-beat `transition`s cross-fade/slide between scenes so the world
 # visibly MORPHS ocean → void → hearth → stadium.
 #
@@ -23,9 +24,9 @@
 
 title: "Generators"
 
-characters:
+cast:
   blip:
-    rig: blip
+    ref: blip
     palette: warm
 
 beats:
@@ -34,6 +35,8 @@ beats:
   - id: g1
     say: "An ocean of layered, scrolling waves."
     show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
       - generator: water
         as: ocean
         args:
@@ -51,6 +54,7 @@ beats:
           foam_size: [1.5, 4]
           foam_color: light        # off-white sea foam
           resolution: 22           # crest sampling step (smaller = smoother)
+      - actor: blip                # the protagonist, z=10, in front of the world
     camera: establishing
     duration: { seconds: 3 }
 
@@ -58,6 +62,8 @@ beats:
   - id: g2
     say: "Then a void of rising, glowing motes."
     show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
       - generator: particles
         as: motes
         args:
@@ -71,6 +77,7 @@ beats:
           sway_speed: 1.1
           glow: true               # soft halo (good for sparks)
           opacity: 0.9
+      - actor: blip
     camera: slow_push_in
     duration: { seconds: 4 }
     transition: { kind: fade, duration: 18 }
@@ -79,6 +86,8 @@ beats:
   - id: g3
     say: "A single flame, flickering with smoke."
     show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
       - generator: fire
         as: hearth
         args:
@@ -99,6 +108,7 @@ beats:
             color: bg2             # cool grey-blue smoke
           glow: true
           opacity: 1
+      - actor: blip
     camera: hold
     duration: { seconds: 4 }
     transition: { kind: fade, duration: 18 }
@@ -107,6 +117,8 @@ beats:
   - id: g4
     say: "And a stadium, alive with a thousand tiny minds."
     show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
       - generator: crowd
         as: stands
         args:
@@ -123,6 +135,7 @@ beats:
           distribution: grid
           jitter: 0.55
           opacity: 1
+      - actor: blip
     camera: slow_pull_out
     duration: { seconds: 3 }
     transition: { kind: slide, dir: left, duration: 18 }

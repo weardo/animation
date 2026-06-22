@@ -1,9 +1,9 @@
 {
   "project_version": "1.0",
   "id": "shapes-demo",
-  "name": "Shapes Demo",
-  "created": "2026-06-22T07:49:45.692Z",
-  "updated": "2026-06-22T07:49:45.692Z",
+  "name": "shapes-demo",
+  "created": "2026-06-22T09:44:56.926Z",
+  "updated": "2026-06-22T09:44:56.926Z",
   "config": {
     "w": 1920,
     "h": 1080,
@@ -13,11 +13,10 @@
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "e7e48e282ef1c37890473ac134576e82e1341275",
+  "scene_ir_hash": "95348fbf7c241728ee75a70f9369b20bb412443b",
   "engine": "remotion@4.0.481",
   "deps": [
     "bg_gradient@1.0.0",
-    "axon_curve@1.0.0",
     "blip@1.0.0"
   ],
   "assets": [

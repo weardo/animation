@@ -1,37 +1,53 @@
 // Story IR — semantic, human/LLM-authorable, YAML-authored, Zod-validated. Spec §6.1.
 //
-// High-level *intent* only: beats, characters, narration, camera intent. No frame numbers,
+// High-level *intent* only: beats, a declared cast, narration, camera intent. No frame numbers,
 // no coordinates — those are produced downstream by the lowering/layout/camera passes (Scene IR).
 // OTIO-aligned: a beat ≈ a clip on a track.
 //
-// M1 subset: title, characters, beats (id, say?, show?, action?, camera?).
-// Fields the spec mentions for later milestones (environment, place) are RESERVED as optional so
-// later passes need no schema migration. Audio/TTS is NOT modeled here in M1.
+// DOMAIN-AGNOSTIC (ADR-007 decision #3): the front-end specializes in NOTHING. A story declares a
+// generic `cast` — named refs/actors that each map to a library entry (+ an optional provider). A
+// "character" is just one KIND of cast ref (one whose entry resolves to a rig); it is NOT a
+// schema-level entity. There is no `characters`/`character:`/domain vocabulary in this schema — those
+// live only in plugins (code) + library (data) + examples (story authoring).
+//
+// Authorable surface: title, cast, beats (id, say?, show?, action?, camera?, transition?, duration?).
+// Fields reserved for later milestones (environment, place) are optional so later passes need no
+// schema migration. Audio/TTS is NOT modeled here yet.
 
 import { z } from 'zod';
 
 /** A named palette token reference (resolved later in Scene IR `defs.palette`). */
 const PaletteRefSchema = z.string().min(1);
 
-/** A character declaration: which rig art it uses + an optional palette intent. */
-export const CharacterSchema = z
+/**
+ * A CAST entry: a named, reusable reference an actor/subject in the story binds to. Generic by
+ * design (ADR-007) — `ref` is a library `name@version` (resolved to a content hash by P2) and the
+ * optional `provider` names which provider plugin interprets it (e.g. a skeletal-rig provider, a
+ * procedural-creature provider). "character" is just a cast entry whose ref resolves to a rig; the
+ * core schema knows only the generic shape. A `show[].actor` directive binds a layer to a cast key.
+ */
+export const CastEntrySchema = z
   .object({
-    /** Library rig name (optionally name@version); resolved to a content hash by P2. */
-    rig: z.string().min(1),
+    /** Library entry name (optionally `name@version`); resolved to a content hash by P2. */
+    ref: z.string().min(1),
+    /** Optional provider id override (else derived from the resolved catalog entry). */
+    provider: z.string().min(1).optional(),
     /** Optional palette intent (token name). */
     palette: PaletteRefSchema.optional(),
   })
   .strict();
-export type Character = z.infer<typeof CharacterSchema>;
+export type CastEntry = z.infer<typeof CastEntrySchema>;
 
 /**
- * A `show` directive: introduce something on screen. M1 supports a generator spawn
- * (e.g. `{ generator: "bead-string", as: "neuron_chain" }`). Loosely typed by design — the
- * lowering pass interprets it; reserved keys (asset/clip/character) are tolerated for later.
+ * A `show` directive: introduce something on screen. Each item declares ONE generic layer kind by
+ * which field it sets — `generator` (a procedural world), `shape` (a vector primitive / morph),
+ * `asset` (static art), or `actor` (a cast ref bound to a rig/provider layer). Loosely typed by
+ * design — the lowering pass interprets it generically (it knows layer KINDS, never a subject domain;
+ * ADR-007); the free-form `args` flow straight through and are validated by each family's own Zod.
  */
 export const ShowItemSchema = z
   .object({
-    /** Generator name to spawn (M1). */
+    /** Generator name to spawn (any registered procedural generator). */
     generator: z.string().min(1).optional(),
     /**
      * A first-class vector SHAPE to show (ADR-003 #1). The value is the `@remotion/shapes` primitive
@@ -42,12 +58,12 @@ export const ShowItemSchema = z
      * id and the optional positional `at` (an anchor name) its placement.
      */
     shape: z.string().min(1).optional(),
-    /** Static asset to show (reserved; later). */
+    /** Static asset to show (a `defs.assets` ref; a background is just a low-z, far-parallax asset). */
     asset: z.string().min(1).optional(),
     /** Reusable clip to place (reserved; later). */
     clip: z.string().min(1).optional(),
-    /** A character to bring on (reserved; later). */
-    character: z.string().min(1).optional(),
+    /** A cast key to bring on screen as a rig/provider layer (the generic "actor" binding). */
+    actor: z.string().min(1).optional(),
     /** Local handle other beats refer to (e.g. an `action.on` target). */
     as: z.string().min(1).optional(),
     /** Named layout anchor (e.g. "center", "left", "top_right") the lowering pass resolves to a
@@ -60,8 +76,8 @@ export const ShowItemSchema = z
 export type ShowItem = z.infer<typeof ShowItemSchema>;
 
 /**
- * An `action` directive: do something to an existing on-screen handle.
- * (e.g. `{ on: "neuron_chain", do: "pulse_travel" }`).
+ * An `action` directive: do something to an existing on-screen handle (an earlier `show[].as`).
+ * `do` is the target family's own verb/clip name — a thin pointer the lowering pass forwards.
  */
 export const ActionItemSchema = z
   .object({
@@ -138,7 +154,7 @@ export type StoryTransition = z.infer<typeof StoryTransitionSchema>;
  */
 export const PlaceItemSchema = z
   .object({
-    character: z.string().min(1).optional(),
+    actor: z.string().min(1).optional(),
     clip: z.string().min(1).optional(),
     /** Named anchor in the environment to drop onto. */
     at: z.string().min(1).optional(),
@@ -183,8 +199,8 @@ export type Beat = z.infer<typeof BeatSchema>;
 export const StoryIRSchema = z
   .object({
     title: z.string().min(1),
-    /** Named characters → their rig + palette intent. */
-    characters: z.record(CharacterSchema).default({}),
+    /** Named cast: generic refs/actors → a library entry (+ optional provider/palette intent). */
+    cast: z.record(CastEntrySchema).default({}),
     beats: z.array(BeatSchema).min(1),
   })
   .strict();

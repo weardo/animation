@@ -27,9 +27,9 @@
 
 title: "Shapes & Morph"
 
-characters:
+cast:
   blip:
-    rig: blip
+    ref: blip
     palette: warm
 
 beats:
@@ -41,6 +41,9 @@ beats:
   - id: primitives
     say: "Every shape is a socket; the library is the plug."
     show:
+      # The gradient background: a plain asset at z=0, far parallax.
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
       # A calm starfield so the scene isn't empty space (reuses the scatter generator).
       - generator: scatter
         as: stars
@@ -53,6 +56,8 @@ beats:
           anim_speed: 0.4
           glow: true
           opacity: 0.8
+      # The procedural character the primitives ring (z=10, centred at the default anchor).
+      - actor: blip
 
       # STAR — solid gold fill + off-white stroke. Top of frame.
       - shape: star
@@ -127,6 +132,8 @@ beats:
   - id: morph
     say: "Now watch one become another — geometry and colour together."
     show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
       - shape: morph
         as: star_to_heart
         at: center

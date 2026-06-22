@@ -1,8 +1,12 @@
-// factory:gen — a THIN source-material CLI (ADR-006). The engine specializes in NOTHING, so the
+// factory:gen — a THIN source-material CLI (ADR-006/007). The engine specializes in NOTHING, so the
 // character-specific factory (CharacterSpec → library entry + preview) no longer lives in core; it is
 // OWNED by the `blob-creature` provider plugin. This CLI just dispatches to that provider's
 // `generate(...)` — the generic shape any provider plugin can ship (a chart plugin would expose its
 // own ChartSpec generator the same way).
+//
+// ADR-007 code-location: as a composition root that NAMES a specific provider plugin, this CLI lives
+// OUTSIDE src/ (alongside render-entry.tsx) so the engine core (src/) imports no plugin — the
+// plugin→core arrow holds and `grep "from .*plugins/" src/` stays empty.
 //
 //   npm run factory:gen <spec.json>
 //
@@ -13,9 +17,9 @@
 import { resolve as resolvePath, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { generate } from '../../plugins/blob-creature/generator.js';
+import { generate } from './plugins/blob-creature/generator.js';
 
-const ROOT = resolvePath(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const ROOT = resolvePath(dirname(fileURLToPath(import.meta.url)));
 
 function main(): void {
   const specArg = process.argv.slice(2).find((a) => !a.startsWith('-'));

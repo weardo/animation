@@ -18,7 +18,7 @@
 
 import type { ComponentType, ReactNode } from 'react';
 import type { Easings, RigDef, RigLayer } from '../ir/index.js';
-import type { GeneratorComponent } from '../generators/types.js';
+import type { GeneratorComponent } from './generator.js';
 import { effects, generators, layerTypes, passes, providers, transitions } from './registry.js';
 
 /**

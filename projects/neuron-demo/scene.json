@@ -4,7 +4,7 @@
     "w": 1920,
     "h": 1080,
     "fps": 30,
-    "duration_frames": 150
+    "duration_frames": 120
   },
   "defs": {
     "palette": {
@@ -62,7 +62,7 @@
       }
     },
     "rigs": {
-      "narrator": {
+      "dragon": {
         "uri": "rig://dragon/dragon.dbones.json",
         "provider": "dragonbones"
       }
@@ -73,9 +73,9 @@
     {
       "id": "b1",
       "at": 0,
-      "duration_frames": 150,
+      "duration_frames": 120,
       "labels": {
-        "reveal": 75
+        "reveal": 60
       },
       "camera": {
         "position": {
@@ -90,7 +90,7 @@
               "e": "smooth"
             },
             {
-              "t": 150,
+              "t": 120,
               "s": [
                 60,
                 0
@@ -107,7 +107,7 @@
               "e": "smooth"
             },
             {
-              "t": 150,
+              "t": 120,
               "s": 1.15
             }
           ]
@@ -116,41 +116,24 @@
       "layers": [
         {
           "type": "asset",
-          "id": "L_bg",
+          "id": "L_asset_bg_gradient_0",
           "z": 0,
           "ref": "bg_gradient",
-          "parallax": 0.2
+          "parallax": 0
         },
         {
           "type": "generator",
-          "id": "L_neuron",
-          "z": 4,
+          "id": "L_gen_bead-string_neuron_chain",
+          "z": 1,
           "gen": "bead-string",
-          "seed": 1736731050,
-          "path": "asset://axon_curve.svg#path",
-          "params": {
-            "beads": 9,
-            "bead_radius": 14,
-            "blobbiness": 0.35,
-            "pulse": {
-              "amp": 0.25,
-              "speed": 1.4,
-              "phase_step": 0.6
-            },
-            "wave": {
-              "amp": 10,
-              "speed": 0.8
-            },
-            "gooey": true,
-            "fill": "accent",
-            "glow": true
-          }
+          "seed": 920223613,
+          "params": {}
         },
         {
           "type": "rig",
-          "id": "L_narr",
+          "id": "L_rig_narrator",
           "z": 10,
-          "ref": "narrator",
+          "ref": "dragon",
           "transform": {
             "position": {
               "a": 0,
@@ -191,8 +174,18 @@
           "rig_state": {
             "clips": [
               {
-                "anim": "throw",
+                "anim": "idle",
                 "loop": true
+              },
+              {
+                "anim": "throw",
+                "loop": false,
+                "at": 60
+              },
+              {
+                "anim": "idle",
+                "loop": true,
+                "at": 108
               }
             ]
           }
@@ -201,9 +194,9 @@
     }
   ],
   "provenance": {
-    "story_ir_hash": "sha1:2357f0cb2e16c987fb20cdf74b36fd2721e101b7",
+    "story_ir_hash": "sha1:8b3be5cff40953331cadef6ff6d723206346149c",
     "passes": [
-      "lower@1.0"
+      "lower@2.0"
     ]
   }
 }

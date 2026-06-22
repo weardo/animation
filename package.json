@@ -10,9 +10,9 @@
     "frames": "tsx src/cli/render.ts",
     "build:blip": "tsx src/cli/render.ts examples/character.yaml --project blip-intro --name \"Meet Blip\"",
     "build:neuron": "tsx src/cli/render.ts examples/neuron.yaml --project neuron-demo --name \"Neuron\"",
-    "factory:gen": "tsx src/cli/factory-gen.ts",
+    "factory:gen": "tsx factory-gen-entry.ts",
     "compare": "node tools/perceptual-diff.mjs",
-    "studio": "remotion studio src/render/index.ts"
+    "studio": "remotion studio render-entry.tsx"
   },
   "dependencies": {
     "@remotion/cli": "4.0.481",

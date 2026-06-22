@@ -1,9 +1,9 @@
 {
   "project_version": "1.0",
   "id": "scatter-demo",
-  "name": "Scatter Demo",
-  "created": "2026-06-22T07:50:08.851Z",
-  "updated": "2026-06-22T07:50:08.851Z",
+  "name": "scatter-demo",
+  "created": "2026-06-22T09:45:06.767Z",
+  "updated": "2026-06-22T09:45:06.767Z",
   "config": {
     "w": 1920,
     "h": 1080,
@@ -13,16 +13,14 @@
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "be9a0dc34b5b6edda11f9580004e213f2049ff73",
+  "scene_ir_hash": "eeff1fa6371c19d82562662a2bbde774ae6ff037",
   "engine": "remotion@4.0.481",
   "deps": [
     "bg_gradient@1.0.0",
-    "axon_curve@1.0.0",
     "blip@1.0.0"
   ],
   "assets": [
     "assets/bg_gradient.svg",
-    "assets/axon_curve.svg",
     "assets/characters/blip/blip.spec.json",
     "assets/characters/blip/blip.preview.png"
   ],

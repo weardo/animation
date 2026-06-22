@@ -12,7 +12,7 @@
 //
 // PURE / DETERMINISTIC: a function of (clips, frame, fps) only. No clock, no random.
 
-import type { RigClip } from '../ir/index.js';
+import type { RigClip } from '../../src/ir/index.js';
 
 /** What to seek this frame: which animation, and to what absolute time (seconds). */
 export interface ClipSeek {

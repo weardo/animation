@@ -1,28 +1,26 @@
 {
   "project_version": "1.0",
   "id": "blip-intro",
-  "name": "Meet Blip",
-  "created": "2026-06-22T07:48:50.725Z",
-  "updated": "2026-06-22T07:48:50.725Z",
+  "name": "blip-intro",
+  "created": "2026-06-22T09:49:48.032Z",
+  "updated": "2026-06-22T09:49:48.032Z",
   "config": {
     "w": 1920,
     "h": 1080,
     "fps": 30,
-    "duration_frames": 150
+    "duration_frames": 120
   },
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "8460fc508ab8db637a49a9f2acf3b5e35f1476b1",
+  "scene_ir_hash": "9dc6432b8aba67352a49d9ac5ab5e4d29b8bf119",
   "engine": "remotion@4.0.481",
   "deps": [
     "bg_gradient@1.0.0",
-    "axon_curve@1.0.0",
     "blip@1.0.0"
   ],
   "assets": [
     "assets/bg_gradient.svg",
-    "assets/axon_curve.svg",
     "assets/characters/blip/blip.spec.json",
     "assets/characters/blip/blip.preview.png"
   ],

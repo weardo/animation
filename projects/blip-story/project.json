@@ -1,9 +1,9 @@
 {
   "project_version": "1.0",
   "id": "blip-story",
-  "name": "Blip Story",
-  "created": "2026-06-22T07:49:12.226Z",
-  "updated": "2026-06-22T07:49:12.226Z",
+  "name": "Blip's Story",
+  "created": "2026-06-22T09:33:09.791Z",
+  "updated": "2026-06-22T09:33:09.791Z",
   "config": {
     "w": 1920,
     "h": 1080,
@@ -13,16 +13,14 @@
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "b17e771fd3cc2eb132c7a64012befea47a7e6926",
+  "scene_ir_hash": "8e67be84657973545e975afe94926f57f04bce1e",
   "engine": "remotion@4.0.481",
   "deps": [
     "bg_gradient@1.0.0",
-    "axon_curve@1.0.0",
     "blip@1.0.0"
   ],
   "assets": [
     "assets/bg_gradient.svg",
-    "assets/axon_curve.svg",
     "assets/characters/blip/blip.spec.json",
     "assets/characters/blip/blip.preview.png"
   ],
