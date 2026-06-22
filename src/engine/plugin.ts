@@ -23,8 +23,7 @@ const Version = z.string().regex(/^\d+\.\d+\.\d+(?:[-+].+)?$/, 'expected semver 
  */
 const CONTRIBUTION_KINDS = [
   'generators',
-  'rigProviders',
-  'characterStyles',
+  'providers',
   'effects',
   'transitions',
   'layerTypes',

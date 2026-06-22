@@ -1,9 +1,9 @@
 {
   "project_version": "1.0",
   "id": "generators-demo",
-  "name": "Generators",
-  "created": "2026-06-22T05:12:33.306Z",
-  "updated": "2026-06-22T05:31:35.264Z",
+  "name": "Generators Demo",
+  "created": "2026-06-22T07:49:27.275Z",
+  "updated": "2026-06-22T07:49:27.275Z",
   "config": {
     "w": 1920,
     "h": 1080,
@@ -13,7 +13,7 @@
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "ab52858bbfc80a8ec2e54c79fe6051c5d950bac3",
+  "scene_ir_hash": "ab9486f0befb19515a748c16a1db122cb90e2f34",
   "engine": "remotion@4.0.481",
   "deps": [
     "bg_gradient@1.0.0",

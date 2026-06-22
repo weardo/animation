@@ -1,7 +1,7 @@
 {
   "id": "blob-creature",
   "version": "1.0.0",
-  "contributes": ["characterStyles"],
+  "contributes": ["providers"],
   "license": "MIT",
   "provenance": {
     "author": "animation-factory",

@@ -233,7 +233,7 @@ function resolveAsset(ref: string, lib: LibraryLike | undefined): AssetDef {
 function resolveRig(ref: string, lib: LibraryLike | undefined): RigDef {
   if (lib) return lib.toRigDef(ref);
   const name = ref.split('@')[0] ?? ref;
-  return { uri: `rig://${name}.dbones.json`, kind: 'dragonbones' };
+  return { uri: `rig://${name}.dbones.json`, provider: 'dragonbones' };
 }
 
 /**

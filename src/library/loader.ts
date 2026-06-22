@@ -81,17 +81,19 @@ export class Library {
       throw new Error(`ref ${r.key} is kind '${r.entry.kind}', expected 'rig'`);
     }
     if (!r.entry.uri) throw new Error(`rig entry ${r.key} has no uri`);
-    // The entry `format` selects the provider (ADR-001): 'procedural' (code-only shape character)
-    // or 'dragonbones' (vendor skeleton). Default to dragonbones for back-compat.
-    const fmt = r.entry.format === 'procedural' ? 'procedural' : 'dragonbones';
-    if (fmt === 'procedural') {
-      // Embed the CharacterSpec so it travels in the Scene IR (shareable; the compositor renders it).
+    // ADR-006: the rig def carries a `provider` id (NOT a domain "kind"). The catalog entry names it
+    // explicitly via `provider`; otherwise it is derived from `format` for back-compat — a
+    // 'procedural' entry is rendered by the `blob-creature` provider, anything else by 'dragonbones'.
+    const provider =
+      r.entry.provider ?? (r.entry.format === 'procedural' ? 'blob-creature' : 'dragonbones');
+    if (provider === 'blob-creature') {
+      // Embed the opaque provider spec so it travels in the Scene IR (the provider validates/renders).
       const id = r.entry.uri.replace(/^proc:\/\//, '').split('/')[0] ?? '';
       const specPath = resolvePath(this.rootDir, 'library', 'characters', id, `${id}.spec.json`);
       const spec = JSON.parse(readFileSync(specPath, 'utf8')) as Record<string, unknown>;
-      return { uri: r.entry.uri, kind: fmt, spec };
+      return { uri: r.entry.uri, provider, spec };
     }
-    return { uri: r.entry.uri, kind: fmt };
+    return { uri: r.entry.uri, provider };
   }
 
   /** Adapt a resolved asset entry to the Scene-IR `AssetDef` shape (src/ir). */

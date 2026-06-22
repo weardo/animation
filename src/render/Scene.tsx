@@ -24,7 +24,7 @@ import React, { useMemo } from 'react';
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from 'remotion';
 import type { Defs, Easings, Layer, Scene as SceneIR } from '../ir/index.js';
 import { GeneratorLayer } from '../generators/index.js';
-import { rigProviders } from '../engine/index.js';
+import { providers } from '../engine/index.js';
 import { AssetLayer } from './AssetLayer.js';
 import { ShapeLayer } from './ShapeLayer.js';
 import { evalNumber, evalVec2 } from './eval.js';
@@ -137,10 +137,10 @@ function renderSub(
       if (!rigDef) {
         throw new Error(`Scene IR: rig layer "${layer.id}" references unknown rig "${layer.ref}".`);
       }
-      // Provider dispatch (ADR-005): resolve the rig `kind` ("procedural"/"dragonbones") through the
-      // engine's rigProviders registry (populated by the core-rigs plugin) — no hardcoded branch.
-      // `get` throws loudly on an unknown kind (no silent fallback).
-      const Provider = rigProviders.get(rigDef.kind);
+      // Provider dispatch (ADR-006): resolve `rigDef.provider` ("dragonbones"/"blob-creature"/future
+      // "chart"…) through the engine's generic `providers` registry (populated by the provider
+      // plugins) — core knows no rig "kind"/domain. `get` throws loudly on an unknown provider.
+      const Provider = providers.get(rigDef.provider);
       const inner = <Provider layer={layer} rigDef={rigDef} easings={easings} />;
       return (
         <ParallaxWrapper offset={parallaxOffset} id={layer.id}>

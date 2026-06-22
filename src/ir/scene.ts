@@ -48,14 +48,21 @@ export const AssetDefSchema = z
 export type AssetDef = z.infer<typeof AssetDefSchema>;
 export const AssetsSchema = z.record(AssetDefSchema);
 
-/** A rig definition. `kind` selects the provider that renders it (spec ADR-001): a vendor
- *  DragonBones skeleton, or a code-only `procedural` character (shape-composition; no vendor mesh). */
+/**
+ * A rig definition (ADR-006). `provider` is the id of the PROVIDER plugin that renders this layer
+ * (e.g. "dragonbones", "blob-creature", future "chart"/"widget"). The compositor dispatches by it
+ * through the engine's `providers` registry — core knows no rig "kind"/domain.
+ *
+ * `spec` is OPAQUE to the core (`z.record(unknown)`): it travels in the Scene IR but is validated and
+ * interpreted ONLY by the named provider (e.g. blob-creature parses it as its CharacterSpec). This
+ * keeps the engine free of any domain entity — a provider's spec shape never leaks into core.
+ */
 export const RigDefSchema = z
   .object({
     uri: z.string().min(1),
-    kind: z.enum(['dragonbones', 'procedural']),
-    /** For `procedural` rigs: the embedded CharacterSpec (loose here to avoid an ir→factory cycle;
-     *  validated by the factory's parseSpec at the compositor). Travels in the Scene IR (shareable). */
+    /** Provider id → the engine `providers` registry entry that renders this rig. */
+    provider: z.string().min(1),
+    /** OPAQUE, provider-validated spec/sources. Travels in the Scene IR (shareable). */
     spec: z.record(z.unknown()).optional(),
   })
   .strict();

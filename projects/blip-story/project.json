@@ -1,9 +1,9 @@
 {
   "project_version": "1.0",
   "id": "blip-story",
-  "name": "Blip's Story",
-  "created": "2026-06-22T03:59:16.964Z",
-  "updated": "2026-06-22T03:59:16.964Z",
+  "name": "Blip Story",
+  "created": "2026-06-22T07:49:12.226Z",
+  "updated": "2026-06-22T07:49:12.226Z",
   "config": {
     "w": 1920,
     "h": 1080,
@@ -13,7 +13,7 @@
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "9df6aa29b3b5754498b42f7390be84d890fd4c80",
+  "scene_ir_hash": "b17e771fd3cc2eb132c7a64012befea47a7e6926",
   "engine": "remotion@4.0.481",
   "deps": [
     "bg_gradient@1.0.0",

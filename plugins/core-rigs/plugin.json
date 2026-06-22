@@ -1,7 +1,7 @@
 {
   "id": "core-rigs",
   "version": "1.0.0",
-  "contributes": ["rigProviders"],
+  "contributes": ["providers"],
   "license": "MIT",
   "provenance": {
     "author": "animation-factory",

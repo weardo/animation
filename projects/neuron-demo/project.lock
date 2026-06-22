@@ -16,11 +16,11 @@
       "hash": "84e83292f11d2fa767ca742a60d548a44653c621",
       "deps": []
     },
-    "blip@1.0.0": {
+    "dragon@1.0.0": {
       "namespace": "characters",
-      "id": "blip",
+      "id": "dragon",
       "version": "1.0.0",
-      "hash": "0ee38acd75aca505e31c8e8c78c8de86475e4f9c",
+      "hash": "51aacf3ed6e362a486aeb62eacc66485325acf61",
       "deps": []
     }
   }

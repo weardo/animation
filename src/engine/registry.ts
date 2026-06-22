@@ -13,7 +13,7 @@
 // the resolved capability set is identical across cold processes (CLAUDE.md r.1).
 
 import type { GeneratorComponent } from '../generators/types.js';
-import type { CharacterStyleBuilder, RigProviderComponent } from './api.js';
+import type { ProviderComponent } from './api.js';
 
 /** A generic, typed name→value registry. The single building block for every extension point. */
 export class Registry<T> {
@@ -56,13 +56,16 @@ export class Registry<T> {
   }
 }
 
-// --- The named extension points the engine core owns (ADR-005 "Extension points"). ---
+// --- The named extension points the engine core owns (ADR-005 / ADR-006 "Extension points"). ---
 //
-// THREE are populated today (they have real contributors — the existing built-ins migrate into them
-// as core plugins in the Migrate phase):
-//   • generators       — generator name → React component  (was src/generators/registry.ts)
-//   • rigProviders     — rig `kind`      → React component  (was the Scene.tsx kind dispatch)
-//   • characterStyles  — style id        → CharacterSpec→markup builder (was characterMarkup)
+// TWO are populated today (they have real contributors — the existing built-ins are core plugins):
+//   • generators  — generator name → React component  (was src/generators/registry.ts)
+//   • providers   — provider id    → React component  (was the Scene.tsx kind dispatch; ADR-006)
+//
+// ADR-006: the engine specializes in NOTHING. The former `rigProviders` and `characterStyles` collapse
+// into ONE generic `providers` registry: a provider (id `blob-creature`/`dragonbones`/future `chart`/
+// `widget`) renders a `rig` layer from an OPAQUE spec it validates itself. Core knows no "character"/
+// "style" — only "a rig layer → a provider id → the provider renders it".
 //
 // FOUR are STUBS — defined now with the SAME shape so future backlog items (ADR-003 / ADR-005) plug
 // in WITHOUT touching the core, but left empty (no contributors yet). Do NOT implement these now.
@@ -70,11 +73,8 @@ export class Registry<T> {
 /** Generator implementations: `gen` name → component (e.g. "scatter", "water"). */
 export const generators = new Registry<GeneratorComponent>('generator');
 
-/** Rig providers: rig `kind` → component (e.g. "procedural", "dragonbones"). */
-export const rigProviders = new Registry<RigProviderComponent>('rig provider');
-
-/** Character styles: style id → CharacterSpec→markup builder (e.g. "blob-creature"). */
-export const characterStyles = new Registry<CharacterStyleBuilder>('character style');
+/** Providers: provider id → component (e.g. "blob-creature", "dragonbones", future "chart"). */
+export const providers = new Registry<ProviderComponent>('provider');
 
 // --- STUB extension points (defined, empty; future capability plugs in here). ---
 
@@ -93,13 +93,12 @@ export const passes = new Registry<unknown>('pass');
 /** Every engine registry, by name — for diagnostics and the loader's post-load report. */
 export const registries = {
   generators,
-  rigProviders,
-  characterStyles,
+  providers,
   effects,
   transitions,
   layerTypes,
   passes,
 } as const;
 
-/** The set of extension-point names the engine owns (the three live + four stubs). */
+/** The set of extension-point names the engine owns (the two live + four stubs). */
 export type RegistryName = keyof typeof registries;

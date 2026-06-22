@@ -1,29 +1,31 @@
 {
   "project_version": "1.0",
-  "id": "shapes-demo",
-  "name": "Shapes Demo",
-  "created": "2026-06-22T07:49:45.692Z",
-  "updated": "2026-06-22T07:49:45.692Z",
+  "id": "neuron-demo",
+  "name": "Neuron Demo",
+  "created": "2026-06-22T07:51:32.037Z",
+  "updated": "2026-06-22T07:51:32.037Z",
   "config": {
     "w": 1920,
     "h": 1080,
     "fps": 30,
-    "duration_frames": 162
+    "duration_frames": 150
   },
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "e7e48e282ef1c37890473ac134576e82e1341275",
+  "scene_ir_hash": "22b0cc2d03f7dcba8eb85bc7d4a08c96ed4134ae",
   "engine": "remotion@4.0.481",
   "deps": [
     "bg_gradient@1.0.0",
     "axon_curve@1.0.0",
-    "blip@1.0.0"
+    "dragon@1.0.0"
   ],
   "assets": [
     "assets/bg_gradient.svg",
-    "assets/characters/blip/blip.spec.json",
-    "assets/characters/blip/blip.preview.png"
+    "assets/axon_curve.svg",
+    "assets/dragon/dragon_ske.json",
+    "assets/dragon/dragon_tex.json",
+    "assets/dragon/dragon_tex.png"
   ],
   "outputs": {
     "video": "media/out.mp4",

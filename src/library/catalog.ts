@@ -71,8 +71,14 @@ export const CatalogEntrySchema = z
     id: z.string().min(1),
     version: SemverSchema,
     kind: EntryKindSchema,
-    /** Media/serialization format, e.g. 'svg' | 'lottie' | 'image' | 'dragonbones'. */
+    /** Media/serialization format, e.g. 'svg' | 'lottie' | 'image' | 'dragonbones' | 'procedural'. */
     format: z.string().min(1).optional(),
+    /**
+     * For `rig` entries (ADR-006): the id of the PROVIDER plugin that renders this entry (e.g.
+     * 'blob-creature', 'dragonbones'). The loader copies it into the Scene-IR rig def's `provider`.
+     * Optional → the loader derives it from `format` for back-compat (procedural → blob-creature).
+     */
+    provider: z.string().min(1).optional(),
     /** Addressable location, e.g. `rig://dragon.dbones.json` or `asset://bg.svg#path`. */
     uri: z.string().min(1).optional(),
     tags: z.array(z.string()).default([]),

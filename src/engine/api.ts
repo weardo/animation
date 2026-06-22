@@ -4,59 +4,41 @@
 // single, swappable seam between "capability authored as a plugin" and "the registries the core owns"
 // (Blender-style register/unregister; ADR-005 "Plugin contract").
 //
-// Today THREE register methods are live (generators, rig providers, character styles — the existing
-// built-ins migrate through them in the Migrate phase) and FOUR are STUBS (effects / transitions /
-// layer types / passes) — present with the right shape so future plugins compile and wire in without
-// a core change, but with no contributors yet. Do NOT implement the stub capabilities now.
+// Today TWO register methods are live (generators, providers — the existing built-ins are core
+// plugins) and FOUR are STUBS (effects / transitions / layer types / passes) — present with the right
+// shape so future plugins compile and wire in without a core change, but with no contributors yet. Do
+// NOT implement the stub capabilities now.
+//
+// ADR-006: the engine specializes in NOTHING. There is no "character style" extension point — a
+// "character" is just one PROVIDER among many. A provider renders a `rig` layer from an OPAQUE spec
+// (`z.record(unknown)`) that the provider itself validates/interprets; core has zero domain knowledge.
 //
 // DETERMINISM: the API only performs registration (pure data wiring). It owns no clock and no
 // per-frame state; contributed implementations carry the determinism contract (CLAUDE.md r.1).
 
 import type { ComponentType } from 'react';
-import type { CharacterSpec } from '../factory/spec.js';
-import type { Easings, RigClip, RigDef, RigLayer } from '../ir/index.js';
+import type { Easings, RigDef, RigLayer } from '../ir/index.js';
 import type { GeneratorComponent } from '../generators/types.js';
-import {
-  characterStyles,
-  effects,
-  generators,
-  layerTypes,
-  passes,
-  rigProviders,
-  transitions,
-} from './registry.js';
+import { effects, generators, layerTypes, passes, providers, transitions } from './registry.js';
 
 /**
- * A RIG PROVIDER renders a Scene-IR `rig` layer for one provider `kind` (ADR-001). It is a React
- * component the compositor dispatches to by `rigDef.kind` (today: `procedural` → ProceduralRig,
- * `dragonbones` → RigLayer). The props are the union of what those two existing providers need; a
- * provider reads only the fields its kind uses. Like every sub-renderer it reads the frame clock
- * itself (useCurrentFrame) and must be a pure function of (props + frame) — CLAUDE.md r.1.
+ * A PROVIDER renders a Scene-IR `rig` layer (ADR-006). It is a React component the compositor
+ * dispatches to by `rigDef.provider` (today: `blob-creature`, `dragonbones`; future: `chart`,
+ * `widget`, …). The `rigDef.spec` is OPAQUE to the core — the provider validates/interprets it with
+ * its OWN schema. Like every sub-renderer it reads the frame clock itself (useCurrentFrame) and must
+ * be a pure function of (props + frame) — CLAUDE.md r.1.
  */
-export interface RigProviderProps {
+export interface ProviderProps {
   /** The Scene-IR rig layer (transform `{a,k}` channels + rig_state.clips). */
   layer: RigLayer;
-  /** The resolved rig definition (`defs.rigs[layer.ref]`): `kind` + optional embedded spec/sources. */
+  /** The resolved rig definition (`defs.rigs[layer.ref]`): `provider` id + the opaque `spec`/sources. */
   rigDef: RigDef;
   /** The scene easing table for resolving `{a,k}` channels. */
   easings?: Easings | undefined;
 }
 
-/** A rig provider is a React component consuming {@link RigProviderProps}. */
-export type RigProviderComponent = ComponentType<RigProviderProps>;
-
-/**
- * A CHARACTER STYLE builds the deterministic SVG markup for a CharacterSpec at a frame (ADR-005
- * "Character styles"). The default `blob-creature` style is today's `characterMarkup`. A style is a
- * PURE function of (spec, frame, fps, clips) returning a byte-stable `<g>` markup string — it drives
- * both the runtime procedural rig and offline factory previews, so it owns no clock.
- */
-export type CharacterStyleBuilder = (
-  spec: CharacterSpec,
-  frame: number,
-  fps: number,
-  clips: readonly RigClip[],
-) => string;
+/** A provider is a React component consuming {@link ProviderProps}. */
+export type ProviderComponent = ComponentType<ProviderProps>;
 
 /**
  * The surface a plugin's `register(api)` uses to contribute capability into the engine's extension
@@ -69,11 +51,11 @@ export interface EngineAPI {
   /** Register a generator implementation under its `gen` name (e.g. "scatter"). */
   registerGenerator(name: string, component: GeneratorComponent): void;
 
-  /** Register a rig provider under its rig `kind` (e.g. "procedural", "dragonbones"). */
-  registerRigProvider(kind: string, component: RigProviderComponent): void;
-
-  /** Register a character-style builder under its style id (e.g. "blob-creature"). */
-  registerCharacterStyle(id: string, builder: CharacterStyleBuilder): void;
+  /**
+   * Register a provider under its id (e.g. "blob-creature", "dragonbones", future "chart"). The
+   * provider renders a `rig` layer from the layer's OPAQUE `spec`, which it validates itself (ADR-006).
+   */
+  registerProvider(id: string, component: ProviderComponent): void;
 
   // --- STUB extension points (shape only; no consumers wired yet — do not implement now) ---
 
@@ -96,8 +78,7 @@ export interface EngineAPI {
  */
 export const engineApi: EngineAPI = {
   registerGenerator: (name, component) => void generators.register(name, component),
-  registerRigProvider: (kind, component) => void rigProviders.register(kind, component),
-  registerCharacterStyle: (id, builder) => void characterStyles.register(id, builder),
+  registerProvider: (id, component) => void providers.register(id, component),
   registerEffect: (name, effect) => void effects.register(name, effect),
   registerTransition: (kind, transition) => void transitions.register(kind, transition),
   registerLayerType: (type, impl) => void layerTypes.register(type, impl),

@@ -1,6 +1,6 @@
 # ADR-006 — The engine specializes in NOTHING: purge domain entities (character) from core
 
-**Date:** 2026-06-22 · **Status:** Accepted — refinement of ADR-005. Implement next.
+**Date:** 2026-06-22 · **Status:** DONE 2026-06-22 — refinement of ADR-005, implemented. Engine specializes in nothing; core has zero `character`/`CharacterSpec`/`style` refs; `blob-creature` is a provider plugin owning its CharacterSpec. All demos re-lowered + byte-identical across cold processes (blob-creature + dragonbones provider paths).
 
 ## Context
 
@@ -31,6 +31,11 @@ Generic layer kinds only: `asset` · `shape` · `text` · `generator` · `rig` (
 - `blob-creature` is just the *first* provider; the factory pattern (spec → library entry) is reusable by every provider plugin (a chart plugin ships a `ChartSpec` + its own generator).
 - Confirms the layering: **core (generic) · plugins (capability/code) · library (content/data)** — with no domain leakage into core. Generalizes ADR-001/004/005 to their endpoint.
 
-## Backlog item
+## Implementation (DONE 2026-06-22)
 
-**Engine purification** (next): drop `characterStyles` → `providers`; move `CharacterSpec`/`characterMarkup`/factory into `plugins/blob-creature/`; make the IR rig `spec` opaque + rig def `{provider, spec}`; thin generic source-material CLI dispatching to the plugin; re-lower/verify all demos byte-identical. After this, the core has no domain entity.
+- **Engine:** the `characterStyles` extension point is gone; `rigProviders` → one generic **`providers`** registry. `EngineAPI` drops `registerCharacterStyle`; exposes `registerProvider(id, component)` (provider id, not "style"). The 4 stub registries (`effects`/`transitions`/`layerTypes`/`passes`) are unchanged.
+- **Out of core:** `src/factory/` is **deleted**. Its `spec.ts` (CharacterSpec) + `character.ts` (`characterMarkup`) moved into `plugins/blob-creature/` (`spec.ts`, `character.ts`). The provider renderer (`plugins/blob-creature/renderer.tsx`, formerly `src/render/ProceduralRig.tsx`) takes the rig layer's OPAQUE spec, validates it with the plugin's OWN `CharacterSpec` (Zod), and renders. `src/ir` has ZERO CharacterSpec import — `RigDef.spec` is `z.record(unknown)`.
+- **IR + consumers:** `RigDef` = `{ uri, provider, spec? }` (was `{ uri, kind, spec }` + `spec.style`). `library/loader.ts` sets `provider` from the catalog entry (`provider` field, else derived: `format:'procedural'` → `blob-creature`, else `dragonbones`) and embeds the opaque spec for blob-creature. `src/render/Scene.tsx` rig dispatch → `providers.get(rigDef.provider)`. `core-rigs` registers the vendor renderer under `dragonbones`.
+- **Factory:** the character-specific generator moved to `plugins/blob-creature/generator.ts` (CharacterSpec → library entry + preview). `src/cli/factory-gen.ts` is a thin CLI that dispatches to the active provider plugin's `generate(...)`.
+- **Wire-compat:** the `rig` layer type, `defs.rigs`, and `library/characters/` namespace stay (data org). All 6 demo projects re-lowered so their `scene.json` carries the new `{provider, spec}` rig def.
+- **Verify:** `render <project> --frames auto` (CPU raster), cross-process `cmp` of stills → byte-identical for the blob-creature provider (blip-intro) across two cold processes; dragonbones provider (neuron-demo) renders correctly; typecheck clean.

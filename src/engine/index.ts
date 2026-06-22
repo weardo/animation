@@ -2,12 +2,11 @@
 // the EngineAPI plugins register into, the plugin/manifest contract, and the loader. Capability is
 // contributed by plugins (code); content stays in the library (data). See ADR-005.
 
-// Generic registry + the named extension points the engine owns (3 live + 4 stubs).
+// Generic registry + the named extension points the engine owns (2 live + 4 stubs).
 export {
   Registry,
   generators,
-  rigProviders,
-  characterStyles,
+  providers,
   effects,
   transitions,
   layerTypes,
@@ -20,9 +19,8 @@ export {
 export {
   engineApi,
   type EngineAPI,
-  type RigProviderComponent,
-  type RigProviderProps,
-  type CharacterStyleBuilder,
+  type ProviderComponent,
+  type ProviderProps,
 } from './api.js';
 
 // Plugin + manifest contract.

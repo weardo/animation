@@ -1,9 +1,14 @@
-// Character SPEC — the data-driven recipe the asset factory turns into a procedural character
-// (spec ADR-001/ADR-002). One generalized builder (character.ts) + a spec → a distinct creature, so
-// new characters are DATA, not code. Zod-validated → TS types + JSON-Schema for free (CLAUDE.md r.3).
+// CharacterSpec — the blob-creature PROVIDER's OWN spec schema (ADR-006). This lived in core
+// (`src/factory/spec.ts`) when the engine still knew about "characters"; ADR-006 purges that domain
+// entity from core, so the spec moves INTO the plugin that owns it. The core IR's rig-layer `spec` is
+// OPAQUE (`z.record(unknown)`) — only THIS provider validates/interprets it (with the schema below).
+//
+// One generalized builder (character.ts) + a spec → a distinct creature, so new creatures are DATA,
+// not code. Zod-validated → TS types + JSON-Schema for free (CLAUDE.md r.3).
 //
 // PURE DATA: no behaviour here. The spec is content-addressed + stored as a library artifact and
-// travels inside the Scene IR (defs.rigs[ref].spec) so the compositor renders it deterministically.
+// travels inside the Scene IR (defs.rigs[ref].spec, opaque to core) so the compositor renders it
+// deterministically — the provider parses it back to a typed CharacterSpec at render time.
 
 import { z } from 'zod';
 
@@ -13,12 +18,6 @@ export const CharacterSpecSchema = z
   .object({
     id: z.string().min(1),
     name: z.string().min(1),
-    /**
-     * The character STYLE that builds this spec's markup (ADR-005 "Character styles"). Resolved at
-     * render time from the engine's `characterStyles` registry (a style ships as a plugin, e.g. the
-     * default `blob-creature`). Optional → defaults to `blob-creature` so existing specs are unchanged.
-     */
-    style: z.string().min(1).default('blob-creature'),
     /** Flat palette (Kurzgesagt: saturated body + dark ink outline + accent for beak/feet). */
     palette: z
       .object({
@@ -64,7 +63,7 @@ export function parseSpec(data: unknown): CharacterSpec {
   return CharacterSpecSchema.parse(data);
 }
 
-/** The reference "blip" spec — the proportions ProceduralRig was hand-tuned to. Used as a template. */
+/** The reference "blip" spec — the proportions the renderer was hand-tuned to. Used as a template. */
 export const BLIP_SPEC: CharacterSpec = CharacterSpecSchema.parse({
   id: 'blip',
   name: 'Blip',

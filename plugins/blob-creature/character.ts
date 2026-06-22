@@ -1,15 +1,16 @@
-// characterMarkup — the GENERALIZED procedural character builder. One function + a CharacterSpec →
-// the SVG markup for a flat-vector Kurzgesagt creature, animated as a pure function of the frame.
+// characterMarkup — the GENERALIZED procedural creature builder, OWNED by the blob-creature provider
+// (ADR-006: moved out of core `src/factory/`). One function + a CharacterSpec → the SVG markup for a
+// flat-vector Kurzgesagt creature, animated as a pure function of the frame.
 //
 // Returns an SVG markup STRING (a `<g>` centred on local origin) so it can drive BOTH:
-//   • runtime (ProceduralRig injects it via dangerouslySetInnerHTML), and
+//   • runtime (the provider injects it via dangerouslySetInnerHTML), and
 //   • factory previews (wrapped in an <svg> and rasterised by rsvg-convert — no Remotion needed).
 //
 // DETERMINISM (CLAUDE.md r.1): pure function of (spec, frame, fps, clips). No Date.now/Math.random;
 // blink is frame-modulo; motion is trig of frame/fps. Numbers are fixed-precision so the STRING is
 // byte-stable across runs.
 
-import type { RigClip } from '../ir/index.js';
+import type { RigClip } from '../../src/ir/index.js';
 import type { CharacterSpec } from './spec.js';
 
 const TAU = Math.PI * 2;

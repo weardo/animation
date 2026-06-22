@@ -102,13 +102,28 @@ function vendorAssets(sceneIR: SceneIR, paths: ProjectPaths): string[] {
     const rel = uri.replace(/^asset:\/\//, '').split('#')[0] ?? '';
     if (rel) copy(resolvePath(PROJECT_ROOT, 'public', rel), rel);
   }
-  // 2. procedural character source (spec drives the look; spec is also inlined in scene.json)
-  const rigs = (sceneIR.defs?.rigs ?? {}) as Record<string, { kind?: string; uri?: string }>;
+  // 2. procedural character source (spec drives the look; spec is also inlined in scene.json).
+  // ADR-006: the rig def carries a `provider` id (no domain "kind"); blob-creature is the procedural
+  // (proc://) provider whose spec/preview source artifacts we vendor for a self-contained bundle.
+  const rigs = (sceneIR.defs?.rigs ?? {}) as Record<string, { provider?: string; uri?: string }>;
   for (const def of Object.values(rigs)) {
-    if (def.kind === 'procedural' && def.uri) {
+    if (def.provider === 'blob-creature' && def.uri) {
       const id = def.uri.replace(/^proc:\/\//, '').split('/')[0] ?? '';
       for (const f of [`${id}.spec.json`, `${id}.preview.png`]) {
         copy(resolvePath(PROJECT_ROOT, 'library', 'characters', id, f), `characters/${id}/${f}`);
+      }
+    } else if (def.provider === 'dragonbones' && def.uri) {
+      // The dragonbones provider loads its three source files from public/ via `staticFile`
+      // (RigLayer.deriveSources): `rig://<dir>/<base>.dbones.json` → <dir>/<base>_{ske,tex}.json
+      // + <dir>/<base>_tex.png. Vendor them into the project's assets/ (the render publicDir) so the
+      // bundle is self-contained — the parallel of vendoring blob-creature's spec/preview above.
+      const noScheme = def.uri.includes('://') ? def.uri.slice(def.uri.indexOf('://') + 3) : def.uri;
+      const slash = noScheme.lastIndexOf('/');
+      const dir = slash >= 0 ? noScheme.slice(0, slash + 1) : '';
+      const fileName = slash >= 0 ? noScheme.slice(slash + 1) : noScheme;
+      const base = fileName.replace(/\.(dbones|ske)?\.?json$/i, '').replace(/\.[^.]+$/, '');
+      for (const f of [`${base}_ske.json`, `${base}_tex.json`, `${base}_tex.png`]) {
+        copy(resolvePath(PROJECT_ROOT, 'public', `${dir}${f}`), `${dir}${f}`);
       }
     }
   }

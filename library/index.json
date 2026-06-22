@@ -8,6 +8,7 @@
         "version": "1.0.0",
         "kind": "rig",
         "format": "procedural",
+        "provider": "blob-creature",
         "uri": "proc://blip",
         "tags": [
           "m2",
@@ -52,7 +53,7 @@
         },
         "provenance": {
           "source": "factory",
-          "generator": "factory-gen",
+          "generator": "blob-creature",
           "spec_hash": "d16f4dbeb4c542b404191eb600fa2e538441b8cf",
           "license": "CC0"
         },
@@ -84,6 +85,7 @@
         "version": "1.0.0",
         "kind": "rig",
         "format": "procedural",
+        "provider": "blob-creature",
         "uri": "proc://pip",
         "tags": [
           "procedural",
@@ -127,7 +129,7 @@
         },
         "provenance": {
           "source": "factory",
-          "generator": "factory-gen",
+          "generator": "blob-creature",
           "spec_hash": "673028bc93ffb86bd8958cbec1bfa7c00c0c0df4",
           "license": "CC0"
         },

@@ -64,7 +64,7 @@
     "rigs": {
       "narrator": {
         "uri": "proc://blip",
-        "kind": "procedural",
+        "provider": "blob-creature",
         "spec": {
           "id": "blip",
           "name": "Blip",
