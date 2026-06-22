@@ -36,6 +36,9 @@ export const ProvenanceSchema = z
   .object({
     source: z.string().min(1),
     license: z.string().min(1),
+    /** Factory-generated assets: the generator + the content hash of the source spec. */
+    generator: z.string().optional(),
+    spec_hash: z.string().optional(),
   })
   .strict();
 export type Provenance = z.infer<typeof ProvenanceSchema>;
@@ -49,6 +52,10 @@ export const RigManifestSchema = z
   .object({
     mounts: z.record(z.object({ bone: z.string() }).or(z.object({ slot: z.string() }))).default({}),
     variants: z.record(z.array(z.string())).default({}),
+    /** Named animations the rig exposes (procedural characters: idle/blink/wave). */
+    clips: z.array(z.string()).optional(),
+    /** Approximate footprint for layout/preview (local units). */
+    bounds: z.object({ w: z.number(), h: z.number() }).optional(),
   })
   .strict();
 export type RigManifest = z.infer<typeof RigManifestSchema>;
@@ -74,6 +81,8 @@ export const CatalogEntrySchema = z
     /** Rig-only manifest (mounts + variant axes). */
     manifest: RigManifestSchema.optional(),
     provenance: ProvenanceSchema.optional(),
+    /** Relative path (under library/) to a generated preview image. */
+    preview: z.string().optional(),
   })
   .strict();
 export type CatalogEntry = z.infer<typeof CatalogEntrySchema>;

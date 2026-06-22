@@ -145,18 +145,15 @@ async function main(): Promise<void> {
     // --- deterministic render settings (spec §14.1 / spike) ---
     imageFormat: 'png', // lossless intermediate frames (no JPEG quantization variance)
     concurrency: 1, // single browser worker (the absolute-seek rig path is order-independent anyway)
-    // SOFTWARE GL backend (SwiftShader): hardware 'angle' rasterizes WebGL non-deterministically
-    // across independent runs (GPU/driver float variance), breaking byte-identical determinism.
-    // 'swangle' rasterizes in software → reproducible Pixi/DragonBones frames. Verified 2026-06-22.
-    //
-    // enableMultiProcessOnLinux:false → Chromium runs `--single-process` (renderer + GPU collapsed
-    // into ONE process). REQUIRED for FFD determinism: with the default multi-process layout the
-    // separate GPU process accumulates state, so a sub-pixel WebGL/FFD-mesh edge difference on one
-    // frame cascades into a WHOLE-FRAME divergence (incl. the SVG gradient) on later frames across
-    // independent runs. The bone-only M1 dragon tolerated multi-process; the FFD-on-every-frame M2
-    // `blip` character did not (112/150 frames differed). Single-process removes the cross-process
-    // scheduling variance → byte-identical decoded video across cold runs. Verified 2026-06-22 (M2.0).
-    chromiumOptions: { gl: 'swiftshader', enableMultiProcessOnLinux: false },
+    // GL backend = 'angle' (hardware). Procedural characters are pure SVG/DOM, so determinism comes
+    // from the DOM, NOT the GL backend — 'angle' is byte-identical across cold runs AND fast (~28s).
+    // DO NOT use 'swiftshader'/'swangle' here: the SOFTWARE GL renderer balloons Chromium's
+    // Service-Worker CacheStorage to ~26GB during render, filling the disk until the process crashes
+    // (then the unlinked temp frees — the "fills up then frees" symptom). Verified 2026-06-22.
+    // (Software GL was only needed for WebGL/DragonBones FFD determinism — another reason the
+    // procedural provider is preferred; a WebGL scene that needs determinism must solve the cache
+    // bloat first, e.g. a capped/disabled Chromium cache.)
+    chromiumOptions: { gl: 'angle' },
     // Pin the H.264 encode so the MUXED MP4 is byte-identical too, not just the source frames:
     // sequential single-pass encoding (no thread-scheduling variance) + fixed preset/crf.
     disallowParallelEncoding: true,
