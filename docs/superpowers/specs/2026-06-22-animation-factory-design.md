@@ -26,9 +26,15 @@ Same Scene IR ⇒ byte-identical video. Render with **`gl: 'angle'`** — proced
 
 ### Build status
 - **DONE:** pipeline (parse→lower→layout→camera→validate) · Remotion render · library + per-project lockfile · **Shading & Depth (§11.1)** · **multi-scene storytelling + transitions (§11.2, 2026-06-22)** · procedural provider + **asset factory** + **projects** · determinism/disk fixes.
-- **NEXT (M2):** object/prop specs · `scatter` + more generators (§10/§10.1) · `clip`/`environment` (§13.3) · `attach`/`parts` (§8.1) · motion blur/effects (§11) · color-script (§11.4) · kinetic typography (§11.3).
+- **NEXT (M2):** **content & animation vocabulary buildout (ADR-003), Tier-A-first** — `@remotion/shapes`+`@remotion/paths` · `effects[]` via SVG filters + motion blur · generators (scatter/water/particles/crowd) · `clip`/`environment` (§13.3) · `attach`/`parts` (§8.1) · text/typography (§11.3) · color-script (§11.4) · object/prop specs · data-viz.
 - **LATER (M3):** audio + sound design (P4/P7) · LLM script-expander (P1) · smart layout (P6/P9) · `post[]` grade · AI asset-gen (P3).
 - **ADR follow-ups:** formalize `AssetProvider`/`LibraryResolver` TS interfaces · `factory bundle`/`list` · OTIO export.
+
+### Content & animation vocabulary (ADR-003)
+The full editor vocabulary (transitions, effects, shapes, text, color, masks, audio, generators, data-viz, 3D) is **adopted from free libraries through our families, not invented** ("families are sockets; libraries are plugs"). Two sourcing tiers, gated by determinism:
+- **Tier A — adopt now** (deterministic, disk-safe, DOM/SVG/CSS/CPU): `@remotion/shapes`+`@remotion/paths`, `@remotion/transitions`, SVG/CSS filters, `@remotion/motion-blur`/`noise`, GSAP (free plugins), `flubber`, `culori`/`d3`, `@remotion/google-fonts`/`layout-utils`/`captions`/`media-utils`, Iconify/unDraw/Open Peeps/Lottie.
+- **Tier B — opt-in, gated on deterministic GPU capture** (free but WebGL → non-deterministic + disk-balloon): GL Transitions (123 GLSL), PixiJS filters, pmndrs/postprocessing, `@remotion/three`/`skia`.
+The complete inventory + build backlog (every category, nothing skipped) is **ADR-003**. The M2 buildout executes that backlog Tier-A-first.
 
 ---
 
