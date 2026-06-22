@@ -56,3 +56,15 @@ Each item is built into its family, **adopting the Tier-A source**, and verified
 - The vocabulary grows by **adopting catalogs into families**, not authoring effects — fast, free, and consistent with ADR-001 (engine generic; families pluggable).
 - Tier-A items are shippable + deterministic immediately; Tier-B is a single future enablement (GPU-determinism) that unlocks a large catalog at once.
 - Quick wins flagged: stop hand-rolling shapes (`@remotion/shapes`) and morph (`@remotion/paths`).
+
+## Runtime vs compiler boundary (the "are we reinventing Remotion?" rule)
+
+**Remotion is the RUNTIME; our IR is the compiler TARGET.** Remotion natively provides the deterministic frame model (`useCurrentFrame`), the animation primitives (`interpolate`, `spring`, `Easing.bezier`, `interpolateColors`), sequencing (`Sequence`/`Series`/`@remotion/transitions` `TransitionSeries`), media/layout (`AbsoluteFill`/`Img`/`Audio`/`staticFile`), and the render backend (`bundle`/`renderMedia`/`renderStill`). Its "declarative" form, however, is **React + props (code)** — it has **no serializable, generatable, validatable film *document***.
+
+That gap is the ONLY reason our wrapper exists: a **serializable Scene-IR format** (Lottie-superset `{a,k}`, Zod-validated, content-hashable), a **script → Story IR → Scene IR → frames compiler** (pure staged passes), a **content-addressed library/lockfile**, determinism tooling (cross-process verify, golden-diff), and the **AI-emits-*data* boundary** (AI writes validated IR, never code or frames — the founding motivation). The Scene IR is passed **verbatim as `inputProps`** to one generic compositor — there is no runtime translation layer.
+
+**Rules:**
+1. **Never reimplement a Remotion primitive.** Interpolation, easing, springs, sequencing, transitions, color interpolation — call Remotion (e.g. `eval.ts` reads IR keyframes and calls Remotion `interpolate`; `EASINGS` are bezier tuples fed to `Easing.bezier`; overshoot uses `spring()`). The render layer is a THIN IR→Remotion adapter.
+2. **Borrow capability from Remotion's ecosystem first** (Tier A): transitions→`@remotion/transitions`, text→`@remotion/google-fonts`+`layout-utils`, shapes→`@remotion/shapes`, footage→`@remotion/lottie`/`<Video>`, motion-blur→`@remotion/motion-blur`. Add a non-Remotion lib only where Remotion has none (e.g. `culori` for OKLab, `flubber` for morph, `d3-shape` for charts).
+3. **Let Remotion own playback timing.** The compiler computes only the bookkeeping it needs (total `duration_frames`, per-scene `at`); `TransitionSeries`/`Sequence` own the actual overlap/playback — do not re-derive it.
+4. **Trap to avoid:** if the goal were "write a React composition per video," almost all the wrapper would be redundant with Remotion. The wrapper earns its keep ONLY as the *data-driven factory* (videos as generated, reusable, reproducible DATA). Keep the runtime layer minimal; put the weight in the compiler/IR/library/plugins, never in re-doing Remotion.
