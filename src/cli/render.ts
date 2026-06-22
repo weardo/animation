@@ -13,7 +13,7 @@
 // DETERMINISM: scene.json is the deterministic engine input; gl:'angle' (procedural scenes are SVG/
 // DOM-deterministic — NEVER software GL, which balloons Chromium CacheStorage and fills the disk).
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync, rmSync } from 'node:fs';
 import { resolve as resolvePath, dirname, basename } from 'node:path';
 import { cpus } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -42,6 +42,15 @@ import {
 } from '../project/index.js';
 
 const PROJECT_ROOT = resolvePath(dirname(fileURLToPath(import.meta.url)), '..', '..');
+
+// DISK SAFETY: Remotion writes its per-render webpack bundle + Chromium profile to os.tmpdir() (`/tmp`),
+// which here is a SMALL tmpfs (7.7G, RAM-backed) — many renders accumulate 25MB bundles until it hits
+// ENOSPC ("disk full") + crash. Redirect all render temp to a dir on the PROJECT partition (big disk)
+// by setting TMPDIR BEFORE any bundle/Chromium temp is created. Bundles are also removed per-render
+// (see prepare()/renderScene). This is the durable fix for the recurring "root partition full".
+const RENDER_TMP = resolvePath(PROJECT_ROOT, '.render-tmp');
+mkdirSync(RENDER_TMP, { recursive: true });
+process.env.TMPDIR = RENDER_TMP;
 // The composition root (render-entry.tsx) loads the enabled plugins before registering the Remotion
 // root; it lives at the repo root so the engine core (src/) names no plugin (ADR-007).
 const REMOTION_ENTRY = resolvePath(PROJECT_ROOT, 'render-entry.tsx');
@@ -191,24 +200,28 @@ async function prepare(sceneIR: SceneIR, publicDir: string) {
 /** Render the full Scene IR to an mp4. `gpu` opts into the fast (perceptual) iGPU tier. */
 async function renderScene(sceneIR: SceneIR, videoOut: string, publicDir: string, gpu: boolean): Promise<{ frames: number }> {
   const { serveUrl, composition, inputProps } = await prepare(sceneIR, publicDir);
-  console.log(`[render] video ${composition.width}x${composition.height}@${composition.fps} (${composition.durationInFrames}f) [${gpu ? 'GPU/perceptual' : 'CPU/byte-exact'}] → ${videoOut}`);
-  await renderMedia({
-    composition,
-    serveUrl,
-    codec: 'h264',
-    outputLocation: videoOut,
-    inputProps,
-    imageFormat: 'png',
-    concurrency: CONCURRENCY,
-    chromiumOptions: chromiumOpts(gpu),
-    // CPU tier pins single-pass encode for byte-identical mp4; GPU tier is perceptual anyway, so let
-    // the encoder parallelize for more speed.
-    disallowParallelEncoding: !gpu,
-    x264Preset: 'faster',
-    crf: 18,
-    colorSpace: 'bt709',
-  });
-  return { frames: composition.durationInFrames };
+  try {
+    console.log(`[render] video ${composition.width}x${composition.height}@${composition.fps} (${composition.durationInFrames}f) [${gpu ? 'GPU/perceptual' : 'CPU/byte-exact'}] → ${videoOut}`);
+    await renderMedia({
+      composition,
+      serveUrl,
+      codec: 'h264',
+      outputLocation: videoOut,
+      inputProps,
+      imageFormat: 'png',
+      concurrency: CONCURRENCY,
+      chromiumOptions: chromiumOpts(gpu),
+      // CPU tier pins single-pass encode for byte-identical mp4; GPU tier is perceptual anyway, so let
+      // the encoder parallelize for more speed.
+      disallowParallelEncoding: !gpu,
+      x264Preset: 'faster',
+      crf: 18,
+      colorSpace: 'bt709',
+    });
+    return { frames: composition.durationInFrames };
+  } finally {
+    rmSync(serveUrl, { recursive: true, force: true }); // free the per-render bundle (disk safety)
+  }
 }
 
 /**
@@ -220,14 +233,18 @@ async function renderStills(sceneIR: SceneIR, framesDir: string, frameList: numb
   const { serveUrl, composition, inputProps } = await prepare(sceneIR, publicDir);
   mkdirSync(framesDir, { recursive: true });
   const out: string[] = [];
-  for (const frame of frameList) {
-    const f = Math.min(Math.max(0, frame), composition.durationInFrames - 1);
-    const output = resolvePath(framesDir, `frame-${String(f).padStart(4, '0')}.png`);
-    await renderStill({ composition, serveUrl, output, frame: f, inputProps, imageFormat: 'png', chromiumOptions: chromiumOpts(gpu) });
-    out.push(output);
+  try {
+    for (const frame of frameList) {
+      const f = Math.min(Math.max(0, frame), composition.durationInFrames - 1);
+      const output = resolvePath(framesDir, `frame-${String(f).padStart(4, '0')}.png`);
+      await renderStill({ composition, serveUrl, output, frame: f, inputProps, imageFormat: 'png', chromiumOptions: chromiumOpts(gpu) });
+      out.push(output);
+    }
+    console.log(`[render] ${out.length} still(s) → ${framesDir}`);
+    return out;
+  } finally {
+    rmSync(serveUrl, { recursive: true, force: true }); // free the per-render bundle (disk safety)
   }
-  console.log(`[render] ${out.length} still(s) → ${framesDir}`);
-  return out;
 }
 
 /** Parse a --frames spec into frame numbers. "auto" = 5 evenly-spaced; else a comma list (a,b,c). */
