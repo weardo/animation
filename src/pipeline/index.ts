@@ -88,10 +88,15 @@ const PASS_CHAIN = [
   VALIDATE_PASS,
 ] as const;
 
-/** Compute the content-hash cache key for a script + the pass chain (pure, no wall-clock). */
-function cacheKey(scriptContents: string): string {
+/**
+ * Compute the content-hash cache key for a script + the pass chain (pure, no wall-clock). `extra`
+ * folds in any caller-supplied input that ALSO affects the output but isn't in the script file —
+ * e.g. a CLI `--aspect`/`--fps` format override (I1). Omitting it would let an override silently
+ * return a stale cached IR for the same script.
+ */
+function cacheKey(scriptContents: string, extra?: unknown): string {
   return objectHash(
-    { passes: PASS_CHAIN, script: scriptContents },
+    { passes: PASS_CHAIN, script: scriptContents, extra: extra ?? null },
     { algorithm: 'sha1', encoding: 'hex' }
   );
 }
@@ -109,6 +114,12 @@ export interface RunPipelineOptions {
    * For tests and for callers that wire a custom front-end.
    */
   frontend?: Frontend;
+  /**
+   * Extra input folded into the cache key — for output-affecting options the front-end injects that
+   * aren't in the script file (e.g. a CLI format override, I1). Without it, an override would hit a
+   * stale cache entry for the same script.
+   */
+  cacheKeyExtra?: unknown;
 }
 
 /** The default front-end: the bundled parse (P0) + lower (P5). */
@@ -147,7 +158,7 @@ export function runPipeline(
   // --- cache lookup ---
   const cachingEnabled = opts.cacheDir !== null;
   const cacheDir = opts.cacheDir ?? DEFAULT_CACHE_DIR;
-  const key = cacheKey(scriptContents);
+  const key = cacheKey(scriptContents, opts.cacheKeyExtra);
   const cacheFile = resolvePath(rootDir, cacheDir, `scene-${key}.json`);
 
   if (cachingEnabled && existsSync(cacheFile)) {

@@ -35,6 +35,7 @@ import {
   type Easings,
   type EasingDef,
   type StoryIR,
+  type Format,
   type Beat,
   type ShowItem,
   type ActionItem,
@@ -65,6 +66,32 @@ export const RENDER_CONFIG = {
   h: 1080,
   fps: 30,
 } as const;
+
+/** Aspect preset → [width, height] at a 1080 short-edge. Author convenience (I1); explicit w/h wins. */
+const ASPECT_DIMS: Record<string, readonly [number, number]> = {
+  '16:9': [1920, 1080],
+  '9:16': [1080, 1920],
+  '1:1': [1080, 1080],
+  '4:5': [1080, 1350],
+  '4:3': [1440, 1080],
+  '21:9': [2560, 1080],
+};
+
+/**
+ * I1 — resolve the output config (frame size + fps) from the story's `format`, then a LowerOptions
+ * override (CLI), over the RENDER_CONFIG defaults. Aspect preset sets width×height; explicit
+ * width/height override the preset; fps defaults to 30. Pure — no domain assumptions, no demo baked in.
+ */
+function resolveConfig(format: Format | undefined, override: Format | undefined): { w: number; h: number; fps: number } {
+  const f: Format = { ...(format ?? {}), ...(override ?? {}) };
+  let w: number = RENDER_CONFIG.w;
+  let h: number = RENDER_CONFIG.h;
+  if (f.aspect && ASPECT_DIMS[f.aspect]) [w, h] = ASPECT_DIMS[f.aspect] as [number, number];
+  if (typeof f.width === 'number') w = f.width;
+  if (typeof f.height === 'number') h = f.height;
+  const fps = typeof f.fps === 'number' ? f.fps : RENDER_CONFIG.fps;
+  return { w, h, fps };
+}
 
 /**
  * Default per-beat scene length when a beat declares no `duration`. Expressed in SECONDS and
@@ -173,6 +200,8 @@ export interface LowerOptions {
   library?: LibraryLike;
   /** Override the per-scene duration in frames (default: {@link DEFAULT_BEAT_SECONDS} × fps). */
   durationFrames?: number;
+  /** I1: override the output format (aspect/size/fps). CLI convenience; the story's `format` is primary. */
+  format?: Format | undefined;
 }
 
 // --- StyleKit → IR adapters -------------------------------------------------------------------
@@ -565,7 +594,8 @@ function collectDefs(story: StoryIR, lib: LibraryLike | undefined) {
  */
 export function lowerStory(story: StoryIR, opts: LowerOptions = {}): LoweredSceneIR {
   const lib = opts.library;
-  const { w, h, fps } = RENDER_CONFIG;
+  // I1: frame size + fps come from the story's `format` (or a CLI override), not a hardcoded config.
+  const { w, h, fps } = resolveConfig(story.format, opts.format);
 
   const hash = storyHash(story);
 

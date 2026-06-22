@@ -1,0 +1,44 @@
+# examples/vertical-demo.yaml — I1 proof: an author-declared 9:16 VERTICAL short.
+#
+# The ONLY thing that makes this vertical is the top-level `format` block. The renderer + Scene-IR
+# `config` already support any geometry/fps; I1 lets the STORY choose it, so the same factory emits
+# vertical shorts, square loops, 4K, or 60fps — not just 1080p@30 landscape. Everything else is the
+# normal generic show[] vocabulary. Deterministic (pure SVG/DOM, CPU raster).
+#
+#   tsx src/cli/render.ts examples/vertical-demo.yaml --project vertical-demo --frames auto
+#   (or override any story without editing it:  --aspect 1:1 / --fps 60 / --width 3840 --height 2160)
+
+title: "Vertical Demo"
+format:
+  aspect: "9:16"   # → 1080×1920 (explicit width/height would override)
+  fps: 30
+
+cast:
+  blip:
+    ref: blip
+    palette: warm
+
+beats:
+  - id: intro
+    say: "Same factory, different frame."
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - generator: scatter
+        as: stars
+        args:
+          motif: star
+          count: 60
+          size: [2, 6]
+          colors: [light, accent]
+          anim: twinkle
+          glow: true
+      - actor: blip
+      - shape: star
+        as: hero
+        at: top
+        args:
+          z: 6
+          scale: 70
+          params: { points: 5, innerRadius: 50, outerRadius: 110 }
+          fill: { a: 0, k: accent }

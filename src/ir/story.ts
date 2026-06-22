@@ -195,10 +195,34 @@ export const BeatSchema = z
   .strict();
 export type Beat = z.infer<typeof BeatSchema>;
 
+/**
+ * Output format (I1 — author-controlled frame size + fps). The renderer + Scene-IR `config` already
+ * support ANY resolution/fps; this lets the STORY choose, so the factory can make vertical shorts,
+ * square loops, 4K, 24/60fps — not just 1080p@30 landscape. `aspect` is an ergonomic preset resolved
+ * to width×height; explicit `width`/`height` override it; `fps` defaults to 30. Omitted → the
+ * lowering default (1920×1080@30). NOTE: the *output codec/container* (alpha/ProRes/GIF) is a separate
+ * concern (render-side), not here — this is purely the frame geometry the compiler emits.
+ */
+export const AspectSchema = z.enum(['16:9', '9:16', '1:1', '4:5', '4:3', '21:9']);
+export type Aspect = z.infer<typeof AspectSchema>;
+
+export const FormatSchema = z
+  .object({
+    /** Ergonomic aspect preset → width×height (1080 short-edge). Overridden by explicit width/height. */
+    aspect: AspectSchema.optional(),
+    width: z.number().int().positive().optional(),
+    height: z.number().int().positive().optional(),
+    fps: z.number().positive().optional(),
+  })
+  .strict();
+export type Format = z.infer<typeof FormatSchema>;
+
 /** The Story IR root. */
 export const StoryIRSchema = z
   .object({
     title: z.string().min(1),
+    /** Optional output format (I1): aspect preset or explicit size + fps. Omitted → 1920×1080@30. */
+    format: FormatSchema.optional(),
     /** Named cast: generic refs/actors → a library entry (+ optional provider/palette intent). */
     cast: z.record(CastEntrySchema).default({}),
     beats: z.array(BeatSchema).min(1),

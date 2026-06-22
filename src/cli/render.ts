@@ -27,7 +27,7 @@ import { runPipeline, lowerStory } from '../pipeline/index.js';
 import type { Frontend } from '../pipeline/index.js';
 import { parseStory } from '../pipeline/parse.js';
 import { Library } from '../library/index.js';
-import type { SceneIR } from '../ir/index.js';
+import type { SceneIR, Format } from '../ir/index.js';
 import { COMPOSITION_ID } from '../render/Root.js';
 import {
   projectPaths,
@@ -65,8 +65,8 @@ function lockRefsForScene(sceneIR: SceneIR): string[] {
   return [...refs].sort();
 }
 
-function libraryFrontend(library: Library): Frontend {
-  return { parse: parseStory, lower: (story) => lowerStory(story, { library }) };
+function libraryFrontend(library: Library, format?: Format): Frontend {
+  return { parse: parseStory, lower: (story) => lowerStory(story, { library, format }) };
 }
 
 interface Args {
@@ -75,6 +75,8 @@ interface Args {
   name?: string | undefined;
   frames?: string | undefined;
   gpu: boolean;
+  /** I1: CLI override of the story's output format (aspect/size/fps). */
+  format?: Format | undefined;
 }
 function parseArgs(argv: string[]): Args {
   const positional = argv.filter((a) => !a.startsWith('-'));
@@ -84,7 +86,23 @@ function parseArgs(argv: string[]): Args {
     if (n === '--frames' && i >= 0 && (argv[i + 1] === undefined || argv[i + 1]!.startsWith('-'))) return 'auto';
     return i >= 0 ? argv[i + 1] : undefined;
   };
-  return { target: positional[0] ?? 'examples/character.yaml', id: flag('--project'), name: flag('--name'), frames: flag('--frames'), gpu: argv.includes('--gpu') };
+  const num = (n: string): number | undefined => {
+    const v = flag(n);
+    const x = v !== undefined ? Number(v) : NaN;
+    return Number.isFinite(x) ? x : undefined;
+  };
+  // I1: assemble an optional format override from --aspect/--fps/--width/--height.
+  const fmt: Format = {};
+  const aspect = flag('--aspect');
+  if (aspect) fmt.aspect = aspect as Format['aspect'];
+  const fps = num('--fps');
+  if (fps !== undefined) fmt.fps = fps;
+  const width = num('--width');
+  if (width !== undefined) fmt.width = width;
+  const height = num('--height');
+  if (height !== undefined) fmt.height = height;
+  const format = Object.keys(fmt).length > 0 ? fmt : undefined;
+  return { target: positional[0] ?? 'examples/character.yaml', id: flag('--project'), name: flag('--name'), frames: flag('--frames'), gpu: argv.includes('--gpu'), format };
 }
 
 /**
@@ -231,7 +249,7 @@ function makeThumbnail(p: ProjectPaths, frame: number): void {
 }
 
 async function main(): Promise<void> {
-  const { target, id: idFlag, name, frames, gpu } = parseArgs(process.argv.slice(2));
+  const { target, id: idFlag, name, frames, gpu, format } = parseArgs(process.argv.slice(2));
 
   let paths: ProjectPaths;
   let sceneIR: SceneIR;
@@ -254,7 +272,7 @@ async function main(): Promise<void> {
 
     const library = Library.open(PROJECT_ROOT);
     console.log(`[render] compiling '${target}' → project '${id}'`);
-    sceneIR = runPipeline(storyPath, { rootDir: PROJECT_ROOT, frontend: libraryFrontend(library) });
+    sceneIR = runPipeline(storyPath, { rootDir: PROJECT_ROOT, frontend: libraryFrontend(library, format), cacheKeyExtra: format });
 
     const refs = lockRefsForScene(sceneIR);
     writeSource(paths, readFileSync(storyPath, 'utf8'));

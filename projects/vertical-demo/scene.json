@@ -1,0 +1,275 @@
+{
+  "scene_ir_version": "1.0",
+  "config": {
+    "w": 1080,
+    "h": 1920,
+    "fps": 30,
+    "duration_frames": 120
+  },
+  "defs": {
+    "palette": {
+      "bg": "#1b2a4a",
+      "bg2": "#24386b",
+      "accent": "#ffcf4d",
+      "accent2": "#4d9fff",
+      "ink": "#0d1b33",
+      "light": "#fff6e0",
+      "shadow": "#0a1326"
+    },
+    "easings": {
+      "smooth": [
+        0.4,
+        0,
+        0.2,
+        1
+      ],
+      "pop": "backOut",
+      "backOut": [
+        0.34,
+        1.56,
+        0.64,
+        1
+      ],
+      "anticipate": [
+        0.36,
+        0,
+        0.66,
+        -0.56
+      ],
+      "easeIn": [
+        0.4,
+        0,
+        1,
+        1
+      ],
+      "easeOut": [
+        0,
+        0,
+        0.2,
+        1
+      ],
+      "linear": [
+        0,
+        0,
+        1,
+        1
+      ]
+    },
+    "assets": {
+      "bg_gradient": {
+        "uri": "asset://bg_gradient.svg",
+        "kind": "svg"
+      }
+    },
+    "rigs": {
+      "blip": {
+        "uri": "proc://blip",
+        "provider": "blob-creature",
+        "spec": {
+          "id": "blip",
+          "name": "Blip",
+          "palette": {
+            "body": "#4aa3ff",
+            "bodyDark": "#2f86e0",
+            "ink": "#16243f",
+            "belly": "#d6ecff",
+            "accent": "#ffce4a",
+            "white": "#ffffff",
+            "cheek": "#ff7eb0"
+          },
+          "head": {
+            "r": 66,
+            "cy": -66
+          },
+          "body": {
+            "rx": 70,
+            "ry": 68,
+            "cy": 28
+          },
+          "belly": {
+            "rx": 42,
+            "ry": 36,
+            "cy": 48
+          },
+          "eyes": {
+            "spacing": 26,
+            "cy": -74,
+            "r": 17,
+            "pupil": 8
+          },
+          "beak": {
+            "show": true,
+            "width": 24,
+            "depth": 16,
+            "cy": -50
+          },
+          "cheeks": {
+            "show": true,
+            "r": 9,
+            "spacing": 46,
+            "cy": -50
+          },
+          "arms": {
+            "width": 18,
+            "length": 66,
+            "shoulderY": 6,
+            "rest": 14
+          },
+          "legs": {
+            "width": 20,
+            "height": 40,
+            "spacing": 24,
+            "footRx": 23,
+            "footRy": 12,
+            "footCy": 120
+          },
+          "motion": {
+            "bob": 5,
+            "swayDeg": 1.6,
+            "breathe": 0.03,
+            "waveRaise": 150
+          }
+        }
+      }
+    }
+  },
+  "audio": [],
+  "scenes": [
+    {
+      "id": "intro",
+      "at": 0,
+      "duration_frames": 120,
+      "labels": {
+        "reveal": 60
+      },
+      "camera": {
+        "position": {
+          "a": 0,
+          "k": [
+            0,
+            0
+          ]
+        },
+        "zoom": {
+          "a": 0,
+          "k": 1
+        }
+      },
+      "layers": [
+        {
+          "type": "asset",
+          "id": "L_asset_bg_gradient_0",
+          "z": 0,
+          "ref": "bg_gradient",
+          "parallax": 0
+        },
+        {
+          "type": "generator",
+          "id": "L_gen_scatter_stars",
+          "z": 1,
+          "gen": "scatter",
+          "seed": 2131135776,
+          "params": {
+            "motif": "star",
+            "count": 60,
+            "size": [
+              2,
+              6
+            ],
+            "colors": [
+              "light",
+              "accent"
+            ],
+            "anim": "twinkle",
+            "glow": true
+          }
+        },
+        {
+          "type": "rig",
+          "id": "L_rig_blip",
+          "z": 10,
+          "ref": "blip",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                1190.4
+              ]
+            },
+            "scale": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "pop"
+                },
+                {
+                  "t": 12,
+                  "s": 100
+                }
+              ]
+            },
+            "opacity": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "pop"
+                },
+                {
+                  "t": 12,
+                  "s": 100
+                }
+              ]
+            }
+          },
+          "rig_state": {
+            "clips": [
+              {
+                "anim": "idle",
+                "loop": true
+              }
+            ]
+          }
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_hero",
+          "z": 6,
+          "shape": {
+            "kind": "star",
+            "points": 5,
+            "innerRadius": 50,
+            "outerRadius": 110
+          },
+          "fill": {
+            "a": 0,
+            "k": "accent"
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                480
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 70
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "provenance": {
+    "story_ir_hash": "sha1:67595974beb5a23c6b84b30fa3fa0427ff8af78a",
+    "passes": [
+      "lower@2.0"
+    ]
+  }
+}

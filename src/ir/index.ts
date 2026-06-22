@@ -38,6 +38,8 @@ export {
   CameraIntentSchema,
   DurationSchema,
   StoryTransitionSchema,
+  FormatSchema,
+  AspectSchema,
 } from './story.js';
 export type {
   StoryIR,
@@ -49,6 +51,8 @@ export type {
   CameraIntent,
   Duration,
   StoryTransition,
+  Format,
+  Aspect,
 } from './story.js';
 
 // Scene IR.

@@ -1,0 +1,31 @@
+{
+  "project_version": "1.0",
+  "id": "vertical-demo",
+  "name": "Vertical Demo",
+  "created": "2026-06-22T10:03:15.298Z",
+  "updated": "2026-06-22T10:03:15.298Z",
+  "config": {
+    "w": 1080,
+    "h": 1920,
+    "fps": 30,
+    "duration_frames": 120
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "9abfc4f36abc0c0b65532b513e9979c5f630fe2f",
+  "engine": "remotion@4.0.481",
+  "deps": [
+    "bg_gradient@1.0.0",
+    "blip@1.0.0"
+  ],
+  "assets": [
+    "assets/bg_gradient.svg",
+    "assets/characters/blip/blip.spec.json",
+    "assets/characters/blip/blip.preview.png"
+  ],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  }
+}
