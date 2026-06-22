@@ -53,6 +53,16 @@ export const CharacterSpecSchema = z
       })
       .strict()
       .default({}),
+    /**
+     * INTRA-RIG VARIANT axes (spec §8.1 `parts`). A map: axis name → (variant name → a PARTIAL spec
+     * override). When a Scene-IR rig layer selects `parts: { axis: "variantName" }`, this provider
+     * deep-merges the matching override onto the base spec BEFORE drawing — so one self-contained rig
+     * carries multiple looks (e.g. `palette: { warm: {...}, cool: {...} }`, `outfit: {...}`). The valid
+     * axis/variant names a rig advertises are also published in its library manifest `variants` (DATA);
+     * here the override VALUES live with the provider (it owns the CharacterSpec it interprets). OPAQUE
+     * to core — `parts` is just a `z.record(string)` selection the core forwards untouched (ADR-006).
+     */
+    variants: z.record(z.record(z.record(z.unknown()))).optional(),
   })
   .strict();
 
@@ -61,6 +71,39 @@ export type CharacterSpec = z.infer<typeof CharacterSpecSchema>;
 /** Validate raw spec data (from a file or the catalog) → a typed CharacterSpec (throws on invalid). */
 export function parseSpec(data: unknown): CharacterSpec {
   return CharacterSpecSchema.parse(data);
+}
+
+/** Deep-merge `b` onto `a` (objects merge recursively; scalars/arrays from `b` win). Pure. */
+function deepMerge(a: Record<string, unknown>, b: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...a };
+  for (const [k, v] of Object.entries(b)) {
+    const prev = out[k];
+    if (v && typeof v === 'object' && !Array.isArray(v) && prev && typeof prev === 'object' && !Array.isArray(prev)) {
+      out[k] = deepMerge(prev as Record<string, unknown>, v as Record<string, unknown>);
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+/**
+ * Apply a Scene-IR rig layer's `parts` selection (spec §8.1) to a CharacterSpec. For each
+ * `{ axis: variantName }`, deep-merges the matching `spec.variants[axis][variantName]` override onto
+ * the base, then re-validates (so a variant can't produce an invalid spec). Unknown axes/variants are
+ * skipped silently (a selection a rig does not advertise is a no-op, not a crash). Pure + deterministic
+ * — a function of (spec, parts) only; no clock, no RNG. Returns the base unchanged when `parts` is empty.
+ */
+export function applyParts(spec: CharacterSpec, parts: Record<string, string> | undefined): CharacterSpec {
+  if (!parts || Object.keys(parts).length === 0 || !spec.variants) return spec;
+  let merged: Record<string, unknown> = { ...spec };
+  for (const [axis, variantName] of Object.entries(parts)) {
+    const override = spec.variants[axis]?.[variantName];
+    if (override) merged = deepMerge(merged, override);
+  }
+  // Drop the variants table from the merged object before re-validating (it's provider-internal data).
+  delete merged['variants'];
+  return CharacterSpecSchema.parse(merged);
 }
 
 /** The reference "blip" spec — the proportions the renderer was hand-tuned to. Used as a template. */

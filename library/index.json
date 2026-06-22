@@ -1,301 +1,420 @@
 {
-  "catalog_version": "1.0",
-  "description": "Content-addressed asset/rig/generator catalog. name@version -> content hash (computed at resolve time via object-hash over the entry's content). Namespaced by kind. Local-first, no service.",
-  "entries": {
-    "characters": {
-      "blip": {
-        "id": "blip",
-        "version": "1.0.0",
-        "kind": "rig",
-        "format": "procedural",
-        "provider": "blob-creature",
-        "uri": "proc://blip",
-        "tags": [
-          "m2",
-          "character",
-          "kurzgesagt",
-          "flat-vector",
-          "ffd"
-        ],
-        "deps": [],
-        "manifest": {
-          "mounts": {
-            "head_top": {
-              "bone": "head"
-            },
-            "handR": {
-              "bone": "armR"
-            },
-            "handL": {
-              "bone": "armL"
-            }
-          },
-          "variants": {
-            "palette": [
-              "body",
-              "bodyDark",
-              "ink",
-              "belly",
-              "accent",
-              "white",
-              "cheek"
-            ]
-          },
-          "clips": [
-            "idle",
-            "blink",
-            "wave"
-          ],
-          "bounds": {
-            "w": 206,
-            "h": 252
-          }
-        },
-        "provenance": {
-          "source": "factory",
-          "generator": "blob-creature",
-          "spec_hash": "d16f4dbeb4c542b404191eb600fa2e538441b8cf",
-          "license": "CC0"
-        },
-        "preview": "characters/blip/blip.preview.png"
+ "catalog_version": "1.0",
+ "description": "Content-addressed asset/rig/generator catalog. name@version -> content hash (computed at resolve time via object-hash over the entry's content). Namespaced by kind. Local-first, no service.",
+ "entries": {
+  "characters": {
+   "blip": {
+    "id": "blip",
+    "version": "1.0.0",
+    "kind": "rig",
+    "format": "procedural",
+    "provider": "blob-creature",
+    "uri": "proc://blip",
+    "tags": [
+     "m2",
+     "character",
+     "kurzgesagt",
+     "flat-vector",
+     "ffd"
+    ],
+    "deps": [],
+    "manifest": {
+     "mounts": {
+      "head_top": {
+       "bone": "head"
       },
-      "dragon": {
-        "id": "dragon",
-        "version": "1.0.0",
-        "kind": "rig",
-        "format": "dragonbones",
-        "provider": "dragonbones",
-        "uri": "rig://dragon/dragon.dbones.json",
-        "tags": [
-          "m1",
-          "creature",
-          "ffd"
-        ],
-        "deps": [],
-        "manifest": {
-          "mounts": {},
-          "variants": {}
-        },
-        "provenance": {
-          "source": "pixi-dragonbones-runtime 'starter' demo armature (h1ve2)",
-          "license": "MIT"
-        }
+      "handR": {
+       "bone": "armR"
       },
-      "pip": {
-        "id": "pip",
-        "version": "1.0.0",
-        "kind": "rig",
-        "format": "procedural",
-        "provider": "blob-creature",
-        "uri": "proc://pip",
-        "tags": [
-          "procedural",
-          "character",
-          "kurzgesagt",
-          "factory"
-        ],
-        "deps": [],
-        "manifest": {
-          "mounts": {
-            "head_top": {
-              "bone": "head"
-            },
-            "handR": {
-              "bone": "armR"
-            },
-            "handL": {
-              "bone": "armL"
-            }
-          },
-          "variants": {
-            "palette": [
-              "body",
-              "bodyDark",
-              "ink",
-              "belly",
-              "accent",
-              "white",
-              "cheek"
-            ]
-          },
-          "clips": [
-            "idle",
-            "blink",
-            "wave"
-          ],
-          "bounds": {
-            "w": 178,
-            "h": 260
-          }
-        },
-        "provenance": {
-          "source": "factory",
-          "generator": "blob-creature",
-          "spec_hash": "673028bc93ffb86bd8958cbec1bfa7c00c0c0df4",
-          "license": "CC0"
-        },
-        "preview": "characters/pip/pip.preview.png"
+      "handL": {
+       "bone": "armL"
       }
+     },
+     "variants": {
+      "palette": [
+       "body",
+       "bodyDark",
+       "ink",
+       "belly",
+       "accent",
+       "white",
+       "cheek"
+      ]
+     },
+     "clips": [
+      "idle",
+      "blink",
+      "wave"
+     ],
+     "bounds": {
+      "w": 206,
+      "h": 252
+     }
     },
-    "props": {},
-    "clips": {
-      "badge": {
-        "id": "badge",
-        "version": "1.0.0",
-        "kind": "clip",
-        "format": "clip",
-        "uri": "clip://badge",
-        "tags": [
-          "m2",
-          "clip",
-          "nested-composition",
-          "precomp"
-        ],
-        "deps": [],
-        "provenance": {
-          "source": "factory (M2 nested composition — clip design doc)",
-          "license": "CC0"
-        }
-      },
-      "lower-third": {
-        "id": "lower-third",
-        "version": "1.0.0",
-        "kind": "clip",
-        "format": "clip",
-        "uri": "clip://lower-third",
-        "tags": [
-          "m2",
-          "clip",
-          "nested-composition",
-          "precomp",
-          "lower-third"
-        ],
-        "deps": [
-          "badge@1.0.0"
-        ],
-        "provenance": {
-          "source": "factory (M2 nested composition — clip design doc)",
-          "license": "CC0"
-        }
-      }
+    "provenance": {
+     "source": "factory",
+     "generator": "blob-creature",
+     "spec_hash": "d16f4dbeb4c542b404191eb600fa2e538441b8cf",
+     "license": "CC0"
     },
-    "backgrounds": {
-      "bg_gradient": {
-        "id": "bg_gradient",
-        "version": "1.0.0",
-        "kind": "asset",
-        "format": "svg",
-        "uri": "asset://bg_gradient.svg",
-        "tags": [
-          "m1",
-          "background",
-          "parallax"
-        ],
-        "deps": [],
-        "provenance": {
-          "source": "authored",
-          "license": "CC0"
-        }
-      }
+    "preview": "characters/blip/blip.preview.png"
+   },
+   "dragon": {
+    "id": "dragon",
+    "version": "1.0.0",
+    "kind": "rig",
+    "format": "dragonbones",
+    "provider": "dragonbones",
+    "uri": "rig://dragon/dragon.dbones.json",
+    "tags": [
+     "m1",
+     "creature",
+     "ffd"
+    ],
+    "deps": [],
+    "manifest": {
+     "mounts": {},
+     "variants": {}
     },
-    "generators": {
-      "axon_curve": {
-        "id": "axon_curve",
-        "version": "1.0.0",
-        "kind": "asset",
-        "format": "svg",
-        "uri": "asset://axon_curve.svg#path",
-        "tags": [
-          "m1",
-          "bead-string",
-          "path"
-        ],
-        "deps": [],
-        "provenance": {
-          "source": "authored",
-          "license": "CC0"
-        }
-      }
-    },
-    "kits": {},
-    "fonts": {
-      "dejavu-sans": {
-        "id": "dejavu-sans",
-        "version": "1.0.0",
-        "kind": "asset",
-        "format": "font",
-        "uri": "asset://fonts/DejaVuSans.ttf",
-        "tags": [
-          "font",
-          "text",
-          "sans",
-          "default",
-          "vendored-local"
-        ],
-        "deps": [],
-        "provenance": {
-          "source": "DejaVu Sans 2.37 (Bitstream Vera derivative) — vendored from /usr/share/fonts/TTF/DejaVuSans.ttf",
-          "license": "Bitstream Vera + public-domain (free, permissive)"
-        }
-      },
-      "dejavu-sans-bold": {
-        "id": "dejavu-sans-bold",
-        "version": "1.0.0",
-        "kind": "asset",
-        "format": "font",
-        "uri": "asset://fonts/DejaVuSans-Bold.ttf",
-        "tags": [
-          "font",
-          "text",
-          "sans",
-          "bold",
-          "vendored-local"
-        ],
-        "deps": [],
-        "provenance": {
-          "source": "DejaVu Sans Bold 2.37 (Bitstream Vera derivative) — vendored from /usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
-          "license": "Bitstream Vera + public-domain (free, permissive)"
-        }
-      }
-    },
-    "stylekits": {
-      "kurzgesagt": {
-        "id": "kurzgesagt",
-        "version": "1.0.0",
-        "kind": "stylekit",
-        "format": "stylekit",
-        "uri": "stylekit://kurzgesagt",
-        "tags": [
-          "stylekit",
-          "kurzgesagt",
-          "default",
-          "quality-floor"
-        ],
-        "deps": [],
-        "provenance": {
-          "source": "factory (relocated from src/render/stylekit.ts — ADR-008 I2)",
-          "license": "CC0"
-        }
-      },
-      "plain": {
-        "id": "plain",
-        "version": "1.0.0",
-        "kind": "stylekit",
-        "format": "stylekit",
-        "uri": "stylekit://plain",
-        "tags": [
-          "stylekit",
-          "plain",
-          "flat",
-          "technical",
-          "floor-off"
-        ],
-        "deps": [],
-        "provenance": {
-          "source": "factory (ADR-008 I3 floor opt-out)",
-          "license": "CC0"
-        }
-      }
+    "provenance": {
+     "source": "pixi-dragonbones-runtime 'starter' demo armature (h1ve2)",
+     "license": "MIT"
     }
+   },
+   "pip": {
+    "id": "pip",
+    "version": "1.0.0",
+    "kind": "rig",
+    "format": "procedural",
+    "provider": "blob-creature",
+    "uri": "proc://pip",
+    "tags": [
+     "procedural",
+     "character",
+     "kurzgesagt",
+     "factory"
+    ],
+    "deps": [],
+    "manifest": {
+     "mounts": {
+      "head_top": {
+       "bone": "head"
+      },
+      "handR": {
+       "bone": "armR"
+      },
+      "handL": {
+       "bone": "armL"
+      }
+     },
+     "variants": {
+      "palette": [
+       "body",
+       "bodyDark",
+       "ink",
+       "belly",
+       "accent",
+       "white",
+       "cheek"
+      ]
+     },
+     "clips": [
+      "idle",
+      "blink",
+      "wave"
+     ],
+     "bounds": {
+      "w": 178,
+      "h": 260
+     }
+    },
+    "provenance": {
+     "source": "factory",
+     "generator": "blob-creature",
+     "spec_hash": "673028bc93ffb86bd8958cbec1bfa7c00c0c0df4",
+     "license": "CC0"
+    },
+    "preview": "characters/pip/pip.preview.png"
+   }
+  },
+  "props": {
+   "gear_prop": {
+    "id": "gear_prop",
+    "version": "1.0.0",
+    "kind": "rig",
+    "format": "procedural",
+    "provider": "object",
+    "uri": "proc://gear_prop",
+    "tags": [
+     "m2",
+     "prop",
+     "object",
+     "kurzgesagt",
+     "flat-vector"
+    ],
+    "deps": [],
+    "manifest": {
+     "mounts": {},
+     "variants": {
+      "variant": []
+     }
+    },
+    "provenance": {
+     "source": "factory (core-objects provider — simple flat-vector prop)",
+     "license": "CC0"
+    }
+   }
+  },
+  "clips": {
+   "badge": {
+    "id": "badge",
+    "version": "1.0.0",
+    "kind": "clip",
+    "format": "clip",
+    "uri": "clip://badge",
+    "tags": [
+     "m2",
+     "clip",
+     "nested-composition",
+     "precomp"
+    ],
+    "deps": [],
+    "provenance": {
+     "source": "factory (M2 nested composition \u2014 clip design doc)",
+     "license": "CC0"
+    }
+   },
+   "lower-third": {
+    "id": "lower-third",
+    "version": "1.0.0",
+    "kind": "clip",
+    "format": "clip",
+    "uri": "clip://lower-third",
+    "tags": [
+     "m2",
+     "clip",
+     "nested-composition",
+     "precomp",
+     "lower-third"
+    ],
+    "deps": [
+     "badge@1.0.0"
+    ],
+    "provenance": {
+     "source": "factory (M2 nested composition \u2014 clip design doc)",
+     "license": "CC0"
+    }
+   }
+  },
+  "backgrounds": {
+   "bg_gradient": {
+    "id": "bg_gradient",
+    "version": "1.0.0",
+    "kind": "asset",
+    "format": "svg",
+    "uri": "asset://bg_gradient.svg",
+    "tags": [
+     "m1",
+     "background",
+     "parallax"
+    ],
+    "deps": [],
+    "provenance": {
+     "source": "authored",
+     "license": "CC0"
+    }
+   },
+   "pulse_anim": {
+    "id": "pulse_anim",
+    "version": "1.0.0",
+    "kind": "asset",
+    "format": "lottie",
+    "uri": "asset://lottie/pulse.lottie.json",
+    "tags": [
+     "m2",
+     "footage",
+     "lottie",
+     "vector"
+    ],
+    "deps": [],
+    "provenance": {
+     "source": "factory (authored minimal Lottie — pulsing ring, deterministic)",
+     "license": "CC0"
+    }
+   },
+   "pulse_video": {
+    "id": "pulse_video",
+    "version": "1.0.0",
+    "kind": "asset",
+    "format": "video",
+    "uri": "asset://video/pulse.webm",
+    "tags": [
+     "m2",
+     "footage",
+     "video",
+     "alpha"
+    ],
+    "deps": [],
+    "provenance": {
+     "source": "factory (deterministic transparent pulse — VP9/yuva420p, frame-exact via OffthreadVideo)",
+     "license": "CC0"
+    }
+   }
+  },
+  "generators": {
+   "axon_curve": {
+    "id": "axon_curve",
+    "version": "1.0.0",
+    "kind": "asset",
+    "format": "svg",
+    "uri": "asset://axon_curve.svg#path",
+    "tags": [
+     "m1",
+     "bead-string",
+     "path"
+    ],
+    "deps": [],
+    "provenance": {
+     "source": "authored",
+     "license": "CC0"
+    }
+   }
+  },
+  "kits": {},
+  "fonts": {
+   "dejavu-sans": {
+    "id": "dejavu-sans",
+    "version": "1.0.0",
+    "kind": "asset",
+    "format": "font",
+    "uri": "asset://fonts/DejaVuSans.ttf",
+    "tags": [
+     "font",
+     "text",
+     "sans",
+     "default",
+     "vendored-local"
+    ],
+    "deps": [],
+    "provenance": {
+     "source": "DejaVu Sans 2.37 (Bitstream Vera derivative) \u2014 vendored from /usr/share/fonts/TTF/DejaVuSans.ttf",
+     "license": "Bitstream Vera + public-domain (free, permissive)"
+    }
+   },
+   "dejavu-sans-bold": {
+    "id": "dejavu-sans-bold",
+    "version": "1.0.0",
+    "kind": "asset",
+    "format": "font",
+    "uri": "asset://fonts/DejaVuSans-Bold.ttf",
+    "tags": [
+     "font",
+     "text",
+     "sans",
+     "bold",
+     "vendored-local"
+    ],
+    "deps": [],
+    "provenance": {
+     "source": "DejaVu Sans Bold 2.37 (Bitstream Vera derivative) \u2014 vendored from /usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
+     "license": "Bitstream Vera + public-domain (free, permissive)"
+    }
+   }
+  },
+  "stylekits": {
+   "kurzgesagt": {
+    "id": "kurzgesagt",
+    "version": "1.0.0",
+    "kind": "stylekit",
+    "format": "stylekit",
+    "uri": "stylekit://kurzgesagt",
+    "tags": [
+     "stylekit",
+     "kurzgesagt",
+     "default",
+     "quality-floor"
+    ],
+    "deps": [],
+    "provenance": {
+     "source": "factory (relocated from src/render/stylekit.ts \u2014 ADR-008 I2)",
+     "license": "CC0"
+    }
+   },
+   "plain": {
+    "id": "plain",
+    "version": "1.0.0",
+    "kind": "stylekit",
+    "format": "stylekit",
+    "uri": "stylekit://plain",
+    "tags": [
+     "stylekit",
+     "plain",
+     "flat",
+     "technical",
+     "floor-off"
+    ],
+    "deps": [],
+    "provenance": {
+     "source": "factory (ADR-008 I3 floor opt-out)",
+     "license": "CC0"
+    }
+   }
+  },
+  "palettes": {
+   "warm": {
+    "id": "warm",
+    "version": "1.0.0",
+    "kind": "palette",
+    "format": "palette",
+    "uri": "palette://warm",
+    "tags": [
+     "palette",
+     "color-script",
+     "mood",
+     "m2"
+    ],
+    "deps": [],
+    "provenance": {
+     "source": "factory (color-script \u00a711.4)",
+     "license": "CC0"
+    }
+   },
+   "cold": {
+    "id": "cold",
+    "version": "1.0.0",
+    "kind": "palette",
+    "format": "palette",
+    "uri": "palette://cold",
+    "tags": [
+     "palette",
+     "color-script",
+     "mood",
+     "m2"
+    ],
+    "deps": [],
+    "provenance": {
+     "source": "factory (color-script \u00a711.4)",
+     "license": "CC0"
+    }
+   },
+   "hopeful": {
+    "id": "hopeful",
+    "version": "1.0.0",
+    "kind": "palette",
+    "format": "palette",
+    "uri": "palette://hopeful",
+    "tags": [
+     "palette",
+     "color-script",
+     "mood",
+     "m2"
+    ],
+    "deps": [],
+    "provenance": {
+     "source": "factory (color-script \u00a711.4)",
+     "license": "CC0"
+    }
+   }
   }
+ }
 }

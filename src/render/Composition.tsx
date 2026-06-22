@@ -9,11 +9,12 @@
 // SEQUENCING (the multi-scene contract):
 //   • We use `@remotion/transitions` `TransitionSeries`: `.Sequence` per scene + `.Transition`
 //     between consecutive scenes whose inbound scene declares a (non-`cut`) `transition_in`.
-//   • A scene's `transition_in.kind` maps to a preset: fade → fade(), wipe → wipe({direction}),
-//     slide → slide({direction}). Kinds without a dedicated @remotion/transitions preset
-//     (iris/mask/morph-match/match-cut/camera-continuous) fall back to `fade()` for now (those land
-//     in later milestones as SVG-mask / flubber / shared-element compositors). A `cut` (or no
-//     transition_in) is a plain hard cut — NO `.Transition` is emitted, the segments butt together.
+//   • A scene's `transition_in.kind` is resolved THROUGH the engine `transitions` extension-point
+//     registry (the core-transitions PLUGIN registers fade/wipe/slide/iris/mask/morph-match/match-cut/
+//     camera-continuous; ADR-005 close-the-stub). Core no longer hardcodes a kind→preset switch — it
+//     looks up `transitions.get(kind).build({transition,width,height})` for the presentation. A `cut`
+//     (or no transition_in) is a plain hard cut — NO `.Transition` is emitted, the segments butt
+//     together. An unregistered kind falls back to fade (keeps the renderer runnable on a bare engine).
 //   • A transition of length D OVERLAPS the two adjacent segments by D frames, so the timeline length
 //     is `Σ scene.duration_frames − Σ transition.duration`. The lowering pass computes each scene's
 //     `at` and the root `config.duration_frames` from exactly these same overlaps, so the
@@ -26,24 +27,30 @@
 //
 // DETERMINISM (CLAUDE.md r.1): a pure function of `inputProps`. TransitionSeries is frame-driven (it
 // reads Remotion's frame clock; transitions are timed by `linearTiming`, a pure function of frame),
-// and all per-frame motion lives in <Scene> and the sub-renderers via `useCurrentFrame()`. No
-// Date.now / Math.random; the transition easing is a fixed StyleKit cubic-bezier.
+// and all per-frame motion lives in <Scene> and the sub-renderers via `useCurrentFrame()`. The
+// transition presentations resolved from the registry are themselves pure fns of presentationProgress.
+// No Date.now / Math.random; the transition easing is a fixed StyleKit cubic-bezier.
 
 import React from 'react';
-import { AbsoluteFill, Easing } from 'remotion';
+import { AbsoluteFill, Easing, useVideoConfig } from 'remotion';
 import {
   TransitionSeries,
   linearTiming,
   type TransitionPresentation,
 } from '@remotion/transitions';
 import { fade } from '@remotion/transitions/fade';
-import { wipe, type WipeDirection } from '@remotion/transitions/wipe';
-import { slide, type SlideDirection } from '@remotion/transitions/slide';
 import type { SceneIR, Scene as SceneType, Transition, Easings } from '../ir/index.js';
+import { transitions } from '../engine/index.js';
 import { Scene } from './Scene.js';
 import { easingFn } from './stylekit.js';
 
-export type SceneIRCompositionProps = SceneIR;
+// P3 (alpha): `inputProps` is the Scene IR PLUS an optional transient render-time `_alpha` flag the
+// CLI sets ONLY for an `--alpha` render. It is NOT part of scene.json (the canonical record stays a
+// pure Scene IR — determinism of the on-disk artifact is preserved); it is a presentation hint that
+// tells the compositor to render on a TRANSPARENT canvas: omit the root background fill AND drop the
+// far-back backdrop layers (the documented "low-z, parallax-0" background convention), so the alpha
+// channel actually carries through to the RGBA frames instead of being flattened to opaque.
+export type SceneIRCompositionProps = SceneIR & { _alpha?: boolean };
 
 /** Default transition length (frames) when a non-`cut` transition omits `duration`. Mirrors the
  *  lowering pass's `DEFAULT_TRANSITION_FRAMES` so the rendered overlap matches the timeline math. */
@@ -63,38 +70,6 @@ function smoothEasingFor(easings: Easings) {
   }
 }
 
-/** Map the IR transition `dir` (left/right/up/down) to a @remotion/transitions wipe direction. */
-function wipeDirection(dir: Transition['dir']): WipeDirection {
-  switch (dir) {
-    case 'left':
-      return 'from-left';
-    case 'right':
-      return 'from-right';
-    case 'up':
-      return 'from-top';
-    case 'down':
-      return 'from-bottom';
-    default:
-      return 'from-left';
-  }
-}
-
-/** Map the IR transition `dir` to a @remotion/transitions slide direction. */
-function slideDirection(dir: Transition['dir']): SlideDirection {
-  switch (dir) {
-    case 'left':
-      return 'from-left';
-    case 'right':
-      return 'from-right';
-    case 'up':
-      return 'from-top';
-    case 'down':
-      return 'from-bottom';
-    default:
-      return 'from-right';
-  }
-}
-
 /**
  * The overlap (frames) a scene's leading transition consumes from the previous scene's tail.
  * `cut` / no transition / non-positive duration → 0 (segments butt together; no `.Transition`).
@@ -108,38 +83,28 @@ function transitionOverlap(t: Transition | undefined): number {
 }
 
 /**
- * Build the @remotion/transitions presentation for a scene's `transition_in.kind`. fade/wipe/slide
- * use their dedicated presets; every other (later-milestone) kind falls back to fade for now.
+ * Resolve the @remotion/transitions presentation for a scene's `transition_in` via the engine
+ * `transitions` registry (populated by the core-transitions plugin). Every concrete presentation lives
+ * in that plugin (ADR-005); core only looks it up by `kind`. If the kind is not registered (a bare
+ * engine with no transitions plugin), fall back to fade so the boundary still reads as a transition.
  */
-function presentationFor(t: Transition): TransitionPresentation<Record<string, unknown>> {
-  let p: TransitionPresentation<Record<string, unknown>>;
-  switch (t.kind) {
-    case 'fade':
-      p = fade() as TransitionPresentation<Record<string, unknown>>;
-      break;
-    case 'wipe':
-      p = wipe({ direction: wipeDirection(t.dir) }) as TransitionPresentation<
-        Record<string, unknown>
-      >;
-      break;
-    case 'slide':
-      p = slide({ direction: slideDirection(t.dir) }) as TransitionPresentation<
-        Record<string, unknown>
-      >;
-      break;
-    // iris / mask / morph-match / match-cut / camera-continuous: no dedicated preset yet — fall
-    // back to a fade so the boundary still reads as a transition (proper compositors land later).
-    default:
-      p = fade() as TransitionPresentation<Record<string, unknown>>;
+function presentationFor(
+  t: Transition,
+  width: number,
+  height: number,
+): TransitionPresentation<Record<string, unknown>> {
+  if (transitions.has(t.kind)) {
+    return transitions.get(t.kind).build({ transition: t, width, height });
   }
-  return p;
+  return fade() as TransitionPresentation<Record<string, unknown>>;
 }
 
-/** One scene segment, rendered by the existing per-frame <Scene> compositor. */
-const SceneSegment: React.FC<{ scene: SceneType; defs: SceneIR['defs'] }> = ({
+/** One scene segment, rendered by the existing per-frame <Scene> compositor. `alpha` drops backdrops. */
+const SceneSegment: React.FC<{ scene: SceneType; defs: SceneIR['defs']; alpha?: boolean | undefined }> = ({
   scene,
   defs,
-}) => <Scene scene={scene} defs={defs} />;
+  alpha,
+}) => <Scene scene={scene} defs={defs} alpha={alpha} />;
 
 /**
  * Render a full Scene IR as one continuous film: a background fill (so out-of-bounds parallax never
@@ -148,14 +113,19 @@ const SceneSegment: React.FC<{ scene: SceneType; defs: SceneIR['defs'] }> = ({
  */
 export const SceneIRComposition: React.FC<SceneIRCompositionProps> = (props) => {
   const sceneIR = props;
-  const bg = sceneIR.defs.palette?.['bg'];
+  const { width, height } = useVideoConfig();
+  // P3 (alpha): a transparent render omits the opaque background fill (else every pixel is opaque and
+  // the PNG/codec carries no alpha). The `_alpha` hint is a render-time prop, not persisted to the IR.
+  const alpha = props._alpha === true;
+  const bg = alpha ? undefined : sceneIR.defs.palette?.['bg'];
   const scenes = sceneIR.scenes;
   const smoothEasing = smoothEasingFor(sceneIR.defs.easings ?? {});
 
   // Build the TransitionSeries children: for each scene a `.Sequence` (length = its duration_frames),
   // preceded — for every scene after the first whose `transition_in` is a real (non-`cut`)
-  // transition — by a `.Transition` of that scene's overlap, presented per its `kind`. A `cut` / no
-  // transition_in emits no `.Transition`, so the two segments butt together (a hard cut).
+  // transition — by a `.Transition` of that scene's overlap, presented per its `kind` (resolved via
+  // the engine transitions registry). A `cut` / no transition_in emits no `.Transition`, so the two
+  // segments butt together (a hard cut).
   const children: React.ReactNode[] = [];
   scenes.forEach((scene, i) => {
     if (i > 0) {
@@ -165,7 +135,7 @@ export const SceneIRComposition: React.FC<SceneIRCompositionProps> = (props) => 
         children.push(
           <TransitionSeries.Transition
             key={`t-${scene.id}`}
-            presentation={presentationFor(tIn)}
+            presentation={presentationFor(tIn, width, height)}
             timing={linearTiming({
               durationInFrames: overlap,
               easing: smoothEasing,
@@ -180,7 +150,7 @@ export const SceneIRComposition: React.FC<SceneIRCompositionProps> = (props) => 
         durationInFrames={scene.duration_frames}
         layout="none"
       >
-        <SceneSegment scene={scene} defs={sceneIR.defs} />
+        <SceneSegment scene={scene} defs={sceneIR.defs} alpha={alpha} />
       </TransitionSeries.Sequence>
     );
   });

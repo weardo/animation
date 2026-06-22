@@ -15,7 +15,7 @@
 // the resolved capability set is identical across cold processes (CLAUDE.md r.1).
 
 import type { GeneratorComponent } from './generator.js';
-import type { EffectImpl, ProviderComponent } from './api.js';
+import type { EffectImpl, ProviderComponent, TransitionImpl } from './api.js';
 
 /** A generic, typed name→value registry. The single building block for every extension point. */
 export class Registry<T> {
@@ -86,10 +86,15 @@ export const providers = new Registry<ProviderComponent>('provider');
  */
 export const effects = new Registry<EffectImpl>('effect');
 
-// --- STUB extension points (defined, empty; future capability plugs in here). ---
+/**
+ * Transitions: scene-boundary presentation kind → {@link TransitionImpl} (e.g. "fade", "iris",
+ * "mask", "match-cut", "camera-continuous"). Populated by the core-transitions plugin (C4). A
+ * registered transition builds a `@remotion/transitions` presentation from the IR transition + frame
+ * box; the compositor (Composition.tsx) resolves via this registry instead of a hardcoded switch.
+ */
+export const transitions = new Registry<TransitionImpl>('transition');
 
-/** STUB: scene-boundary transition presentations. Shape only; no contributors yet. */
-export const transitions = new Registry<unknown>('transition');
+// --- STUB extension points (defined, empty; future capability plugs in here). ---
 
 /** STUB: Scene-IR layer types (beyond asset/rig/generator/shape). Shape only; no contributors yet. */
 export const layerTypes = new Registry<unknown>('layer type');

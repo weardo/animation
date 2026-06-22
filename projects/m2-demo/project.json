@@ -1,0 +1,36 @@
+{
+  "project_version": "1.0",
+  "id": "m2-demo",
+  "name": "M2",
+  "created": "2026-06-22T15:01:14.294Z",
+  "updated": "2026-06-22T15:01:14.294Z",
+  "config": {
+    "w": 1920,
+    "h": 1080,
+    "fps": 30,
+    "duration_frames": 272
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "2a6202c2f72dd22e15470736a62b2b7a6da01fe2",
+  "engine": "remotion@4.0.481",
+  "deps": [
+    "bg_gradient@1.0.0",
+    "blip@1.0.0",
+    "gear_prop@1.0.0",
+    "pulse_video@1.0.0"
+  ],
+  "assets": [
+    "assets/bg_gradient.svg",
+    "assets/video/pulse.webm",
+    "assets/fonts/DejaVuSans.ttf",
+    "assets/characters/blip/blip.spec.json",
+    "assets/characters/blip/blip.preview.png",
+    "assets/props/gear_prop/gear_prop.spec.json"
+  ],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  }
+}

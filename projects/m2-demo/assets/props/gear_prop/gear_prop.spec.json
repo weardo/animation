@@ -1,0 +1,9 @@
+{
+  "id": "gear_prop",
+  "kind": "gear",
+  "palette": { "fill": "#9b6bd6", "fillDark": "#6f47a3", "ink": "#16243f", "accent": "#ffce4a" },
+  "size": 48,
+  "stroke": 4,
+  "parts": {},
+  "motion": { "amp": 1, "spinHz": 0.2 }
+}

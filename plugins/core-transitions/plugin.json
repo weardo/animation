@@ -1,0 +1,10 @@
+{
+  "id": "core-transitions",
+  "version": "1.0.0",
+  "contributes": ["transitions"],
+  "license": "MIT",
+  "provenance": {
+    "author": "animation-factory",
+    "source": "built-in"
+  }
+}

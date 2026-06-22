@@ -13,19 +13,29 @@ import type { Plugin } from '../src/engine/index.js';
 import { coreGeneratorsPlugin } from './core-generators/index.js';
 import { coreRigsPlugin } from './core-rigs/index.js';
 import { coreEffectsPlugin } from './core-effects/index.js';
+import { coreTransitionsPlugin } from './core-transitions/index.js';
+import { coreDatavizPlugin } from './core-dataviz/index.js';
+import { coreObjectsPlugin } from './core-objects/index.js';
 import { blobCreaturePlugin } from './blob-creature/index.js';
 
 /**
  * The active plugins, applied in order by `loadPlugins()`:
- *   • core-generators — all built-in generators (bead-string/scatter/water/particles/fire/crowd)
- *   • core-rigs       — the dragonbones provider
- *   • core-effects    — the built-in `effects[]` channel ops (blur/glow/drop_shadow/color_grade/
- *                       turbulence/displace/vignette/grain/motion_blur) (ADR-003 #2)
- *   • blob-creature   — the `blob-creature` provider (renders a rig layer from its opaque spec)
+ *   • core-generators  — all built-in generators (bead-string/scatter/water/particles/fire/crowd)
+ *   • core-rigs        — the dragonbones provider
+ *   • core-effects     — the built-in `effects[]` channel ops (blur/glow/drop_shadow/color_grade/
+ *                        turbulence/displace/vignette/grain/motion_blur) (ADR-003 #2)
+ *   • core-transitions — the scene-boundary transition presentations (fade/wipe/slide/iris/mask/
+ *                        match-cut/morph-match/camera-continuous) into the `transitions` registry (C4)
+ *   • core-dataviz     — the `chart` generator (bar/line/pie via d3-shape) (P1)
+ *   • core-objects     — the `object` provider for simple flat-vector props (P2)
+ *   • blob-creature    — the `blob-creature` provider (renders a rig layer from its opaque spec)
  */
 export const ENABLED_PLUGINS: readonly Plugin[] = [
   coreGeneratorsPlugin,
   coreRigsPlugin,
   coreEffectsPlugin,
+  coreTransitionsPlugin,
+  coreDatavizPlugin,
+  coreObjectsPlugin,
   blobCreaturePlugin,
 ];

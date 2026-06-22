@@ -30,7 +30,10 @@ import { AssetLayer } from './AssetLayer.js';
 import { ShapeLayer } from './ShapeLayer.js';
 import { TextLayer } from './TextLayer.js';
 import { ClipLayer } from './ClipLayer.js';
+import { FootageLayer } from './FootageLayer.js';
+import { applyBlend, applyMatte } from './compositing.js';
 import { evalNumber, evalVec2 } from './eval.js';
+import { resolveAttach } from './attach.js';
 import { applyEffects, resolveEffects } from './effects.js';
 import { NEUTRAL_STYLEKIT, type Light, type StyleKit } from './stylekit.js';
 import {
@@ -46,6 +49,29 @@ export interface SceneProps {
   scene: SceneIR;
   /** The Scene-IR `defs` (palette / easings / assets / rigs) the layers resolve against. */
   defs: Defs;
+  /**
+   * P3 (alpha): when a `--alpha` (transparent) render is requested, the full-frame BACKDROP layers are
+   * dropped so the alpha channel shows through behind the foreground subjects. A backdrop is the
+   * documented "low-z, far-parallax background" convention (see lower.ts `buildAssetLayer` /
+   * `buildEnvironmentLayer`): an asset/clip layer at `z <= 0` with `parallax === 0`. Render-time only.
+   */
+  alpha?: boolean | undefined;
+}
+
+/**
+ * P3 (alpha): is `layer` a full-scene BACKDROP that an `--alpha` render should drop so transparency
+ * shows through? Matches the documented background convention — an asset or clip layer pinned to the
+ * far-back depth (`parallax === 0`) at or behind the base z-plane (`z <= 0`), e.g. a `bg_gradient`
+ * asset (z 0, parallax 0) or an `environment` backdrop clip (z -100). Foreground subjects (rigs,
+ * generators, text, shapes, footage) are never matched, so the subject the user wants on a transparent
+ * canvas is always kept. Pure structural predicate (no clock/RNG).
+ */
+function isBackdrop(layer: Layer): boolean {
+  return (
+    (layer.type === 'asset' || layer.type === 'clip') &&
+    layer.z <= 0 &&
+    layerParallax(layer) === 0
+  );
 }
 
 /**
@@ -54,11 +80,25 @@ export interface SceneProps {
  * right default for foreground subjects (rig/generator) that should ride the camera.
  */
 function layerParallax(layer: Layer): number {
-  return layer.type === 'asset' ? layer.parallax : 1;
+  if (layer.type === 'asset') return layer.parallax;
+  if ((layer.type === 'footage' || layer.type === 'clip') && layer.parallax !== undefined)
+    return layer.parallax;
+  return 1;
 }
 
-export const Scene: React.FC<SceneProps> = ({ scene, defs }) => {
+export const Scene: React.FC<SceneProps> = ({ scene, defs: baseDefs, alpha }) => {
   const frame = useCurrentFrame();
+  // COLOR-SCRIPT (spec §11.4): merge this scene's per-scene PALETTE OVERRIDE (a diff vs the base,
+  // emitted by the lowering color-script pass) OVER `defs.palette`, so every fill/stroke/light that
+  // resolves a token recolors coherently for this scene only. A scene with no override (no mood shift)
+  // uses the base `defs` unchanged (back-compat). Pure: a memoized structural merge, no clock/RNG.
+  const defs: Defs = useMemo(
+    () =>
+      scene.palette && Object.keys(scene.palette).length > 0
+        ? { ...baseDefs, palette: { ...baseDefs.palette, ...scene.palette } }
+        : baseDefs,
+    [baseDefs, scene.palette],
+  );
   const easings: Easings = defs.easings ?? {};
   // ADR-008 I2/I3: read the SELECTED stylekit from the IR (defs.stylekit), not core constants. The
   // neutral fallback keeps the renderer runnable on a bare IR. `floor` toggles gate the quality floor.
@@ -72,10 +112,24 @@ export const Scene: React.FC<SceneProps> = ({ scene, defs }) => {
   const zoom = evalNumber(scene.camera.zoom, frame, easings, 1);
 
   // --- 3. Z-order: sort a COPY by `z` ascending (stable; higher z paints last → front) ---
+  // P3 (alpha): drop full-scene backdrop layers in a transparent render so the alpha channel shows
+  // through behind the foreground subjects (a no-op for an opaque render — the common case).
   const ordered = useMemo(
-    () => scene.layers.map((l, i) => ({ l, i })).sort((a, b) => a.l.z - b.l.z || a.i - b.i),
-    [scene.layers],
+    () =>
+      scene.layers
+        .map((l, i) => ({ l, i }))
+        .filter(({ l }) => !alpha || !isBackdrop(l))
+        .sort((a, b) => a.l.z - b.l.z || a.i - b.i),
+    [scene.layers, alpha],
   );
+
+  // Layer-id index for inter-rig ATTACH resolution (spec §8.1): a child layer resolves its parent's
+  // per-frame anchor by id. Built once per scene (stable map; pure lookup at render).
+  const layersById = useMemo(() => {
+    const m = new Map<string, Layer>();
+    for (const l of scene.layers) m.set(l.id, l);
+    return m;
+  }, [scene.layers]);
 
   // The camera parent: scale about the centre (zoom), then translate by -cameraPosition so a pan
   // moves the world opposite the camera. transformOrigin centre keeps zoom anchored to the middle.
@@ -101,13 +155,16 @@ export const Scene: React.FC<SceneProps> = ({ scene, defs }) => {
               parallaxOffset={parallaxOffset}
               light={light}
               stylekit={stylekit}
+              layersById={layersById}
             />
           );
         })}
       </AbsoluteFill>
       {/* --- Scene-level look (screen-space): directional light wash + vignette (§11.1) --- */}
       {/* Floor toggle (I3): shading=false → no scene-level light wash / vignette (flat look). */}
-      {floor.shading && <SceneLook light={scene.light} defaultLight={stylekit.light} />}
+      {/* P3 (alpha): the screen-space wash/vignette is a full-frame overlay that would tint the
+          transparent canvas — skip it for an `--alpha` render so the background stays clear. */}
+      {floor.shading && !alpha && <SceneLook light={scene.light} defaultLight={stylekit.light} />}
     </AbsoluteFill>
   );
 };
@@ -119,6 +176,12 @@ export interface LayerViewProps {
   parallaxOffset: readonly [number, number];
   light: Light;
   stylekit: StyleKit;
+  /**
+   * The scene's layers indexed by id, for inter-rig ATTACH resolution (spec §8.1). A child layer with
+   * `attach.to` looks up its parent here to compose onto the parent's per-frame mount anchor. Optional
+   * (absent inside a clip's local layer set, which has no scene-level attach) → attach is a no-op.
+   */
+  layersById?: Map<string, Layer>;
 }
 
 /** Build the bare sub-renderer for a layer (no shading). Asset layers fold parallax themselves. */
@@ -195,6 +258,20 @@ function renderSub(
         </ParallaxWrapper>
       );
     }
+    case 'footage': {
+      // Footage (M2 compositing): frame-seeked VIDEO (<OffthreadVideo>) or LOTTIE (@remotion/lottie)
+      // from a `defs.assets` ref. A thin adapter over Remotion's media primitives (reuse over invent).
+      // Wrapped in parallax like the other layers so it gets depth + the generic blend/matte/effects.
+      const assetDef = defs.assets[layer.ref];
+      if (!assetDef) {
+        throw new Error(`Scene IR: footage layer "${layer.id}" references unknown asset "${layer.ref}".`);
+      }
+      return (
+        <ParallaxWrapper offset={parallaxOffset} id={layer.id}>
+          <FootageLayer layer={layer} assetDef={assetDef} easings={easings} />
+        </ParallaxWrapper>
+      );
+    }
     default: {
       const _exhaustive: never = layer;
       return _exhaustive;
@@ -211,7 +288,7 @@ function renderSub(
  * filters/gradients are static styles; the contact-shadow anchor is a deterministically-evaluated
  * position.
  */
-export const LayerView: React.FC<LayerViewProps> = ({ layer, defs, easings, parallaxOffset, light, stylekit }) => {
+export const LayerView: React.FC<LayerViewProps> = ({ layer, defs, easings, parallaxOffset, light, stylekit, layersById }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
   const floor = stylekit.floor;
@@ -249,12 +326,61 @@ export const LayerView: React.FC<LayerViewProps> = ({ layer, defs, easings, para
   // parallax wrappers, in `effects[]` order. Resolved through the engine `effects` registry (the
   // core-effects plugin). Layers without `effects[]` are returned unchanged (backward-compatible).
   const resolved = resolveEffects(layer.id, layer.effects, frame);
-  const composed = applyEffects(resolved, layer.id, shaded);
+  const withEffects = applyEffects(resolved, layer.id, shaded);
+
+  // --- COMPOSITING (M2 §11): per-layer track matte / mask, then blend mode — applied GENERICALLY to
+  // every layer type, on top of shading + effects + parallax. A LAYER matte (`matte.from`) renders the
+  // named sibling's bare sub-renderer into an SVG mask (its luma/alpha is the stencil); an ASSET matte
+  // (`matte.ref`) uses the asset image via CSS mask-image / SVG mask. Both are static styles (pure).
+  let matteSource: React.ReactNode = undefined;
+  if (layer.matte?.from && layersById) {
+    const src = layersById.get(layer.matte.from);
+    if (src) matteSource = renderSub(src, defs, easings, [0, 0], stylekit, light);
+  }
+  const matteAsset = layer.matte?.ref ? defs.assets[layer.matte.ref] : undefined;
+  const matted = applyMatte(withEffects, layer.matte, layer.id, {
+    asset: matteAsset,
+    matteSource,
+    width,
+    height,
+  });
+  const composed = applyBlend(matted, layer.blend, layer.id);
+
+  // --- INTER-RIG ATTACH (spec §8.1): compose this layer onto a parent layer's per-frame mount anchor.
+  // The provider draws the child at its OWN absolute `transform.position`; attaching shifts it by the
+  // delta (anchor − ownPosition) so it rides the parent's bone/slot, plus inherited rotation/scale.
+  // Pure (frame-driven) translate wrapper — no provider change. Skipped when not attached / no graph.
+  const anchor =
+    layersById && layer.type === 'rig' && layer.attach
+      ? resolveAttach(layer, layersById, defs, frame, easings, width, height)
+      : null;
+  let attached: React.ReactNode = composed;
+  if (anchor && layer.type === 'rig') {
+    const own = evalVec2(layer.transform?.position, frame, easings, [width / 2, height * 0.6]);
+    const dx = anchor.position[0] - own[0];
+    const dy = anchor.position[1] - own[1];
+    const extra =
+      anchor.rotation !== 0 || anchor.scale !== 1
+        ? ` rotate(${anchor.rotation}deg) scale(${anchor.scale})`
+        : '';
+    attached = (
+      <AbsoluteFill
+        data-attach={layer.attach?.to}
+        style={{
+          transform: `translate(${dx}px, ${dy}px)${extra}`,
+          transformOrigin: `${own[0]}px ${own[1]}px`,
+          ...(anchor.opacity !== 1 ? { opacity: anchor.opacity } : {}),
+        }}
+      >
+        {composed}
+      </AbsoluteFill>
+    );
+  }
 
   return (
     <>
       {contact}
-      {composed}
+      {attached}
     </>
   );
 };

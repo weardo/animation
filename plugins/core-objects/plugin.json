@@ -1,0 +1,10 @@
+{
+  "id": "core-objects",
+  "version": "1.0.0",
+  "contributes": ["providers"],
+  "license": "MIT",
+  "provenance": {
+    "author": "animation-factory",
+    "source": "built-in"
+  }
+}

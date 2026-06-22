@@ -1,0 +1,62 @@
+{
+  "lockfile_version": "1",
+  "algorithm": "object-hash@sha1/v1",
+  "refs": {
+    "bg_gradient@1.0.0": {
+      "namespace": "backgrounds",
+      "id": "bg_gradient",
+      "version": "1.0.0",
+      "hash": "84e83292f11d2fa767ca742a60d548a44653c621",
+      "deps": []
+    },
+    "blip@1.0.0": {
+      "namespace": "characters",
+      "id": "blip",
+      "version": "1.0.0",
+      "hash": "0ee38acd75aca505e31c8e8c78c8de86475e4f9c",
+      "deps": []
+    },
+    "cold@1.0.0": {
+      "namespace": "palettes",
+      "id": "cold",
+      "version": "1.0.0",
+      "hash": "fa7c7ce5767c0ef143c49032b8cbf789d5353923",
+      "deps": []
+    },
+    "gear_prop@1.0.0": {
+      "namespace": "props",
+      "id": "gear_prop",
+      "version": "1.0.0",
+      "hash": "fcbf053c1e4f8d2d4041411bf32b17cbdf9f0bf0",
+      "deps": []
+    },
+    "hopeful@1.0.0": {
+      "namespace": "palettes",
+      "id": "hopeful",
+      "version": "1.0.0",
+      "hash": "549d8ccba23c469c5edb40425a1d47fe9ea08be5",
+      "deps": []
+    },
+    "kurzgesagt@1.0.0": {
+      "namespace": "stylekits",
+      "id": "kurzgesagt",
+      "version": "1.0.0",
+      "hash": "c70eaa416ae16cd7b5d3667908f01b12f559c8be",
+      "deps": []
+    },
+    "pulse_video@1.0.0": {
+      "namespace": "backgrounds",
+      "id": "pulse_video",
+      "version": "1.0.0",
+      "hash": "ab31dd233310218bf8ca87a9047621b9f582940d",
+      "deps": []
+    },
+    "warm@1.0.0": {
+      "namespace": "palettes",
+      "id": "warm",
+      "version": "1.0.0",
+      "hash": "b26c22aab405573390e199bca4febf8101c46ce1",
+      "deps": []
+    }
+  }
+}

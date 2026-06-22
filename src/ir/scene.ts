@@ -39,11 +39,11 @@ export type EasingDef = z.infer<typeof EasingDefSchema>;
 export const EasingsSchema = z.record(EasingDefSchema);
 export type Easings = z.infer<typeof EasingsSchema>;
 
-/** An asset definition (URI + kind). */
+/** An asset definition (URI + kind). `video`/`lottie` back a `footage` layer (frame-seeked playback). */
 export const AssetDefSchema = z
   .object({
     uri: z.string().min(1),
-    kind: z.enum(['svg', 'lottie', 'image']),
+    kind: z.enum(['svg', 'lottie', 'image', 'video']),
   })
   .strict();
 export type AssetDef = z.infer<typeof AssetDefSchema>;
@@ -58,6 +58,24 @@ export const AssetsSchema = z.record(AssetDefSchema);
  * interpreted ONLY by the named provider (e.g. blob-creature parses it as its CharacterSpec). This
  * keeps the engine free of any domain entity — a provider's spec shape never leaks into core.
  */
+/**
+ * A rig MOUNT point (spec §8.1): a named bone/slot another layer may `attach` to, plus an OPTIONAL
+ * local offset (px, in the rig's own centred space) at which the mount sits. `bone` follows a bone
+ * (the attached child keeps its own draw order); `slot` injects into the parent's draw order. The
+ * offset lets a static-art / blob-creature rig declare an approximate anchor position (e.g. `handR`
+ * at `[40,-10]`) without a live skeleton — the compositor composes the child onto parent.position +
+ * this offset. Carried as DATA from the rig library manifest into the Scene-IR rig def by the loader.
+ */
+export const RigMountSchema = z
+  .object({
+    bone: z.string().min(1).optional(),
+    slot: z.string().min(1).optional(),
+    /** Local offset (px) of this mount in the rig's own centred coordinate space. */
+    offset: z.tuple([z.number(), z.number()]).optional(),
+  })
+  .strict();
+export type RigMount = z.infer<typeof RigMountSchema>;
+
 export const RigDefSchema = z
   .object({
     uri: z.string().min(1),
@@ -65,6 +83,13 @@ export const RigDefSchema = z
     provider: z.string().min(1),
     /** OPAQUE, provider-validated spec/sources. Travels in the Scene IR (shareable). */
     spec: z.record(z.unknown()).optional(),
+    /**
+     * Named MOUNT points (spec §8.1) the rig exposes — bone/slot anchors another layer may `attach`
+     * to, each with an optional local offset. Copied from the rig's library manifest (`manifest.mounts`)
+     * by the loader so the compositor can resolve an `attach.bone`/`attach.slot` to a position WITHOUT
+     * poking the provider's internals (a rig stays a typed black box). Empty/absent → no mounts.
+     */
+    mounts: z.record(RigMountSchema).optional(),
   })
   .strict();
 export type RigDef = z.infer<typeof RigDefSchema>;
@@ -201,13 +226,27 @@ export const LightSchema = z
   })
   .strict();
 
-/** RESERVED (M2): inter-rig attachment (scene-graph parenting). */
+/**
+ * Inter-rig ATTACHMENT (scene-graph parenting, spec §8.1). A layer with `attach` is parented to
+ * another layer (`to` = a sibling layer id): each frame the compositor resolves the parent's anchor
+ * (its evaluated `transform.position`, plus the offset of the named `bone`/`slot` MOUNT from the
+ * parent rig def's `mounts`) and composes the child's own transform ON TOP of it (prop in hand, hat
+ * on head, character on vehicle). `bone` follows a bone (child keeps its own draw order); `slot`
+ * injects into the parent's draw order. `inherit` lists which channels propagate from the parent
+ * (default `["position"]`); `offset` is an extra explicit child offset (px) past the mount.
+ */
 export const AttachSchema = z
   .object({
+    /** The sibling layer id to parent onto (an earlier layer in the same scene). */
     to: z.string().min(1),
+    /** Parent rig mount BONE to follow (resolved via the parent rig def's `mounts`). */
     bone: z.string().min(1).optional(),
+    /** Parent rig mount SLOT to inject into (resolved via the parent rig def's `mounts`). */
     slot: z.string().min(1).optional(),
-    inherit: z.array(z.string()).optional(),
+    /** Which transform channels propagate from the parent. Default `["position"]`. */
+    inherit: z.array(z.enum(['position', 'rotation', 'scale', 'opacity'])).optional(),
+    /** An extra explicit child offset (px) applied past the resolved mount. */
+    offset: z.tuple([z.number(), z.number()]).optional(),
   })
   .strict();
 
@@ -245,6 +284,60 @@ export const RigStateSchema = z
   .strict();
 export type RigState = z.infer<typeof RigStateSchema>;
 
+// --- compositing: blend mode + track matte / mask (M2 §11, ADR-003) ---
+
+/**
+ * A per-layer BLEND MODE (compositing): how this layer's pixels combine with what is already drawn
+ * beneath it. Maps 1:1 to the CSS `mix-blend-mode` property (the runtime primitive — never
+ * reimplemented), applied generically in the layer wrapper. `normal` (the default) is a no-op.
+ * Covers the standard Porter-Duff / separable + non-separable modes (multiply for shadows, screen/
+ * add for light, overlay/soft-light for grades, etc.).
+ */
+export const BlendModeSchema = z.enum([
+  'normal',
+  'multiply',
+  'screen',
+  'overlay',
+  'darken',
+  'lighten',
+  'color-dodge',
+  'color-burn',
+  'hard-light',
+  'soft-light',
+  'difference',
+  'exclusion',
+  'hue',
+  'saturation',
+  'color',
+  'luminosity',
+]);
+export type BlendMode = z.infer<typeof BlendModeSchema>;
+
+/**
+ * A TRACK MATTE / MASK on a layer (compositing): clip this layer's visible area by the LUMINANCE or
+ * ALPHA of a source. The source is EITHER another sibling layer's rendered output (`from` = a layer
+ * id — an AE-style track matte) OR an external image/SVG asset (`ref` = a `defs.assets` key). Applied
+ * generically in the layer wrapper via an SVG `<mask>` (luma) / `clipPath` + CSS `mask-image` (the
+ * runtime primitives — never reimplemented), so it composes with blend/effects/parallax uniformly.
+ *   • `mode: 'luma'`   — bright pixels of the source reveal (the default; AE luminance matte).
+ *   • `mode: 'alpha'`  — opaque pixels of the source reveal (AE alpha matte).
+ *   • `invert: true`   — invert the matte (a STENCIL / hole instead of a reveal).
+ * Exactly one of `from`/`ref` is the source; both absent → no-op.
+ */
+export const MatteSchema = z
+  .object({
+    /** A sibling layer id whose rendered output is the matte source (AE track matte). */
+    from: z.string().min(1).optional(),
+    /** A `defs.assets` key (image/svg) used as the matte source. */
+    ref: z.string().min(1).optional(),
+    /** Luminance matte (bright reveals) or alpha matte (opaque reveals). Default `luma`. */
+    mode: z.enum(['luma', 'alpha']).default('luma'),
+    /** Invert the matte (reveal → stencil/hole). */
+    invert: z.boolean().optional(),
+  })
+  .strict();
+export type Matte = z.infer<typeof MatteSchema>;
+
 // --- common layer fields shared by every layer type ---
 
 const layerBase = {
@@ -256,6 +349,18 @@ const layerBase = {
   shading: ShadingSchema.optional(),
   /** RESERVED (M2): cascade offset metadata. */
   stagger: z.number().optional(),
+  /**
+   * COMPOSITING — per-layer blend mode (CSS `mix-blend-mode`). How this layer mixes with the layers
+   * beneath it. Omitted/`normal` → ordinary alpha over (back-compat). Applied generically in the
+   * layer wrapper (LayerView), so EVERY layer type gets it uniformly.
+   */
+  blend: BlendModeSchema.optional(),
+  /**
+   * COMPOSITING — per-layer track matte / mask. Clips this layer by the luma/alpha of a sibling layer
+   * (`from`) or an asset (`ref`). Applied generically in the layer wrapper (LayerView) via SVG mask /
+   * CSS mask-image. Omitted → unmasked (back-compat).
+   */
+  matte: MatteSchema.optional(),
 } as const;
 
 // --- M1 layer types ---
@@ -283,10 +388,16 @@ export const RigLayerSchema = z
     ref: z.string().min(1),
     transform: TransformSchema.optional(),
     rig_state: RigStateSchema,
-    // --- reserved compositional fields (M2) ---
-    /** Intra-rig variant selection (reserved; M2). */
+    // --- compositional fields (M2, spec §8.1) ---
+    /**
+     * INTRA-RIG variant selection (spec §8.1): axis name → chosen part/skin name (e.g.
+     * `{ head:"head_round", outfit:"lab_coat", palette:"warm" }`). OPAQUE to the core — forwarded to
+     * the rig's PROVIDER, which interprets the selection against its own spec (DragonBones skins/
+     * slot-swaps; blob-creature palette/part variants). The valid axes are declared by the rig's
+     * library manifest `variants`; an unknown axis is the provider's concern, not core's.
+     */
     parts: z.record(z.string()).optional(),
-    /** Inter-rig attachment (reserved; M2). */
+    /** INTER-RIG attachment (scene-graph parenting onto another layer's mount; spec §8.1). */
     attach: AttachSchema.optional(),
   })
   .strict();
@@ -441,7 +552,37 @@ export const ClipLayerSchema = z
   .strict();
 export type ClipLayer = z.infer<typeof ClipLayerSchema>;
 
-/** Discriminated union of all layer types (M1 + the M2 `clip` precomp). */
+/**
+ * footage layer (M2 compositing): plays time-based EXTERNAL media — a VIDEO file or a LOTTIE
+ * animation — from a `defs.assets` ref, FRAME-SEEKED by Remotion so it is deterministic (CLAUDE.md
+ * r.1). "Reuse over invent" (r.3): the renderer is a thin adapter over Remotion's `<OffthreadVideo>`/
+ * `<Video>` (video) and `@remotion/lottie`'s `<Lottie>` (vector loops) — never reimplemented. The
+ * media kind is read from the resolved `defs.assets[ref].kind` (`video` → video element; `lottie` →
+ * Lottie). `from`/`playbackRate` window/retime the source; the standard `transform` + camera/parallax
+ * + the generic blend/matte/effects wrappers compose it like every other layer.
+ */
+export const FootageLayerSchema = z
+  .object({
+    type: z.literal('footage'),
+    ...layerBase,
+    /** defs.assets key — must resolve to a `video` or `lottie` asset def. */
+    ref: z.string().min(1),
+    /** Local start frame of the source within this layer (offsets which source frame plays). */
+    from: z.number().int().optional(),
+    /** Playback-rate multiplier (1 = real time). Deterministic: still a pure function of frame. */
+    playbackRate: z.number().positive().optional(),
+    /** Loop the source when the timeline outlasts it (video: <Loop>; lottie: loop prop). */
+    loop: z.boolean().optional(),
+    /** Object-fit for video media within the layer box (cover/contain/fill). Default `contain`. */
+    fit: z.enum(['cover', 'contain', 'fill']).optional(),
+    /** Parallax factor for the whole footage unit (2.5D depth), like an asset/clip layer. */
+    parallax: z.number().optional(),
+    transform: TransformSchema.optional(),
+  })
+  .strict();
+export type FootageLayer = z.infer<typeof FootageLayerSchema>;
+
+/** Discriminated union of all layer types (M1 + the M2 `clip` precomp + `footage`). */
 export const LayerSchema = z.discriminatedUnion('type', [
   AssetLayerSchema,
   RigLayerSchema,
@@ -449,6 +590,7 @@ export const LayerSchema = z.discriminatedUnion('type', [
   ShapeLayerSchema,
   TextLayerSchema,
   ClipLayerSchema,
+  FootageLayerSchema,
 ]);
 export type Layer = z.infer<typeof LayerSchema>;
 
@@ -548,6 +690,16 @@ export const SceneSchema = z
     labels: z.record(z.number()).default({}),
     camera: CameraSchema,
     layers: z.array(LayerSchema),
+    /**
+     * COLOR-SCRIPT (spec §11.4): a per-scene PALETTE OVERRIDE — a partial token map (token → color)
+     * that the renderer merges OVER `defs.palette` for THIS scene only, so every fill/stroke/light
+     * that resolves a token recolors coherently when the mood shifts. Carried as a DIFF vs the base
+     * (only the tokens that change), emitted by the lowering color-script pass. Across a transition
+     * the entering scene's override is the OKLab-interpolated blend toward the previous scene's palette
+     * at the transition's leading edge (culori), so a mood change reads as a smooth global shift.
+     * Omitted → the scene uses the base `defs.palette` unchanged (back-compat).
+     */
+    palette: PaletteSchema.optional(),
     // --- reserved-now (unused in M1) ---
     light: LightSchema.optional(),
     stagger: z.array(StaggerGroupSchema).optional(),

@@ -1,0 +1,160 @@
+# examples/m2-demo.yaml — the M2 VOCABULARY mega-demo. One short multi-scene story that exercises
+# EVERY new M2 feature end-to-end, so a single render proves the whole milestone wires together:
+#
+#   • COMPOSITIONAL RIGS (§8.1)  — an `object` prop (gear) ATTACHED to a rig's hand mount (inter-rig
+#                                  scene-graph parenting) + a PARTS swap on the rig (intra-rig variant).
+#   • ENVIRONMENT (§13.3)        — a library CLIP used as a full-scene backdrop (`environment:`).
+#   • COLOR-SCRIPT (§11.4)       — a per-beat `mood` (warm → cold → hopeful) that shifts the whole
+#                                  palette, INTERPOLATED across each transition in OKLab.
+#   • FOOTAGE / COMPOSITING       — a transparent VIDEO footage layer (frame-seeked, deterministic via
+#                                  OffthreadVideo), a per-layer BLEND mode, and a
+#                                  track-MATTE (one shape masks another).
+#   • TRANSITIONS (C4)           — a real IRIS reveal + a MASK reveal (not the old fade fallback), plus
+#                                  a WIPE — all resolved through the core-transitions PLUGIN registry.
+#   • DATA-VIZ (P1)              — a `chart` generator (animated draw-on bar chart).
+#   • OBJECT / PROP (P2)         — the `object` provider renders a flat-vector prop (gear), standalone
+#                                  AND attached.
+#
+# Build it (compiles + vendors assets + renders one continuous mp4):
+#   tsx src/cli/render.ts examples/m2-demo.yaml --project m2-demo --name "M2" --frames auto
+
+title: "M2"
+
+cast:
+  # The protagonist (procedural blob-creature rig). Its hand mount (handR) carries the attached prop.
+  hero:
+    ref: blip
+    palette: warm
+  # A simple flat-vector PROP rendered by the core-objects `object` provider (a peer of blob-creature).
+  gear:
+    ref: gear_prop
+
+beats:
+  # ───────────────────────── b1 — INTRO (warm). environment backdrop + data-viz chart + text. ──────
+  - id: b1
+    say: "We start warm, with the numbers laid out."
+    mood: warm
+    show:
+      # ENVIRONMENT (§13.3): a library clip used as a far-back full-scene backdrop.
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      # DATA-VIZ (P1): an animated bar chart that draws on from the baseline.
+      - generator: chart
+        as: bars
+        args:
+          z: 4
+          kind: bar
+          orientation: vertical
+          inset: { top: 220, right: 260, bottom: 200, left: 260 }
+          colors: [accent, accent2, bg2, light]
+          gap: 0.35
+          draw_on: { delay: 6, duration: 24, stagger: 5, easing: easeOut }
+          axes: true
+          data:
+            - { value: 14, label: "A" }
+            - { value: 32, label: "B" }
+            - { value: 22, label: "C" }
+            - { value: 41, label: "D" }
+      - text: "The Story So Far"
+        as: title
+        at: top
+        args: { z: 20, size: 72, weight: 700, color: ink, anim: { preset: rise, duration: 22, distance: 60 } }
+    camera: establishing
+    duration: { seconds: 3 }
+
+  # ───────────── b2 — TURN (cold). object prop ATTACHED to the rig + a PARTS swap. IRIS transition. ──
+  - id: b2
+    say: "Then it turns cold — and the hero picks up a tool."
+    mood: cold
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      # The protagonist with an INTRA-RIG parts swap (variant selection, opaque to core).
+      - actor: hero
+        as: hero
+        at: bench
+        args:
+          z: 10
+          parts: { palette: body }
+      # OBJECT PROP (P2) ATTACHED to the hero's right-hand mount (INTER-RIG scene-graph parenting, §8.1).
+      # `attach.to` is the hero layer id; `attach.bone` names the parent mount; `offset` nudges it.
+      - actor: gear
+        as: tool
+        args:
+          z: 12
+          attach: { to: L_rig_hero, bone: head, offset: [70, 10], inherit: ["position", "rotation"] }
+    camera: slow_push_in
+    duration: { seconds: 3 }
+    # Real IRIS reveal (resolved through the core-transitions registry — NOT the fade fallback).
+    transition: { kind: iris, duration: 20 }
+
+  # ──────── b3 — LIFT (hopeful). lottie FOOTAGE + a BLEND-mode shape + a track-MATTE. MASK transition. ─
+  - id: b3
+    say: "And lifts into something hopeful."
+    mood: hopeful
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      # FOOTAGE (compositing): a transparent VIDEO (VP9/yuva420p), frame-seeked by Remotion's
+      # <OffthreadVideo> — the BYTE-DETERMINISTIC footage primitive (lottie-web is not bit-exact in
+      # Remotion's parallel-tab video render, per upstream; the `lottie` kind stays available for
+      # perceptual/preview use). Looped + 10% parallax so it reads as moving depth behind the subjects.
+      - footage: pulse_video
+        as: pulse
+        args: { z: 5, loop: true, fit: contain, parallax: 0.1 }
+      # A SCREEN-blended glow shape (compositing: per-layer mix-blend-mode = the runtime primitive).
+      - shape: circle
+        as: glow
+        at: center
+        args:
+          z: 6
+          params: { radius: 180 }
+          fill: { a: 0, k: accent }
+          opacity: 70
+          blend: screen
+      # A MATTE source (drawn, then used as the luma stencil for the masked shape below).
+      - shape: star
+        as: mask_src
+        at: right
+        args:
+          z: 7
+          params: { points: 5, innerRadius: 60, outerRadius: 150 }
+          fill: { a: 0, k: light }
+      # A shape CLIPPED by the star's luminance (AE-style track matte: matte.from = sibling layer id).
+      - shape: rect
+        as: panel
+        at: right
+        args:
+          z: 8
+          params: { width: 360, height: 360 }
+          fill: { a: 0, k: accent2 }
+          matte: { from: L_shape_mask_src, mode: luma }
+      - text: "Hope"
+        as: hope
+        at: bottom
+        args: { z: 20, size: 64, weight: 700, color: ink, anim: { preset: fade, duration: 24 } }
+    camera: slow_pull_out
+    duration: { seconds: 3 }
+    # Real MASK reveal (custom SVG radial mask — was the fade fallback before C4).
+    transition: { kind: mask, duration: 20 }
+
+  # ─────────────────── b4 — OUTRO (hopeful, lingering). standalone prop. WIPE transition. ───────────
+  - id: b4
+    say: "We end with the tool itself."
+    mood: hopeful
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      # The object prop, standalone and centred (no attach) — the provider renders it on its own.
+      - actor: gear
+        as: hero_gear
+        at: center
+        args: { z: 10, scale: 180 }
+      - text: "The End"
+        as: end
+        at: top
+        args: { z: 20, size: 80, weight: 700, color: ink, anim: { preset: rise, duration: 22, distance: 60 } }
+    camera: hold
+    duration: { seconds: 2 }
+    # A directional WIPE (the @remotion/transitions preset, via the registry).
+    transition: { kind: wipe, dir: left, duration: 18 }

@@ -50,7 +50,18 @@ export type Provenance = z.infer<typeof ProvenanceSchema>;
  */
 export const RigManifestSchema = z
   .object({
-    mounts: z.record(z.object({ bone: z.string() }).or(z.object({ slot: z.string() }))).default({}),
+    mounts: z
+      .record(
+        z
+          .object({
+            bone: z.string().optional(),
+            slot: z.string().optional(),
+            /** Local offset (px) of this mount in the rig's own centred space (spec §8.1 attach). */
+            offset: z.tuple([z.number(), z.number()]).optional(),
+          })
+          .strict(),
+      )
+      .default({}),
     variants: z.record(z.array(z.string())).default({}),
     /** Named animations the rig exposes (procedural characters: idle/blink/wave). */
     clips: z.array(z.string()).optional(),

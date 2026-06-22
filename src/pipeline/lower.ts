@@ -28,6 +28,9 @@ import {
   type ShapeLayer,
   type TextLayer,
   type ClipLayer,
+  type FootageLayer,
+  type BlendMode,
+  type Matte,
   type ClipDef,
   type Effect,
   type RigClip,
@@ -52,6 +55,7 @@ import type { LoweredLayer } from './contract.js';
 import { NEUTRAL_STYLEKIT } from '../render/stylekit.js';
 import { storyHash, deriveSeed } from './parse.js';
 import type { LoweredSceneIR, LoweredScene } from './contract.js';
+import { resolveScenePalette, paletteDiff, interpolatePalettes } from './color-script.js';
 
 /** This pass's id + version — folded into cache keys / provenance (spec §5). */
 export const PASS_ID = 'lower';
@@ -205,6 +209,8 @@ export interface LibraryLike {
   toStyleKit?(ref: string): StyleKit;
   /** Resolve a `clip` library entry to a validated ClipDef (M2 nested composition). */
   toClip?(ref: string): ClipDef;
+  /** Resolve a named `palette` library entry to a token map (color-script, spec §11.4). */
+  toPalette?(ref: string): Palette;
   /** Optional: resolve a ref's content hash (used for provenance only). */
   hashOf?(ref: string): string;
 }
@@ -256,6 +262,32 @@ function easingsFromStyleKit(sk: StyleKit): Easings {
 /** Seed a Scene-IR `defs.palette` from the resolved stylekit's palette tokens (spec §6.2/§9). */
 function paletteFromStyleKit(sk: StyleKit): Palette {
   return { ...sk.palette };
+}
+
+// --- color-script (spec §11.4) ----------------------------------------------------------------
+
+/**
+ * The fraction of the previous scene's palette that BLEEDS INTO the entering scene at the LEADING
+ * EDGE of a transition (color-script, spec §11.4). The entering scene's per-scene palette is the
+ * OKLab blend `interpolate(prev, target, 1 − BLEED)` — i.e. the new mood, pulled `BLEED` of the way
+ * back toward the previous mood — so the boundary reads as a smooth global shift rather than a snap.
+ * A flat per-scene token map (the renderer reads `scene.palette` as static colors), so this is the
+ * single deterministic blend point; the transition's own cross-fade carries the eye across it. 0 ⇒ a
+ * hard palette swap at the cut (no bleed). Tuned small so the body of the scene shows its true mood.
+ */
+export const PALETTE_TRANSITION_BLEED = 0.5 as const;
+
+/**
+ * Resolve one beat's FULL scene palette (color-script, spec §11.4): the stylekit base, overlaid by
+ * the beat's named `mood` (a `palette` library entry, resolved via the Library) and then its inline
+ * `palette` override (most specific). Without a Library (standalone lowering) a named mood can't be
+ * resolved, so only the inline override applies — the pass stays pure + runnable. Pure: no RNG/clock.
+ */
+function resolveBeatPalette(beat: Beat, base: Palette, lib: LibraryLike | undefined): Palette {
+  const mood =
+    beat.mood !== undefined && lib?.toPalette ? lib.toPalette(beat.mood) : undefined;
+  const inline = beat.palette as Palette | undefined;
+  return resolveScenePalette(base, mood, inline);
 }
 
 // --- ref helpers ------------------------------------------------------------------------------
@@ -503,6 +535,34 @@ function buildTextLayer(item: ShowItem, index: number): LoweredLayer {
 }
 
 /**
+ * The default z-order of an ENVIRONMENT backdrop layer (spec §13.3). An environment is a clip used as
+ * a full-scene backdrop — a composed background+ambience bundle — so it sits BEHIND every authored
+ * `show[]` layer. Far below the asset-layer default (0) so a beat's own assets still stack on top.
+ */
+export const ENVIRONMENT_Z = -100 as const;
+
+/**
+ * Lower a beat's `environment` ref (spec §13.3) into a backdrop CLIP layer. An environment IS a clip
+ * (the spec's "scene-template = a clip used as a backdrop"): we REUSE the clip machinery wholesale — the
+ * shared def is resolved + deduped into `defs.clips` exactly like a `show[].clip` (see {@link
+ * collectClipDefs}); here we emit ONE `clip` layer per beat, pinned to a far-back z and the scene
+ * centre (its inner layers compose in the clip's local space). No new nesting mechanism is built. The
+ * id is derived from the beat so re-renders are byte-identical. Pure structural lowering: no RNG.
+ */
+function buildEnvironmentLayer(envRef: string, beatId: string): LoweredLayer {
+  const layer: ClipLayer = {
+    type: 'clip',
+    id: `L_env_${beatId}`,
+    ref: defKey(envRef),
+    z: ENVIRONMENT_Z,
+    // A backdrop is static far depth (parallax 0 = moves least with the camera), like a background asset.
+    parallax: 0,
+  };
+  // Anchor at "center": the layout pass resolves it to the scene-centre origin (the clip's local space).
+  return { ...layer, anchor: 'center' } as LoweredLayer;
+}
+
+/**
  * A first-class CLIP layer (M2 nested composition) lowered from a `show[].clip` directive — a
  * PRE-COMPOSITION INSTANCE (mirrors {@link buildShapeLayer}/{@link buildTextLayer}). The clip's
  * shared DEFINITION is resolved + deduped into `defs.clips` separately (see {@link collectClipDefs});
@@ -568,6 +628,75 @@ function buildClipLayer(item: ShowItem, index: number): LoweredLayer {
 }
 
 /**
+ * A generic FOOTAGE layer lowered from a `show[].footage` item (M2 compositing). The item's value is a
+ * `defs.assets` ref that must resolve to a `video` or `lottie` asset; the renderer (FootageLayer.tsx)
+ * frame-seeks it via Remotion's `<OffthreadVideo>` / `@remotion/lottie` (deterministic). The look —
+ * `from` (source start frame), `playbackRate`, `loop`, `fit` (cover/contain/fill), `parallax`, an
+ * optional `{a,k}` transform and `effects[]` — travels in `args` and passes straight through to the
+ * Scene-IR `footage` layer (validated by FootageLayerSchema at the boundary). Pure structural lowering.
+ */
+function buildFootageLayer(item: ShowItem, index: number): LoweredLayer {
+  const ref = item.footage!;
+  const args = (item.args ?? {}) as Record<string, unknown>;
+  const id = `L_footage_${item.as ?? `${refName(ref)}_${index}`}`;
+  const z = typeof args['z'] === 'number' ? (args['z'] as number) : 8;
+
+  const transform: Transform = {};
+  const channel = (v: unknown): Transform['scale'] | undefined =>
+    typeof v === 'number' ? { a: 0, k: v } : v && typeof v === 'object' ? (v as Transform['scale']) : undefined;
+  const scaleCh = channel(args['scale']);
+  const rotationCh = channel(args['rotation']);
+  const opacityCh = channel(args['opacity']);
+  if (scaleCh) transform.scale = scaleCh;
+  if (rotationCh) transform.rotation = rotationCh;
+  if (opacityCh) transform.opacity = opacityCh;
+
+  const parallax = typeof args['parallax'] === 'number' ? (args['parallax'] as number) : undefined;
+  const effects = Array.isArray(args['effects']) ? (args['effects'] as Effect[]) : undefined;
+  const from = typeof item.from === 'number' ? item.from : typeof args['from'] === 'number' ? (args['from'] as number) : undefined;
+  const playbackRate = typeof args['playbackRate'] === 'number' ? (args['playbackRate'] as number) : undefined;
+  const loop = typeof args['loop'] === 'boolean' ? (args['loop'] as boolean) : undefined;
+  const fit =
+    args['fit'] === 'cover' || args['fit'] === 'contain' || args['fit'] === 'fill'
+      ? (args['fit'] as FootageLayer['fit'])
+      : undefined;
+
+  const layer: FootageLayer = {
+    type: 'footage',
+    id,
+    ref: defKey(ref),
+    z,
+    ...(from !== undefined ? { from } : {}),
+    ...(playbackRate !== undefined ? { playbackRate } : {}),
+    ...(loop !== undefined ? { loop } : {}),
+    ...(fit !== undefined ? { fit } : {}),
+    ...(parallax !== undefined ? { parallax } : {}),
+    ...(Object.keys(transform).length > 0 ? { transform } : {}),
+    ...(effects && effects.length > 0 ? { effects } : {}),
+  };
+  if (typeof item.at === 'string') return { ...layer, anchor: item.at } as LoweredLayer;
+  return layer;
+}
+
+/**
+ * Extract the GENERIC compositing fields (blend mode + track matte / mask) any `show[]` item may carry
+ * in its free-form `args`, applied uniformly to EVERY layer kind (M2 §11). `blend` maps 1:1 to the
+ * CSS `mix-blend-mode`; `matte` clips the layer by a sibling layer's (`from`) or asset's (`ref`)
+ * luma/alpha. Both pass straight through to the Scene-IR layer (validated at the boundary) and are
+ * applied generically in the compositor's layer wrapper (Scene.tsx), composing with effects/parallax.
+ * Pure: a function of the authored args.
+ */
+function compositingFields(item: ShowItem): { blend?: BlendMode; matte?: Matte } {
+  const args = (item.args ?? {}) as Record<string, unknown>;
+  const blend = typeof args['blend'] === 'string' ? (args['blend'] as BlendMode) : undefined;
+  const matte =
+    args['matte'] && typeof args['matte'] === 'object'
+      ? (args['matte'] as Matte)
+      : undefined;
+  return { ...(blend ? { blend } : {}), ...(matte ? { matte } : {}) };
+}
+
+/**
  * A generic RIG layer lowered from a `show[].actor` item. The named actor is resolved to its library
  * ref via the story's `cast` declaration; the rig def key is the ref's bare name (a `defs.rigs` key).
  * A StyleKit "pop" entrance (scale + opacity overshoot) makes the rig appear with life (spec §9);
@@ -612,6 +741,18 @@ function buildRigLayer(
   };
 
   const effects = Array.isArray(args['effects']) ? (args['effects'] as Effect[]) : undefined;
+  // Compositional rig fields (spec §8.1), authored on the actor's free-form args:
+  //   • `parts`  — INTRA-RIG variant selection (axis → variant name), forwarded OPAQUE to the provider.
+  //   • `attach` — INTER-RIG parenting onto another layer's mount; the compositor resolves it per frame.
+  // Both pass straight through to the Scene-IR rig layer (validated by the RigLayer Zod at the boundary).
+  const parts =
+    args['parts'] && typeof args['parts'] === 'object'
+      ? (args['parts'] as RigLayer['parts'])
+      : undefined;
+  const attach =
+    args['attach'] && typeof args['attach'] === 'object'
+      ? (args['attach'] as RigLayer['attach'])
+      : undefined;
   const layer: RigLayer = {
     type: 'rig',
     id,
@@ -619,6 +760,8 @@ function buildRigLayer(
     z,
     transform,
     rig_state: { clips: clipsForRig(handle, actions, durationFrames) },
+    ...(parts ? { parts } : {}),
+    ...(attach ? { attach } : {}),
     ...(effects && effects.length > 0 ? { effects } : {}),
   };
   // Placement: an explicit `at`, else a generic default staging anchor for a standing subject.
@@ -652,6 +795,11 @@ function buildScene(
   // field wins (a single item declares a single layer kind). Items that declare nothing renderable
   // (e.g. a reserved `clip` field, or an `actor` not in the cast) are skipped.
   const layers: LoweredLayer[] = [];
+  // ENVIRONMENT (spec §13.3): a beat's `environment` ref lowers to a far-back backdrop clip layer FIRST
+  // (behind every authored layer), reusing the clip machinery. The def is resolved in collectClipDefs.
+  if (beat.environment !== undefined) {
+    layers.push(buildEnvironmentLayer(beat.environment, beat.id));
+  }
   show.forEach((item, i) => {
     let layer: LoweredLayer | undefined;
     if (item.actor !== undefined) {
@@ -664,11 +812,18 @@ function buildScene(
       layer = buildTextLayer(item, i);
     } else if (item.clip !== undefined) {
       layer = buildClipLayer(item, i);
+    } else if (item.footage !== undefined) {
+      layer = buildFootageLayer(item, i);
     } else if (item.asset !== undefined) {
       layer = buildAssetLayer(item, i);
     }
-    // Other reserved fields produce no layer yet (declared-only, lowered in a later phase).
-    if (layer !== undefined) layers.push(layer);
+    // Generic COMPOSITING (M2 §11): a per-layer blend mode + track matte/mask, authored on any item's
+    // `args`, applied uniformly to whatever layer kind was built (composed in the compositor wrapper).
+    if (layer !== undefined) {
+      const comp = compositingFields(item);
+      if (comp.blend || comp.matte) layer = { ...layer, ...comp } as LoweredLayer;
+      layers.push(layer);
+    }
   });
 
   // A single GSAP-style label at mid-scene (a generic "reveal" point the camera/timing can key off).
@@ -704,6 +859,11 @@ function collectDefs(story: StoryIR, lib: LibraryLike | undefined) {
       if (item.asset !== undefined) {
         const key = defKey(item.asset);
         if (!(key in assets)) assets[key] = resolveAsset(item.asset, lib);
+      }
+      // A footage layer's media is a `defs.assets` ref too (resolved to a `video`/`lottie` AssetDef).
+      if (item.footage !== undefined) {
+        const key = defKey(item.footage);
+        if (!(key in assets)) assets[key] = resolveAsset(item.footage, lib);
       }
       if (item.actor !== undefined) {
         const entry = story.cast[item.actor];
@@ -779,6 +939,8 @@ function collectClipDefs(story: StoryIR, lib: LibraryLike | undefined): Record<s
   };
 
   for (const beat of story.beats) {
+    // An `environment` ref (spec §13.3) is a clip used as a backdrop — resolve its def the same way.
+    if (beat.environment !== undefined) resolve(beat.environment, new Set<string>(), 0);
     for (const item of beat.show ?? []) {
       if (item.clip !== undefined) resolve(item.clip, new Set<string>(), 0);
     }
@@ -846,6 +1008,13 @@ export function lowerStory(story: StoryIR, opts: LowerOptions = {}): LoweredScen
   // Per-beat duration default: an explicit override, else DEFAULT_BEAT_SECONDS × fps.
   const beatDefaultFrames = opts.durationFrames ?? Math.round(DEFAULT_BEAT_SECONDS * fps);
 
+  // COLOR-SCRIPT (spec §11.4): pre-resolve each beat's FULL scene palette (stylekit base ← named mood
+  // ← inline override). Resolving ALL beats up front lets the per-scene palette at a transition bleed
+  // toward the PREVIOUS beat's palette in OKLab (a smooth mood shift), not just the base.
+  const fullPalettes: Palette[] = story.beats.map((beat) =>
+    resolveBeatPalette(beat, defs.palette, lib),
+  );
+
   // Lower each beat to a scene, sequencing them on the global timeline with transition overlaps.
   const scenes: LoweredScene[] = [];
   let at = 0;
@@ -861,7 +1030,21 @@ export function lowerStory(story: StoryIR, opts: LowerOptions = {}): LoweredScen
     // Pull this scene back over the previous tail by the overlap so the transition cross-fades.
     at -= overlap;
 
-    scenes.push(buildScene(beat, at, durationFrames, hash, story, transitionIn));
+    // COLOR-SCRIPT: the scene's per-scene palette is the resolved target, BLED toward the previous
+    // scene's palette across a (non-cut) transition in OKLab (culori) so a mood change reads as a
+    // smooth global shift (spec §11.4). The first scene (or a hard cut) takes its target palette as-is.
+    const target = fullPalettes[i] ?? defs.palette;
+    let scenePalette = target;
+    if (i > 0 && overlap > 0) {
+      const prev = fullPalettes[i - 1] ?? defs.palette;
+      scenePalette = interpolatePalettes(prev, target, 1 - PALETTE_TRANSITION_BLEED);
+    }
+    // Carry ONLY the diff vs the base (a minimal override the renderer merges over `defs.palette`).
+    const paletteOverride = paletteDiff(scenePalette, defs.palette);
+
+    const scene = buildScene(beat, at, durationFrames, hash, story, transitionIn);
+    if (Object.keys(paletteOverride).length > 0) scene.palette = paletteOverride;
+    scenes.push(scene);
 
     at += durationFrames;
     total += durationFrames - overlap;

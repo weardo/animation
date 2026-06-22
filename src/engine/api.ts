@@ -17,7 +17,8 @@
 // per-frame state; contributed implementations carry the determinism contract (CLAUDE.md r.1).
 
 import type { ComponentType, ReactNode } from 'react';
-import type { Easings, RigDef, RigLayer, StyleKit } from '../ir/index.js';
+import type { TransitionPresentation } from '@remotion/transitions';
+import type { Easings, RigDef, RigLayer, StyleKit, Transition } from '../ir/index.js';
 import type { GeneratorComponent } from './generator.js';
 import { effects, generators, layerTypes, passes, providers, transitions } from './registry.js';
 
@@ -98,6 +99,38 @@ export interface ProviderProps {
 export type ProviderComponent = ComponentType<ProviderProps>;
 
 /**
+ * The context a transition factory needs to build its presentation. The compositor (core
+ * Composition.tsx) resolves a scene's `transition_in.kind` to a registered {@link TransitionImpl} and
+ * calls `build(ctx)` to obtain a `@remotion/transitions` {@link TransitionPresentation} for the
+ * boundary. The engine owns ONLY this generic contract + the registry — it knows NOTHING about any
+ * specific transition (fade/wipe/iris/mask/match-cut/…); every concrete presentation lives in the
+ * core-transitions PLUGIN (ADR-005 "families are sockets; plugins are plugs").
+ *
+ * DETERMINISM (CLAUDE.md r.1): `build` is a pure function of `ctx`. It carries no clock — the returned
+ * presentation's component reads the transition's `presentationProgress` (a pure fn of frame, timed by
+ * the compositor's `linearTiming` + StyleKit easing) and may read `useVideoConfig()` for dimensions.
+ */
+export interface TransitionBuildContext {
+  /** The inbound scene's `transition_in` (the authoritative side) — `kind` + passthrough params. */
+  transition: Transition;
+  /** Composition dimensions (px), for presentations that need the frame box (iris/mask geometry). */
+  width: number;
+  height: number;
+}
+
+/**
+ * A TRANSITION implementation registered under its Scene-IR `transition_in.kind` (e.g. "fade", "wipe",
+ * "iris", "mask", "match-cut", "camera-continuous"). `build` turns the IR transition + frame box into a
+ * `@remotion/transitions` presentation the compositor hands to `<TransitionSeries.Transition>`. DOM
+ * presets (fade/wipe/slide/iris) reuse `@remotion/transitions` directly (never reimplemented; ADR-003);
+ * mask / match-cut / morph-match / camera-continuous are custom presentations the plugin authors.
+ */
+export interface TransitionImpl {
+  /** Pure (ctx) → a `@remotion/transitions` presentation for this boundary. No clock, no RNG. */
+  build(ctx: TransitionBuildContext): TransitionPresentation<Record<string, unknown>>;
+}
+
+/**
  * The surface a plugin's `register(api)` uses to contribute capability into the engine's extension
  * points. Mirrors the registries in registry.ts one-to-one. LIVE methods write real contributions;
  * STUB methods exist with the right shape but have no consumers wired yet (future backlog).
@@ -122,10 +155,16 @@ export interface EngineAPI {
    */
   registerEffect(kind: string, impl: EffectImpl): void;
 
-  // --- STUB extension points (shape only; no consumers wired yet — do not implement now) ---
+  /**
+   * Register a scene-boundary transition presentation under its Scene-IR `transition_in.kind` (e.g.
+   * "fade", "iris", "mask", "match-cut", "camera-continuous"). The {@link TransitionImpl} builds a
+   * `@remotion/transitions` presentation from the IR transition + frame box; the compositor (core
+   * Composition.tsx) resolves via this registry instead of a hardcoded switch. Concrete presentations
+   * live in the core-transitions plugin — core owns only the generic registry + contract (ADR-005).
+   */
+  registerTransition(kind: string, impl: TransitionImpl): void;
 
-  /** STUB: register a scene-boundary transition presentation. No consumer yet. */
-  registerTransition(kind: string, transition: unknown): void;
+  // --- STUB extension points (shape only; no consumers wired yet — do not implement now) ---
 
   /** STUB: register a Scene-IR layer type. No consumer yet. */
   registerLayerType(type: string, impl: unknown): void;
@@ -142,7 +181,7 @@ export const engineApi: EngineAPI = {
   registerGenerator: (name, component) => void generators.register(name, component),
   registerProvider: (id, component) => void providers.register(id, component),
   registerEffect: (kind, impl) => void effects.register(kind, impl),
-  registerTransition: (kind, transition) => void transitions.register(kind, transition),
+  registerTransition: (kind, impl) => void transitions.register(kind, impl),
   registerLayerType: (type, impl) => void layerTypes.register(type, impl),
   registerPass: (name, pass) => void passes.register(name, pass),
 };

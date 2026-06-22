@@ -15,7 +15,7 @@ import { AbsoluteFill, useCurrentFrame, useVideoConfig } from 'remotion';
 import type { ProviderProps } from '../../src/engine/index.js';
 import type { Easings } from '../../src/ir/index.js';
 import { evalNumber, evalVec2 } from '../../src/render/eval.js';
-import { parseSpec, BLIP_SPEC, type CharacterSpec } from './spec.js';
+import { parseSpec, applyParts, BLIP_SPEC, type CharacterSpec } from './spec.js';
 import { characterMarkup } from './character.js';
 
 /** Validate the embedded opaque spec → CharacterSpec; fall back to the reference blip spec if absent/invalid. */
@@ -43,7 +43,11 @@ export const BlobCreatureProvider: React.FC<ProviderProps> = ({ layer, rigDef, e
   const rotationDeg = evalNumber(t?.rotation, frame, easingTable, 0);
   const opacityPct = evalNumber(t?.opacity, frame, easingTable, 100);
 
-  const character = resolveSpec(rigDef.spec as Record<string, unknown> | undefined);
+  // Validate the opaque spec, then apply the layer's INTRA-RIG `parts` variant selection (spec §8.1).
+  // `parts` is core-opaque (a `record<string>` the engine forwards untouched); THIS provider interprets
+  // it against its own `spec.variants` table — deep-merging the chosen overrides before drawing. Pure.
+  const base = resolveSpec(rigDef.spec as Record<string, unknown> | undefined);
+  const character = applyParts(base, layer.parts);
   // ADR-008 I3: honor the stylekit's quality-FLOOR liveness toggle. Default-alive (back-compat / no
   // stylekit). When `floor.liveness` is false, the creature holds a static neutral pose (no bob/sway/
   // breathe/blink) for a flat/technical look.

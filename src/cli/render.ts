@@ -81,6 +81,46 @@ function libraryFrontend(library: Library, format?: Format): Frontend {
   return { parse: parseStory, lower: (story) => lowerStory(story, { library, format }) };
 }
 
+// P3: output container/codec selection. The DEFAULT stays h264 mp4 (byte-deterministic on the CPU
+// tier — the canonical record). `--format` picks the container; `--codec` overrides the codec within
+// it; `--alpha` switches to a transparency-capable codec + yuva420p (vp8/vp9 webm) or prores4444
+// (.mov) + a png-sequence escape hatch. We name the codec to Remotion's vocabulary verbatim and let
+// Remotion own the encode (NEVER reimplement a Remotion primitive — ADR-003).
+type OutFormat = 'mp4' | 'webm' | 'gif' | 'mov' | 'png-sequence';
+type VideoCodec = 'h264' | 'h265' | 'vp8' | 'vp9' | 'prores' | 'gif';
+/** Container → its default video codec (mirrors Remotion's defaultCodecsForFileExtension). */
+const FORMAT_DEFAULT_CODEC: Record<Exclude<OutFormat, 'png-sequence'>, VideoCodec> = {
+  mp4: 'h264',
+  webm: 'vp8',
+  gif: 'gif',
+  mov: 'prores',
+};
+/** Container → output file extension. */
+const FORMAT_EXT: Record<Exclude<OutFormat, 'png-sequence'>, string> = {
+  mp4: 'mp4',
+  webm: 'webm',
+  gif: 'gif',
+  mov: 'mov',
+};
+/** Codecs that can carry an alpha channel, and the matching alpha container. */
+const ALPHA_CODEC: Record<'vp8' | 'vp9' | 'prores', { ext: string; pixelFormat: 'yuva420p' | undefined }> = {
+  vp8: { ext: 'webm', pixelFormat: 'yuva420p' },
+  vp9: { ext: 'webm', pixelFormat: 'yuva420p' },
+  // ProRes 4444 carries alpha in the codec itself (no yuva pixel-format flag needed).
+  prores: { ext: 'mov', pixelFormat: undefined },
+};
+
+interface OutSpec {
+  /** png-sequence renders a frame folder (transparent PNGs); else a single muxed file. */
+  kind: 'video' | 'png-sequence';
+  codec: VideoCodec;
+  ext: string;
+  pixelFormat?: 'yuva420p' | undefined;
+  /** ProRes profile — '4444' for alpha, else undefined (Remotion default). */
+  proResProfile?: '4444' | undefined;
+  alpha: boolean;
+}
+
 interface Args {
   target: string;
   id?: string | undefined;
@@ -89,6 +129,52 @@ interface Args {
   gpu: boolean;
   /** I1: CLI override of the story's output format (aspect/size/fps). */
   format?: Format | undefined;
+  /** P3: output container/codec/alpha selection. */
+  out: OutSpec;
+}
+
+/**
+ * P3: resolve --format / --codec / --alpha into a concrete codec + container + pixel format.
+ * Defaults to h264 mp4 (opaque, byte-deterministic). --alpha forces a transparency-capable target:
+ *   • --alpha (webm/default)  → vp9 + yuva420p webm   (vp8/vp9 carry alpha via the pixel format)
+ *   • --alpha --format mov    → prores 4444 .mov       (alpha in-codec, full quality, big files)
+ *   • --alpha --format png-sequence → a folder of transparent PNGs (lossless, no encode)
+ * An explicit --codec wins over the container default. We validate alpha-capability so a nonsense
+ * combo (e.g. --alpha --codec h264) fails loudly instead of silently flattening transparency.
+ */
+function resolveOutSpec(formatFlag: string | undefined, codecFlag: string | undefined, alpha: boolean): OutSpec {
+  // png-sequence is its own (codec-less) output target.
+  if (formatFlag === 'png-sequence' || formatFlag === 'pngs' || formatFlag === 'png') {
+    return { kind: 'png-sequence', codec: 'h264', ext: 'png', alpha, pixelFormat: alpha ? 'yuva420p' : undefined };
+  }
+
+  if (alpha) {
+    // Alpha defaults to vp9 webm; --format mov upgrades to ProRes 4444; --codec narrows the webm codec.
+    let codec: 'vp8' | 'vp9' | 'prores' =
+      formatFlag === 'mov' ? 'prores' : (codecFlag === 'vp8' ? 'vp8' : 'vp9');
+    if (codecFlag === 'prores') codec = 'prores';
+    if (codecFlag === 'vp8') codec = 'vp8';
+    if (codecFlag === 'vp9') codec = 'vp9';
+    if (codecFlag && !(codecFlag in ALPHA_CODEC)) {
+      throw new Error(`--alpha needs an alpha-capable --codec (vp8|vp9|prores); got '${codecFlag}'`);
+    }
+    const a = ALPHA_CODEC[codec];
+    return {
+      kind: 'video',
+      codec,
+      ext: a.ext,
+      pixelFormat: a.pixelFormat,
+      proResProfile: codec === 'prores' ? '4444' : undefined,
+      alpha: true,
+    };
+  }
+
+  const format = (formatFlag ?? 'mp4') as Exclude<OutFormat, 'png-sequence'>;
+  if (!(format in FORMAT_DEFAULT_CODEC)) {
+    throw new Error(`unknown --format '${formatFlag}' (mp4|webm|gif|mov|png-sequence)`);
+  }
+  const codec = (codecFlag as VideoCodec | undefined) ?? FORMAT_DEFAULT_CODEC[format];
+  return { kind: 'video', codec, ext: FORMAT_EXT[format], alpha: false };
 }
 function parseArgs(argv: string[]): Args {
   const positional = argv.filter((a) => !a.startsWith('-'));
@@ -114,7 +200,9 @@ function parseArgs(argv: string[]): Args {
   const height = num('--height');
   if (height !== undefined) fmt.height = height;
   const format = Object.keys(fmt).length > 0 ? fmt : undefined;
-  return { target: positional[0] ?? 'examples/character.yaml', id: flag('--project'), name: flag('--name'), frames: flag('--frames'), gpu: argv.includes('--gpu'), format };
+  // P3: --format (container/output) is distinct from the I1 --aspect/--fps size override above.
+  const out = resolveOutSpec(flag('--format'), flag('--codec'), argv.includes('--alpha'));
+  return { target: positional[0] ?? 'examples/character.yaml', id: flag('--project'), name: flag('--name'), frames: flag('--frames'), gpu: argv.includes('--gpu'), format, out };
 }
 
 /**
@@ -154,9 +242,15 @@ function vendorAssets(sceneIR: SceneIR, paths: ProjectPaths): string[] {
   for (const def of Object.values(rigs)) {
     if (!def.uri) continue;
     if (def.uri.startsWith('proc://')) {
+      // An inlined-spec rig: vendor its co-located sidecar. The spec lives under the entry's namespace
+      // dir (characters/ for actors, props/ for props) — try the known namespaces (a data convention,
+      // mirroring the loader); core names no provider→namespace mapping. The spec is also inlined in
+      // scene.json, so a missing file is harmless (the provider falls back to its own default spec).
       const id = def.uri.replace(/^proc:\/\//, '').split('/')[0] ?? '';
-      for (const f of [`${id}.spec.json`, `${id}.preview.png`]) {
-        copy(resolvePath(PROJECT_ROOT, 'library', 'characters', id, f), `characters/${id}/${f}`);
+      for (const ns of ['characters', 'props', 'objects']) {
+        for (const f of [`${id}.spec.json`, `${id}.preview.png`]) {
+          copy(resolvePath(PROJECT_ROOT, 'library', ns, id, f), `${ns}/${id}/${f}`);
+        }
       }
     } else if (def.uri.includes('://')) {
       // A sidecar-set rig URI (`rig://<dir>/<base>.dbones.json`): vendor the runtime's three source
@@ -182,8 +276,13 @@ function vendorAssets(sceneIR: SceneIR, paths: ProjectPaths): string[] {
 const chromiumOpts = (gpu: boolean) => (gpu ? { gl: 'angle' as const } : {});
 const CONCURRENCY = Math.max(1, cpus().length - 2);
 
-/** Bundle the project + select the composition for a Scene IR. Shared by video + stills. */
-async function prepare(sceneIR: SceneIR, publicDir: string) {
+/**
+ * Bundle the project + select the composition for a Scene IR. Shared by video + stills.
+ * P3 (alpha): when `alpha` is set we overlay a TRANSIENT `_alpha` flag onto the inputProps (NOT onto
+ * scene.json — the canonical record stays a pure Scene IR). The compositor reads it to render on a
+ * transparent canvas (omit the bg fill + drop backdrop layers) so the RGBA channel survives.
+ */
+async function prepare(sceneIR: SceneIR, publicDir: string, alpha = false) {
   const serveUrl = await bundle({
     entryPoint: REMOTION_ENTRY,
     publicDir,
@@ -195,31 +294,43 @@ async function prepare(sceneIR: SceneIR, publicDir: string) {
       },
     }),
   });
-  const inputProps = sceneIR as unknown as Record<string, unknown>;
+  const inputProps = (alpha
+    ? { ...(sceneIR as unknown as Record<string, unknown>), _alpha: true }
+    : (sceneIR as unknown as Record<string, unknown>));
   const composition = await selectComposition({ serveUrl, id: COMPOSITION_ID, inputProps });
   return { serveUrl, composition, inputProps };
 }
 
-/** Render the full Scene IR to an mp4. `gpu` opts into the fast (perceptual) iGPU tier. */
-async function renderScene(sceneIR: SceneIR, videoOut: string, publicDir: string, gpu: boolean): Promise<{ frames: number }> {
-  const { serveUrl, composition, inputProps } = await prepare(sceneIR, publicDir);
+/**
+ * Render the full Scene IR to a muxed video. `gpu` opts into the fast (perceptual) iGPU tier; `out`
+ * selects the codec/container/alpha (default h264 mp4). Remotion owns the encode (ADR-003: never
+ * reimplement a primitive). x264-specific tuning (preset/crf) only applies to the h264 codecs.
+ */
+async function renderScene(sceneIR: SceneIR, videoOut: string, publicDir: string, gpu: boolean, out: OutSpec): Promise<{ frames: number }> {
+  const { serveUrl, composition, inputProps } = await prepare(sceneIR, publicDir, out.alpha);
+  const isH264 = out.codec === 'h264' || out.codec === 'h265';
   try {
-    console.log(`[render] video ${composition.width}x${composition.height}@${composition.fps} (${composition.durationInFrames}f) [${gpu ? 'GPU/perceptual' : 'CPU/byte-exact'}] → ${videoOut}`);
+    console.log(`[render] video ${composition.width}x${composition.height}@${composition.fps} (${composition.durationInFrames}f) [${gpu ? 'GPU/perceptual' : 'CPU/byte-exact'}] codec=${out.codec}${out.alpha ? ' +alpha' : ''} → ${videoOut}`);
     await renderMedia({
       composition,
       serveUrl,
-      codec: 'h264',
+      codec: out.codec,
       outputLocation: videoOut,
       inputProps,
+      // Alpha needs an RGBA-capable frame source: PNG carries the alpha channel into the encoder.
       imageFormat: 'png',
+      ...(out.pixelFormat ? { pixelFormat: out.pixelFormat } : {}),
+      ...(out.proResProfile ? { proResProfile: out.proResProfile } : {}),
       concurrency: CONCURRENCY,
       chromiumOptions: chromiumOpts(gpu),
-      // CPU tier pins single-pass encode for byte-identical mp4; GPU tier is perceptual anyway, so let
-      // the encoder parallelize for more speed.
-      disallowParallelEncoding: !gpu,
-      x264Preset: 'faster',
-      crf: 18,
-      colorSpace: 'bt709',
+      // CPU tier pins single-pass encode for byte-identical output; GPU tier is perceptual anyway, so
+      // let the encoder parallelize for more speed. ALPHA MUST allow parallel encoding: Remotion's
+      // pre-encode (disallowParallelEncoding) path drops the `-pix_fmt yuva420p`/`-auto-alt-ref 0`
+      // flags (ffmpeg-args.js `firstEncodingStepOnly` early-returns when `hasPreencoded`), flattening
+      // transparency. The deterministic/byte-exact canonical record is the default h264 mp4 anyway;
+      // the alpha (webm/mov) tier is for delivery/compositing, so it opts out of the single-pass pin.
+      disallowParallelEncoding: !gpu && !out.alpha,
+      ...(isH264 ? { x264Preset: 'faster' as const, crf: 18, colorSpace: 'bt709' as const } : {}),
     });
     return { frames: composition.durationInFrames };
   } finally {
@@ -232,14 +343,15 @@ async function renderScene(sceneIR: SceneIR, videoOut: string, publicDir: string
  * video. Verify correctness + determinism on frames in seconds; render the video only for final
  * validation. Frames are byte-identical to the corresponding video frames (same scene IR + CPU raster).
  */
-async function renderStills(sceneIR: SceneIR, framesDir: string, frameList: number[], publicDir: string, gpu: boolean): Promise<string[]> {
-  const { serveUrl, composition, inputProps } = await prepare(sceneIR, publicDir);
+async function renderStills(sceneIR: SceneIR, framesDir: string, frameList: number[], publicDir: string, gpu: boolean, alpha = false): Promise<string[]> {
+  const { serveUrl, composition, inputProps } = await prepare(sceneIR, publicDir, alpha);
   mkdirSync(framesDir, { recursive: true });
   const out: string[] = [];
   try {
     for (const frame of frameList) {
       const f = Math.min(Math.max(0, frame), composition.durationInFrames - 1);
       const output = resolvePath(framesDir, `frame-${String(f).padStart(4, '0')}.png`);
+      // imageFormat:'png' + a transparent canvas (_alpha overlay) makes renderStill write RGBA PNGs.
       await renderStill({ composition, serveUrl, output, frame: f, inputProps, imageFormat: 'png', chromiumOptions: chromiumOpts(gpu) });
       out.push(output);
     }
@@ -269,7 +381,7 @@ function makeThumbnail(p: ProjectPaths, frame: number): void {
 }
 
 async function main(): Promise<void> {
-  const { target, id: idFlag, name, frames, gpu, format } = parseArgs(process.argv.slice(2));
+  const { target, id: idFlag, name, frames, gpu, format, out } = parseArgs(process.argv.slice(2));
 
   let paths: ProjectPaths;
   let sceneIR: SceneIR;
@@ -316,7 +428,7 @@ async function main(): Promise<void> {
       engine: ENGINE,
       deps: refs,
       assets,
-      outputs: { video: 'media/out.mp4', thumbnail: 'media/thumbnail.png' },
+      outputs: { video: `media/out.${out.kind === 'png-sequence' ? 'png-sequence' : out.ext}`, thumbnail: 'media/thumbnail.png' },
     };
     writeManifest(paths, manifest);
     console.log(`[render] project written → projects/${id}/`);
@@ -327,14 +439,29 @@ async function main(): Promise<void> {
   // FAST PATH: --frames renders stills only (verification), skipping the slow video encode.
   if (frames !== undefined) {
     const list = parseFrames(frames, sceneIR.config.duration_frames);
-    const out = await renderStills(sceneIR, resolvePath(paths.mediaDir, 'frames'), list, publicDir, gpu);
-    console.log(`[render] frames done → ${out.length} PNG(s) at ${list.join(',')}`);
+    // --alpha verifies transparency on the fast still path too (RGBA PNGs), before the full sequence.
+    const stills = await renderStills(sceneIR, resolvePath(paths.mediaDir, 'frames'), list, publicDir, gpu, out.alpha);
+    console.log(`[render] frames done → ${stills.length} ${out.alpha ? 'transparent ' : ''}PNG(s) at ${list.join(',')}`);
     return;
   }
 
-  const meta = await renderScene(sceneIR, paths.video, publicDir, gpu);
-  makeThumbnail(paths, Math.min(30, Math.max(0, meta.frames - 1)));
-  console.log(`[render] done → ${paths.video}`);
+  // P3: png-sequence output renders the full frame range as transparent PNGs (lossless, no encode),
+  // reusing the deterministic still path. Otherwise mux a single video file with the chosen codec.
+  if (out.kind === 'png-sequence') {
+    const seqDir = resolvePath(paths.mediaDir, 'out.png-sequence');
+    const total = sceneIR.config.duration_frames;
+    const all = Array.from({ length: total }, (_v, i) => i);
+    const pngs = await renderStills(sceneIR, seqDir, all, publicDir, gpu, out.alpha);
+    console.log(`[render] done → ${pngs.length} ${out.alpha ? 'transparent ' : ''}PNG(s) at ${seqDir}`);
+    return;
+  }
+
+  // The container extension comes from --format/--codec/--alpha; default mp4 keeps paths.video.
+  const videoOut = out.ext === 'mp4' ? paths.video : resolvePath(paths.mediaDir, `out.${out.ext}`);
+  const meta = await renderScene(sceneIR, videoOut, publicDir, gpu, out);
+  // Thumbnail is extracted from the rendered file (ffmpeg reads any container).
+  if (out.ext === 'mp4') makeThumbnail(paths, Math.min(30, Math.max(0, meta.frames - 1)));
+  console.log(`[render] done → ${videoOut}`);
 }
 
 main().catch((err: unknown) => {

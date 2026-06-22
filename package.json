@@ -16,11 +16,14 @@
   },
   "dependencies": {
     "@remotion/cli": "4.0.481",
+    "@remotion/layout-utils": "^4.0.481",
+    "@remotion/lottie": "^4.0.481",
     "@remotion/motion-blur": "^4.0.481",
     "@remotion/paths": "^4.0.481",
     "@remotion/renderer": "4.0.481",
     "@remotion/shapes": "^4.0.481",
     "@remotion/transitions": "^4.0.481",
+    "culori": "^4.0.2",
     "d3-shape": "3.2.0",
     "flubber": "^0.4.2",
     "object-hash": "3.0.0",
@@ -35,6 +38,7 @@
     "zod-to-json-schema": "3.24.1"
   },
   "devDependencies": {
+    "@types/culori": "^4.0.1",
     "@types/d3-shape": "3.1.7",
     "@types/node": "22.10.5",
     "@types/object-hash": "3.0.6",

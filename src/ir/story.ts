@@ -80,6 +80,14 @@ export const ShowItemSchema = z
     clip: z.string().min(1).optional(),
     /** Local start frame within the scene for a `clip` instance (Remotion `<Sequence from>`). */
     from: z.number().int().optional(),
+    /**
+     * A FOOTAGE layer (M2 compositing): play time-based EXTERNAL media — a `video` or `lottie`
+     * `defs.assets` ref, frame-seeked by Remotion (deterministic). The value is the asset ref; its
+     * look (`from`/`playbackRate`/`loop`/`fit`/`parallax`/transform/effects) travels in `args`,
+     * interpreted by the lowering pass into a Scene-IR `footage` layer. `as` becomes the layer id and
+     * the optional `at` its placement. (Mirrors `asset`/`clip`.)
+     */
+    footage: z.string().min(1).optional(),
     /** A cast key to bring on screen as a rig/provider layer (the generic "actor" binding). */
     actor: z.string().min(1).optional(),
     /** Local handle other beats refer to (e.g. an `action.on` target). */
@@ -218,6 +226,21 @@ export const BeatSchema = z
      * and its `at` offset on the global timeline (sequenced film).
      */
     duration: DurationSchema.optional(),
+    /**
+     * COLOR-SCRIPT (spec §11.4): the beat's emotional MOOD — a named `palette` library entry that
+     * points to a token set (e.g. "warm", "cold", "hopeful"). The lowering pass resolves it to tokens
+     * that OVERRIDE the stylekit palette for this beat's scene; it diffs them vs the base and carries
+     * the diff as the Scene-IR `scene.palette`. Across a transition the entering scene's palette
+     * interpolates from the previous scene's in OKLab (culori) so a mood change reads as a smooth
+     * global shift — the arc across the whole video (warm intro → cold problem → hopeful resolution).
+     */
+    mood: PaletteRefSchema.optional(),
+    /**
+     * Inline palette OVERRIDE for this beat (token name → color), merged over the stylekit base AND
+     * over any `mood` palette (so `palette` is the most specific). A beat may set `mood` (a named arc
+     * point), `palette` (ad-hoc token tweaks), or both. (Spec §11.4.)
+     */
+    palette: z.record(z.string().min(1)).optional(),
     // --- Reserved for later milestones (M2 environment composition) ---
     /** Reuse a whole scene-template/environment (reserved; M2). */
     environment: z.string().min(1).optional(),

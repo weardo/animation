@@ -9,11 +9,11 @@
 // No network. Resolution is pure over the catalog; the only side effects are explicit
 // lockfile reads/writes the caller requests.
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { resolve as resolvePath } from 'node:path';
 
-import type { AssetDef, RigDef, ClipDef } from '../ir/index.js';
-import { StyleKitSchema, ClipDefSchema, type StyleKit } from '../ir/index.js';
+import type { AssetDef, RigDef, ClipDef, Palette } from '../ir/index.js';
+import { StyleKitSchema, ClipDefSchema, PaletteSchema, type StyleKit } from '../ir/index.js';
 import type { Catalog } from './catalog.js';
 import {
   resolveRef,
@@ -95,13 +95,30 @@ export class Library {
     // A `proc://` URI is the engine-generic convention for "this entry carries an inlined sidecar spec
     // co-located with it" — embed it so the opaque spec travels in the Scene IR (the named provider
     // validates/renders it). Keyed on the URI SCHEME (data convention), not on any provider name.
+    // Carry the rig's declared MOUNT points (spec §8.1) from the library manifest into the Scene-IR
+    // rig def as DATA, so the compositor can resolve an `attach.bone`/`attach.slot` to a position
+    // without poking the provider's internals (a rig stays a typed black box). Absent → no mounts.
+    const mounts =
+      r.entry.manifest && Object.keys(r.entry.manifest.mounts).length > 0
+        ? r.entry.manifest.mounts
+        : undefined;
     if (r.entry.uri.startsWith('proc://')) {
+      // A `proc://` entry inlines its sidecar spec. The spec lives co-located with the entry under its
+      // namespace dir: `library/<ns>/<id>/<id>.spec.json`. Core knows no provider→namespace mapping, so
+      // we search the known catalog namespaces (a data convention) and embed the first match; if none
+      // exists the provider falls back to its own default spec (e.g. core-objects' STAR_SPEC).
       const id = r.entry.uri.replace(/^proc:\/\//, '').split('/')[0] ?? '';
-      const specPath = resolvePath(this.rootDir, 'library', 'characters', id, `${id}.spec.json`);
-      const spec = JSON.parse(readFileSync(specPath, 'utf8')) as Record<string, unknown>;
-      return { uri: r.entry.uri, provider, spec };
+      const NAMESPACES = ['characters', 'props', 'objects'] as const;
+      for (const ns of NAMESPACES) {
+        const specPath = resolvePath(this.rootDir, 'library', ns, id, `${id}.spec.json`);
+        if (existsSync(specPath)) {
+          const spec = JSON.parse(readFileSync(specPath, 'utf8')) as Record<string, unknown>;
+          return { uri: r.entry.uri, provider, spec, ...(mounts ? { mounts } : {}) };
+        }
+      }
+      return { uri: r.entry.uri, provider, ...(mounts ? { mounts } : {}) };
     }
-    return { uri: r.entry.uri, provider };
+    return { uri: r.entry.uri, provider, ...(mounts ? { mounts } : {}) };
   }
 
   /** Adapt a resolved asset entry to the Scene-IR `AssetDef` shape (src/ir). */
@@ -112,7 +129,11 @@ export class Library {
     }
     if (!r.entry.uri) throw new Error(`asset entry ${r.key} has no uri`);
     const fmt = r.entry.format;
-    if (fmt !== 'svg' && fmt !== 'lottie' && fmt !== 'image') {
+    // The asset formats the renderer understands (AssetDef.kind enum): static art (svg/image) and the
+    // two frame-seeked FOOTAGE media kinds (lottie / video). `video` backs the byte-DETERMINISTIC footage
+    // path (`<OffthreadVideo>`); `lottie` is the vector path (perceptual — lottie-web is not bit-exact in
+    // Remotion's parallel-tab video render, per upstream, so the determinism-gated demo uses `video`).
+    if (fmt !== 'svg' && fmt !== 'lottie' && fmt !== 'image' && fmt !== 'video') {
       throw new Error(`asset entry ${r.key} has unsupported format '${fmt ?? '<none>'}'`);
     }
     return { uri: r.entry.uri, kind: fmt };
@@ -164,6 +185,30 @@ export class Library {
     const path = resolvePath(this.rootDir, 'library', 'clips', name, `${name}.clip.json`);
     const raw = JSON.parse(readFileSync(path, 'utf8')) as unknown;
     return ClipDefSchema.parse(raw);
+  }
+
+  /**
+   * Resolve a `palette` entry to a validated {@link Palette} token map (color-script, spec §11.4).
+   * Mirrors {@link toStyleKit}/{@link toClip}: the catalog entry's URI is the engine-generic
+   * `palette://<name>` convention; the JSON DATA lives co-located at `library/palettes/<name>.json`
+   * (a flat `{ token: color }` map) and is parsed with {@link PaletteSchema}. The lookup keys on the
+   * URI SCHEME (a data convention), never on any mood name in core. The resolved tokens are merged
+   * over the stylekit base by the lowering color-script pass to form a beat's scene palette.
+   */
+  toPalette(ref: string): Palette {
+    // Default an unversioned ref (e.g. "warm") to `@1.0.0`, mirroring the other resolvers.
+    const r = this.get(ref.includes('@') ? ref : `${ref}@1.0.0`);
+    if (r.entry.kind !== 'palette') {
+      throw new Error(`ref ${r.key} is kind '${r.entry.kind}', expected 'palette'`);
+    }
+    if (!r.entry.uri) throw new Error(`palette entry ${r.key} has no uri`);
+    if (!r.entry.uri.startsWith('palette://')) {
+      throw new Error(`palette entry ${r.key} has unsupported uri '${r.entry.uri}' (expected palette://<name>)`);
+    }
+    const name = r.entry.uri.replace(/^palette:\/\//, '').split('/')[0] ?? '';
+    const path = resolvePath(this.rootDir, 'library', 'palettes', `${name}.json`);
+    const raw = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+    return PaletteSchema.parse(raw);
   }
 
   /** Build a lockfile pinning the currently-cached resolutions, plus any extra refs. */

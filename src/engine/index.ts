@@ -23,6 +23,8 @@ export {
   type ProviderProps,
   type EffectImpl,
   type EffectContribution,
+  type TransitionImpl,
+  type TransitionBuildContext,
 } from './api.js';
 
 // Generator extension-point contract (the generic socket; implementations live in a plugin).
