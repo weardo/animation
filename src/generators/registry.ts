@@ -5,11 +5,19 @@
 import type { GeneratorComponent } from './types.js';
 import { BeadString } from './bead-string.js';
 import { Scatter } from './scatter.js';
+import { Water } from './water.js';
+import { Particles } from './particles.js';
+import { Fire } from './fire.js';
+import { Crowd } from './crowd.js';
 
 /** Name → component. Keys MUST match the Scene IR `generator.gen` field (e.g. "bead-string"). */
 const REGISTRY: Record<string, GeneratorComponent> = {
   'bead-string': BeadString,
   scatter: Scatter,
+  water: Water,
+  particles: Particles,
+  fire: Fire,
+  crowd: Crowd,
 };
 
 /** All registered generator names (for diagnostics / validation). */

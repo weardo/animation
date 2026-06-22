@@ -1,0 +1,128 @@
+# examples/generators-demo.yaml — a 4-scene story whose ONLY job is to SHOWCASE the four new
+# procedural generators (spec §10 generators / §10.1 detail+budget): each beat keeps the SAME
+# protagonist (the procedural `blip` character, z=10) but swaps in ONE new generator field BEHIND it
+# (lowered to a low-z generator layer, above the gradient bg, below the character), so the four beats
+# read as four utterly different worlds — ocean, void, hearth, stadium.
+#
+# THE FOUR BEATS (one new generator per beat, authored as semantic `args` only — no frames/coords):
+#   g1  WATER     — a flat-design ocean of stacked scrolling wavy bands + bobbing foam.   (establishing)
+#   g2  PARTICLES — Blip adrift in a void of rising glowing motes/sparks.        [fade]   (slow push-in)
+#   g3  FIRE      — Blip beside a flickering flame with rising smoke.            [fade]   (hold)
+#   g4  CROWD     — Blip in front of a packed stadium of tiny bobbing creatures. [slide ←](slow pull-out)
+#
+# HOW IT WIRES (no IR/pipeline change — exactly like scatter-story.yaml): each beat's `show[]` lists a
+# `generator: <name>` item with `as:` (handle → deterministic seed + stable layer id) and `args:` (the
+# generator's free-form params, validated by THAT generator's own Zod schema at render time). The
+# lowering pass emits one low-z generator layer per item, compositing BEHIND the `blip` rig (z=10) and
+# ABOVE the gradient background (z=0). Colors are palette TOKENS (bg/bg2/accent/accent2/ink/light)
+# resolved against `defs.palette`. Per-beat `transition`s cross-fade/slide between scenes so the world
+# visibly MORPHS ocean → void → hearth → stadium.
+#
+# Build it (compiles + vendors assets + renders one continuous mp4):
+#   tsx src/cli/render.ts examples/generators-demo.yaml --project generators-demo --name "Generators"
+
+title: "Generators"
+
+characters:
+  blip:
+    rig: blip
+    palette: warm
+
+beats:
+  # g1 — WATER. Blip over a flat-design ocean: stacked translucent bands scroll sideways, foam bobs on
+  # the front crest. No inbound transition (first scene).
+  - id: g1
+    say: "An ocean of layered, scrolling waves."
+    show:
+      - generator: water
+        as: ocean
+        args:
+          bands: 3                 # back→front depth stack
+          amplitude: 34            # crest rise/fall in px
+          wavelength: 520          # broad, calm swell
+          speed: 55                # front-band horizontal scroll (px/s); back bands slower
+          chop: 0.55               # seeded simplex undulation atop the sine
+          colors: [bg, bg2, accent2]   # deepening blues back→front
+          opacity: 0.78            # translucent so stacked bands blend
+          surface: 0.58            # front waterline (fraction of height)
+          band_gap: 0.09           # vertical gap between successive bands
+          foam: true
+          foam_count: 70
+          foam_size: [1.5, 4]
+          foam_color: light        # off-white sea foam
+          resolution: 22           # crest sampling step (smaller = smoother)
+    camera: establishing
+    duration: { seconds: 3 }
+
+  # g2 — PARTICLES. The water dissolves to a void of rising glowing motes. Fade in.
+  - id: g2
+    say: "Then a void of rising, glowing motes."
+    show:
+      - generator: particles
+        as: motes
+        args:
+          count: 160               # a busy but cheap field
+          direction: up            # rising bubbles/sparks
+          speed: 0.10              # fraction-of-screen per second along the flow axis
+          size: [2, 6]
+          color: [accent, light]   # warm sparks + pale motes
+          lifespan: 7              # full fade-in→travel→fade-out cycle (s)
+          sway: 16                 # seeded lateral wobble (px)
+          sway_speed: 1.1
+          glow: true               # soft halo (good for sparks)
+          opacity: 0.9
+    camera: slow_push_in
+    duration: { seconds: 4 }
+    transition: { kind: fade, duration: 18 }
+
+  # g3 — FIRE. The void warms into a flickering flame with rising smoke. Fade in; hold intimate.
+  - id: g3
+    say: "A single flame, flickering with smoke."
+    show:
+      - generator: fire
+        as: hearth
+        args:
+          flames: 4                # layered tongues back(red)→front(yellow)
+          height: 300
+          width: 170
+          flicker_speed: 1.7       # silhouette wobble + sway + pulse (Hz)
+          flicker: 0.55
+          colors: [light, accent, "#f5641e", "#c01e1e"]  # core hot → edge cool
+          smoke: true
+          smoke_params:
+            puffs: 7
+            radius: 30
+            rise: 440
+            lifespan: 150          # looping period in frames
+            drift: 44
+            opacity: 0.26
+            color: bg2             # cool grey-blue smoke
+          glow: true
+          opacity: 1
+    camera: hold
+    duration: { seconds: 4 }
+    transition: { kind: fade, duration: 18 }
+
+  # g4 — CROWD. The flame opens onto a packed stadium of tiny bobbing creatures. Pull back, slide on.
+  - id: g4
+    say: "And a stadium, alive with a thousand tiny minds."
+    show:
+      - generator: crowd
+        as: stands
+        args:
+          count: 220               # a dense crowd (each = 2 cheap SVG nodes)
+          region: { x: 0, y: 520, w: 1920, h: 560 }  # the lower "stands" band
+          colors: [accent2, accent, bg2]   # mixed jerseys
+          head_colors: [light]     # pale heads read against the bodies
+          size: 18
+          size_jitter: 0.45        # crowd-depth variation
+          bob_amp: 5               # stadium "breathing"
+          bob_speed: 0.5
+          blink_speed: 0.35        # each blinks/squashes at its own phase
+          blink_amount: 0.3
+          distribution: grid
+          jitter: 0.55
+          opacity: 1
+    camera: slow_pull_out
+    duration: { seconds: 3 }
+    transition: { kind: slide, dir: left, duration: 18 }

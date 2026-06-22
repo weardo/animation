@@ -288,29 +288,31 @@ function buildBeadStringLayer(seed: number, pathUri: string): GeneratorLayer {
 }
 
 /**
- * A `scatter` GENERATOR layer (spec §10/§10.1: the Kurzgesagt "hundreds of tiny shapes" density —
- * starfields, dust, foliage, sparkle). It is a procedural ambience placed at LOW z (z=1) so it
- * composites BEHIND the bead-string (z=4) and the protagonist rig (z=10) but ABOVE the background
- * (z=0). The beat author supplies the look via the `show[].args` (motif/count/colors/anim/…),
- * passed straight through as the generator's free-form `params`; the lowering pass only assigns a
- * deterministic seed (derived from the story hash + beat id + handle) and the low z. This is how a
- * scatter gives each scene its own DISTINCT ambience (twinkling starfield vs drifting dust vs a
- * faint blob foliage band) without any change to the IR or compositor.
+ * A generic procedural GENERATOR layer (spec §10/§10.1) lowered from a `show[].generator` item —
+ * `scatter` (the Kurzgesagt "hundreds of tiny shapes" ambience), `water`, `particles`, `fire`,
+ * `crowd`, or any future registered generator EXCEPT `bead-string` (which has its own M1 builder).
+ * "Families are sockets; libraries are plugs": the lowering pass does NOT know any generator's
+ * params — it just forwards the authored `gen` name + the item's free-form `args` and assigns a
+ * deterministic seed (story hash + beat id + handle) and a LOW z so the field composites BEHIND the
+ * bead-string (z=4) and the protagonist rig (z=10) but ABOVE the background (z=0). Each generator's
+ * own Zod schema validates the params at render time (CLAUDE.md rule 5: params stay loose at the IR
+ * boundary). This is how each beat gets its own DISTINCT world (ocean / void / hearth / stadium)
+ * with NO IR or compositor change — the registry resolves `gen` → component on the render side.
  */
-function buildScatterLayer(
+function buildGeneratorLayer(
   id: string,
+  gen: string,
   seed: number,
   params: Record<string, unknown>
 ): GeneratorLayer {
   return {
     type: 'generator',
     id,
-    gen: 'scatter',
+    gen,
     // Low z: behind the neuron chain (z=4) and the character (z=10), above the background (z=0).
     z: 1,
     seed,
-    // Free-form, validated by the scatter generator's own Zod schema at render time (CLAUDE.md
-    // rule 5: params stay loose at the IR boundary). Empty args → the scatter's own defaults.
+    // Free-form, validated by the generator's own Zod schema at render time. Empty args → defaults.
     params,
   };
 }
@@ -430,17 +432,22 @@ function buildScene(
   // gets a distinct, deterministic seed (no cross-beat seed collisions, no wall-clock).
   const seed = deriveSeed(hash, `${beat.id}:L_neuron`);
 
-  // SCATTER ambience (spec §10/§10.1): a beat may declare one or more `show[].generator === 'scatter'`
-  // items, each becoming a low-z procedural ambience layer (starfield / dust / foliage). Its look
-  // comes from the item's free-form `args`; each gets a distinct deterministic seed keyed by its
-  // handle, and a stable layer id so re-renders are byte-identical. Distinct per beat → per-scene
-  // variety (the fix for "scenes look similar").
-  const scatterLayers: GeneratorLayer[] = (beat.show ?? [])
-    .filter((s) => s.generator === 'scatter')
+  // GENERATOR ambience (spec §10/§10.1): a beat may declare one or more `show[].generator` items
+  // (scatter / water / particles / fire / crowd / any registered generator EXCEPT `bead-string`,
+  // which has its own M1 builder above). Each becomes a low-z procedural layer whose look comes from
+  // the item's free-form `args`; each gets a distinct deterministic seed keyed by its name+handle and
+  // a stable layer id (`L_gen_<gen>_<handle>`) so re-renders are byte-identical. The authored
+  // `s.generator` flows straight through as the IR `gen` name — the registry resolves it to a
+  // component on the render side. Distinct per beat → per-scene variety (each beat its own world).
+  const generatorLayers: GeneratorLayer[] = (beat.show ?? [])
+    .filter((s): s is typeof s & { generator: string } =>
+      typeof s.generator === 'string' && s.generator !== 'bead-string'
+    )
     .map((s, i) => {
-      const handle = s.as ?? `scatter_${i}`;
-      const scatterSeed = deriveSeed(hash, `${beat.id}:scatter:${handle}`);
-      return buildScatterLayer(`L_scatter_${handle}`, scatterSeed, s.args ?? {});
+      const gen = s.generator;
+      const handle = s.as ?? `${gen}_${i}`;
+      const genSeed = deriveSeed(hash, `${beat.id}:${gen}:${handle}`);
+      return buildGeneratorLayer(`L_gen_${gen}_${handle}`, gen, genSeed, s.args ?? {});
     });
 
   // SHAPE layers (ADR-003 #1): every `show[].shape` item becomes a first-class Scene-IR shape layer
@@ -452,7 +459,7 @@ function buildScene(
 
   const layers: LoweredLayer[] = [
     buildBackgroundLayer(),
-    ...scatterLayers,
+    ...generatorLayers,
     ...(showsBeadString ? [buildBeadStringLayer(seed, beadPathUri)] : []),
     ...shapeLayers,
     buildRigLayer(rigDefKey, cfg.w, cfg.h, clipsForRig(rigRef, durationFrames)),

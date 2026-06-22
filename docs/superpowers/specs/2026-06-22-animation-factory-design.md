@@ -26,7 +26,7 @@ Same Scene IR ⇒ byte-identical video. Render with **`gl: 'angle'`** — proced
 
 ### Build status
 - **DONE:** pipeline (parse→lower→layout→camera→validate) · Remotion render · library + per-project lockfile · **Shading & Depth (§11.1)** · **multi-scene storytelling + transitions (§11.2, 2026-06-22)** · **`scatter` generator (§10/§10.1, 2026-06-22)** · **first-class `shape` layer — `@remotion/shapes` primitives + `flubber` path morph + `@remotion/paths` utilities, solid/linear/radial fills, stroke (§11, ADR-003 #1, 2026-06-22)** · procedural provider + **asset factory** + **projects** · determinism/disk fixes.
-- **NEXT (M2):** **content & animation vocabulary buildout (ADR-003), Tier-A-first** — ✅ `@remotion/shapes`+`@remotion/paths`+`flubber` morph (shape layer) · `effects[]` via SVG filters + motion blur · generators (✅ scatter; water/particles/crowd next) · `clip`/`environment` (§13.3) · `attach`/`parts` (§8.1) · text/typography (§11.3) · color-script (§11.4) · object/prop specs · data-viz.
+- **NEXT (M2):** **content & animation vocabulary buildout (ADR-003), Tier-A-first** — ✅ `@remotion/shapes`+`@remotion/paths`+`flubber` morph (shape layer) · `effects[]` via SVG filters + motion blur · generators (✅ scatter, water, particles, fire, crowd) · `clip`/`environment` (§13.3) · `attach`/`parts` (§8.1) · text/typography (§11.3) · color-script (§11.4) · object/prop specs · data-viz.
 - **LATER (M3):** audio + sound design (P4/P7) · LLM script-expander (P1) · smart layout (P6/P9) · `post[]` grade · AI asset-gen (P3).
 - **ADR follow-ups:** formalize `AssetProvider`/`LibraryResolver` TS interfaces · `factory bundle`/`list` · OTIO export.
 
@@ -317,7 +317,7 @@ A shared `StyleKit` module every scene draws from, so quality is a consistent, t
 
 A registry of **parametric generator components**: each is a small module that, given `params + seed + frame`, emits an animated sub-tree (elements + their procedural motion). Deterministic (seed+frame). Extensible: adding a generator = adding one module, no IR or pipeline changes.
 
-Initial set: ✅ `bead-string` (neurons/chains with traveling pulse + wavy bending + blobby wobble + optional gooey merge) · ✅ `scatter` (procedural density — starfields/dust/foliage/sparkle/crowds, §10.1) · `wave` (water surfaces), `particles` (dust/foam/bubbles/stars), `crowd` (fields of small characters) next. Later: `fire`, `smoke`, `clouds`, `energy`.
+Initial set: ✅ `bead-string` (neurons/chains with traveling pulse + wavy bending + blobby wobble + optional gooey merge) · ✅ `scatter` (procedural density — starfields/dust/foliage/sparkle/crowds, §10.1) · ✅ `water` (stacked translucent scrolling wave bands + foam) · ✅ `particles` (dust/foam/bubbles/stars — looping drift/rise/fall field) · ✅ `fire` (layered flickering flames + warm gradient + rising smoke) · ✅ `crowd` (fields of small head+body creatures with idle bob + blink-squash). Later: `smoke`, `clouds`, `energy`.
 
 **Reuse for generators:** `d3-shape` (smooth curves through moving points), `simplex-noise` (organic undulation), `blobshape` (organic blobs), SVG "gooey" filter (merge), `getPointAtLength`/`svg-path-properties` (placement along a path). Pulse propagation is one line: `phase = frame*speed − index*phase_step`.
 

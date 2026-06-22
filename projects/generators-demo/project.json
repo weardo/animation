@@ -1,0 +1,32 @@
+{
+  "project_version": "1.0",
+  "id": "generators-demo",
+  "name": "Generators",
+  "created": "2026-06-22T05:12:33.306Z",
+  "updated": "2026-06-22T05:31:35.264Z",
+  "config": {
+    "w": 1920,
+    "h": 1080,
+    "fps": 30,
+    "duration_frames": 366
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "ab52858bbfc80a8ec2e54c79fe6051c5d950bac3",
+  "engine": "remotion@4.0.481",
+  "deps": [
+    "bg_gradient@1.0.0",
+    "axon_curve@1.0.0",
+    "blip@1.0.0"
+  ],
+  "assets": [
+    "assets/bg_gradient.svg",
+    "assets/characters/blip/blip.spec.json",
+    "assets/characters/blip/blip.preview.png"
+  ],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  }
+}

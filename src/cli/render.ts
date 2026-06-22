@@ -15,11 +15,12 @@
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync } from 'node:fs';
 import { resolve as resolvePath, dirname, basename } from 'node:path';
+import { cpus } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
 import { bundle } from '@remotion/bundler';
-import { selectComposition, renderMedia } from '@remotion/renderer';
+import { selectComposition, renderMedia, renderStill } from '@remotion/renderer';
 import objectHash from 'object-hash';
 
 import { runPipeline, lowerStory, M1_REFS } from '../pipeline/index.js';
@@ -60,14 +61,17 @@ interface Args {
   target: string;
   id?: string | undefined;
   name?: string | undefined;
+  frames?: string | undefined;
 }
 function parseArgs(argv: string[]): Args {
   const positional = argv.filter((a) => !a.startsWith('-'));
   const flag = (n: string): string | undefined => {
     const i = argv.indexOf(n);
+    // bare "--frames" (no value, or followed by another flag) → "auto"
+    if (n === '--frames' && i >= 0 && (argv[i + 1] === undefined || argv[i + 1]!.startsWith('-'))) return 'auto';
     return i >= 0 ? argv[i + 1] : undefined;
   };
-  return { target: positional[0] ?? 'examples/character.yaml', id: flag('--project'), name: flag('--name') };
+  return { target: positional[0] ?? 'examples/character.yaml', id: flag('--project'), name: flag('--name'), frames: flag('--frames') };
 }
 
 /**
@@ -110,8 +114,14 @@ function vendorAssets(sceneIR: SceneIR, paths: ProjectPaths): string[] {
   return vendored;
 }
 
-/** Bundle + select + render a Scene IR to an mp4, serving assets from `publicDir`. */
-async function renderScene(sceneIR: SceneIR, videoOut: string, publicDir: string): Promise<{ frames: number; w: number; h: number; fps: number }> {
+// NO gl → CPU rasterization: procedural scenes use no WebGL. Hardware 'angle' (GPU raster) is
+// non-deterministic for blur/alpha-heavy SVG (particles/fire); software 'swiftshader' balloons the
+// disk; CPU raster is deterministic AND disk-safe. Shared by video + stills. (Verified 2026-06-22.)
+const CHROMIUM = {} as const;
+const DETERMINISM = { imageFormat: 'png', concurrency: Math.max(1, cpus().length - 2), chromiumOptions: CHROMIUM } as const;
+
+/** Bundle the project + select the composition for a Scene IR. Shared by video + stills. */
+async function prepare(sceneIR: SceneIR, publicDir: string) {
   const serveUrl = await bundle({
     entryPoint: REMOTION_ENTRY,
     publicDir,
@@ -125,24 +135,54 @@ async function renderScene(sceneIR: SceneIR, videoOut: string, publicDir: string
   });
   const inputProps = sceneIR as unknown as Record<string, unknown>;
   const composition = await selectComposition({ serveUrl, id: COMPOSITION_ID, inputProps });
-  console.log(`[render] ${composition.width}x${composition.height}@${composition.fps} (${composition.durationInFrames}f) → ${videoOut}`);
+  return { serveUrl, composition, inputProps };
+}
+
+/** Render the full Scene IR to an mp4. */
+async function renderScene(sceneIR: SceneIR, videoOut: string, publicDir: string): Promise<{ frames: number }> {
+  const { serveUrl, composition, inputProps } = await prepare(sceneIR, publicDir);
+  console.log(`[render] video ${composition.width}x${composition.height}@${composition.fps} (${composition.durationInFrames}f) → ${videoOut}`);
   await renderMedia({
     composition,
     serveUrl,
     codec: 'h264',
     outputLocation: videoOut,
     inputProps,
-    imageFormat: 'png',
-    concurrency: 1,
-    // gl:'angle' — procedural scenes are SVG/DOM-deterministic; software GL ('swiftshader') balloons
-    // Chromium CacheStorage to ~26GB and crashes (verified 2026-06-22). See DECISIONS.
-    chromiumOptions: { gl: 'angle' },
-    disallowParallelEncoding: true,
-    x264Preset: 'medium',
+    ...DETERMINISM,
+    disallowParallelEncoding: true, // single-pass encode → byte-identical mp4
+    x264Preset: 'faster',
     crf: 18,
     colorSpace: 'bt709',
   });
-  return { frames: composition.durationInFrames, w: composition.width, h: composition.height, fps: composition.fps };
+  return { frames: composition.durationInFrames };
+}
+
+/**
+ * FAST verification path: render a handful of STILL frames (PNG, no encode) instead of the full
+ * video. Verify correctness + determinism on frames in seconds; render the video only for final
+ * validation. Frames are byte-identical to the corresponding video frames (same scene IR + CPU raster).
+ */
+async function renderStills(sceneIR: SceneIR, framesDir: string, frameList: number[], publicDir: string): Promise<string[]> {
+  const { serveUrl, composition, inputProps } = await prepare(sceneIR, publicDir);
+  mkdirSync(framesDir, { recursive: true });
+  const out: string[] = [];
+  for (const frame of frameList) {
+    const f = Math.min(Math.max(0, frame), composition.durationInFrames - 1);
+    const output = resolvePath(framesDir, `frame-${String(f).padStart(4, '0')}.png`);
+    await renderStill({ composition, serveUrl, output, frame: f, inputProps, imageFormat: 'png', chromiumOptions: CHROMIUM });
+    out.push(output);
+  }
+  console.log(`[render] ${out.length} still(s) → ${framesDir}`);
+  return out;
+}
+
+/** Parse a --frames spec into frame numbers. "auto" = 5 evenly-spaced; else a comma list (a,b,c). */
+function parseFrames(spec: string, total: number): number[] {
+  if (spec === 'auto' || spec === '') {
+    const last = Math.max(0, total - 1);
+    return [0, Math.round(last * 0.25), Math.round(last * 0.5), Math.round(last * 0.75), last];
+  }
+  return spec.split(',').map((s) => parseInt(s.trim(), 10)).filter((n) => Number.isFinite(n));
 }
 
 /** Extract a poster frame from the rendered video (ffmpeg). Best-effort; non-fatal on failure. */
@@ -155,7 +195,7 @@ function makeThumbnail(p: ProjectPaths, frame: number): void {
 }
 
 async function main(): Promise<void> {
-  const { target, id: idFlag, name } = parseArgs(process.argv.slice(2));
+  const { target, id: idFlag, name, frames } = parseArgs(process.argv.slice(2));
 
   let paths: ProjectPaths;
   let sceneIR: SceneIR;
@@ -208,7 +248,17 @@ async function main(): Promise<void> {
     console.log(`[render] project written → projects/${id}/`);
   }
 
-  const meta = await renderScene(sceneIR, paths.video, resolvePath(paths.dir, 'assets'));
+  const publicDir = resolvePath(paths.dir, 'assets');
+
+  // FAST PATH: --frames renders stills only (verification), skipping the slow video encode.
+  if (frames !== undefined) {
+    const list = parseFrames(frames, sceneIR.config.duration_frames);
+    const out = await renderStills(sceneIR, resolvePath(paths.mediaDir, 'frames'), list, publicDir);
+    console.log(`[render] frames done → ${out.length} PNG(s) at ${list.join(',')}`);
+    return;
+  }
+
+  const meta = await renderScene(sceneIR, paths.video, publicDir);
   makeThumbnail(paths, Math.min(30, Math.max(0, meta.frames - 1)));
   console.log(`[render] done → ${paths.video}`);
 }

@@ -7,6 +7,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "render": "tsx src/cli/render.ts",
+    "frames": "tsx src/cli/render.ts",
     "build:blip": "tsx src/cli/render.ts examples/character.yaml --project blip-intro --name \"Meet Blip\"",
     "build:neuron": "tsx src/cli/render.ts examples/neuron.yaml --project neuron-demo --name \"Neuron\"",
     "factory:gen": "tsx src/cli/factory-gen.ts",
