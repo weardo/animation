@@ -78,7 +78,10 @@ export class Library {
       throw new Error(`ref ${r.key} is kind '${r.entry.kind}', expected 'rig'`);
     }
     if (!r.entry.uri) throw new Error(`rig entry ${r.key} has no uri`);
-    return { uri: r.entry.uri, kind: 'dragonbones' };
+    // The entry `format` selects the provider (ADR-001): 'procedural' (code-only shape character)
+    // or 'dragonbones' (vendor skeleton). Default to dragonbones for back-compat.
+    const fmt = r.entry.format === 'procedural' ? 'procedural' : 'dragonbones';
+    return { uri: r.entry.uri, kind: fmt };
   }
 
   /** Adapt a resolved asset entry to the Scene-IR `AssetDef` shape (src/ir). */

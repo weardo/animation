@@ -24,6 +24,7 @@ import React, { useMemo } from 'react';
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from 'remotion';
 import type { Defs, Easings, Layer, Scene as SceneIR } from '../ir/index.js';
 import { RigLayer } from '../rig/index.js';
+import { ProceduralRig } from './ProceduralRig.js';
 import { GeneratorLayer } from '../generators/index.js';
 import { AssetLayer } from './AssetLayer.js';
 import { evalNumber, evalVec2 } from './eval.js';
@@ -136,9 +137,16 @@ function renderSub(
       if (!rigDef) {
         throw new Error(`Scene IR: rig layer "${layer.id}" references unknown rig "${layer.ref}".`);
       }
+      // Provider dispatch (ADR-001): code-only procedural character vs vendor DragonBones skeleton.
+      const inner =
+        rigDef.kind === 'procedural' ? (
+          <ProceduralRig layer={layer} rigUri={rigDef.uri} easings={easings} />
+        ) : (
+          <RigLayer layer={layer} rigDef={rigDef} easings={easings} />
+        );
       return (
         <ParallaxWrapper offset={parallaxOffset} id={layer.id}>
-          <RigLayer layer={layer} rigDef={rigDef} easings={easings} />
+          {inner}
         </ParallaxWrapper>
       );
     }

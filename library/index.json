@@ -7,8 +7,8 @@
         "id": "blip",
         "version": "1.0.0",
         "kind": "rig",
-        "format": "dragonbones",
-        "uri": "rig://blip/blip.dbones.json",
+        "format": "procedural",
+        "uri": "proc://blip",
         "tags": ["m2", "character", "kurzgesagt", "flat-vector", "ffd"],
         "deps": [],
         "manifest": {

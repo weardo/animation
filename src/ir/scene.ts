@@ -48,11 +48,12 @@ export const AssetDefSchema = z
 export type AssetDef = z.infer<typeof AssetDefSchema>;
 export const AssetsSchema = z.record(AssetDefSchema);
 
-/** A rig definition (DragonBones JSON ref). */
+/** A rig definition. `kind` selects the provider that renders it (spec ADR-001): a vendor
+ *  DragonBones skeleton, or a code-only `procedural` character (shape-composition; no vendor mesh). */
 export const RigDefSchema = z
   .object({
     uri: z.string().min(1),
-    kind: z.literal('dragonbones'),
+    kind: z.enum(['dragonbones', 'procedural']),
   })
   .strict();
 export type RigDef = z.infer<typeof RigDefSchema>;
