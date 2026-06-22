@@ -1,0 +1,97 @@
+# examples/scatter-story.yaml — a 3-scene story whose ONLY structural difference between scenes is a
+# distinct procedural SCATTER ambience (spec §10/§10.1). It exists to prove that the `scatter`
+# generator fixes "scenes look similar": same protagonist (the procedural `blip` character) + same
+# bead-string neuron, but each scene gets its OWN ambient field of "hundreds of tiny shapes" placed
+# at LOW z (behind the character/neuron), so the three beats read as three different worlds.
+#
+# THE THREE AMBIENCES (one scatter per beat, authored as semantic `args` only — no frames/coords):
+#   s1  TWINKLING STARFIELD  motif=star, sparse, anim=twinkle + glow      → a calm night sky
+#   s2  DRIFTING DUST        motif=dot,  denser, anim=drift               → motes adrift in light
+#   s3  FAINT BLOB FOLIAGE   motif=blob, low opacity, gentle pulse        → a soft cloud/leaf band
+#
+# HOW IT WIRES (no IR/pipeline change beyond the scatter lowering): each beat's `show[]` lists a
+# `generator: scatter` item with `as:` (a handle → deterministic seed + stable layer id) and `args:`
+# (the scatter's free-form params, validated by the generator's own Zod schema at render time). The
+# lowering pass emits one low-z (z=1) generator layer per scatter item, so it composites BEHIND the
+# bead-string (z=4) and the `blip` rig (z=10) but ABOVE the gradient background (z=0). Colors are
+# palette TOKENS (light/accent/accent2/bg2) resolved against `defs.palette`. Transitions cross-fade
+# between scenes so the ambience visibly MORPHS from sky → dust → foliage.
+#
+# Build it (compiles + vendors assets + renders one continuous mp4):
+#   tsx src/cli/render.ts examples/scatter-story.yaml --project scatter-demo --name "Scatter Demo"
+
+title: "Scatter Demo"
+
+characters:
+  blip:
+    rig: blip
+    palette: warm
+
+beats:
+  # s1 — STARFIELD. Blip under a calm, sparse, twinkling night sky. No inbound transition (first scene).
+  - id: s1
+    say: "A quiet night, full of stars."
+    show:
+      - generator: bead-string
+        as: neuron_chain
+      - generator: scatter
+        as: starfield
+        args:
+          motif: star
+          count: 140              # sparse — a calm sky, not a blizzard
+          size: [2, 7]
+          colors: [light, accent] # off-white + a few warm sparks
+          distribution: random    # uniform scatter reads as a natural star field
+          anim: twinkle           # per-star opacity pulses, each out of phase
+          anim_speed: 0.4
+          glow: true              # soft halo on the brighter stars
+          opacity: 0.9
+    camera: establishing
+    duration: { seconds: 3 }
+
+  # s2 — DUST. The same scene, but now denser motes drift through the light. Fade from the starfield.
+  - id: s2
+    say: "Motes of dust drift through the light."
+    show:
+      - generator: bead-string
+        as: neuron_chain
+      - generator: scatter
+        as: dust
+        args:
+          motif: dot
+          count: 420              # denser than the stars — a fine haze
+          size: [1.5, 4]
+          colors: [light, bg2]    # pale motes + cool mid-tone, low contrast
+          distribution: grid      # jittered grid → even, believable haze coverage
+          jitter: 0.85
+          anim: drift             # slow Lissajous wander per mote
+          anim_speed: 0.25
+          drift_amount: 9
+          opacity: 0.55
+    camera: slow_push_in
+    duration: { seconds: 4 }
+    transition: { kind: fade, duration: 18 }
+
+  # s3 — FOLIAGE. A faint band of soft blobs (a cloud / leaf canopy) gently pulsing. Fade in.
+  - id: s3
+    say: "And a soft canopy breathes overhead."
+    show:
+      - generator: bead-string
+        as: neuron_chain
+      - generator: scatter
+        as: foliage
+        args:
+          motif: blob
+          region: { x: 0, y: 0, w: 1920, h: 420 }  # a band across the TOP of the frame
+          count: 90
+          size: [22, 60]          # large, soft blobs (a canopy, not specks)
+          colors: [accent2, bg2]  # cool foliage tones
+          distribution: grid
+          jitter: 0.7
+          blobbiness: 0.6         # organic, leaf/cloud-like edges
+          anim: pulse             # the canopy gently breathes
+          anim_speed: 0.18
+          opacity: 0.35           # faint — it's ambience, behind everything
+    camera: slow_pull_out
+    duration: { seconds: 3 }
+    transition: { kind: fade, duration: 18 }

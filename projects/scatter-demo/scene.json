@@ -1,0 +1,637 @@
+{
+  "scene_ir_version": "1.0",
+  "config": {
+    "w": 1920,
+    "h": 1080,
+    "fps": 30,
+    "duration_frames": 264
+  },
+  "defs": {
+    "palette": {
+      "bg": "#1b2a4a",
+      "bg2": "#24386b",
+      "accent": "#ffcf4d",
+      "accent2": "#4d9fff",
+      "ink": "#0d1b33",
+      "light": "#fff6e0",
+      "shadow": "#0a1326"
+    },
+    "easings": {
+      "smooth": [
+        0.4,
+        0,
+        0.2,
+        1
+      ],
+      "pop": "backOut",
+      "backOut": [
+        0.34,
+        1.56,
+        0.64,
+        1
+      ],
+      "anticipate": [
+        0.36,
+        0,
+        0.66,
+        -0.56
+      ],
+      "easeIn": [
+        0.4,
+        0,
+        1,
+        1
+      ],
+      "easeOut": [
+        0,
+        0,
+        0.2,
+        1
+      ],
+      "linear": [
+        0,
+        0,
+        1,
+        1
+      ]
+    },
+    "assets": {
+      "bg_gradient": {
+        "uri": "asset://bg_gradient.svg",
+        "kind": "svg"
+      }
+    },
+    "rigs": {
+      "narrator": {
+        "uri": "proc://blip",
+        "kind": "procedural",
+        "spec": {
+          "id": "blip",
+          "name": "Blip",
+          "palette": {
+            "body": "#4aa3ff",
+            "bodyDark": "#2f86e0",
+            "ink": "#16243f",
+            "belly": "#d6ecff",
+            "accent": "#ffce4a",
+            "white": "#ffffff",
+            "cheek": "#ff7eb0"
+          },
+          "head": {
+            "r": 66,
+            "cy": -66
+          },
+          "body": {
+            "rx": 70,
+            "ry": 68,
+            "cy": 28
+          },
+          "belly": {
+            "rx": 42,
+            "ry": 36,
+            "cy": 48
+          },
+          "eyes": {
+            "spacing": 26,
+            "cy": -74,
+            "r": 17,
+            "pupil": 8
+          },
+          "beak": {
+            "show": true,
+            "width": 24,
+            "depth": 16,
+            "cy": -50
+          },
+          "cheeks": {
+            "show": true,
+            "r": 9,
+            "spacing": 46,
+            "cy": -50
+          },
+          "arms": {
+            "width": 18,
+            "length": 66,
+            "shoulderY": 6,
+            "rest": 14
+          },
+          "legs": {
+            "width": 20,
+            "height": 40,
+            "spacing": 24,
+            "footRx": 23,
+            "footRy": 12,
+            "footCy": 120
+          },
+          "motion": {
+            "bob": 5,
+            "swayDeg": 1.6,
+            "breathe": 0.03,
+            "waveRaise": 150
+          }
+        }
+      }
+    }
+  },
+  "audio": [],
+  "scenes": [
+    {
+      "id": "s1",
+      "at": 0,
+      "duration_frames": 90,
+      "labels": {
+        "reveal": 45
+      },
+      "camera": {
+        "position": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": [
+                0,
+                -20
+              ],
+              "e": "smooth"
+            },
+            {
+              "t": 90,
+              "s": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        "zoom": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": 0.92,
+              "e": "smooth"
+            },
+            {
+              "t": 90,
+              "s": 1
+            }
+          ]
+        }
+      },
+      "layers": [
+        {
+          "type": "asset",
+          "id": "L_bg",
+          "z": 0,
+          "ref": "bg_gradient",
+          "parallax": 0.2
+        },
+        {
+          "type": "generator",
+          "id": "L_scatter_starfield",
+          "z": 1,
+          "gen": "scatter",
+          "seed": 1228963173,
+          "params": {
+            "motif": "star",
+            "count": 140,
+            "size": [
+              2,
+              7
+            ],
+            "colors": [
+              "light",
+              "accent"
+            ],
+            "distribution": "random",
+            "anim": "twinkle",
+            "anim_speed": 0.4,
+            "glow": true,
+            "opacity": 0.9
+          }
+        },
+        {
+          "type": "generator",
+          "id": "L_neuron",
+          "z": 4,
+          "gen": "bead-string",
+          "seed": 461796813,
+          "path": "asset://axon_curve.svg#path",
+          "params": {
+            "beads": 9,
+            "bead_radius": 14,
+            "blobbiness": 0.35,
+            "pulse": {
+              "amp": 0.25,
+              "speed": 1.4,
+              "phase_step": 0.6
+            },
+            "wave": {
+              "amp": 10,
+              "speed": 0.8
+            },
+            "gooey": true,
+            "fill": "accent",
+            "glow": true
+          }
+        },
+        {
+          "type": "rig",
+          "id": "L_narr",
+          "z": 10,
+          "ref": "narrator",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                960,
+                669.6
+              ]
+            },
+            "scale": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "pop"
+                },
+                {
+                  "t": 12,
+                  "s": 100
+                }
+              ]
+            },
+            "opacity": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "pop"
+                },
+                {
+                  "t": 12,
+                  "s": 100
+                }
+              ]
+            }
+          },
+          "rig_state": {
+            "clips": [
+              {
+                "anim": "idle",
+                "loop": true
+              },
+              {
+                "anim": "wave",
+                "loop": false,
+                "at": 36
+              },
+              {
+                "anim": "idle",
+                "loop": true,
+                "at": 84
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "at": 72,
+      "duration_frames": 120,
+      "labels": {
+        "reveal": 60
+      },
+      "camera": {
+        "position": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": [
+                0,
+                0
+              ],
+              "e": "smooth"
+            },
+            {
+              "t": 120,
+              "s": [
+                60,
+                0
+              ]
+            }
+          ]
+        },
+        "zoom": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": 1,
+              "e": "smooth"
+            },
+            {
+              "t": 120,
+              "s": 1.15
+            }
+          ]
+        }
+      },
+      "layers": [
+        {
+          "type": "asset",
+          "id": "L_bg",
+          "z": 0,
+          "ref": "bg_gradient",
+          "parallax": 0.2
+        },
+        {
+          "type": "generator",
+          "id": "L_scatter_dust",
+          "z": 1,
+          "gen": "scatter",
+          "seed": 1216520444,
+          "params": {
+            "motif": "dot",
+            "count": 420,
+            "size": [
+              1.5,
+              4
+            ],
+            "colors": [
+              "light",
+              "bg2"
+            ],
+            "distribution": "grid",
+            "jitter": 0.85,
+            "anim": "drift",
+            "anim_speed": 0.25,
+            "drift_amount": 9,
+            "opacity": 0.55
+          }
+        },
+        {
+          "type": "generator",
+          "id": "L_neuron",
+          "z": 4,
+          "gen": "bead-string",
+          "seed": 447689661,
+          "path": "asset://axon_curve.svg#path",
+          "params": {
+            "beads": 9,
+            "bead_radius": 14,
+            "blobbiness": 0.35,
+            "pulse": {
+              "amp": 0.25,
+              "speed": 1.4,
+              "phase_step": 0.6
+            },
+            "wave": {
+              "amp": 10,
+              "speed": 0.8
+            },
+            "gooey": true,
+            "fill": "accent",
+            "glow": true
+          }
+        },
+        {
+          "type": "rig",
+          "id": "L_narr",
+          "z": 10,
+          "ref": "narrator",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                960,
+                669.6
+              ]
+            },
+            "scale": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "pop"
+                },
+                {
+                  "t": 12,
+                  "s": 100
+                }
+              ]
+            },
+            "opacity": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "pop"
+                },
+                {
+                  "t": 12,
+                  "s": 100
+                }
+              ]
+            }
+          },
+          "rig_state": {
+            "clips": [
+              {
+                "anim": "idle",
+                "loop": true
+              },
+              {
+                "anim": "wave",
+                "loop": false,
+                "at": 48
+              },
+              {
+                "anim": "idle",
+                "loop": true,
+                "at": 96
+              }
+            ]
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 18
+      }
+    },
+    {
+      "id": "s3",
+      "at": 174,
+      "duration_frames": 90,
+      "labels": {
+        "reveal": 45
+      },
+      "camera": {
+        "position": {
+          "a": 0,
+          "k": [
+            0,
+            0
+          ]
+        },
+        "zoom": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": 1.15,
+              "e": "smooth"
+            },
+            {
+              "t": 90,
+              "s": 1
+            }
+          ]
+        }
+      },
+      "layers": [
+        {
+          "type": "asset",
+          "id": "L_bg",
+          "z": 0,
+          "ref": "bg_gradient",
+          "parallax": 0.2
+        },
+        {
+          "type": "generator",
+          "id": "L_scatter_foliage",
+          "z": 1,
+          "gen": "scatter",
+          "seed": 1990778838,
+          "params": {
+            "motif": "blob",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "w": 1920,
+              "h": 420
+            },
+            "count": 90,
+            "size": [
+              22,
+              60
+            ],
+            "colors": [
+              "accent2",
+              "bg2"
+            ],
+            "distribution": "grid",
+            "jitter": 0.7,
+            "blobbiness": 0.6,
+            "anim": "pulse",
+            "anim_speed": 0.18,
+            "opacity": 0.35
+          }
+        },
+        {
+          "type": "generator",
+          "id": "L_neuron",
+          "z": 4,
+          "gen": "bead-string",
+          "seed": 666223732,
+          "path": "asset://axon_curve.svg#path",
+          "params": {
+            "beads": 9,
+            "bead_radius": 14,
+            "blobbiness": 0.35,
+            "pulse": {
+              "amp": 0.25,
+              "speed": 1.4,
+              "phase_step": 0.6
+            },
+            "wave": {
+              "amp": 10,
+              "speed": 0.8
+            },
+            "gooey": true,
+            "fill": "accent",
+            "glow": true
+          }
+        },
+        {
+          "type": "rig",
+          "id": "L_narr",
+          "z": 10,
+          "ref": "narrator",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                960,
+                669.6
+              ]
+            },
+            "scale": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "pop"
+                },
+                {
+                  "t": 12,
+                  "s": 100
+                }
+              ]
+            },
+            "opacity": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "pop"
+                },
+                {
+                  "t": 12,
+                  "s": 100
+                }
+              ]
+            }
+          },
+          "rig_state": {
+            "clips": [
+              {
+                "anim": "idle",
+                "loop": true
+              },
+              {
+                "anim": "wave",
+                "loop": false,
+                "at": 36
+              },
+              {
+                "anim": "idle",
+                "loop": true,
+                "at": 84
+              }
+            ]
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 18
+      }
+    }
+  ],
+  "provenance": {
+    "story_ir_hash": "sha1:383d2a96e3c146e04d33b2ba90af8fc8bacad3ab",
+    "passes": [
+      "lower@1.0"
+    ]
+  }
+}

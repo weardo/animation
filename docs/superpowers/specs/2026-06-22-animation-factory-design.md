@@ -25,8 +25,8 @@ Rig/character layers dispatch by provider `kind`: **`procedural` (PRIMARY)** —
 Same Scene IR ⇒ byte-identical video. Render with **`gl: 'angle'`** — procedural scenes are SVG/DOM-deterministic (the GL backend doesn't affect them). **DO NOT use software GL** (`'swiftshader'`/`'swangle'`): it balloons Chromium CacheStorage to ~26GB and crashes (DECISIONS 2026-06-22). Software GL was only ever needed for WebGL/DragonBones FFD determinism — another reason procedural is primary.
 
 ### Build status
-- **DONE:** pipeline (parse→lower→layout→camera→validate) · Remotion render · library + per-project lockfile · **Shading & Depth (§11.1)** · **multi-scene storytelling + transitions (§11.2, 2026-06-22)** · procedural provider + **asset factory** + **projects** · determinism/disk fixes.
-- **NEXT (M2):** **content & animation vocabulary buildout (ADR-003), Tier-A-first** — `@remotion/shapes`+`@remotion/paths` · `effects[]` via SVG filters + motion blur · generators (scatter/water/particles/crowd) · `clip`/`environment` (§13.3) · `attach`/`parts` (§8.1) · text/typography (§11.3) · color-script (§11.4) · object/prop specs · data-viz.
+- **DONE:** pipeline (parse→lower→layout→camera→validate) · Remotion render · library + per-project lockfile · **Shading & Depth (§11.1)** · **multi-scene storytelling + transitions (§11.2, 2026-06-22)** · **`scatter` generator (§10/§10.1, 2026-06-22)** · procedural provider + **asset factory** + **projects** · determinism/disk fixes.
+- **NEXT (M2):** **content & animation vocabulary buildout (ADR-003), Tier-A-first** — `@remotion/shapes`+`@remotion/paths` · `effects[]` via SVG filters + motion blur · generators (✅ scatter; water/particles/crowd next) · `clip`/`environment` (§13.3) · `attach`/`parts` (§8.1) · text/typography (§11.3) · color-script (§11.4) · object/prop specs · data-viz.
 - **LATER (M3):** audio + sound design (P4/P7) · LLM script-expander (P1) · smart layout (P6/P9) · `post[]` grade · AI asset-gen (P3).
 - **ADR follow-ups:** formalize `AssetProvider`/`LibraryResolver` TS interfaces · `factory bundle`/`list` · OTIO export.
 
@@ -317,7 +317,7 @@ A shared `StyleKit` module every scene draws from, so quality is a consistent, t
 
 A registry of **parametric generator components**: each is a small module that, given `params + seed + frame`, emits an animated sub-tree (elements + their procedural motion). Deterministic (seed+frame). Extensible: adding a generator = adding one module, no IR or pipeline changes.
 
-Initial set: `wave` (water surfaces), `bead-string` (neurons/chains with traveling pulse + wavy bending + blobby wobble + optional gooey merge), `particles` (dust/foam/bubbles/stars), `crowd` (fields of small characters). Later: `fire`, `smoke`, `clouds`, `energy`.
+Initial set: ✅ `bead-string` (neurons/chains with traveling pulse + wavy bending + blobby wobble + optional gooey merge) · ✅ `scatter` (procedural density — starfields/dust/foliage/sparkle/crowds, §10.1) · `wave` (water surfaces), `particles` (dust/foam/bubbles/stars), `crowd` (fields of small characters) next. Later: `fire`, `smoke`, `clouds`, `energy`.
 
 **Reuse for generators:** `d3-shape` (smooth curves through moving points), `simplex-noise` (organic undulation), `blobshape` (organic blobs), SVG "gooey" filter (merge), `getPointAtLength`/`svg-path-properties` (placement along a path). Pulse propagation is one line: `phase = frame*speed − index*phase_step`.
 
@@ -328,7 +328,7 @@ Initial set: `wave` (water surfaces), `bead-string` (neurons/chains with traveli
 Kurzgesagt objects are densely detailed — many tiny shapes (craters, spots, foliage, sparkle, grain) per object. This is supported two ways, and is primarily a **render-budget** concern, not an art one.
 
 - **Authored detail:** an asset SVG or a rig part texture may contain arbitrarily many shapes (it is just art). Use SVG `<symbol>` + `<use>` for repeated motifs to keep markup small.
-- **Procedural detail:** a **`scatter` generator** distributes N small shapes over a region/path/surface with seeded variation (count, size/rotation jitter, palette color, optional per-element twinkle/drift). Reuse `poisson-disc-sampling` for even distribution; deterministic from `seed`.
+- **Procedural detail (✅ built):** the **`scatter` generator** distributes N small shapes over a region with seeded variation — motif (`dot`/`star`/`blob`), per-element size/color/rotation/phase, distribution (jittered even `grid` or seeded `random`), and per-element `twinkle`/`drift`/`pulse` driven by `frame + phase`. Even coverage via a near-square jittered grid (poisson-disc-like); deterministic from `seed`. Enforces the shape budget below (clamp + `console.warn`, no silent truncation).
 
 **Detail × performance strategy (laptop-honest, deterministic):**
 
@@ -340,7 +340,7 @@ Kurzgesagt objects are densely detailed — many tiny shapes (craters, spots, fo
 | surface-bound (spots on a deforming creature) | **bake into the rig part texture** → deforms with FFD automatically | avoids animating thousands of shapes on a moving mesh |
 | any | a per-scene **shape budget**, with a logged warning when exceeded (no silent truncation) | matches the "no silent caps" rule; keeps laptop render times bounded |
 
-Status: **M2 + ongoing performance concern.** Authored multi-shape assets work from day one; the `scatter` generator, baking, and Pixi instancing land in M2. Determinism holds (seeded scatter, content-hashed bakes).
+Status: **`scatter` generator DONE (2026-06-22)**; baking + Pixi `ParticleContainer` instancing are the remaining ongoing performance work. Authored multi-shape assets work from day one. Determinism holds (seeded scatter — verified byte-identical across two cold renders; content-hashed bakes to come). Shape budget = 2000 elements/layer (`SCATTER_SHAPE_BUDGET`), clamped + warned.
 
 ---
 

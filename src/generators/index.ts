@@ -2,12 +2,14 @@
 // emitting an animated SVG sub-tree, driven by Remotion's useCurrentFrame. Deterministic; adding a
 // generator = one registered module, no IR/pipeline changes. See spec §10 and the add-generator skill.
 //
-// M1 ships `bead-string` (neuron chain: travelling pulse + wavy bending + blobby beads + glow/goo).
+// M1 ships `bead-string` (neuron chain: travelling pulse + wavy bending + blobby beads + glow/goo);
+// M2 adds `scatter` (procedural density: starfields/dust/foliage/sparkle/crowds, §10.1 shape budget).
 // Reuse: d3-shape (smooth curves), simplex-noise (organic motion), seeded mulberry32 RNG.
 
 // Public component entry points.
 export { GeneratorLayer, type GeneratorLayerProps } from './GeneratorLayer.js';
 export { BeadString, renderBeadString } from './bead-string.js';
+export { Scatter, renderScatter } from './scatter.js';
 
 // Registry (how the compositor resolves `gen` → component; how to add more).
 export {
@@ -26,6 +28,10 @@ export {
   type BeadStringParams,
   PulseParamsSchema,
   WaveParamsSchema,
+  ScatterParamsSchema,
+  type ScatterParams,
+  ScatterRegionSchema,
+  SCATTER_SHAPE_BUDGET,
 } from './types.js';
 
 // Geometry helpers (reusable by future path-following generators).

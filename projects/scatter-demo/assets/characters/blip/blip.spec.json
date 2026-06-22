@@ -1,0 +1,65 @@
+{
+  "id": "blip",
+  "name": "Blip",
+  "palette": {
+    "body": "#4aa3ff",
+    "bodyDark": "#2f86e0",
+    "ink": "#16243f",
+    "belly": "#d6ecff",
+    "accent": "#ffce4a",
+    "white": "#ffffff",
+    "cheek": "#ff7eb0"
+  },
+  "head": {
+    "r": 66,
+    "cy": -66
+  },
+  "body": {
+    "rx": 70,
+    "ry": 68,
+    "cy": 28
+  },
+  "belly": {
+    "rx": 42,
+    "ry": 36,
+    "cy": 48
+  },
+  "eyes": {
+    "spacing": 26,
+    "cy": -74,
+    "r": 17,
+    "pupil": 8
+  },
+  "beak": {
+    "show": true,
+    "width": 24,
+    "depth": 16,
+    "cy": -50
+  },
+  "cheeks": {
+    "show": true,
+    "r": 9,
+    "spacing": 46,
+    "cy": -50
+  },
+  "arms": {
+    "width": 18,
+    "length": 66,
+    "shoulderY": 6,
+    "rest": 14
+  },
+  "legs": {
+    "width": 20,
+    "height": 40,
+    "spacing": 24,
+    "footRx": 23,
+    "footRy": 12,
+    "footCy": 120
+  },
+  "motion": {
+    "bob": 5,
+    "swayDeg": 1.6,
+    "breathe": 0.03,
+    "waveRaise": 150
+  }
+}

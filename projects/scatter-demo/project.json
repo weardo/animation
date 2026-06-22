@@ -1,0 +1,33 @@
+{
+  "project_version": "1.0",
+  "id": "scatter-demo",
+  "name": "Scatter Demo",
+  "created": "2026-06-22T04:26:49.237Z",
+  "updated": "2026-06-22T04:26:49.237Z",
+  "config": {
+    "w": 1920,
+    "h": 1080,
+    "fps": 30,
+    "duration_frames": 264
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "291d5adb4c4889a6cd801173d47366afb140352c",
+  "engine": "remotion@4.0.481",
+  "deps": [
+    "bg_gradient@1.0.0",
+    "axon_curve@1.0.0",
+    "blip@1.0.0"
+  ],
+  "assets": [
+    "assets/bg_gradient.svg",
+    "assets/axon_curve.svg",
+    "assets/characters/blip/blip.spec.json",
+    "assets/characters/blip/blip.preview.png"
+  ],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  }
+}

@@ -286,6 +286,34 @@ function buildBeadStringLayer(seed: number, pathUri: string): GeneratorLayer {
 }
 
 /**
+ * A `scatter` GENERATOR layer (spec §10/§10.1: the Kurzgesagt "hundreds of tiny shapes" density —
+ * starfields, dust, foliage, sparkle). It is a procedural ambience placed at LOW z (z=1) so it
+ * composites BEHIND the bead-string (z=4) and the protagonist rig (z=10) but ABOVE the background
+ * (z=0). The beat author supplies the look via the `show[].args` (motif/count/colors/anim/…),
+ * passed straight through as the generator's free-form `params`; the lowering pass only assigns a
+ * deterministic seed (derived from the story hash + beat id + handle) and the low z. This is how a
+ * scatter gives each scene its own DISTINCT ambience (twinkling starfield vs drifting dust vs a
+ * faint blob foliage band) without any change to the IR or compositor.
+ */
+function buildScatterLayer(
+  id: string,
+  seed: number,
+  params: Record<string, unknown>
+): GeneratorLayer {
+  return {
+    type: 'generator',
+    id,
+    gen: 'scatter',
+    // Low z: behind the neuron chain (z=4) and the character (z=10), above the background (z=0).
+    z: 1,
+    seed,
+    // Free-form, validated by the scatter generator's own Zod schema at render time (CLAUDE.md
+    // rule 5: params stay loose at the IR boundary). Empty args → the scatter's own defaults.
+    params,
+  };
+}
+
+/**
  * The DragonBones RIG layer with an idle clip (spec §15: identity-stable character). A StyleKit
  * "pop" entrance (scale + opacity overshoot) makes the character appear with life (spec §9); the
  * idle clip loops so even a static shot feels alive. Centered, ground-anchored position.
@@ -350,8 +378,23 @@ function buildScene(
   // Seed is derived from the story hash + the beat id + the layer handle, so every beat's generator
   // gets a distinct, deterministic seed (no cross-beat seed collisions, no wall-clock).
   const seed = deriveSeed(hash, `${beat.id}:L_neuron`);
+
+  // SCATTER ambience (spec §10/§10.1): a beat may declare one or more `show[].generator === 'scatter'`
+  // items, each becoming a low-z procedural ambience layer (starfield / dust / foliage). Its look
+  // comes from the item's free-form `args`; each gets a distinct deterministic seed keyed by its
+  // handle, and a stable layer id so re-renders are byte-identical. Distinct per beat → per-scene
+  // variety (the fix for "scenes look similar").
+  const scatterLayers: GeneratorLayer[] = (beat.show ?? [])
+    .filter((s) => s.generator === 'scatter')
+    .map((s, i) => {
+      const handle = s.as ?? `scatter_${i}`;
+      const scatterSeed = deriveSeed(hash, `${beat.id}:scatter:${handle}`);
+      return buildScatterLayer(`L_scatter_${handle}`, scatterSeed, s.args ?? {});
+    });
+
   const layers: Layer[] = [
     buildBackgroundLayer(),
+    ...scatterLayers,
     ...(showsBeadString ? [buildBeadStringLayer(seed, beadPathUri)] : []),
     buildRigLayer(rigDefKey, cfg.w, cfg.h, clipsForRig(rigRef, durationFrames)),
   ];
