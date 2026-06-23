@@ -21,6 +21,42 @@ import { PostSchema } from './scene.js';
 const PaletteRefSchema = z.string().min(1);
 
 /**
+ * An OPTIONAL voice/tone authoring surface for narration (the swappable TTS abstraction, src/cli/
+ * narrate.ts). EVERY field is optional + back-compat: a plain string `say` with NO voice still uses
+ * the DEFAULT_ENGINE/DEFAULT_VOICE. A `voice` may be declared on a `cast` entry (the actor's standing
+ * voice) and/or overridden per beat (`beat.voice` + the shorthand `beat.tone`); the lowering/narrate
+ * pass resolves the effective voice = beat override ?? cast voice ?? engine defaults and folds it into
+ * the content-addressed cache key, so any change re-synthesizes (golden rule 1: the cached wav is the
+ * deterministic record). The fields map 1:1 onto a {@link NarrateRequest}:
+ *   • `engine` — the TTS engine id (espeak-ng / coqui / kokoro / chatterbox / parler). Loosely typed
+ *     here (a string) so the Story IR does not couple to the engine union in src/cli; the narrate pass
+ *     validates it against the real engine list (an unknown engine falls back to the default).
+ *   • `voice`  — an engine voice id (an espeak-ng voice, a Coqui/Kokoro speaker, …).
+ *   • `tone`   — a free-form tone DESCRIPTION / label (parler's conditioning prompt: "warm, gentle,
+ *     empathetic"); other engines ignore it but it still folds into the cache key.
+ *   • `exaggeration` / `cfg` — numeric engine params (chatterbox expressiveness / guidance), carried
+ *     into the NarrateRequest `style` map.
+ *   • `wpm`    — pacing (words-per-minute; espeak-ng).
+ */
+export const VoiceSchema = z
+  .object({
+    /** TTS engine id (espeak-ng/coqui/kokoro/chatterbox/parler). Loosely typed; narrate pass validates. */
+    engine: z.string().min(1).optional(),
+    /** Engine voice id (espeak-ng voice / Coqui or Kokoro speaker). */
+    voice: z.string().min(1).optional(),
+    /** Free-form tone description / label (parler conditioning prompt; folds into the cache key). */
+    tone: z.string().min(1).optional(),
+    /** Chatterbox expressiveness (0..~1+). Carried into the NarrateRequest `style`. */
+    exaggeration: z.number().optional(),
+    /** Chatterbox classifier-free-guidance weight. Carried into the NarrateRequest `style`. */
+    cfg: z.number().optional(),
+    /** Words-per-minute pacing (espeak-ng). */
+    wpm: z.number().positive().optional(),
+  })
+  .strict();
+export type Voice = z.infer<typeof VoiceSchema>;
+
+/**
  * A CAST entry: a named, reusable reference an actor/subject in the story binds to. Generic by
  * design (ADR-007) — `ref` is a library `name@version` (resolved to a content hash by P2) and the
  * optional `provider` names which provider plugin interprets it (e.g. a skeletal-rig provider, a
@@ -35,6 +71,13 @@ export const CastEntrySchema = z
     provider: z.string().min(1).optional(),
     /** Optional palette intent (token name). */
     palette: PaletteRefSchema.optional(),
+    /**
+     * Optional NARRATION VOICE for this cast member — the actor's standing voice/tone used when a beat
+     * narrated for/by this actor has no per-beat override. All fields optional + back-compat (a string
+     * `say` with no voice anywhere still uses the engine defaults). The narrate pass resolves the
+     * effective voice = beat override ?? cast voice ?? defaults. (See {@link VoiceSchema}.)
+     */
+    voice: VoiceSchema.optional(),
   })
   .strict();
 export type CastEntry = z.infer<typeof CastEntrySchema>;
@@ -233,8 +276,20 @@ export type BeatSfx = z.infer<typeof BeatSfxSchema>;
 export const BeatSchema = z
   .object({
     id: z.string().min(1),
-    /** Narration line. Drives the (later) TTS pass; pure intent in M1. */
+    /** Narration line. Drives the TTS pass (synthesized OFFLINE → a cached, content-addressed wav). */
     say: z.string().optional(),
+    /**
+     * Optional per-beat VOICE OVERRIDE for this beat's `say` (the most specific voice authoring level).
+     * Overrides the speaking cast member's standing `cast[].voice`, which overrides the engine defaults.
+     * All fields optional + back-compat. (See {@link VoiceSchema}.)
+     */
+    voice: VoiceSchema.optional(),
+    /**
+     * Shorthand for a per-beat TONE override — `tone: "warm, gentle"` is sugar for `voice: { tone: … }`.
+     * Merged into the resolved voice (an explicit `voice.tone` wins if both are set). Lets a beat tweak
+     * just the delivery without restating the whole voice block. (See {@link VoiceSchema}.)
+     */
+    tone: z.string().min(1).optional(),
     /**
      * Beat-level SOUND-EFFECT cues (A2): accents anchored at event frames within the beat (a swoosh, an
      * impact). A bare string is shorthand for `{ name, at: 0 }` (fire at the beat opening). Each lowers

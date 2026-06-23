@@ -14,7 +14,7 @@
 
 import { resolve as resolvePath } from 'node:path';
 
-import type { SceneIR, AudioCue, CaptionCue, StoryIR } from '../ir/index.js';
+import type { SceneIR, AudioCue, CaptionCue, StoryIR, Beat, Voice } from '../ir/index.js';
 import {
   synthNarration,
   type NarrateEngine,
@@ -23,6 +23,56 @@ import {
   DEFAULT_WPM,
   type NarrateRequest,
 } from './narrate.js';
+
+/** The TTS engine ids the narrate pass accepts; an authored `voice.engine` outside this set is ignored. */
+const KNOWN_ENGINES: ReadonlySet<NarrateEngine> = new Set<NarrateEngine>([
+  'espeak-ng', 'coqui', 'kokoro', 'chatterbox', 'parler',
+]);
+
+/**
+ * This pass's id + version — folded into provenance + the determinism story. Adding the optional
+ * voice/tone authoring surface (cast[].voice + beat.voice/tone → a per-beat NarrateRequest carrying
+ * engine+voice+tone+style) changes how a beat's narration is synthesized, so bump it (cache-
+ * invalidation rule). The wav cache key already incorporates the full NarrateRequest (engine/voice/
+ * wpm/tone/style), so a voice change re-synthesizes a fresh wav regardless; this version pins the
+ * pass behavior in provenance.
+ */
+export const PASS_ID = 'narrate';
+export const PASS_VERSION = '1.1';
+
+/**
+ * Resolve the EFFECTIVE voice for one beat's narration: the per-beat override ?? the speaking cast
+ * member's standing `cast[].voice` ?? (the caller's CLI/engine defaults, applied below). Returns a
+ * partial {@link Voice} (only the authored fields); unset fields fall through to the run defaults.
+ *
+ * SPEAKER: a beat has no explicit "speaker" field (the front-end is generic), so the cast voice is
+ * taken from the FIRST `show[].actor` the beat brings on screen (the conventional on-screen narrator);
+ * a beat with no actor uses only its own override (or the defaults). The per-beat `voice` block plus
+ * the `tone` shorthand are merged over the cast voice (beat wins; an explicit `voice.tone` beats the
+ * `tone` shorthand). Pure: a function of the story + beat. No wall-clock, no RNG.
+ */
+function resolveBeatVoice(beat: Beat, story: StoryIR): Voice {
+  // Cast voice: the first on-screen actor's standing voice (generic — no domain speaker field).
+  const speaker = (beat.show ?? []).find((s) => s.actor)?.actor;
+  const castVoice: Voice = (speaker && story.cast[speaker]?.voice) || {};
+  // Per-beat override block + the `tone` shorthand (explicit voice.tone wins over the shorthand).
+  const beatVoice: Voice = { ...(beat.voice ?? {}) };
+  if (beat.tone !== undefined && beatVoice.tone === undefined) beatVoice.tone = beat.tone;
+  // Merge: beat fields override cast fields (only defined keys override, so unset falls through).
+  const merged: Voice = { ...castVoice };
+  for (const [k, v] of Object.entries(beatVoice)) {
+    if (v !== undefined) (merged as Record<string, unknown>)[k] = v;
+  }
+  return merged;
+}
+
+/** Build the NarrateRequest `style` map (chatterbox params) from a resolved voice; undefined if empty. */
+function styleFromVoice(v: Voice): Record<string, number> | undefined {
+  const style: Record<string, number> = {};
+  if (typeof v.exaggeration === 'number') style['exaggeration'] = v.exaggeration;
+  if (typeof v.cfg === 'number') style['cfg'] = v.cfg;
+  return Object.keys(style).length > 0 ? style : undefined;
+}
 
 export interface NarrateOptions {
   /** TTS engine (default espeak-ng). Coqui falls back to espeak-ng if its venv is missing. */
@@ -56,9 +106,9 @@ export interface NarrateOptions {
  * are skipped. Returns the SAME IR object with `audio` replaced (existing non-narration cues kept).
  */
 export function applyNarration(sceneIR: SceneIR, story: StoryIR, opts: NarrateOptions): SceneIR {
-  const engine = opts.engine ?? DEFAULT_ENGINE;
-  const voice = opts.voice ?? DEFAULT_VOICE[engine];
-  const wpm = opts.wpm ?? DEFAULT_WPM;
+  // Run-level DEFAULTS (CLI flags). A beat/cast voice overrides these per beat (resolveBeatVoice).
+  const defaultEngine = opts.engine ?? DEFAULT_ENGINE;
+  const defaultWpm = opts.wpm ?? DEFAULT_WPM;
   const fps = sceneIR.config.fps;
   const audioDir = resolvePath(opts.assetsDir, 'audio');
 
@@ -81,7 +131,27 @@ export function applyNarration(sceneIR: SceneIR, story: StoryIR, opts: NarrateOp
     const at = sceneAt.get(beat.id);
     if (at === undefined) continue; // beat produced no scene (nothing renderable) — no place to anchor
 
-    const req: NarrateRequest = { text: say, engine, voice, wpm };
+    // Resolve the EFFECTIVE voice for this beat: per-beat override ?? cast voice ?? run defaults.
+    const v = resolveBeatVoice(beat, story);
+    const engine: NarrateEngine =
+      v.engine && KNOWN_ENGINES.has(v.engine as NarrateEngine)
+        ? (v.engine as NarrateEngine)
+        : defaultEngine;
+    // Voice id: an authored voice id, else the run default voice (only meaningful when the run default
+    // engine is used; per engine the DEFAULT_VOICE label keeps the cache key stable).
+    const voice = v.voice ?? opts.voice ?? DEFAULT_VOICE[engine];
+    const wpm = typeof v.wpm === 'number' ? v.wpm : defaultWpm;
+    const tone = v.tone;
+    const style = styleFromVoice(v);
+
+    const req: NarrateRequest = {
+      text: say,
+      engine,
+      voice,
+      wpm,
+      ...(tone !== undefined ? { tone } : {}),
+      ...(style !== undefined ? { style } : {}),
+    };
     const res = synthNarration(req, audioDir, opts.rootDir);
     if (res.cached) cachedCount += 1;
     else synthCount += 1;
@@ -119,7 +189,8 @@ export function applyNarration(sceneIR: SceneIR, story: StoryIR, opts: NarrateOp
   captions.sort((a, b) => a.at - b.at || a.id.localeCompare(b.id));
 
   console.log(
-    `[narrate] engine=${engine} voice="${voice}" → ${cues.filter((c) => c.kind === 'narration').length} narration cue(s) ` +
+    `[narrate] default engine=${defaultEngine} (per-beat voice/tone overrides honored) → ` +
+      `${cues.filter((c) => c.kind === 'narration').length} narration cue(s) ` +
       `(${synthCount} synthesized, ${cachedCount} cached)` +
       (wantCaptions ? ` + ${captions.length} caption(s) [${captionMode}]` : ' (captions off)') +
       ` → ${audioDir}`,

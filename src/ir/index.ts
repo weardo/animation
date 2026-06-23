@@ -31,6 +31,7 @@ export type {
 export {
   StoryIRSchema,
   CastEntrySchema,
+  VoiceSchema,
   BeatSchema,
   ShowItemSchema,
   ActionItemSchema,
@@ -45,6 +46,7 @@ export {
 export type {
   StoryIR,
   CastEntry,
+  Voice,
   Beat,
   ShowItem,
   ActionItem,
