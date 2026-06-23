@@ -1,0 +1,51 @@
+# c0016 — Kurzgesagt-style frame: a bird, a forked plant, a caterpillar on a leaf.
+# ONE portable project. Objects are PROJECT-LOCAL RIGS (clip defs in rigs/*.clip.yaml), referenced
+# here with `clip: <name>`. COMPOSITION ONLY: stage each instance with an explicit pixel position + z.
+# style: plain (flat-shape look). Static, NO audio. The ONLY blurred element is the bokeh background.
+title: "c0016 — bird, plant, caterpillar"
+style: plain
+format:
+  aspect: "16:9"
+beats:
+  - id: scene
+    duration: { seconds: 3 }
+    camera: hold
+    show:
+      # 1. BOKEH BACKGROUND — dark desaturated-green fill + soft light-green blobs, heavily blurred.
+      - shape: rect
+        as: bg_base
+        args:
+          z: 0
+          position: [960, 540]
+          params: { width: 1920, height: 1080 }
+          fill: { a: 0, k: "#0f2e22" }
+      - generator: scatter
+        as: bokeh
+        args:
+          z: 1
+          count: 20
+          motif: blob
+          blobbiness: 0.5
+          size: [150, 360]
+          colors: ["#2f7d4f", "#3f9d5f", "#256b43", "#1f6b44"]
+          distribution: random
+          opacity: 0.5
+          glow: true
+          region: { x: 0, y: 0, w: 1920, h: 1080 }
+          effects:
+            - { kind: blur, radius: 46 }
+
+      # 2. BIRD — right, facing left, big head filling the right edge, mid depth.
+      - clip: bird
+        as: bird
+        args: { z: 10, position: [1640, 520], scale: 115 }
+
+      # 3. PLANT — lower-left/centre forked branch, near depth.
+      - clip: plant
+        as: plant
+        args: { z: 20, position: [560, 720], scale: 115 }
+
+      # 4. CATERPILLAR — perched on the plant's upper (perch) leaf, front depth.
+      - clip: caterpillar
+        as: caterpillar
+        args: { z: 30, position: [660, 470] }

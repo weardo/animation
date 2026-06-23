@@ -1,0 +1,24 @@
+{
+  "project_version": "1.0",
+  "id": "c0016",
+  "name": "c0016",
+  "created": "2026-06-23T15:55:51.247Z",
+  "updated": "2026-06-23T15:55:51.247Z",
+  "config": {
+    "w": 1920,
+    "h": 1080,
+    "fps": 30,
+    "duration_frames": 90
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "db4f65b448c4fa727b92d0f939bc9b05668abe6a",
+  "engine": "remotion@4.0.481",
+  "deps": [],
+  "assets": [],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  }
+}

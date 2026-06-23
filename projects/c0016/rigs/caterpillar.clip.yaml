@@ -1,0 +1,104 @@
+# caterpillar — a row of flat rounded segment circles (alternating bright green / teal) trailing
+# down-right, a flat RED head (left), stacked-circle eyes, and blue antennae. Flat, NO stroke.
+# Rig-local coords: head at the left, body curls down toward the right. Faces LEFT.
+duration_frames: 90
+params:
+  segments: { type: number, default: 6 }     # documented layout hook (static here)
+  crawl: { type: number, default: 0 }        # future: body-undulation phase hook
+  palette: { type: color, default: "#46b85a" } # the lead body green
+layers:
+  # body segments — trailing back to the right, alternating greens, slightly shrinking
+  - type: shape
+    id: seg6
+    z: 1
+    shape: { kind: circle, radius: 22 }
+    fill: { a: 0, k: "#1f7a55" }
+    transform: { position: { a: 0, k: [120, 70] } }
+  - type: shape
+    id: seg5
+    z: 1
+    shape: { kind: circle, radius: 24 }
+    fill: { a: 0, k: "#2f9a52" }
+    transform: { position: { a: 0, k: [96, 50] } }
+  - type: shape
+    id: seg4
+    z: 2
+    shape: { kind: circle, radius: 25 }
+    fill: { a: 0, k: "#1f8f5a" }
+    transform: { position: { a: 0, k: [70, 30] } }
+  - type: shape
+    id: seg3
+    z: 2
+    shape: { kind: circle, radius: 26 }
+    fill: { a: 0, k: { $param: palette } }
+    transform: { position: { a: 0, k: [44, 14] } }
+  - type: shape
+    id: seg2
+    z: 3
+    shape: { kind: circle, radius: 27 }
+    fill: { a: 0, k: "#2f9a52" }
+    transform: { position: { a: 0, k: [18, 4] } }
+  - type: shape
+    id: seg1
+    z: 3
+    shape: { kind: circle, radius: 28 }
+    fill: { a: 0, k: { $param: palette } }
+    transform: { position: { a: 0, k: [-8, -2] } }
+  # head — red, at the left, slightly larger
+  - type: shape
+    id: head
+    z: 4
+    shape: { kind: circle, radius: 31 }
+    fill: { a: 0, k: "#d8352e" }
+    transform: { position: { a: 0, k: [-44, -8] } }
+  # eyes — two stacked-circle eyes on the head (pale sclera + dark pupil)
+  - type: shape
+    id: eyeL_sclera
+    z: 5
+    shape: { kind: circle, radius: 11 }
+    fill: { a: 0, k: "#fbe7c6" }
+    transform: { position: { a: 0, k: [-56, -12] } }
+  - type: shape
+    id: eyeL_pupil
+    z: 6
+    shape: { kind: circle, radius: 5 }
+    fill: { a: 0, k: "#15233f" }
+    transform: { position: { a: 0, k: [-59, -12] } }
+  - type: shape
+    id: eyeR_sclera
+    z: 5
+    shape: { kind: circle, radius: 10 }
+    fill: { a: 0, k: "#fbe7c6" }
+    transform: { position: { a: 0, k: [-36, -14] } }
+  - type: shape
+    id: eyeR_pupil
+    z: 6
+    shape: { kind: circle, radius: 4.5 }
+    fill: { a: 0, k: "#15233f" }
+    transform: { position: { a: 0, k: [-38, -14] } }
+  # antennae — two thin blue stalks rising from the head
+  - type: shape
+    id: ant_l
+    z: 4
+    morph: { a: 0, k: "M -8 0 L -16 -34 L -8 -36 L 0 -2 Z" }
+    fill: { a: 0, k: "#3b4ea8" }
+    transform: { position: { a: 0, k: [-52, -34] } }
+  - type: shape
+    id: ant_r
+    z: 4
+    morph: { a: 0, k: "M 6 0 L 12 -36 L 20 -34 L 14 -2 Z" }
+    fill: { a: 0, k: "#5566c8" }
+    transform: { position: { a: 0, k: [-40, -36] } }
+  # antenna tips (little dots)
+  - type: shape
+    id: ant_l_tip
+    z: 5
+    shape: { kind: circle, radius: 5 }
+    fill: { a: 0, k: "#5566c8" }
+    transform: { position: { a: 0, k: [-66, -70] } }
+  - type: shape
+    id: ant_r_tip
+    z: 5
+    shape: { kind: circle, radius: 5 }
+    fill: { a: 0, k: "#3b4ea8" }
+    transform: { position: { a: 0, k: [-26, -72] } }

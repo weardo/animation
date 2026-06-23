@@ -1,0 +1,29 @@
+# leaf — a single flat-shape leaf: a base green almond + a yellow-green LIT half on a diagonal.
+# Two flats; volume comes from the diagonal split (color contrast), NO gradient, NO stroke.
+# Authored in rig-local coords (origin = the leaf centre). Params are the future animation hooks.
+duration_frames: 90
+params:
+  size: { type: number, default: 100 }       # uniform scale (percent) of the whole leaf
+  tilt: { type: number, default: 0 }         # rotation (deg) of the whole leaf
+  tone: { type: color, default: "#2fae3e" }  # the base green
+layers:
+  # base — full almond leaf shape (rounded both ends)
+  - type: shape
+    id: base
+    z: 1
+    morph: { a: 0, k: "M -120 30 C -85 -62 95 -68 132 -26 C 96 64 -86 78 -120 30 Z" }
+    fill: { a: 0, k: { $param: tone } }
+    transform:
+      position: { a: 0, k: [0, 0] }
+      scale: { a: 0, k: { $param: size } }
+      rotation: { a: 0, k: { $param: tilt } }
+  # lit half — the lower-right diagonal facet, brighter yellow-green
+  - type: shape
+    id: lit
+    z: 2
+    morph: { a: 0, k: "M -120 30 L 132 -26 C 96 64 -86 78 -120 30 Z" }
+    fill: { a: 0, k: "#a7e052" }
+    transform:
+      position: { a: 0, k: [0, 0] }
+      scale: { a: 0, k: { $param: size } }
+      rotation: { a: 0, k: { $param: tilt } }
