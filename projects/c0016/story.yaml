@@ -38,7 +38,7 @@ beats:
       # 2. BIRD — right, facing left, big head filling the right edge, CROPPED by right+bottom, mid depth.
       - clip: bird
         as: bird
-        args: { z: 10, position: [1640, 500], scale: 110 }
+        args: { z: 10, position: [1380, 610], scale: 135 }
 
       # 3. PLANT — bottom-centre-left forked branch, near depth.
       - clip: plant
