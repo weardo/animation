@@ -15,7 +15,7 @@
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync, rmSync } from 'node:fs';
 import { resolve as resolvePath, dirname, basename } from 'node:path';
-import { cpus } from 'node:os';
+import { cpus, freemem } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
@@ -321,9 +321,15 @@ function vendorAssets(sceneIR: SceneIR, paths: ProjectPaths): string[] {
 // visually lossless). Opt into GPU with --gpu for speed/previews; verify those perceptually (SSIM/
 // PSNR via tools/perceptual-diff.mjs), not byte-exact. NEVER software GL (swiftshader → disk balloon).
 const chromiumOpts = (gpu: boolean) => (gpu ? { gl: 'angle' as const } : {});
+// RAM-AWARE concurrency. Each headless-Chrome render worker needs ~1.3 GB (more for blur/alpha-heavy
+// SVG); `cpu-2` alone is RAM-blind, so on a memory-constrained box it spawns too many workers and Chrome
+// OOM-crashes mid-render ("Target closed" / "browser crashed while rendering frame N, retrying"). Cap the
+// default by BOTH cores (`cpu-2`) and free memory (~1.3 GB/worker, min 1) so renders stay stable here.
+// `RENDER_CONCURRENCY` overrides explicitly (e.g. on a fat machine). See DECISIONS 2026-06-23.
+const PER_WORKER_BYTES = 1.3 * 1024 * 1024 * 1024;
 const CONCURRENCY = process.env['RENDER_CONCURRENCY']
   ? Math.max(1, Number(process.env['RENDER_CONCURRENCY']))
-  : Math.max(1, cpus().length - 2);
+  : Math.max(1, Math.min(cpus().length - 2, Math.floor(freemem() / PER_WORKER_BYTES)));
 
 /**
  * Bundle the project + select the composition for a Scene IR. Shared by video + stills.

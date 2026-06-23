@@ -305,3 +305,19 @@ The `kurzgesagt-nature` stylekit DATA tunes these toward the reference (deep pur
 **HONEST failures / env-gated (none faked):** the pre-exported OpenVINO SD models FAILED to load on this box (a transformers `CLIPFeatureExtractor` mismatch). imagegen handles this per golden rule 1 by synthesizing a DETERMINISTIC placeholder PNG and recording "placeholder (.venv-sd unavailable)" in the asset provenance — the build NEVER fails — so the M9 MECHANISM is complete and verified, but REAL generations remain gated on pinning transformers in `.venv-sd` (or re-exporting a base/turbo SD with `optimum export=True`). Likewise `gl:"angle"` (the iGPU) is the only non-byte-exact path and is gated OFF by default. No item is faked as passing.
 **Lessons / standing rules:** (1) **A provider-specific signal rides a GENERIC opaque channel, not a new core field** — lip-sync is a `mouth: {open[], viseme[]}` array the core blindly carries and the provider interprets, so other providers ignore it and "character mouth" never leaks into the engine. (2) **The LLM is made deterministic exactly like TTS** — shell to `claude -p` ONCE, validate + content-address-cache the EMITTED DATA, replay forever; an unavailable/bad LLM falls back to a pure local impl so the build never depends on the network. (3) **Whisper/alignment is the TTS pattern again** — run ONCE offline into a content-addressed cache, replay the FIXED JSON → byte-identical though the engine isn't bit-exact; ALWAYS ship the even-split fallback so a missing venv never fails the build. (4) **The non-byte-exact GPU tier must be DOUBLE-GATED** (build-time DefinePlugin LOAD gate + runtime real-WebGL self-gate) and verified with VMAF, so the byte-exact CPU default literally cannot load it. (5) **When an installed toolchain genuinely cannot run, ship the MECHANISM + a deterministic placeholder and REPORT it honestly** — never fake a generation; the cache makes the placeholder swappable for the real artifact the moment the env is fixed.
 **Remaining after this batch (deferred, NOT roadmap tail):** the ADR-001 `LibraryResolver` REMOTE variant · a specified bundle/export format · real generated SD assets (pending the `.venv-sd` model fix) · whisper-PRECISION caption page-grouping · a full script→IR LLM front-end (the M5 LLM seam is its spine).
+
+## 2026-06-23 — Render concurrency is RAM-aware (fixes the headless-Chrome OOM crash)
+
+**Symptom:** full-video renders intermittently failed with Remotion "Target closed" / "browser crashed
+while rendering frame N, retrying" — most often on blur/alpha-heavy scenes. NOT a determinism or disk
+issue (that was the gl→CPU-raster decision); a stability one.
+
+**Cause:** `CONCURRENCY = cpu-2` (this box: 16 cores → 14 headless-Chrome render workers), but only ~3-4 GB
+RAM free. ~14 Chrome renderers × ~1 GB each ⇒ OOM ⇒ Chrome crashes mid-render. The setting was RAM-blind.
+
+**Fix (`src/cli/render.ts`):** cap the default concurrency by BOTH cores and FREE MEMORY —
+`min(cpu-2, floor(freemem / 1.3 GB))`, min 1 — so workers fit available RAM (this box: 14 → 2).
+`RENDER_CONCURRENCY=N` still overrides explicitly. Note: only full-video `renderMedia` uses concurrency;
+`--frames auto` stills are single-frame (`renderStill`) and were never the crash path. `/dev/shm` is 7.7 G
+here, so `--disable-dev-shm-usage` was NOT the issue. Lower concurrency also reduces RAM thrashing, so
+renders are faster + more reliable on a constrained box.

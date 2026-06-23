@@ -75,5 +75,5 @@ it for the flat-shape style.)
 - **Determinism:** render with NO gl backend (CPU raster); stills byte-identical across two cold processes.
   Verify FAST on stills (`render <proj> --frames auto`, ~14s) before the slow full video.
 - **A static scene build needs NO audio** — don't add narration / `say`.
-- **The box may crash the headless browser mid-render intermittently** — just re-run `--frames auto`.
+- **Render-crash ("Target closed" / "browser crashed while rendering frame N"):** Chrome OOM from too many render workers. Render concurrency is now RAM-AWARE (caps workers to free-RAM / ~1.3 GB, min 1) — set `RENDER_CONCURRENCY=N` to override. Stills (`--frames auto`) are single-frame (unaffected); full-video `renderMedia` was the crash-prone path. If it still crashes, free RAM or lower `RENDER_CONCURRENCY`.
 - Verify before claiming done → `verify-render`. After a milestone → `refine-standard`.
