@@ -1,11 +1,11 @@
 ---
 name: new-library-entry
-description: Use when adding any reusable unit to the factory library — an asset, rig, preset (composed character/object), clip (nested animation), scene-template/environment, or generator preset. Enforces content-addressing, semver, the index.json catalog, manifests, and lockfile discipline.
+description: Use when PUBLISHING a reusable unit to the SHARED library for cross-project sharing/import (an asset, rig, preset, clip, scene-template/environment, or generator preset). This is the OPT-IN public-sharing path (npm-package layer) — NOT for project-internal reuse, which stays inside the project and never touches the library (CLAUDE.md golden rule 6). Enforces content-addressing, semver, the index.json catalog, manifests, and lockfile discipline.
 ---
 
-# Add a Library Entry
+# Add a Library Entry (the SHARED / published layer)
 
-The library is the factory's compounding asset. It must **grow without ever changing past videos**.
+The library is the factory's compounding **shared** asset — the OPT-IN, cross-project PUBLISH/IMPORT layer (`library : project :: npm package : app`). Use it ONLY when deliberately sharing a unit so OTHER projects can import it. A project's OWN reusable units (defined once, reused across its scenes, never leaving it — the After-Effects precomp/asset model) are PROJECT-LOCAL and do NOT belong here. The library must **grow without ever changing past videos**.
 
 ## Kinds
 
