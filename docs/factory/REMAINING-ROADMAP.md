@@ -4,10 +4,13 @@
 landed 2026-06-23: ✅ M7a interfaces · ✅ M7b icons · ✅ M7c maps · ✅ M8a post[] grade; ✅ M8b paint
 follow-ons (Batch B).** **Batches B/C landed 2026-06-23: ✅ M4a whisper word-sync captions · ✅ M4b
 lip-sync visemes · ✅ M5 director (heuristic + `claude -p` LLM seam) · ✅ M6 Tier-B GPU (perceptual
-VMAF tier) · ✅ M9 AI asset-gen (OpenVINO SD, cached).** Remaining (deliberately deferred, NOT on the
-"cover all of it" tail): the ADR-001 `LibraryResolver` REMOTE variant + a specified bundle/export
-format. Sequenced to run AFTER the painting-style workflow (`wag7nnvs2`) landed — two workflows editing
-the render core + `library/index.json` concurrently would collide.
+VMAF tier) · ✅ M9 AI asset-gen (OpenVINO SD, cached).** **Final deferred items also DONE (2026-06-23):
+✅ the ADR-001 `LibraryResolver` REMOTE variant (`factory:publish-library`/`factory:fetch-library` — a
+per-file-sha256-verified byte-identical local mirror the unchanged `Library` resolves) · ✅ a specified
+bundle/export format (`docs/factory/BUNDLE-FORMAT.md`: `.afbundle/` + OTIO + library `files.json`).**
+NOTHING REMAINS on the roadmap — the whole arc (architecture ADR-001→009, the ADR-003 vocabulary, the
+audio MVP, and the full "cover all of it" tail) is built + verified. A remote registry SERVICE (vs the
+offline publish/fetch mirror) is the only conceivable future drop-in, and the interface already allows it.
 
 This is the full tail after the architecture (ADR-001→008), the ADR-003 vocabulary (#1–10), ADR-004,
 and the audio MVP. Every item obeys the golden rules: determinism (CPU byte-exact OR offline-cached

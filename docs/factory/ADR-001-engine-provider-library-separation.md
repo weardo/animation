@@ -119,4 +119,9 @@ These are deliberate so a future public/community service needs no re-architecti
 
 - Fold this into the main spec (a new "Engine / Provider / Library separation" section) and add a CLAUDE.md golden rule ("source-agnostic engine; providers behind the `AssetProvider` interface; library/registry is a separate concern").
 - ~~Define `AssetProvider` + `LibraryResolver` as real TS interfaces in `src/` and migrate the two existing sources behind them.~~ **DONE (M7a):** `LibraryResolver` + the library-side `AssetRefResolver` are formal interfaces in `src/library/interfaces.ts`; `Library implements` both (no behavior change). The render-time provider half (`instantiate`/`render`/`dispose`) is already migrated behind the plugin `providers` registry per ADR-005/006/007.
-- Specify the bundle/export format and the `LibraryResolver` remote variant.
+- ~~Specify the bundle/export format and the `LibraryResolver` remote variant.~~ **DONE (2026-06-23):**
+  formats specified in `docs/factory/BUNDLE-FORMAT.md` (`.afbundle/` project bundle + OTIO export + the
+  library `files.json`). The remote variant is realized as **`factory:publish-library` →
+  `factory:fetch-library`** (a per-file-sha256-verified, byte-identical local mirror the UNCHANGED `Library`
+  resolves) — the engine never changes, only the library's location. A remote registry SERVICE implementing
+  `LibraryResolver` directly remains a clean future drop-in.

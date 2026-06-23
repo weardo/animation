@@ -16,6 +16,8 @@
     "factory:imagegen": "tsx src/cli/imagegen.ts",
     "factory:bundle": "tsx src/cli/factory-bundle.ts",
     "factory:list": "tsx src/cli/factory-list.ts",
+    "factory:publish-library": "tsx src/cli/publish-library.ts",
+    "factory:fetch-library": "tsx src/cli/fetch-library.ts",
     "export:otio": "tsx src/cli/export-otio.ts",
     "compare": "node tools/perceptual-diff.mjs",
     "studio": "remotion studio render-entry.tsx"
