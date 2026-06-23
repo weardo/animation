@@ -37,8 +37,9 @@ A code-driven, Kurzgesagt-style 2.5D animation pipeline: **a story script in →
 ## How we work (process)
 
 - **New capability** → `superpowers:brainstorming` → spec → `writing-plans` or a `Workflow`. Don't implement before design is approved.
+- **Build/author/organize a SCENE or project** (compose objects, place + animate them, the file roles, the two reuse levels, the four separated concerns, the flat-shape look) → `.claude/skills/building-scenes`. **Read this before creating or editing a project's content.**
 - **Add a generator** → `.claude/skills/add-generator`.
-- **Add any reusable unit** → `.claude/skills/new-library-entry`.
+- **Publish/share a reusable unit to the library** (opt-in, cross-project) → `.claude/skills/new-library-entry`.
 - **Before claiming a render works** → `.claude/skills/verify-render`.
 - **After any workflow/milestone** → `.claude/skills/refine-standard` (folds learnings back into this standard).
 
