@@ -129,11 +129,238 @@
             "breathe": 0.03,
             "waveRaise": 150
           }
+        },
+        "mounts": {
+          "head_top": {
+            "bone": "head"
+          },
+          "handR": {
+            "bone": "armR"
+          },
+          "handL": {
+            "bone": "armL"
+          }
         }
+      }
+    },
+    "clips": {},
+    "stylekit": {
+      "easings": {
+        "linear": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "smooth": [
+          0.4,
+          0,
+          0.2,
+          1
+        ],
+        "easeOut": [
+          0,
+          0,
+          0.2,
+          1
+        ],
+        "easeIn": [
+          0.4,
+          0,
+          1,
+          1
+        ],
+        "snappy": [
+          0.25,
+          0.1,
+          0.25,
+          1
+        ],
+        "anticipate": [
+          0.36,
+          0,
+          0.66,
+          -0.56
+        ],
+        "backOut": [
+          0.34,
+          1.56,
+          0.64,
+          1
+        ],
+        "backInOut": [
+          0.68,
+          -0.6,
+          0.32,
+          1.6
+        ],
+        "expoOut": [
+          0.16,
+          1,
+          0.3,
+          1
+        ]
+      },
+      "defaultEasings": {
+        "smooth": [
+          0.4,
+          0,
+          0.2,
+          1
+        ],
+        "pop": "backOut",
+        "backOut": [
+          0.34,
+          1.56,
+          0.64,
+          1
+        ],
+        "anticipate": [
+          0.36,
+          0,
+          0.66,
+          -0.56
+        ],
+        "easeIn": [
+          0.4,
+          0,
+          1,
+          1
+        ],
+        "easeOut": [
+          0,
+          0,
+          0.2,
+          1
+        ],
+        "linear": [
+          0,
+          0,
+          1,
+          1
+        ]
+      },
+      "palette": {
+        "bg": "#1b2a4a",
+        "bg2": "#24386b",
+        "accent": "#ffcf4d",
+        "accent2": "#4d9fff",
+        "ink": "#0d1b33",
+        "light": "#fff6e0",
+        "shadow": "#0a1326"
+      },
+      "motion": {
+        "spring": {
+          "stiffness": 180,
+          "damping": 14,
+          "mass": 1
+        },
+        "springHeavy": {
+          "stiffness": 120,
+          "damping": 20,
+          "mass": 1.4
+        },
+        "springBouncy": {
+          "stiffness": 220,
+          "damping": 10,
+          "mass": 1
+        },
+        "idle": {
+          "swayAmplitudeDeg": 1.5,
+          "swaySpeedHz": 0.15,
+          "driftAmplitudePx": 2,
+          "driftSpeedHz": 0.1,
+          "saccadeAmplitudeDeg": 3,
+          "saccadeMeanSeconds": 1.8
+        },
+        "breathing": {
+          "amplitude": 0.02,
+          "periodSeconds": 4
+        },
+        "blink": {
+          "rateHz": 0.25,
+          "closeFrames": 4
+        },
+        "stagger": {
+          "offsetFrames": 6
+        },
+        "parallax": {
+          "nearFactor": 1,
+          "farFactor": 0.1
+        },
+        "motionBlurShutter": 180
+      },
+      "light": {
+        "dir": 295,
+        "elevation": 60,
+        "color": "#fff6e0",
+        "intensity": 0.85,
+        "ambient": 0.38
+      },
+      "shading": {
+        "form": true,
+        "contact_shadow": true,
+        "rim": 0.3,
+        "ao": true,
+        "glow": 0
+      },
+      "floor": {
+        "liveness": true,
+        "parallax": true,
+        "shading": true,
+        "nonLinearMotion": true
       }
     }
   },
-  "audio": [],
+  "audio": [
+    {
+      "id": "narration-s1",
+      "kind": "narration",
+      "src": "audio://audio/98891a98ec59a235.wav",
+      "at": 0,
+      "duration_frames": 59,
+      "transcript": "A quiet night, full of stars."
+    },
+    {
+      "id": "narration-s2",
+      "kind": "narration",
+      "src": "audio://audio/c6a73020309900ef.wav",
+      "at": 72,
+      "duration_frames": 62,
+      "transcript": "Motes of dust drift through the light."
+    },
+    {
+      "id": "narration-s3",
+      "kind": "narration",
+      "src": "audio://audio/aaf883a3e8e9afa5.wav",
+      "at": 174,
+      "duration_frames": 61,
+      "transcript": "And a soft canopy breathes overhead."
+    }
+  ],
+  "captions": [
+    {
+      "id": "caption-s1",
+      "text": "A quiet night, full of stars.",
+      "at": 0,
+      "duration_frames": 59,
+      "mode": "line"
+    },
+    {
+      "id": "caption-s2",
+      "text": "Motes of dust drift through the light.",
+      "at": 72,
+      "duration_frames": 62,
+      "mode": "line"
+    },
+    {
+      "id": "caption-s3",
+      "text": "And a soft canopy breathes overhead.",
+      "at": 174,
+      "duration_frames": 61,
+      "mode": "line"
+    }
+  ],
   "scenes": [
     {
       "id": "s1",
@@ -188,18 +415,10 @@
         },
         {
           "type": "generator",
-          "id": "L_gen_bead-string_neuron_chain",
-          "z": 1,
-          "gen": "bead-string",
-          "seed": 2069769983,
-          "params": {}
-        },
-        {
-          "type": "generator",
           "id": "L_gen_scatter_starfield",
           "z": 1,
           "gen": "scatter",
-          "seed": 596147612,
+          "seed": 622076353,
           "params": {
             "motif": "star",
             "count": 140,
@@ -228,7 +447,7 @@
               "a": 0,
               "k": [
                 960,
-                669.6
+                676.8
               ]
             },
             "scale": {
@@ -266,6 +485,70 @@
                 "anim": "idle",
                 "loop": true
               }
+            ]
+          },
+          "mouth": {
+            "fps": 30,
+            "open": [
+              0,
+              0.117,
+              0.48,
+              0.463,
+              0.301,
+              0.239,
+              0.233,
+              0.693,
+              0.877,
+              0.934,
+              0.926,
+              0.914,
+              0.9,
+              0.849,
+              0.604,
+              0.557,
+              0.705,
+              0.841,
+              0.853,
+              0.851,
+              0.844,
+              0.831,
+              0.815,
+              0.741,
+              0.482,
+              0.406,
+              0.264,
+              0.171,
+              0.111,
+              0.072,
+              0.047,
+              0.314,
+              0.725,
+              0.879,
+              0.952,
+              0.981,
+              0.923,
+              0.699,
+              0.62,
+              0.596,
+              0.387,
+              0.636,
+              0.854,
+              0.938,
+              0.92,
+              0.903,
+              0.866,
+              0.822,
+              0.782,
+              0.766,
+              0.677,
+              0.584,
+              0.515,
+              0.43,
+              0.279,
+              0.181,
+              0.118,
+              0.077,
+              0.05
             ]
           }
         }
@@ -324,18 +607,10 @@
         },
         {
           "type": "generator",
-          "id": "L_gen_bead-string_neuron_chain",
-          "z": 1,
-          "gen": "bead-string",
-          "seed": 1245208269,
-          "params": {}
-        },
-        {
-          "type": "generator",
           "id": "L_gen_scatter_dust",
           "z": 1,
           "gen": "scatter",
-          "seed": 554563202,
+          "seed": 181929646,
           "params": {
             "motif": "dot",
             "count": 420,
@@ -365,7 +640,7 @@
               "a": 0,
               "k": [
                 960,
-                669.6
+                676.8
               ]
             },
             "scale": {
@@ -403,6 +678,73 @@
                 "anim": "idle",
                 "loop": true
               }
+            ]
+          },
+          "mouth": {
+            "fps": 30,
+            "open": [
+              0,
+              0,
+              0.269,
+              0.707,
+              0.883,
+              0.953,
+              0.981,
+              0.75,
+              0.539,
+              0.516,
+              0.66,
+              0.814,
+              0.714,
+              0.576,
+              0.374,
+              0.614,
+              0.846,
+              0.938,
+              0.946,
+              0.882,
+              0.737,
+              0.624,
+              0.467,
+              0.421,
+              0.415,
+              0.27,
+              0.286,
+              0.514,
+              0.806,
+              0.916,
+              0.856,
+              0.615,
+              0.448,
+              0.291,
+              0.344,
+              0.293,
+              0.19,
+              0.124,
+              0.279,
+              0.626,
+              0.805,
+              0.729,
+              0.856,
+              0.93,
+              0.886,
+              0.886,
+              0.932,
+              0.832,
+              0.689,
+              0.534,
+              0.38,
+              0.247,
+              0.16,
+              0.374,
+              0.577,
+              0.541,
+              0.405,
+              0.263,
+              0.171,
+              0.111,
+              0.072,
+              0.047
             ]
           }
         }
@@ -452,18 +794,10 @@
         },
         {
           "type": "generator",
-          "id": "L_gen_bead-string_neuron_chain",
-          "z": 1,
-          "gen": "bead-string",
-          "seed": 360737315,
-          "params": {}
-        },
-        {
-          "type": "generator",
           "id": "L_gen_scatter_foliage",
           "z": 1,
           "gen": "scatter",
-          "seed": 1147944220,
+          "seed": 101050769,
           "params": {
             "motif": "blob",
             "region": {
@@ -499,7 +833,7 @@
               "a": 0,
               "k": [
                 960,
-                669.6
+                676.8
               ]
             },
             "scale": {
@@ -538,6 +872,72 @@
                 "loop": true
               }
             ]
+          },
+          "mouth": {
+            "fps": 30,
+            "open": [
+              0,
+              0,
+              0,
+              0,
+              0.548,
+              0.819,
+              0.783,
+              0.913,
+              0.833,
+              0.617,
+              0.45,
+              0.766,
+              0.906,
+              0.963,
+              0.894,
+              0.652,
+              0.484,
+              0.315,
+              0.284,
+              0.258,
+              0.703,
+              0.859,
+              0.906,
+              0.962,
+              0.938,
+              0.726,
+              0.497,
+              0.652,
+              0.851,
+              0.837,
+              0.68,
+              0.48,
+              0.688,
+              0.861,
+              0.921,
+              0.935,
+              0.862,
+              0.723,
+              0.596,
+              0.576,
+              0.83,
+              0.931,
+              0.813,
+              0.728,
+              0.816,
+              0.813,
+              0.732,
+              0.732,
+              0.842,
+              0.864,
+              0.848,
+              0.749,
+              0.647,
+              0.547,
+              0.429,
+              0.279,
+              0.181,
+              0.118,
+              0.077,
+              0.05,
+              0.032
+            ]
           }
         }
       ],
@@ -548,9 +948,9 @@
     }
   ],
   "provenance": {
-    "story_ir_hash": "sha1:efcbeb578e6c66350e83ab9260b747e9d4c9b63c",
+    "story_ir_hash": "sha1:9aab9f9f491587f9a84fd1215200ec53f9532e8c",
     "passes": [
-      "lower@2.0"
+      "lower@2.4"
     ]
   }
 }

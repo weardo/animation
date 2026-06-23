@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!-- axon_curve — a gentle S-curve the bead-string generator places its neuron beads along.
-     The path carries id="path" so a Scene-IR generator `path:"asset://axon_curve.svg#path"`
-     can reference it. (M1's bead-string computes its own analytic baseline; this asset documents
-     the path contract + is the catalog source of truth for later milestones.) CC0 / authored. -->
-<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
-  <path id="path" fill="none" stroke="#ffcf4d" stroke-width="6" stroke-linecap="round"
-        d="M 230 540 C 560 380, 760 700, 960 540 S 1360 380, 1690 540"/>
-</svg>

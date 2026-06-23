@@ -279,23 +279,6 @@
       }
     },
     "generators": {
-      "axon_curve": {
-        "id": "axon_curve",
-        "version": "1.0.0",
-        "kind": "asset",
-        "format": "svg",
-        "uri": "asset://axon_curve.svg#path",
-        "tags": [
-          "m1",
-          "bead-string",
-          "path"
-        ],
-        "deps": [],
-        "provenance": {
-          "source": "authored",
-          "license": "CC0"
-        }
-      },
       "starfield": {
         "id": "starfield",
         "version": "1.0.0",

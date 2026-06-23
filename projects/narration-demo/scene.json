@@ -423,7 +423,7 @@
               "a": 0,
               "k": [
                 960,
-                669.6
+                676.8
               ]
             },
             "scale": {
@@ -565,14 +565,6 @@
           "parallax": 0
         },
         {
-          "type": "generator",
-          "id": "L_gen_bead-string_neuron_chain",
-          "z": 1,
-          "gen": "bead-string",
-          "seed": 190038760,
-          "params": {}
-        },
-        {
           "type": "rig",
           "id": "L_rig_blip",
           "z": 10,
@@ -582,7 +574,7 @@
               "a": 0,
               "k": [
                 960,
-                669.6
+                676.8
               ]
             },
             "scale": {
@@ -756,7 +748,7 @@
               "a": 0,
               "k": [
                 960,
-                669.6
+                676.8
               ]
             },
             "scale": {
@@ -868,9 +860,9 @@
     }
   ],
   "provenance": {
-    "story_ir_hash": "sha1:8425975306bd57c8bebd4d987d348483a7e3a0b0",
+    "story_ir_hash": "sha1:3984467b452df818569399295a73e48d9b4b0ddd",
     "passes": [
-      "lower@2.2"
+      "lower@2.4"
     ]
   }
 }

@@ -36,8 +36,6 @@ beats:
     show:
       - asset: bg_gradient
         args: { z: 0, parallax: 0 }
-      - generator: bead-string
-        as: neuron_chain
       - actor: blip
     action:
       - on: blip

@@ -1,9 +1,9 @@
 {
   "project_version": "1.0",
   "id": "scatter-demo",
-  "name": "scatter-demo",
-  "created": "2026-06-22T09:45:06.767Z",
-  "updated": "2026-06-22T09:45:06.767Z",
+  "name": "Scatter Demo",
+  "created": "2026-06-23T12:04:25.221Z",
+  "updated": "2026-06-23T12:04:25.221Z",
   "config": {
     "w": 1920,
     "h": 1080,
@@ -13,7 +13,7 @@
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "eeff1fa6371c19d82562662a2bbde774ae6ff037",
+  "scene_ir_hash": "da71a8e8797021568fda695e347600ad07aae3b4",
   "engine": "remotion@4.0.481",
   "deps": [
     "bg_gradient@1.0.0",

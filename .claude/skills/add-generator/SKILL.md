@@ -1,6 +1,6 @@
 ---
 name: add-generator
-description: Use when adding a new procedural generator (water, fire, smoke, clouds, crowd, bead-string, particles, etc.) to the animation factory. Ensures it follows the deterministic, registered, golden-tested contract. Do not use for static assets or rigs (see new-library-entry).
+description: Use when adding a new procedural generator (water, fire, smoke, clouds, crowd, particles, etc.) to the animation factory. Ensures it follows the deterministic, registered, golden-tested contract. Do not use for static assets or rigs (see new-library-entry).
 ---
 
 # Add a Generator
