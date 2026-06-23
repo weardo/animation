@@ -37,19 +37,27 @@ layers:
     fill: { a: 0, k: "#1f3a63" }
     transform: { position: { a: 0, k: [300, 430] } }
   # --- beak upper: violet thick rounded capsule, juts LEFT; right end overlaps the head ---
+  # --- beak: a TAPERING WEDGE (morph) — tall at the base (right, overlapping the face), narrowing to a
+  # blunt rounded point at the LEFT, angled slightly down. Path-drawn (a primitive ellipse can't taper). ---
   - type: shape
     id: beak
     z: 5
-    shape: { kind: ellipse, rx: 210, ry: 72 }
+    morph:
+      a: 0
+      k: "M 150 -72 C 60 -82 -70 -44 -158 6 C -180 16 -180 40 -158 50
+          C -70 72 60 80 150 70 C 180 64 180 -66 150 -72 Z"
     fill: { a: 0, k: "#6e4fb0" }
-    transform: { position: { a: 0, k: [-230, 70] } }
-  # --- beak tip: small navy ellipse at the far-LEFT end of the beak ---
+    transform: { position: { a: 0, k: [-300, 84] } }
+  # --- beak tip: a small navy wedge at the far-LEFT point of the beak ---
   - type: shape
     id: beak_tip
     z: 6
-    shape: { kind: ellipse, rx: 46, ry: 56 }
+    morph:
+      a: 0
+      k: "M 48 -34 C 16 -42 -34 -22 -58 4 C -70 16 -70 30 -58 40
+          C -34 60 16 64 48 52 C 70 44 70 -28 48 -34 Z"
     fill: { a: 0, k: "#1c2a4f" }
-    transform: { position: { a: 0, k: [-420, 66] } }
+    transform: { position: { a: 0, k: [-432, 96] } }
   # --- eye stack: navy ring -> blue iris -> near-black pupil -> peach highlight (upper-right of head) ---
   - type: shape
     id: eye_ring

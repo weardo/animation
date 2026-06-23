@@ -8,34 +8,30 @@ params:
   sway: { type: number, default: 0 }      # future: whole-plant rotation hook (deg)
   leafCount: { type: number, default: 8 } # documented hook (static layout here)
 layers:
-  # --- main trunk: a thick tall rounded rect rising from the bottom to the fork point ---
+  # --- branch: ONE curved, tapering, forked limb (a filled bezier silhouette). Trunk rises from the
+  # bottom with an organic lean and splits into two curved forks that taper toward their tips. Curves,
+  # not straight rects (the reference branch is sinuous + tapering). Rig-local; origin near the crotch. ---
   - type: shape
-    id: trunk
+    id: branch
     z: 1
-    shape: { kind: rect, width: 124, height: 580, cornerRadius: 54 }
+    morph:
+      a: 0
+      k: "M -56 540 C -80 360 -64 150 -34 -8 C -96 -150 -178 -300 -238 -398
+          C -216 -414 -190 -406 -176 -374 C -128 -250 -72 -118 -6 -34
+          C 20 -150 66 -288 152 -394 C 174 -410 198 -402 206 -368
+          C 158 -242 92 -96 46 -14 C 66 150 66 372 50 540 Z"
     fill: { a: 0, k: "#9a5a2a" }
-    transform: { position: { a: 0, k: [0, 250] }, rotation: { a: 0, k: { $param: sway } } }
-  # darker side facet down the right of the trunk (hint of round)
+    transform: { position: { a: 0, k: [0, 0] }, rotation: { a: 0, k: { $param: sway } } }
+  # darker inner facet (a slimmer curved path offset right) for a hint of round
   - type: shape
-    id: trunk_facet
+    id: branch_facet
     z: 2
-    shape: { kind: rect, width: 40, height: 556, cornerRadius: 20 }
+    morph:
+      a: 0
+      k: "M 14 530 C 30 350 30 150 18 -10 C 44 -150 96 -286 168 -388
+          C 150 -300 96 -120 52 -16 C 70 150 70 360 50 530 Z"
     fill: { a: 0, k: "#7c451f" }
-    transform: { position: { a: 0, k: [40, 250] }, rotation: { a: 0, k: { $param: sway } } }
-  # left fork: thick rounded rect, lower end at the fork point, sweeping up-left
-  - type: shape
-    id: fork_left
-    z: 1
-    shape: { kind: rect, width: 82, height: 380, cornerRadius: 41 }
-    fill: { a: 0, k: "#9a5a2a" }
-    transform: { position: { a: 0, k: [-120, -176] }, rotation: { a: 0, k: 38 } }
-  # right fork: thick rounded rect, lower end at the fork point, sweeping up-right
-  - type: shape
-    id: fork_right
-    z: 1
-    shape: { kind: rect, width: 80, height: 360, cornerRadius: 40 }
-    fill: { a: 0, k: "#7c451f" }
-    transform: { position: { a: 0, k: [104, -178] }, rotation: { a: 0, k: -34 } }
+    transform: { position: { a: 0, k: [0, 0] }, rotation: { a: 0, k: { $param: sway } } }
 
   # --- LEAVES: nested leaf clip instances (clip-in-clip), a LAYERED overlapping cluster (8). ---
   # prominent DOWN-LEFT pair (big, pointing down-left — the reference's strong lower-left leaves)
