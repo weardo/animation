@@ -25,17 +25,33 @@ import { resolve as resolvePath } from 'node:path';
 
 import objectHash from 'object-hash';
 
-/** A narration TTS engine id. espeak-ng is the deterministic, always-available default. */
-export type NarrateEngine = 'espeak-ng' | 'coqui';
+/**
+ * A narration TTS engine id. espeak-ng is the deterministic, always-available fallback; chatterbox is
+ * the best-sounding DEFAULT. kokoro/chatterbox/parler each run in their own isolated venv at the repo
+ * root (.venv-<engine>) via a productionized synth CLI in scripts/tts/; a missing venv or a synth error
+ * NEVER fails the build — we fall back to espeak-ng (golden rule 1: the cached wav is the deterministic
+ * record, not the engine).
+ */
+export type NarrateEngine = 'espeak-ng' | 'coqui' | 'kokoro' | 'chatterbox' | 'parler';
 
 /** Inputs that fully determine a synthesized clip → its content-address (cache key). */
 export interface NarrateRequest {
   text: string;
   engine: NarrateEngine;
-  /** Engine voice id: an espeak-ng voice (e.g. "en") or a Coqui speaker name (e.g. "Ana Florence"). */
+  /** Engine voice id: an espeak-ng voice (e.g. "en"), a Coqui speaker, or a Kokoro voice (e.g. af_heart). */
   voice: string;
   /** Words-per-minute (espeak-ng pacing). Part of the cache key so a pacing change re-synthesizes. */
   wpm: number;
+  /**
+   * Optional tone DESCRIPTION / label. Parler uses it as the conditioning prompt ("calm, somber, slow");
+   * other engines ignore it but it still folds into the cache key, so a tone change re-synthesizes.
+   */
+  tone?: string;
+  /**
+   * Optional numeric engine params (e.g. {exaggeration, cfg} for chatterbox). Folded into the cache key,
+   * so a param change re-synthesizes; engines that don't use a given key ignore it.
+   */
+  style?: Record<string, number>;
 }
 
 /** Where a synthesized clip lives + how the renderer references it. */
@@ -54,24 +70,66 @@ export interface NarrateResult {
   cached: boolean;
 }
 
-/** Defaults: deterministic engine, a neutral English voice, a calm narration pace. */
-export const DEFAULT_ENGINE: NarrateEngine = 'espeak-ng';
+/**
+ * Defaults: chatterbox (best-sounding, ~ElevenLabs in blind tests) is the DEFAULT engine; if its venv
+ * is missing or it errors we fall back to espeak-ng (never fail the build). Each engine has a sensible
+ * default voice and a calm narration pace.
+ */
+export const DEFAULT_ENGINE: NarrateEngine = 'chatterbox';
 export const DEFAULT_VOICE: Record<NarrateEngine, string> = {
   'espeak-ng': 'en',
   coqui: 'Ana Florence',
+  kokoro: 'af_heart',
+  // chatterbox/parler don't take a discrete voice id (chatterbox = built-in voice; parler = tone desc),
+  // but the field is required by NarrateRequest and folds into the cache key, so use a stable label.
+  chatterbox: 'default',
+  parler: 'default',
 };
 export const DEFAULT_WPM = 165;
+
+/** Per-engine default numeric params (chatterbox expressiveness/guidance). */
+export const DEFAULT_STYLE: Partial<Record<NarrateEngine, Record<string, number>>> = {
+  chatterbox: { exaggeration: 0.5, cfg: 0.5 },
+};
+
+/** Per-engine default tone description (parler conditioning prompt). */
+export const DEFAULT_TONE: Partial<Record<NarrateEngine, string>> = {
+  parler: 'A speaker delivers in a calm, somber and reverent tone, at a measured pace, with very clear high-quality audio and no background noise.',
+};
+
+/** The HF model cache shared by every venv engine; pinned so models never re-download per-process. */
+const HF_HOME = '/mnt/data/astra/.cache/hf';
 
 /** The isolated Coqui XTTS env (a heavy optional dependency, kept off the engine's critical path). */
 const COQUI_TTS_BIN = '.venv-tts/bin/tts';
 const COQUI_MODEL = 'tts_models/multilingual/multi-dataset/xtts_v2';
 
+/** Each venv-based engine: its isolated python + the productionized synth CLI under scripts/tts/. */
+const VENV_PYTHON: Partial<Record<NarrateEngine, string>> = {
+  kokoro: '.venv-kokoro/bin/python',
+  chatterbox: '.venv-chatterbox/bin/python',
+  parler: '.venv-parler/bin/python',
+};
+const SYNTH_SCRIPT: Partial<Record<NarrateEngine, string>> = {
+  kokoro: 'scripts/tts/kokoro_synth.py',
+  chatterbox: 'scripts/tts/chatterbox_synth.py',
+  parler: 'scripts/tts/parler_synth.py',
+};
+
 /**
- * Content-address a request: hash(text + engine + voice + wpm). Stable + collision-resistant
- * (object-hash, the repo's adopted hasher), so identical narration shares ONE cached wav.
+ * Content-address a request: hash(text + engine + voice + wpm + tone + style). Stable + collision-
+ * resistant (object-hash, the repo's adopted hasher), so identical narration shares ONE cached wav and
+ * any change to the tone description or numeric style params re-synthesizes a fresh wav.
  */
 export function narrateHash(req: NarrateRequest): string {
-  return objectHash({ text: req.text, engine: req.engine, voice: req.voice, wpm: req.wpm }).slice(0, 16);
+  return objectHash({
+    text: req.text,
+    engine: req.engine,
+    voice: req.voice,
+    wpm: req.wpm,
+    tone: req.tone ?? null,
+    style: req.style ?? null,
+  }).slice(0, 16);
 }
 
 /** Probe a wav's duration in seconds via ffprobe (deterministic; the wav is a fixed file). */
@@ -118,6 +176,52 @@ function synthCoqui(text: string, voice: string, wavPath: string, rootDir: strin
 }
 
 /**
+ * Run a venv-based engine's synth CLI: `.venv-<engine>/bin/python scripts/tts/<engine>_synth.py
+ * --text … --out … <extra args>`, with HF_HOME pinned to the shared model cache. Returns false (→
+ * espeak-ng fallback, never fail the build) if the venv python / script is missing or the synth errors.
+ */
+function runVenvSynth(engine: NarrateEngine, text: string, wavPath: string, rootDir: string, extra: string[]): boolean {
+  const pyRel = VENV_PYTHON[engine];
+  const scriptRel = SYNTH_SCRIPT[engine];
+  if (!pyRel || !scriptRel) return false;
+  const py = resolvePath(rootDir, pyRel);
+  const script = resolvePath(rootDir, scriptRel);
+  if (!existsSync(py) || !existsSync(script)) return false;
+  try {
+    execFileSync(py, [script, '--text', text, '--out', wavPath, ...extra], {
+      stdio: 'pipe',
+      env: { ...process.env, HF_HOME: process.env['HF_HOME'] ?? HF_HOME },
+    });
+    return existsSync(wavPath);
+  } catch {
+    return false;
+  }
+}
+
+/** Kokoro (fast, clean) via .venv-kokoro: `--voice <id>`. */
+function synthKokoro(req: NarrateRequest, wavPath: string, rootDir: string): boolean {
+  return runVenvSynth('kokoro', req.text, wavPath, rootDir, ['--voice', req.voice]);
+}
+
+/** Chatterbox (best-sounding, default) via .venv-chatterbox: `--exaggeration <n> --cfg <n>`. */
+function synthChatterbox(req: NarrateRequest, wavPath: string, rootDir: string): boolean {
+  const style = req.style ?? DEFAULT_STYLE.chatterbox ?? {};
+  const exaggeration = style['exaggeration'] ?? 0.5;
+  const cfg = style['cfg'] ?? 0.5;
+  return runVenvSynth('chatterbox', req.text, wavPath, rootDir, [
+    '--exaggeration', String(exaggeration),
+    '--cfg', String(cfg),
+  ]);
+}
+
+/** Parler (describe-the-tone) via .venv-parler: `--desc "<tone>"`. */
+function synthParler(req: NarrateRequest, wavPath: string, rootDir: string): boolean {
+  const desc = req.tone ?? DEFAULT_TONE.parler;
+  const extra = desc ? ['--desc', desc] : [];
+  return runVenvSynth('parler', req.text, wavPath, rootDir, extra);
+}
+
+/**
  * Synthesize (or reuse) one narration clip into the project's audio cache. CONTENT-ADDRESSED +
  * skip-if-exists: if `<audioDir>/<hash>.wav` already exists we reuse it (no re-synth), which is what
  * makes a re-render byte-identical regardless of engine stochasticity. `audioDir` is the project's
@@ -150,15 +254,31 @@ export function synthNarration(
   }
 
   let engineUsed: NarrateEngine = req.engine;
-  if (req.engine === 'coqui') {
-    const ok = synthCoqui(req.text, req.voice, wavPath, rootDir);
+  if (req.engine === 'espeak-ng') {
+    synthEspeak(req.text, req.voice, req.wpm, wavPath);
+  } else {
+    // Optional engines: try the selected engine; on any miss/error fall back to espeak-ng (never fail
+    // the build — the cached wav from whatever engine is the deterministic record, golden rule 1).
+    let ok = false;
+    switch (req.engine) {
+      case 'coqui':
+        ok = synthCoqui(req.text, req.voice, wavPath, rootDir);
+        break;
+      case 'kokoro':
+        ok = synthKokoro(req, wavPath, rootDir);
+        break;
+      case 'chatterbox':
+        ok = synthChatterbox(req, wavPath, rootDir);
+        break;
+      case 'parler':
+        ok = synthParler(req, wavPath, rootDir);
+        break;
+    }
     if (!ok) {
-      console.warn(`[narrate] coqui unavailable/failed → falling back to espeak-ng for "${truncate(req.text)}"`);
+      console.warn(`[narrate] ${req.engine} unavailable/failed → falling back to espeak-ng for "${truncate(req.text)}"`);
       synthEspeak(req.text, DEFAULT_VOICE['espeak-ng'], req.wpm, wavPath);
       engineUsed = 'espeak-ng';
     }
-  } else {
-    synthEspeak(req.text, req.voice, req.wpm, wavPath);
   }
 
   if (!existsSync(wavPath)) throw new Error(`[narrate] synthesis produced no wav at ${wavPath}`);
