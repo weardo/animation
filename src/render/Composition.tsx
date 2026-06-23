@@ -32,7 +32,7 @@
 // No Date.now / Math.random; the transition easing is a fixed StyleKit cubic-bezier.
 
 import React from 'react';
-import { AbsoluteFill, Audio, Easing, Sequence, staticFile, useVideoConfig } from 'remotion';
+import { AbsoluteFill, Audio, Easing, Loop, Sequence, staticFile, useCurrentFrame, useVideoConfig } from 'remotion';
 import {
   TransitionSeries,
   linearTiming,
@@ -42,6 +42,7 @@ import { fade } from '@remotion/transitions/fade';
 import type { SceneIR, Scene as SceneType, Transition, Easings } from '../ir/index.js';
 import { transitions } from '../engine/index.js';
 import { Scene } from './Scene.js';
+import { CaptionTrack } from './CaptionTrack.js';
 import { easingFn } from './stylekit.js';
 
 // P3 (alpha): `inputProps` is the Scene IR PLUS an optional transient render-time `_alpha` flag the
@@ -130,6 +131,116 @@ const NarrationTrack: React.FC<{ cues: SceneIR['audio'] }> = ({ cues }) => (
   </>
 );
 
+/**
+ * The SFX track (A2). Each `kind:"sfx"` AudioCue is a one-shot Remotion <Audio> inside a
+ * <Sequence from={cue.at}> placed at its EVENT frame on the global timeline (an element entrance or a
+ * beat accent — lowered by the sfx pass). The wavs are FIXED, ffmpeg-synthesized files vendored into
+ * assets/audio/ (golden rule 2), so the decoded stream is byte-identical across renders. Remotion muxes
+ * every <Audio> together with the narration into one aac track — we never reimplement mixing (ADR-003).
+ * Dropped on an alpha render, like narration (sfx belong to the finished film).
+ */
+const SfxTrack: React.FC<{ cues: SceneIR['audio'] }> = ({ cues }) => (
+  <>
+    {(cues ?? [])
+      .filter((cue) => cue.kind === 'sfx' && typeof cue.src === 'string')
+      .map((cue) => (
+        <Sequence key={cue.id} from={cue.at} durationInFrames={Math.max(1, cue.duration_frames)} layout="none">
+          <Audio src={resolveAudioUrl(cue.src as string)} />
+        </Sequence>
+      ))}
+  </>
+);
+
+/** A narration window on the global timeline (start, end-exclusive) — what drives the music duck. */
+interface DuckWindow {
+  start: number;
+  end: number;
+}
+
+/**
+ * DUCK MATH (A3) — a PURE function of the GLOBAL frame → deterministic (golden rule 1). Returns the
+ * `ducking` amount in [0,1]: 0 = no dip (the bed plays at `gain`), 1 = full dip (the bed drops to
+ * `duck`). Linear `fade`-frame ramps ease the dip in BEFORE and out AFTER each narration window;
+ * inside a window the dip is full (past its leading ramp). Overlapping windows take the MAX dip so the
+ * bed stays ducked across back-to-back narration lines. Needs only the narration windows (no audio
+ * analysis), so it is byte-deterministic.
+ */
+function duckingAt(frame: number, windows: readonly DuckWindow[], fade: number): number {
+  let d = 0;
+  for (const w of windows) {
+    let amt = 0;
+    if (frame >= w.start && frame < w.end) {
+      amt = fade > 0 ? Math.min(1, (frame - w.start) / fade) : 1; // inside: full, eased-in
+    } else if (fade > 0 && frame < w.start && frame >= w.start - fade) {
+      amt = (frame - (w.start - fade)) / fade; // approaching: ramp 0→1
+    } else if (fade > 0 && frame >= w.end && frame < w.end + fade) {
+      amt = 1 - (frame - w.end) / fade; // leaving: ramp 1→0
+    }
+    if (amt > d) d = amt;
+  }
+  return d <= 0 ? 0 : d >= 1 ? 1 : d;
+}
+
+/**
+ * The looped bed `<Audio>` for one `<Loop>` iteration. `<Loop>` tiles the (short) bed across the whole
+ * timeline by wrapping each iteration in its own `<Sequence>` (resetting the local frame to 0), so the
+ * GLOBAL frame for ducking is `iteration * loopFrames + localFrame` (recovered from `Loop.useLoop()` +
+ * `useCurrentFrame()`). We compute the duck volume as a SCALAR for the current global frame (the
+ * component re-renders every frame, so a plain number is exact + deterministic) — we do NOT use the
+ * `<Audio volume>` CALLBACK form because inside a Loop its frame arg is the per-iteration media frame,
+ * not the global timeline frame the narration windows live on.
+ */
+const LoopedDuckedBed: React.FC<{
+  src: string;
+  windows: readonly DuckWindow[];
+  gain: number;
+  duck: number;
+  fade: number;
+}> = ({ src, windows, gain, duck, fade }) => {
+  const local = useCurrentFrame();
+  const loop = Loop.useLoop();
+  const globalFrame = (loop ? loop.iteration * loop.durationInFrames : 0) + local;
+  const d = duckingAt(globalFrame, windows, fade);
+  const volume = gain + (duck - gain) * d; // lerp(gain, duck, d)
+  return <Audio src={src} volume={volume} />;
+};
+
+/**
+ * The MUSIC BED track + DUCKING (A3, spec §12). A single `kind:"music"` AudioCue spans the whole
+ * timeline. We never reimplement looping/mixing (ADR-003): the bed (a short loop) is tiled with the
+ * Remotion `<Loop>` primitive and Remotion muxes it under the narration/sfx. The bed's volume DUCKS
+ * (dips from `gain` to `duck`) while any narration cue overlaps the frame — computed per-frame in
+ * {@link LoopedDuckedBed}. Sfx are short accents and do NOT duck the bed (only spoken narration does).
+ * Dropped on an alpha render (music belongs to the finished film).
+ */
+const MusicTrack: React.FC<{ cues: SceneIR['audio'] }> = ({ cues }) => {
+  const all = cues ?? [];
+  const music = all.find((c) => c.kind === 'music' && typeof c.src === 'string');
+  if (!music) return null;
+
+  const windows: DuckWindow[] = all
+    .filter((c) => c.kind === 'narration')
+    .map((c) => ({ start: c.at, end: c.at + Math.max(1, c.duration_frames) }));
+
+  const gain = music.mix?.gain ?? 0.5;
+  const duck = music.mix?.duck ?? 0.18;
+  const fade = Math.max(0, music.mix?.fade ?? 8);
+  const src = resolveAudioUrl(music.src as string);
+  const total = Math.max(1, music.duration_frames);
+  // The bed's own loop length (frames); tile it across the timeline with <Loop>. If unknown, play once.
+  const loopFrames = Math.max(1, music.loop_frames ?? total);
+
+  const bed = (
+    <LoopedDuckedBed src={src} windows={windows} gain={gain} duck={duck} fade={fade} />
+  );
+
+  return (
+    <Sequence from={music.at} durationInFrames={total} layout="none">
+      {loopFrames < total ? <Loop durationInFrames={loopFrames}>{bed}</Loop> : bed}
+    </Sequence>
+  );
+};
+
 /** One scene segment, rendered by the existing per-frame <Scene> compositor. `alpha` drops backdrops. */
 const SceneSegment: React.FC<{ scene: SceneType; defs: SceneIR['defs']; alpha?: boolean | undefined }> = ({
   scene,
@@ -189,9 +300,17 @@ export const SceneIRComposition: React.FC<SceneIRCompositionProps> = (props) => 
   return (
     <AbsoluteFill style={bg ? { backgroundColor: bg } : undefined}>
       <TransitionSeries>{children}</TransitionSeries>
+      {/* Music bed (A3): one looping <Audio> under the whole film, ducked per-frame while narration
+          speaks. Rendered first so it sits beneath narration/sfx in the mix. Dropped on alpha. */}
+      {!alpha && <MusicTrack cues={sceneIR.audio} />}
       {/* Narration track (M3): <Audio> cues muxed by Remotion. Dropped on an alpha (compositing) render
           — the canonical muxed record is the default h264 mp4 (audio belongs to the finished film). */}
       {!alpha && <NarrationTrack cues={sceneIR.audio} />}
+      {/* SFX track (A2): event-anchored one-shot sound effects, muxed by Remotion. Dropped on alpha. */}
+      {!alpha && <SfxTrack cues={sceneIR.audio} />}
+      {/* Caption track (A1): narration-synced on-screen subtitles, derived from the same cues. Dropped
+          on an alpha render — captions belong to the finished film, like the narration track. */}
+      {!alpha && <CaptionTrack captions={sceneIR.captions} />}
     </AbsoluteFill>
   );
 };

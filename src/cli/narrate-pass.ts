@@ -14,7 +14,7 @@
 
 import { resolve as resolvePath } from 'node:path';
 
-import type { SceneIR, AudioCue, StoryIR } from '../ir/index.js';
+import type { SceneIR, AudioCue, CaptionCue, StoryIR } from '../ir/index.js';
 import {
   synthNarration,
   type NarrateEngine,
@@ -35,6 +35,17 @@ export interface NarrateOptions {
   assetsDir: string;
   /** Repo root (to locate the optional Coqui venv). */
   rootDir: string;
+  /**
+   * Emit on-screen CAPTION cues synced to each narration line (A1; default true). `--no-captions`
+   * sets this false. Captions are DERIVED from the authored transcript + the cue window (deterministic,
+   * no whisper), so they cost nothing extra to produce.
+   */
+  captions?: boolean | undefined;
+  /**
+   * Caption cadence: `line` (whole line for the cue window — default) or `words` (cumulative even-split
+   * word reveal across `duration_frames`, a deterministic karaoke without whisper word-timestamps).
+   */
+  captionMode?: 'line' | 'words' | undefined;
 }
 
 /**
@@ -57,6 +68,10 @@ export function applyNarration(sceneIR: SceneIR, story: StoryIR, opts: NarrateOp
 
   // Preserve any non-narration cues already present (none today, but future SFX/music are additive).
   const cues: AudioCue[] = (sceneIR.audio ?? []).filter((c) => c.kind !== 'narration');
+  // Captions are re-derived here from this run's narration lines (replace any prior caption set).
+  const wantCaptions = opts.captions !== false;
+  const captionMode = opts.captionMode ?? 'line';
+  const captions: CaptionCue[] = [];
 
   let synthCount = 0;
   let cachedCount = 0;
@@ -71,6 +86,7 @@ export function applyNarration(sceneIR: SceneIR, story: StoryIR, opts: NarrateOp
     if (res.cached) cachedCount += 1;
     else synthCount += 1;
 
+    const durationFrames = Math.max(1, Math.round(res.durationSeconds * fps));
     cues.push({
       id: `narration-${beat.id}`,
       kind: 'narration',
@@ -78,18 +94,36 @@ export function applyNarration(sceneIR: SceneIR, story: StoryIR, opts: NarrateOp
       // resolves it with staticFile. An `audio://` scheme keeps it self-describing + parallel to asset://.
       src: `audio://${res.publicRel}`,
       at,
-      duration_frames: Math.max(1, Math.round(res.durationSeconds * fps)),
+      duration_frames: durationFrames,
       transcript: say,
     });
+
+    // A1 CAPTION: one caption per narration line, sharing the cue's exact window (deterministic —
+    // same authored text + same at/duration → same caption; no whisper). `words` mode pre-tokenizes so
+    // the renderer reveals an even-split cumulative line.
+    if (wantCaptions) {
+      const cap: CaptionCue = {
+        id: `caption-${beat.id}`,
+        text: say,
+        at,
+        duration_frames: durationFrames,
+        mode: captionMode,
+      };
+      if (captionMode === 'words') cap.words = say.split(/\s+/).filter(Boolean);
+      captions.push(cap);
+    }
   }
 
-  // Sort cues by start frame for a stable, diffable scene.json (deterministic ordering).
+  // Sort cues + captions by start frame for a stable, diffable scene.json (deterministic ordering).
   cues.sort((a, b) => a.at - b.at || a.id.localeCompare(b.id));
+  captions.sort((a, b) => a.at - b.at || a.id.localeCompare(b.id));
 
   console.log(
     `[narrate] engine=${engine} voice="${voice}" → ${cues.filter((c) => c.kind === 'narration').length} narration cue(s) ` +
-      `(${synthCount} synthesized, ${cachedCount} cached) → ${audioDir}`,
+      `(${synthCount} synthesized, ${cachedCount} cached)` +
+      (wantCaptions ? ` + ${captions.length} caption(s) [${captionMode}]` : ' (captions off)') +
+      ` → ${audioDir}`,
   );
 
-  return { ...sceneIR, audio: cues };
+  return { ...sceneIR, audio: cues, captions: wantCaptions ? captions : (sceneIR.captions ?? []) };
 }

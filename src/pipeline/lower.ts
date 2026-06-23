@@ -211,6 +211,13 @@ export interface LibraryLike {
   toClip?(ref: string): ClipDef;
   /** Resolve a named `palette` library entry to a token map (color-script, spec §11.4). */
   toPalette?(ref: string): Palette;
+  /**
+   * Expand a `show[].generator` value (ADR-004 §2): a `generator-preset` ref (e.g. `"starfield"`) →
+   * its locked `{ gen, params }` (preset params are defaults; the layer's own args win), or a bare
+   * implementation name passed straight through. Used by {@link buildGeneratorLayer} so a story may
+   * name a PRESET where a generator goes. Optional — without it the gen name passes through unchanged.
+   */
+  expandGeneratorRef?(genRef: string, layerParams?: Record<string, unknown>): { gen: string; params: Record<string, unknown> };
   /** Optional: resolve a ref's content hash (used for provenance only). */
   hashOf?(ref: string): string;
 }
@@ -401,13 +408,22 @@ function buildGeneratorLayer(
   item: ShowItem,
   beatId: string,
   hash: string,
-  index: number
+  index: number,
+  lib: LibraryLike | undefined
 ): LoweredLayer {
-  const gen = item.generator!;
-  const handle = item.as ?? `${gen}_${index}`;
-  const id = `L_gen_${gen}_${handle}`;
-  const seed = deriveSeed(hash, `${beatId}:${gen}:${handle}`);
+  const genRef = item.generator!;
   const args = (item.args ?? {}) as Record<string, unknown>;
+  // ADR-004 §2 PRESET expansion: a `generator` value may name a `generator-preset` library entry
+  // (e.g. "starfield"), which resolves to a concrete `{ gen, params }` — the preset params are defaults
+  // merged UNDER the layer's own args (most specific wins). A bare implementation name (or no library)
+  // passes straight through. The HANDLE/ID/SEED key on the AUTHORED ref so they stay stable + diffable.
+  const expanded = lib?.expandGeneratorRef
+    ? lib.expandGeneratorRef(genRef, args)
+    : { gen: genRef, params: args };
+  const gen = expanded.gen;
+  const handle = item.as ?? `${refName(genRef)}_${index}`;
+  const id = `L_gen_${refName(genRef)}_${handle}`;
+  const seed = deriveSeed(hash, `${beatId}:${refName(genRef)}:${handle}`);
   const z = typeof args['z'] === 'number' ? (args['z'] as number) : 1;
   const path = typeof args['path'] === 'string' ? (args['path'] as string) : undefined;
   const effects = Array.isArray(args['effects']) ? (args['effects'] as Effect[]) : undefined;
@@ -417,8 +433,9 @@ function buildGeneratorLayer(
     gen,
     z,
     seed,
-    // Free-form, validated by the generator's own Zod schema at render time. Empty args → defaults.
-    params: args,
+    // The preset-expanded params (preset defaults ← layer args), validated by the generator's own Zod
+    // schema at render time. Structural keys (z/path/effects) ride here too, harmlessly ignored by gens.
+    params: expanded.params,
     ...(path ? { path } : {}),
     ...(effects && effects.length > 0 ? { effects } : {}),
   };
@@ -786,7 +803,8 @@ function buildScene(
   durationFrames: number,
   hash: string,
   story: StoryIR,
-  transitionIn: Transition | undefined
+  transitionIn: Transition | undefined,
+  lib: LibraryLike | undefined
 ): LoweredScene {
   const show = beat.show ?? [];
   const actions = beat.action ?? [];
@@ -805,7 +823,7 @@ function buildScene(
     if (item.actor !== undefined) {
       layer = buildRigLayer(item, story, actions, durationFrames);
     } else if (item.generator !== undefined) {
-      layer = buildGeneratorLayer(item, beat.id, hash, i);
+      layer = buildGeneratorLayer(item, beat.id, hash, i, lib);
     } else if (item.shape !== undefined) {
       layer = buildShapeLayer(item, i);
     } else if (item.text !== undefined) {
@@ -1042,7 +1060,7 @@ export function lowerStory(story: StoryIR, opts: LowerOptions = {}): LoweredScen
     // Carry ONLY the diff vs the base (a minimal override the renderer merges over `defs.palette`).
     const paletteOverride = paletteDiff(scenePalette, defs.palette);
 
-    const scene = buildScene(beat, at, durationFrames, hash, story, transitionIn);
+    const scene = buildScene(beat, at, durationFrames, hash, story, transitionIn, lib);
     if (Object.keys(paletteOverride).length > 0) scene.palette = paletteOverride;
     scenes.push(scene);
 
@@ -1055,6 +1073,7 @@ export function lowerStory(story: StoryIR, opts: LowerOptions = {}): LoweredScen
     config: { w, h, fps, duration_frames: total },
     defs,
     audio: [],
+    captions: [],
     scenes,
     provenance: {
       story_ir_hash: hash,

@@ -14,7 +14,8 @@ import { resolve as resolvePath } from 'node:path';
 
 import type { AssetDef, RigDef, ClipDef, Palette } from '../ir/index.js';
 import { StyleKitSchema, ClipDefSchema, PaletteSchema, type StyleKit } from '../ir/index.js';
-import type { Catalog } from './catalog.js';
+import type { Catalog, GeneratorPreset } from './catalog.js';
+import { GeneratorPresetSchema } from './catalog.js';
 import {
   resolveRef,
   resolveRefs,
@@ -209,6 +210,62 @@ export class Library {
     const path = resolvePath(this.rootDir, 'library', 'palettes', `${name}.json`);
     const raw = JSON.parse(readFileSync(path, 'utf8')) as unknown;
     return PaletteSchema.parse(raw);
+  }
+
+  /**
+   * Resolve a `generator-preset` entry to its validated {@link GeneratorPreset} body (ADR-004 §2).
+   * Mirrors {@link toClip}/{@link toPalette}: the catalog entry's URI is the engine-generic
+   * `preset://<name>` convention; the JSON DATA lives co-located at
+   * `library/generators/<name>.preset.json` and is parsed with {@link GeneratorPresetSchema}. The
+   * lookup keys on the URI SCHEME (a data convention), never on any generator name in core. The
+   * returned `{ gen, params }` is what {@link expandGeneratorRef} merges with a layer's own args.
+   */
+  toGeneratorPreset(ref: string): GeneratorPreset {
+    // Default an unversioned ref (e.g. "starfield") to `@1.0.0`, mirroring the other resolvers.
+    const r = this.get(ref.includes('@') ? ref : `${ref}@1.0.0`);
+    if (r.entry.kind !== 'generator-preset') {
+      throw new Error(`ref ${r.key} is kind '${r.entry.kind}', expected 'generator-preset'`);
+    }
+    if (!r.entry.uri) throw new Error(`generator-preset entry ${r.key} has no uri`);
+    if (!r.entry.uri.startsWith('preset://')) {
+      throw new Error(
+        `generator-preset entry ${r.key} has unsupported uri '${r.entry.uri}' (expected preset://<name>)`
+      );
+    }
+    const name = r.entry.uri.replace(/^preset:\/\//, '').split('/')[0] ?? '';
+    const path = resolvePath(this.rootDir, 'library', 'generators', `${name}.preset.json`);
+    const raw = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+    return GeneratorPresetSchema.parse(raw);
+  }
+
+  /**
+   * Expand a Scene-IR `generator.gen` value to a concrete `{ gen, params }` pair (ADR-004 §2,
+   * resolver expansion). The value is EITHER:
+   *   • a bare generator IMPLEMENTATION name (e.g. `"scatter"`) — passed through as `{ gen, params:{} }`;
+   *   • a `generator-preset` ref (e.g. `"starfield@1.0.0"` / bare `"starfield"`) — resolved via
+   *     {@link toGeneratorPreset} to its locked `{ gen, params }`.
+   * Disambiguation keys on the CATALOG (data), not on any name list in core: a ref that locates to a
+   * `generator-preset` entry is expanded; anything else (a bare impl name, or an unknown ref the
+   * generator registry will validate) passes straight through. `layerParams` are merged OVER the
+   * preset's params (preset = defaults, the authored layer args win) — a shallow, deterministic merge.
+   */
+  expandGeneratorRef(
+    genRef: string,
+    layerParams: Record<string, unknown> = {}
+  ): { gen: string; params: Record<string, unknown> } {
+    // Probe the catalog: is this ref a generator-preset entry? If it doesn't resolve (bare impl name
+    // with no catalog entry) or isn't a preset, treat it as a pass-through implementation name.
+    let isPreset = false;
+    try {
+      const r = this.get(genRef.includes('@') ? genRef : `${genRef}@1.0.0`);
+      isPreset = r.entry.kind === 'generator-preset';
+    } catch {
+      isPreset = false; // not in catalog → bare implementation name.
+    }
+    if (!isPreset) return { gen: genRef, params: { ...layerParams } };
+    const preset = this.toGeneratorPreset(genRef);
+    // Preset params are defaults; the layer's own args override (most specific wins).
+    return { gen: preset.gen, params: { ...preset.params, ...layerParams } };
   }
 
   /** Build a lockfile pinning the currently-cached resolutions, plus any extra refs. */

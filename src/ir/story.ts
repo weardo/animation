@@ -95,6 +95,14 @@ export const ShowItemSchema = z
     /** Named layout anchor (e.g. "center", "left", "top_right") the lowering pass resolves to a
      *  `transform.position` via the layout pass. Currently used to place `shape` items. */
     at: z.string().min(1).optional(),
+    /**
+     * A SOUND EFFECT to play at THIS element's entrance (A2, spec §12). The value is a built-in sfx
+     * NAME (tick/pop/whoosh/ding/thud/click — synthesized OFFLINE by `ffmpeg` into the shared
+     * `library/sfx/` cache, golden rule 2). The sfx pass emits a `kind:"sfx"` `audio[]` cue anchored at
+     * the SCENE START (the element's on-screen entrance frame). Deterministic: a fixed recipe → a fixed
+     * cached wav → a byte-identical audio stream. Omitted → no effect for this element.
+     */
+    sfx: z.string().min(1).optional(),
     /** Free-form generator/asset/shape arguments, interpreted by the lowering pass. */
     args: z.record(z.unknown()).optional(),
   })
@@ -203,12 +211,35 @@ export const PlaceItemSchema = z
   .strict();
 export type PlaceItem = z.infer<typeof PlaceItemSchema>;
 
+/**
+ * A beat-level SOUND-EFFECT cue (A2, spec §12): a built-in sfx `name` (tick/pop/whoosh/ding/thud/
+ * click) anchored at an event frame. `at` is the OFFSET (in frames, from the beat's scene start) at
+ * which the cue fires — omitted → the beat's opening (frame 0 of the scene). Use this for beat-level
+ * accents (a transition swoosh, an impact) that are not tied to a single `show[]` element's entrance
+ * (which carries its own `sfx`). Synthesized OFFLINE (golden rule 2), played via Remotion <Audio>.
+ */
+export const BeatSfxSchema = z
+  .object({
+    /** Built-in sfx name (tick/pop/whoosh/ding/thud/click). */
+    name: z.string().min(1),
+    /** Frame offset from the beat's scene start at which the cue fires (default 0). */
+    at: z.number().int().nonnegative().optional(),
+  })
+  .strict();
+export type BeatSfx = z.infer<typeof BeatSfxSchema>;
+
 /** A single beat. The atomic unit of a story (≈ an OTIO clip on a track). */
 export const BeatSchema = z
   .object({
     id: z.string().min(1),
     /** Narration line. Drives the (later) TTS pass; pure intent in M1. */
     say: z.string().optional(),
+    /**
+     * Beat-level SOUND-EFFECT cues (A2): accents anchored at event frames within the beat (a swoosh, an
+     * impact). A bare string is shorthand for `{ name, at: 0 }` (fire at the beat opening). Each lowers
+     * to a `kind:"sfx"` `audio[]` cue. (Per-element entrance sounds use `show[].sfx` instead.)
+     */
+    sfx: z.array(z.union([z.string().min(1), BeatSfxSchema])).optional(),
     /** Things to introduce on screen. */
     show: z.array(ShowItemSchema).optional(),
     /** Things to do to existing on-screen handles. */
@@ -272,10 +303,48 @@ export const FormatSchema = z
   .strict();
 export type Format = z.infer<typeof FormatSchema>;
 
+/**
+ * A story-level MUSIC BED (A3, spec §12): a single track played UNDER the whole video, LOOPED to fill
+ * the timeline and DUCKED (volume dipped) while narration is speaking. Two authorings:
+ *   • a bare string — a built-in synthesized bed NAME (e.g. "calm", "drone", "uplift" — generated
+ *     OFFLINE by ffmpeg into the shared `library/music/` cache, golden rule 2) or an `asset://`/library
+ *     wav ref the project vendors;
+ *   • an object `{ ref, gain?, duck?, fade? }` — the same ref plus mix controls: `gain` (the bed's base
+ *     volume 0..1, default 0.5), `duck` (the reduced volume 0..1 while narration is active, default
+ *     0.18), and `fade` (frames of linear duck ramp in/out around each narration cue, default 8).
+ * The music pass emits ONE `kind:"music"` `audio[]` cue spanning the whole timeline (at:0, the full
+ * `duration_frames`) carrying these controls; the compositor plays it via Remotion `<Audio loop>` with
+ * a per-frame `volume` fn that dips to `duck` while any narration cue overlaps the frame. Deterministic
+ * (a fixed recipe → a fixed wav; the volume fn is a pure function of frame; golden rule 1).
+ */
+export const MusicSchema = z.union([
+  z.string().min(1),
+  z
+    .object({
+      /** Built-in bed NAME (calm/drone/uplift) or an `asset://`/library wav ref. */
+      ref: z.string().min(1),
+      /** Base bed volume (0..1) when no narration is speaking. Default 0.5. */
+      gain: z.number().min(0).max(1).optional(),
+      /** Reduced bed volume (0..1) while a narration cue is active (ducking). Default 0.18. */
+      duck: z.number().min(0).max(1).optional(),
+      /** Linear duck ramp length (frames) on each side of a narration cue. Default 8. */
+      fade: z.number().int().nonnegative().optional(),
+    })
+    .strict(),
+]);
+export type Music = z.infer<typeof MusicSchema>;
+
 /** The Story IR root. */
 export const StoryIRSchema = z
   .object({
     title: z.string().min(1),
+    /**
+     * Optional story-level MUSIC BED (A3): a looping track played under the whole video, auto-ducked
+     * while narration speaks. A bare string (a built-in synth bed name / asset ref) or `{ ref, gain?,
+     * duck?, fade? }`. Omitted → no music. Synthesized OFFLINE; runs under the `--no-audio` /
+     * `--no-music` switches.
+     */
+    music: MusicSchema.optional(),
     /** Optional output format (I1): aspect preset or explicit size + fps. Omitted → 1920×1080@30. */
     format: FormatSchema.optional(),
     /**

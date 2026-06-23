@@ -1,0 +1,22 @@
+{
+  "gen": "scatter",
+  "params": {
+    "motif": "star",
+    "count": 160,
+    "size": [
+      2,
+      7
+    ],
+    "colors": [
+      "#ffffff",
+      "#cfe3ff",
+      "#fff3c4"
+    ],
+    "distribution": "grid",
+    "jitter": 0.7,
+    "anim": "twinkle",
+    "anim_speed": 0.5,
+    "glow": true,
+    "opacity": 1
+  }
+}

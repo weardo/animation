@@ -458,7 +458,25 @@
       }
     }
   },
-  "audio": [],
+  "audio": [
+    {
+      "id": "narration-titles",
+      "kind": "narration",
+      "src": "audio://audio/4fec7bd6fea3c7fb.wav",
+      "at": 0,
+      "duration_frames": 154,
+      "transcript": "One pre-comp, two instances — shared definition, per-instance parameters."
+    }
+  ],
+  "captions": [
+    {
+      "id": "caption-titles",
+      "text": "One pre-comp, two instances — shared definition, per-instance parameters.",
+      "at": 0,
+      "duration_frames": 154,
+      "mode": "line"
+    }
+  ],
   "scenes": [
     {
       "id": "titles",

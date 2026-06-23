@@ -316,26 +316,49 @@
     {
       "id": "narration-b1",
       "kind": "narration",
-      "src": "audio://audio/565b0ada8aad8a18.wav",
+      "src": "audio://audio/eca40af789994dc7.wav",
       "at": 0,
-      "duration_frames": 58,
+      "duration_frames": 29,
       "transcript": "Meet Blip."
     },
     {
       "id": "narration-b2",
       "kind": "narration",
-      "src": "audio://audio/5a24e17a3444ddd7.wav",
+      "src": "audio://audio/ed0446bccf78b12b.wav",
       "at": 120,
-      "duration_frames": 74,
+      "duration_frames": 65,
       "transcript": "Blip explores the neuron network."
     },
     {
       "id": "narration-b3",
       "kind": "narration",
-      "src": "audio://audio/cf945a31aa866209.wav",
+      "src": "audio://audio/f734d6bad83c6bd1.wav",
       "at": 240,
-      "duration_frames": 78,
+      "duration_frames": 52,
       "transcript": "And that is how it works."
+    }
+  ],
+  "captions": [
+    {
+      "id": "caption-b1",
+      "text": "Meet Blip.",
+      "at": 0,
+      "duration_frames": 29,
+      "mode": "line"
+    },
+    {
+      "id": "caption-b2",
+      "text": "Blip explores the neuron network.",
+      "at": 120,
+      "duration_frames": 65,
+      "mode": "line"
+    },
+    {
+      "id": "caption-b3",
+      "text": "And that is how it works.",
+      "at": 240,
+      "duration_frames": 52,
+      "mode": "line"
     }
   ],
   "scenes": [

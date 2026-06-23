@@ -1,6 +1,6 @@
 # ADR-004 — Generators are first-class library entries (capability + presets)
 
-**Date:** 2026-06-22 · **Status:** Accepted — backlog item (implement after the generator batch lands).
+**Date:** 2026-06-22 · **Status:** ✅ DONE (2026-06-23). The `generator-preset` catalog kind + resolver expansion + `factory:gen-preset` CLI are built; `library/generators/starfield.preset.json` + `dust-motes.preset.json` ship as examples. A `show[].generator` that names a preset (e.g. `starfield`) is expanded by the loader to its locked `{ gen: scatter, params }` at lowering (`expandGeneratorRef` → `buildGeneratorLayer`), the layer's own `args` overriding preset defaults. Verified: `examples/remaining-demo.yaml` uses the `starfield` preset, renders byte-identical cross-process. Generator code unchanged (a preset is pure DATA).
 
 ## Context
 

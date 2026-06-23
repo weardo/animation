@@ -27,7 +27,7 @@ import type { Defs, Easings, Layer, Scene as SceneIR } from '../ir/index.js';
 import { providers } from '../engine/index.js';
 import { GeneratorLayer } from './GeneratorLayer.js';
 import { AssetLayer } from './AssetLayer.js';
-import { ShapeLayer } from './ShapeLayer.js';
+import { ShapeLayer, shapeClipGeometry } from './ShapeLayer.js';
 import { TextLayer } from './TextLayer.js';
 import { ClipLayer } from './ClipLayer.js';
 import { FootageLayer } from './FootageLayer.js';
@@ -341,14 +341,24 @@ export const LayerView: React.FC<LayerViewProps> = ({ layer, defs, easings, para
   // named sibling's bare sub-renderer into an SVG mask (its luma/alpha is the stencil); an ASSET matte
   // (`matte.ref`) uses the asset image via CSS mask-image / SVG mask. Both are static styles (pure).
   let matteSource: React.ReactNode = undefined;
+  let shapeClip: ReturnType<typeof shapeClipGeometry> | undefined = undefined;
   if (layer.matte?.from && layersById) {
     const src = layersById.get(layer.matte.from);
-    if (src) matteSource = renderSub(src, defs, easings, [0, 0], stylekit, light);
+    if (src) {
+      // A4: a SHAPE source becomes a real SVG <clipPath> (screen-space geometry resolved here, applied
+      // in compositing). Any other source kind keeps the (pre-rendered) sibling node + graceful warn.
+      if (src.type === 'shape') {
+        shapeClip = shapeClipGeometry(src, frame, width, height, easings) ?? undefined;
+      } else {
+        matteSource = renderSub(src, defs, easings, [0, 0], stylekit, light);
+      }
+    }
   }
   const matteAsset = layer.matte?.ref ? defs.assets[layer.matte.ref] : undefined;
   const matted = applyMatte(withEffects, layer.matte, layer.id, {
     asset: matteAsset,
     matteSource,
+    shapeClip,
     width,
     height,
   });

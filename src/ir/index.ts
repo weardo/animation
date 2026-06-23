@@ -40,6 +40,7 @@ export {
   StoryTransitionSchema,
   FormatSchema,
   AspectSchema,
+  MusicSchema,
 } from './story.js';
 export type {
   StoryIR,
@@ -53,6 +54,7 @@ export type {
   StoryTransition,
   Format,
   Aspect,
+  Music,
 } from './story.js';
 
 // StyleKit IR schema (ADR-008 I2) — pure Zod shape of a selectable house style (no render dep).
@@ -130,6 +132,7 @@ export {
   StaggerGroupSchema,
   TransitionSchema,
   AudioCueSchema,
+  CaptionCueSchema,
   ProvenanceSchema,
 } from './scene.js';
 export type {
@@ -169,6 +172,7 @@ export type {
   Post,
   Transition,
   AudioCue,
+  CaptionCue,
   Provenance,
 } from './scene.js';
 

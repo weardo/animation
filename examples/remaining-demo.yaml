@@ -1,0 +1,120 @@
+# examples/remaining-demo.yaml — the REMAINING-BACKLOG mega-demo. One short narrated story that
+# exercises EVERY feature built in the final fast-track, so a single render proves the whole batch
+# wires together end-to-end:
+#
+#   • NARRATION (§12, M3)          — every beat carries a `say` line → an OFFLINE-synthesized, cached
+#                                    wav → a Scene-IR audio[] cue → Remotion <Audio> → muxed into mp4.
+#   • CAPTIONS (A1, §11.3)         — narration-synced on-screen subtitles, DERIVED from the same `say`
+#                                    text + cue window (deterministic, no whisper). Default-ON with
+#                                    narration; rendered by the caption track (bottom-centre pill).
+#   • SFX-FROM-EVENTS (A2, §12)    — a sound effect attached to an ELEMENT ENTRANCE (`show[].sfx`) and a
+#                                    beat-level ACCENT (`beat.sfx[]`). Synthesized OFFLINE by ffmpeg into
+#                                    the shared library/sfx/ cache; played via <Audio> at the event frame.
+#   • MUSIC BED + DUCKING (A3, §12)— a story-level `music` bed plays UNDER the whole film (looped) and
+#                                    DUCKS (dips volume) while narration speaks (per-frame, deterministic).
+#   • TRACK-MATTE clipPath (A4)    — a shape CLIPPED by a sibling STAR shape's geometry, built as a REAL
+#                                    SVG <clipPath> (works in headless Chromium). A bright contrasting
+#                                    fill makes the star-clipped silhouette read clearly.
+#   • GENERATOR PRESET (B, ADR-004)— a `generator` that names a PRESET library entry (`starfield`), which
+#                                    the resolver expands to its locked `{ gen: scatter, params }` at
+#                                    lowering time (the layer's own args override the preset defaults).
+#
+# Build it (compiles + narrates + sfx + music + vendors assets + renders one continuous mp4):
+#   tsx src/cli/render.ts examples/remaining-demo.yaml --project remaining-demo --name "Remaining"
+#
+# Verify FAST on stills first (no encode): add --frames auto.
+# Toggle audio sub-features: --no-captions / --no-music / --no-audio.
+
+title: "Remaining"
+
+# MUSIC BED (A3): a built-in synthesized ambient bed plays under the whole film, ducked while narration
+# speaks. `{ ref, gain, duck, fade }` — gain = base volume, duck = volume while speaking, fade = ramp.
+music: { ref: calm, gain: 0.45, duck: 0.15, fade: 10 }
+
+cast:
+  hero:
+    ref: blip # → library characters/blip@1.0.0 (procedural blob-creature rig)
+    palette: warm
+
+beats:
+  # ───────────────────── b1 — INTRO (warm). Narration + caption + a GENERATOR PRESET (starfield). ───
+  - id: b1
+    say: "We begin under a field of stars."
+    mood: warm
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      # GENERATOR PRESET (B): `starfield` is a generator-preset library entry. The resolver expands it
+      # to its locked `{ gen: scatter, params: { motif: star, count: 160, … } }`. The args here OVERRIDE
+      # the preset defaults (most specific wins) — a thinner field for the intro.
+      - generator: starfield
+        as: stars
+        args: { z: 2, count: 120, parallax: 0.2 }
+      - text: "A Field of Stars"
+        as: title
+        at: top
+        args: { z: 20, size: 72, weight: 700, color: ink, anim: { preset: rise, duration: 22, distance: 60 } }
+    camera: slow_push_in
+    duration: { seconds: 3 }
+
+  # ───────── b2 — TURN (cold). The hero ENTERS with an SFX (A2) + a beat accent. Narration + caption. ─
+  - id: b2
+    say: "Then the hero arrives, with a pop."
+    mood: cold
+    # BEAT-LEVEL SFX ACCENT (A2): a whoosh fired 8 frames into the beat (a transition swoosh).
+    sfx:
+      - { name: whoosh, at: 8 }
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - generator: starfield
+        as: stars
+        args: { z: 2, count: 120, parallax: 0.2 }
+      # ELEMENT-ENTRANCE SFX (A2): the `pop` effect fires at THIS actor's on-screen entrance (scene start).
+      - actor: hero
+        as: hero
+        at: bench
+        sfx: pop
+        args: { z: 10 }
+    camera: slow_push_in
+    duration: { seconds: 3 }
+    transition: { kind: iris, duration: 20 }
+
+  # ──────── b3 — LIFT (hopeful). A STAR-clipped track-MATTE panel (A4). Narration + caption + ding. ──
+  - id: b3
+    say: "And lifts into a shining, star-shaped hope."
+    mood: hopeful
+    sfx:
+      - { name: ding, at: 4 }
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - generator: starfield
+        as: stars
+        args: { z: 2, count: 120, parallax: 0.2 }
+      # MATTE SOURCE (A4): a star shape drawn, then used as the clip stencil for the panel below. It is
+      # NOT drawn standalone (the compositor hides a matte-source layer — AE track-matte convention).
+      - shape: star
+        as: mask_src
+        at: center
+        args:
+          z: 7
+          params: { points: 5, innerRadius: 80, outerRadius: 200 }
+          fill: { a: 0, k: light }
+      # TRACK-MATTE (A4): a rect CLIPPED to the star's geometry via a real SVG <clipPath>. A bright,
+      # high-contrast fill makes the star-clipped silhouette unmistakable against the backdrop.
+      - shape: rect
+        as: panel
+        at: center
+        args:
+          z: 8
+          params: { width: 440, height: 440 }
+          fill: { a: 0, k: "#ff4d6d" }
+          matte: { from: L_shape_mask_src, mode: luma }
+      - text: "Hope"
+        as: hope
+        at: bottom
+        args: { z: 20, size: 64, weight: 700, color: ink, anim: { preset: fade, duration: 24 } }
+    camera: slow_pull_out
+    duration: { seconds: 3 }
+    transition: { kind: mask, duration: 20 }

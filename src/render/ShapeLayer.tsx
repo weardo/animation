@@ -76,6 +76,73 @@ interface ResolvedGeometry {
   height: number;
 }
 
+/**
+ * A shape layer's geometry resolved into SCREEN-SPACE clip data (A4 track-matte clipPath). Carries the
+ * path `d` (in its own local box `box`), and the placement that maps that box onto the composition:
+ * the SVG draws into `viewBox = box`, the wrapper is positioned at top-left (`left`,`top`) with
+ * `width`/`height` = the box size, then rotated/scaled about its centre — IDENTICAL to how <ShapeLayer>
+ * paints, so the clip aligns pixel-for-pixel with what the source shape would have drawn. Pure
+ * (frame-driven). Returns `null` when there is no drawable geometry.
+ */
+export interface ShapeClipGeometry {
+  d: string;
+  box: { x: number; y: number; width: number; height: number };
+  /** Screen-space top-left of the local SVG box. */
+  left: number;
+  top: number;
+  /** Local box size (also the SVG viewBox size). */
+  width: number;
+  height: number;
+  rotationDeg: number;
+  scale: number;
+}
+
+/**
+ * Compute the screen-space clip geometry for a shape layer at `frame` (A4). Mirrors <ShapeLayer>'s
+ * geometry + transform resolution exactly so a `<clipPath>` built from it lines up with the shape the
+ * layer paints. Returns `null` for a layer with no drawable geometry.
+ */
+export function shapeClipGeometry(
+  layer: ShapeLayerIR,
+  frame: number,
+  compWidth: number,
+  compHeight: number,
+  easings: Easings | undefined,
+): ShapeClipGeometry | null {
+  const easingTable: Easings = easings ?? {};
+  let d: string;
+  let box: { x: number; y: number; width: number; height: number };
+  if (layer.morph) {
+    d = evalMorph(layer.morph, frame, easingTable);
+    if (!d) return null;
+    const bb = getBoundingBox(d);
+    box = { x: bb.x1, y: bb.y1, width: bb.width, height: bb.height };
+  } else if (layer.shape) {
+    const { kind, ...rest } = layer.shape as { kind: string } & Record<string, unknown>;
+    const geo = geometryForPrimitive(kind, rest);
+    d = geo.d;
+    box = { x: 0, y: 0, width: geo.width, height: geo.height };
+  } else {
+    return null;
+  }
+  const t = layer.transform;
+  const [tx, ty] = evalVec2(t?.position, frame, easingTable, [compWidth / 2, compHeight / 2]);
+  const scalePct = evalNumber(t?.scale, frame, easingTable, 100);
+  const rotationDeg = evalNumber(t?.rotation, frame, easingTable, 0);
+  const vbW = box.width || 1;
+  const vbH = box.height || 1;
+  return {
+    d,
+    box,
+    left: tx - vbW / 2,
+    top: ty - vbH / 2,
+    width: vbW,
+    height: vbH,
+    rotationDeg,
+    scale: scalePct / 100,
+  };
+}
+
 /** A numeric param off the loose primitive descriptor, with a default. */
 function num(params: Record<string, unknown>, key: string, fallback: number): number {
   const v = params[key];

@@ -1,0 +1,101 @@
+// <CaptionTrack> — the compositor's renderer for narration-synced CAPTIONS (subtitles). Spec §11.3
+// (narration-synced text) / §12 (captions). A GLOBAL-timeline visual track (parallel to the
+// <NarrationTrack> audio track in Composition.tsx): each `SceneIR.captions[]` cue becomes a styled,
+// readable caption inside a Remotion `<Sequence from={cue.at}>` so it appears exactly while its
+// narration line plays.
+//
+// REUSE over invent (ADR-003): captions are plain styled DOM text in a Remotion `<Sequence>` — no
+// new primitive. We deliberately DON'T pull `@remotion/captions` here: that package's value is
+// page-grouping a whisper token STREAM with real timestamps; we authored the `say` line ourselves, so
+// the cue text + window are already exact and a hand-tokenized even-split (`words` mode) is fully
+// deterministic without whisper. The precision-caption (whisper word-alignment) path stays the
+// documented later follow-up.
+//
+// DETERMINISM (CLAUDE.md r.1): a pure function of (cue, frame) — the `words` reveal is `floor` of an
+// even-split of the LOCAL frame across `duration_frames`. No Date.now / Math.random; the font is the
+// vendored local DejaVu Sans face the TextLayer already registers (shared @font-face cache).
+
+import React from 'react';
+import { AbsoluteFill, Sequence, useCurrentFrame, useVideoConfig } from 'remotion';
+import type { CaptionCue } from '../ir/index.js';
+
+/**
+ * The caption font family. Reuses the SAME vendored local DejaVu Sans face the TextLayer registers via
+ * @font-face (offline + deterministic); we don't re-inject it here — captions tolerate the system
+ * sans-serif fallback for the brief window before the shared face resolves, and the byte-exact still
+ * verification runs after fonts settle. Kept as a plain CSS family so no extra font gate is needed.
+ */
+const CAPTION_FONT = '"DejaVu Sans", sans-serif';
+
+/** One caption cue, rendered for its window. The `words` mode reveals tokens cumulatively even-split. */
+const CaptionCueView: React.FC<{ cue: CaptionCue }> = ({ cue }) => {
+  const frame = useCurrentFrame(); // LOCAL frame within the <Sequence> (0 at cue.at)
+  const { width, height } = useVideoConfig();
+
+  let text = cue.text;
+  if (cue.mode === 'words') {
+    const words = cue.words && cue.words.length > 0 ? cue.words : cue.text.split(/\s+/).filter(Boolean);
+    if (words.length > 0) {
+      // Even-split: word i is fully shown once the local frame passes (i+1)/N of the window. `floor`
+      // makes the reveal a deterministic step function of the frame (no easing, no sub-pixel drift).
+      const per = cue.duration_frames / words.length;
+      const shown = Math.max(1, Math.min(words.length, Math.floor(frame / per) + 1));
+      text = words.slice(0, shown).join(' ');
+    }
+  }
+
+  // Bottom-centre, readable: a semi-opaque dark pill behind light text (the standard subtitle look),
+  // constrained to ~80% width so long lines wrap instead of bleeding to the edges.
+  const wrapStyle: React.CSSProperties = {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: Math.round(height * 0.06),
+    display: 'flex',
+    justifyContent: 'center',
+    pointerEvents: 'none',
+  };
+  const pillStyle: React.CSSProperties = {
+    maxWidth: Math.round(width * 0.8),
+    padding: '0.35em 0.7em',
+    borderRadius: 8,
+    backgroundColor: 'rgba(0,0,0,0.62)',
+    color: '#ffffff',
+    fontFamily: CAPTION_FONT,
+    fontSize: Math.round(width / 36),
+    fontWeight: 600,
+    lineHeight: 1.25,
+    textAlign: 'center',
+    textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+    whiteSpace: 'pre-wrap',
+  };
+
+  return (
+    <AbsoluteFill data-caption={cue.id}>
+      <div style={wrapStyle}>
+        <div style={pillStyle}>{text}</div>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+/**
+ * The full caption track: every `SceneIR.captions[]` cue placed at its global `at` in a `<Sequence>`.
+ * Dropped by the caller on an alpha render (captions belong to the finished film, like narration).
+ */
+export const CaptionTrack: React.FC<{ captions: CaptionCue[] | undefined }> = ({ captions }) => (
+  <>
+    {(captions ?? []).map((cue) => (
+      <Sequence
+        key={cue.id}
+        from={cue.at}
+        durationInFrames={Math.max(1, cue.duration_frames)}
+        layout="none"
+      >
+        <CaptionCueView cue={cue} />
+      </Sequence>
+    ))}
+  </>
+);
+
+export default CaptionTrack;

@@ -20,6 +20,12 @@ export const EntryKindSchema = z.enum([
   'clip',
   'environment',
   'generator',
+  // ADR-004 §2: a `generator-preset` is the "add as we want" unit — a named, versioned library
+  // entry that pins one generator IMPLEMENTATION (`gen`) + locked `params`. Pure DATA: it adds a
+  // reusable procedural world with ZERO code. A Scene-IR `generator.gen` may name a preset ref
+  // (`starfield@1.0.0`); the resolver expands it to `{ gen, params }` (preset params = defaults,
+  // layer args override). The implementation (`kind:'generator'`) it points at is unchanged.
+  'generator-preset',
   'stylekit',
   'palette',
   'easing-set',
@@ -70,6 +76,24 @@ export const RigManifestSchema = z
   })
   .strict();
 export type RigManifest = z.infer<typeof RigManifestSchema>;
+
+/**
+ * Generator-preset SIDECAR document (ADR-004 §2). This is the DATA a `generator-preset` catalog
+ * entry points at — co-located at `library/generators/<name>.preset.json` (the `preset://<name>`
+ * URI-scheme convention, mirroring `proc://` rigs / `clip://` clips / `palette://` palettes). It
+ * pins ONE generator implementation name + a locked params object; the implementation's own Zod
+ * schema validates `params` at render time (core keeps `params` opaque — CLAUDE.md rule 5). Authoring
+ * a preset needs zero code: write this file, run `factory:gen-preset`, the catalog entry is added.
+ */
+export const GeneratorPresetSchema = z
+  .object({
+    /** The generator IMPLEMENTATION this preset configures (a registered `gen` name, e.g. "scatter"). */
+    gen: z.string().min(1),
+    /** Locked, generator-specific params (defaults the layer's own `args` may override). Opaque here. */
+    params: z.record(z.unknown()).default({}),
+  })
+  .strict();
+export type GeneratorPreset = z.infer<typeof GeneratorPresetSchema>;
 
 /**
  * A single catalog entry. `uri` + `format` + `manifest` + `deps` + `provenance`

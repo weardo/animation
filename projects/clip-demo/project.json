@@ -1,9 +1,9 @@
 {
   "project_version": "1.0",
   "id": "clip-demo",
-  "name": "Nested Composition",
-  "created": "2026-06-22T13:20:53.119Z",
-  "updated": "2026-06-22T13:20:53.119Z",
+  "name": "clip-demo",
+  "created": "2026-06-23T01:21:15.771Z",
+  "updated": "2026-06-23T01:21:15.771Z",
   "config": {
     "w": 1920,
     "h": 1080,
@@ -13,7 +13,7 @@
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "8ea14fb91d065595e33f20236a8a2516bc8e626e",
+  "scene_ir_hash": "3ce820096aca528d88e83747a5cabf69b85c29ab",
   "engine": "remotion@4.0.481",
   "deps": [
     "badge@1.0.0",

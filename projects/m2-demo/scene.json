@@ -337,7 +337,70 @@
       }
     }
   },
-  "audio": [],
+  "audio": [
+    {
+      "id": "narration-b1",
+      "kind": "narration",
+      "src": "audio://audio/5c8f16c81fb23ee2.wav",
+      "at": 0,
+      "duration_frames": 82,
+      "transcript": "We start warm, with the numbers laid out."
+    },
+    {
+      "id": "narration-b2",
+      "kind": "narration",
+      "src": "audio://audio/d764adf6abea1724.wav",
+      "at": 70,
+      "duration_frames": 104,
+      "transcript": "Then it turns cold — and the hero picks up a tool."
+    },
+    {
+      "id": "narration-b3",
+      "kind": "narration",
+      "src": "audio://audio/fde5219a29fd7587.wav",
+      "at": 140,
+      "duration_frames": 67,
+      "transcript": "And lifts into something hopeful."
+    },
+    {
+      "id": "narration-b4",
+      "kind": "narration",
+      "src": "audio://audio/b5663708e46abe84.wav",
+      "at": 212,
+      "duration_frames": 56,
+      "transcript": "We end with the tool itself."
+    }
+  ],
+  "captions": [
+    {
+      "id": "caption-b1",
+      "text": "We start warm, with the numbers laid out.",
+      "at": 0,
+      "duration_frames": 82,
+      "mode": "line"
+    },
+    {
+      "id": "caption-b2",
+      "text": "Then it turns cold — and the hero picks up a tool.",
+      "at": 70,
+      "duration_frames": 104,
+      "mode": "line"
+    },
+    {
+      "id": "caption-b3",
+      "text": "And lifts into something hopeful.",
+      "at": 140,
+      "duration_frames": 67,
+      "mode": "line"
+    },
+    {
+      "id": "caption-b4",
+      "text": "We end with the tool itself.",
+      "at": 212,
+      "duration_frames": 56,
+      "mode": "line"
+    }
+  ],
   "scenes": [
     {
       "id": "b1",
@@ -395,7 +458,7 @@
           "id": "L_gen_chart_bars",
           "z": 4,
           "gen": "chart",
-          "seed": 1964013604,
+          "seed": 681463682,
           "params": {
             "z": 4,
             "kind": "bar",
@@ -772,7 +835,7 @@
           },
           "fill": {
             "a": 0,
-            "k": "accent2"
+            "k": "#ff4d6d"
           },
           "transform": {
             "position": {
@@ -945,7 +1008,7 @@
     }
   ],
   "provenance": {
-    "story_ir_hash": "sha1:2cb19e97eaa541254d8def0b74b9482c4052f2c8",
+    "story_ir_hash": "sha1:fdae22f4708e15338db07b958563db54997ad1d7",
     "passes": [
       "lower@2.0"
     ]

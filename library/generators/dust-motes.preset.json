@@ -1,0 +1,23 @@
+{
+  "gen": "scatter",
+  "params": {
+    "motif": "blob",
+    "count": 40,
+    "size": [
+      4,
+      14
+    ],
+    "colors": [
+      "#fff0d0",
+      "#ffe2a8"
+    ],
+    "distribution": "random",
+    "jitter": 0.9,
+    "anim": "drift",
+    "anim_speed": 0.3,
+    "drift_amount": 10,
+    "blobbiness": 0.5,
+    "glow": true,
+    "opacity": 0.45
+  }
+}

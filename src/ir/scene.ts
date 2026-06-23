@@ -732,9 +732,60 @@ export const AudioCueSchema = z
     duration_frames: z.number(),
     transcript: z.string().optional(),
     align: z.array(z.unknown()).optional(),
+    /** Loop the source to fill the cue window (a music bed shorter than the timeline). */
+    loop: z.boolean().optional(),
+    /** Source loop length in frames (a music bed's own duration) — drives Remotion `<Loop>` tiling. */
+    loop_frames: z.number().int().positive().optional(),
+    /**
+     * MIX controls (A3) for a `kind:"music"` bed: the per-frame volume the compositor applies. `gain`
+     * is the base volume (no narration); `duck` the reduced volume while a narration cue overlaps the
+     * frame; `fade` the linear ramp (frames) on each side of a narration cue. The compositor computes a
+     * pure per-frame `volume(frame)` from these + the narration cue windows (deterministic). Ignored on
+     * non-music cues.
+     */
+    mix: z
+      .object({
+        gain: z.number().min(0).max(1).optional(),
+        duck: z.number().min(0).max(1).optional(),
+        fade: z.number().int().nonnegative().optional(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 export type AudioCue = z.infer<typeof AudioCueSchema>;
+
+// --- caption cue (spec §11.3 narration-synced text / §12 captions) ---
+
+/**
+ * A CAPTION (subtitle) cue — on-screen narration-synced text. VISUAL (distinct from the `audio[]`
+ * track), but DERIVED from a narration AudioCue: same authored `text` + same `at`/`duration_frames`,
+ * so it is deterministic WITHOUT whisper (we authored the `say` line — golden rule 1). The compositor
+ * renders it as a styled, readable caption (bottom-centre, semi-opaque bg) in a `<Sequence>` timed to
+ * the cue. `mode` selects the on-screen cadence:
+ *   • `line`  — the full transcript line shows for the whole cue window (the default).
+ *   • `words` — the words reveal cumulatively, EVEN-SPLIT across `duration_frames` (a deterministic
+ *     karaoke-style progression that needs no whisper word-timestamps; precise word alignment is the
+ *     deferred whisper follow-up). `words[]` carries the tokens so the renderer needn't re-tokenize.
+ * Carried as a top-level `SceneIR.captions[]` (parallel to `audio[]`), emitted by the narrate pass and
+ * dropped on an alpha render (the caption belongs to the finished film, like the narration track).
+ */
+export const CaptionCueSchema = z
+  .object({
+    id: z.string().min(1),
+    /** The full transcript line (the authored `say`). */
+    text: z.string().min(1),
+    /** Global timeline start frame (matches the source narration cue's `at`). */
+    at: z.number().int().nonnegative(),
+    /** On-screen length in frames (matches the source narration cue's `duration_frames`). */
+    duration_frames: z.number().int().positive(),
+    /** Cadence: whole line, or cumulative even-split word reveal. Default `line`. */
+    mode: z.enum(['line', 'words']).default('line'),
+    /** Pre-tokenized words (for `mode:"words"`); the renderer reveals them even-split across the window. */
+    words: z.array(z.string()).optional(),
+  })
+  .strict();
+export type CaptionCue = z.infer<typeof CaptionCueSchema>;
 
 // --- provenance ---
 
@@ -755,6 +806,14 @@ export const SceneIRSchema = z
     defs: DefsSchema,
     /** RESERVED (M3): empty in M1, filled by the later TTS pass. */
     audio: z.array(AudioCueSchema).default([]),
+    /**
+     * On-screen CAPTIONS (subtitles) synced to the narration (spec §11.3 / §12). Emitted by the
+     * narrate pass alongside the narration `audio[]` cues (one caption per `say` line), VISUAL +
+     * deterministic (derived from the authored transcript + cue window — no whisper). Default empty
+     * (a silent / caption-disabled project has none). Rendered by the compositor's caption track and
+     * dropped on an alpha render (the caption belongs to the finished film).
+     */
+    captions: z.array(CaptionCueSchema).default([]),
     /**
      * The sequenced film: one or more scenes laid out on the GLOBAL timeline. Each scene's `at` is
      * its start frame and `duration_frames` its length; scenes play back-to-back (a scene's

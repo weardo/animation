@@ -127,7 +127,10 @@ beats:
         args:
           z: 8
           params: { width: 360, height: 360 }
-          fill: { a: 0, k: accent2 }
+          # A bright, high-contrast fill so the STAR-clipped silhouette (A4: a real SVG clipPath built
+          # from the source star's geometry) reads clearly against the backdrop — a visibly star-shaped
+          # panel, not a rectangle.
+          fill: { a: 0, k: "#ff4d6d" }
           matte: { from: L_shape_mask_src, mode: luma }
       - text: "Hope"
         as: hope

@@ -129,6 +129,17 @@
             "breathe": 0.03,
             "waveRaise": 150
           }
+        },
+        "mounts": {
+          "head_top": {
+            "bone": "head"
+          },
+          "handR": {
+            "bone": "armR"
+          },
+          "handL": {
+            "bone": "armL"
+          }
         }
       }
     },
@@ -301,7 +312,25 @@
       }
     }
   },
-  "audio": [],
+  "audio": [
+    {
+      "id": "narration-b1",
+      "kind": "narration",
+      "src": "audio://audio/fd4bd1de151a02c2.wav",
+      "at": 0,
+      "duration_frames": 104,
+      "transcript": "Hi! I'm Blip — a code-generated character."
+    }
+  ],
+  "captions": [
+    {
+      "id": "caption-b1",
+      "text": "Hi! I'm Blip — a code-generated character.",
+      "at": 0,
+      "duration_frames": 104,
+      "mode": "line"
+    }
+  ],
   "scenes": [
     {
       "id": "b1",

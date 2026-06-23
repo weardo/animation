@@ -31,6 +31,7 @@ const PLACEHOLDER_SCENE_IR: SceneIR = {
     stylekit: NEUTRAL_STYLEKIT,
   },
   audio: [],
+  captions: [],
   scenes: [
     {
       id: 'placeholder',

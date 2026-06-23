@@ -29,6 +29,8 @@ import { parseStory } from '../pipeline/parse.js';
 import { Library } from '../library/index.js';
 import type { SceneIR, Format } from '../ir/index.js';
 import { applyNarration } from './narrate-pass.js';
+import { applySfx } from './sfx-pass.js';
+import { applyMusic } from './music-pass.js';
 import type { NarrateEngine } from './narrate.js';
 import { COMPOSITION_ID } from '../render/Root.js';
 import {
@@ -138,6 +140,12 @@ interface Args {
   engine?: NarrateEngine | undefined;
   voice?: string | undefined;
   wpm?: number | undefined;
+  /** A1 captions: emit narration-synced on-screen subtitles (default on). `--no-captions` skips it. */
+  captions: boolean;
+  /** Caption cadence: `line` (default) or `words` (cumulative even-split reveal). */
+  captionMode?: 'line' | 'words' | undefined;
+  /** A3 music bed: play+duck the story's `music` track (default on). `--no-music` skips it. */
+  music: boolean;
 }
 
 /**
@@ -216,7 +224,13 @@ function parseArgs(argv: string[]): Args {
   const engine = (flag('--engine') ?? process.env['NARRATE_ENGINE']) as NarrateEngine | undefined;
   const voice = flag('--voice') ?? process.env['NARRATE_VOICE'];
   const wpm = num('--wpm');
-  return { target: positional[0] ?? 'examples/character.yaml', id: flag('--project'), name: flag('--name'), frames: flag('--frames'), gpu: argv.includes('--gpu'), format, out, audio, engine, voice, wpm };
+  // A1 captions: narration-synced subtitles, on by default with narration; --no-captions skips them.
+  // --caption-mode line|words selects the on-screen cadence (default line).
+  const captions = !argv.includes('--no-captions');
+  const captionMode = (flag('--caption-mode') === 'words' ? 'words' : 'line') as 'line' | 'words';
+  // A3 music bed: on by default (under the same --no-audio master switch); --no-music skips just music.
+  const music = !argv.includes('--no-music');
+  return { target: positional[0] ?? 'examples/character.yaml', id: flag('--project'), name: flag('--name'), frames: flag('--frames'), gpu: argv.includes('--gpu'), format, out, audio, engine, voice, wpm, captions, captionMode, music };
 }
 
 /**
@@ -288,7 +302,9 @@ function vendorAssets(sceneIR: SceneIR, paths: ProjectPaths): string[] {
 // visually lossless). Opt into GPU with --gpu for speed/previews; verify those perceptually (SSIM/
 // PSNR via tools/perceptual-diff.mjs), not byte-exact. NEVER software GL (swiftshader → disk balloon).
 const chromiumOpts = (gpu: boolean) => (gpu ? { gl: 'angle' as const } : {});
-const CONCURRENCY = Math.max(1, cpus().length - 2);
+const CONCURRENCY = process.env['RENDER_CONCURRENCY']
+  ? Math.max(1, Number(process.env['RENDER_CONCURRENCY']))
+  : Math.max(1, cpus().length - 2);
 
 /**
  * Bundle the project + select the composition for a Scene IR. Shared by video + stills.
@@ -395,7 +411,7 @@ function makeThumbnail(p: ProjectPaths, frame: number): void {
 }
 
 async function main(): Promise<void> {
-  const { target, id: idFlag, name, frames, gpu, format, out, audio, engine, voice, wpm } = parseArgs(process.argv.slice(2));
+  const { target, id: idFlag, name, frames, gpu, format, out, audio, engine, voice, wpm, captions, captionMode, music } = parseArgs(process.argv.slice(2));
 
   let paths: ProjectPaths;
   let sceneIR: SceneIR;
@@ -427,11 +443,33 @@ async function main(): Promise<void> {
     // are generated DIRECTLY into the render publicDir (assets/), so no extra vendor step is needed.
     if (audio) {
       const story = parseStory(readFileSync(storyPath, 'utf8'));
+      const assetsDir = resolvePath(paths.dir, 'assets');
       const hasSay = story.beats.some((b) => b.say?.trim());
       if (hasSay) {
-        const assetsDir = resolvePath(paths.dir, 'assets');
         mkdirSync(assetsDir, { recursive: true });
-        sceneIR = applyNarration(sceneIR, story, { engine, voice, wpm, assetsDir, rootDir: PROJECT_ROOT });
+        sceneIR = applyNarration(sceneIR, story, { engine, voice, wpm, assetsDir, rootDir: PROJECT_ROOT, captions, captionMode });
+      }
+      // A2 SFX (OFFLINE asset-gen; golden rule 2). Beats may attach a sound effect to an event —
+      // `show[].sfx` (an element entrance) or `beat.sfx[]` (a beat accent). The sfx pass synthesizes
+      // each named effect with ffmpeg into the shared library/sfx/ cache, copies the wav into the
+      // project's assets/audio/, and emits `kind:"sfx"` cues at the event frames. Deterministic (fixed
+      // recipe → fixed wav). Runs under the same `--no-audio` master switch as narration.
+      const hasSfx = story.beats.some(
+        (b) => (b.sfx && b.sfx.length > 0) || (b.show ?? []).some((s) => s.sfx),
+      );
+      if (hasSfx) {
+        mkdirSync(assetsDir, { recursive: true });
+        sceneIR = applySfx(sceneIR, story, { assetsDir, rootDir: PROJECT_ROOT });
+      }
+      // A3 MUSIC BED + DUCKING (OFFLINE asset-gen; golden rule 2). A story-level `music` directive plays
+      // a looping bed UNDER the whole video, auto-ducked while narration speaks. The music pass
+      // synthesizes a built-in bed with ffmpeg into the shared library/music/ cache (or passes an
+      // asset ref through), copies the wav into the project's assets/audio/, and emits ONE
+      // `kind:"music"` cue spanning the timeline with the duck `mix` controls. Deterministic; runs under
+      // the `--no-audio` master switch and skipped by `--no-music`.
+      if (music && story.music) {
+        mkdirSync(assetsDir, { recursive: true });
+        sceneIR = applyMusic(sceneIR, story, { assetsDir, rootDir: PROJECT_ROOT });
       }
     }
 

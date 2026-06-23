@@ -16,6 +16,7 @@ export {
   SemverSchema,
   ProvenanceSchema,
   RigManifestSchema,
+  GeneratorPresetSchema,
 } from './catalog.js';
 export type {
   Catalog,
@@ -24,6 +25,7 @@ export type {
   EntryKind,
   Provenance,
   RigManifest,
+  GeneratorPreset,
 } from './catalog.js';
 
 // Lockfile (animation.lock) schema + types + constants.
