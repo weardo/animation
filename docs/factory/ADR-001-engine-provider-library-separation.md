@@ -1,6 +1,25 @@
 # ADR-001 — Source-agnostic engine, pluggable providers, shareable library
 
-**Date:** 2026-06-22 · **Status:** Accepted (target architecture; integrate into main spec after M2)
+**Date:** 2026-06-22 · **Status:** Integrated / DONE (M7a) — the boundary contracts are now formal TS interfaces in `src/library`
+
+> **M7a (2026-06-23) — formal interfaces landed.** The two boundary seams this ADR reserved as
+> types now exist as explicit TS interfaces in `src/library/interfaces.ts`, implemented by the
+> existing loader with **zero behavior change** (the `implements` clause is a compile-time assertion
+> that the current methods already honor the contracts):
+> - **§4 storage seam → `LibraryResolver`** — catalog lookup (`name@version` → content hash + data),
+>   dedup, and lockfile pin/verify. The engine depends on this thin interface, never on where things
+>   live (local FS today; a remote registry tomorrow is a drop-in implementation).
+> - **§2/§5 library-side ref→def plug → `AssetRefResolver`** — adapt a resolved catalog entry/URI to a
+>   concrete Scene-IR def (`toRigDef`/`toAssetDef`) or a validated spec-pack artifact
+>   (`toStyleKit`/`toClip`/`toPalette`/`toGeneratorPreset`/`expandGeneratorRef`): the `proc://`
+>   sidecar-spec embedding + provider-from-catalog + spec-pack resolvers, keyed on the URI **scheme**
+>   (data) so core names no provider/look/clip.
+>
+> Naming note: the render-time `AssetProvider` half of §2 (`instantiate`/`render`/`dispose`) lives in
+> the **provider plugins** (`providers.get(id)`) per ADR-005/006/007, not in core; `src/library` owns
+> only the **library half** (ref → def), hence the precise name `AssetRefResolver`. `Library implements
+> LibraryResolver, AssetRefResolver`. See the "Follow-ups" section below (items 2 + the type-definition
+> part of item 3) marked done.
 
 ## Context
 
@@ -99,5 +118,5 @@ These are deliberate so a future public/community service needs no re-architecti
 ## Follow-ups (after M2 lands, to avoid editing shared files mid-workflow)
 
 - Fold this into the main spec (a new "Engine / Provider / Library separation" section) and add a CLAUDE.md golden rule ("source-agnostic engine; providers behind the `AssetProvider` interface; library/registry is a separate concern").
-- Define `AssetProvider` + `LibraryResolver` as real TS interfaces in `src/` and migrate the two existing sources behind them.
+- ~~Define `AssetProvider` + `LibraryResolver` as real TS interfaces in `src/` and migrate the two existing sources behind them.~~ **DONE (M7a):** `LibraryResolver` + the library-side `AssetRefResolver` are formal interfaces in `src/library/interfaces.ts`; `Library implements` both (no behavior change). The render-time provider half (`instantiate`/`render`/`dispose`) is already migrated behind the plugin `providers` registry per ADR-005/006/007.
 - Specify the bundle/export format and the `LibraryResolver` remote variant.

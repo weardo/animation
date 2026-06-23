@@ -88,6 +88,26 @@ function layerParallax(layer: Layer): number {
   return 1;
 }
 
+/**
+ * The effective DEPTH of a layer in [0,1] (1 = near/foreground, 0 = far/atmosphere) for the painting
+ * depth grade + aerial-perspective haze (M8b-b). A layer that carries an explicit `parallax` uses it
+ * directly (parallax IS the camera-depth signal). Subjects with no parallax (shape/rig/generator/text)
+ * fall back to their `z` normalised over the scene's z-range — the documented "low-parallax / HIGH-Z"
+ * depth convention (stylekit §atmosphere) — so a far trunk (low z) hazes while a near foliage clump
+ * (high z) stays saturated. A flat scene (all z equal) → depth 1 everywhere (no haze). Pure.
+ */
+function layerDepth01(layer: Layer, zMin: number, zMax: number): number {
+  if (
+    layer.type === 'asset' ||
+    ((layer.type === 'footage' || layer.type === 'clip') && layer.parallax !== undefined)
+  ) {
+    return layerParallax(layer);
+  }
+  const span = zMax - zMin;
+  if (span <= 0) return 1;
+  return (layer.z - zMin) / span;
+}
+
 export const Scene: React.FC<SceneProps> = ({ scene, defs: baseDefs, alpha }) => {
   const frame = useCurrentFrame();
   // COLOR-SCRIPT (spec §11.4): merge this scene's per-scene PALETTE OVERRIDE (a diff vs the base,
@@ -141,6 +161,18 @@ export const Scene: React.FC<SceneProps> = ({ scene, defs: baseDefs, alpha }) =>
     return m;
   }, [scene.layers]);
 
+  // Scene Z-RANGE for the depth grade / aerial-perspective haze (M8b-b): subjects with no parallax use
+  // their `z` normalised over this range as their depth (far = low z). Memoised, pure structural reduce.
+  const [zMin, zMax] = useMemo(() => {
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (const l of scene.layers) {
+      if (l.z < lo) lo = l.z;
+      if (l.z > hi) hi = l.z;
+    }
+    return Number.isFinite(lo) ? [lo, hi] : [0, 0];
+  }, [scene.layers]);
+
   // The camera parent: scale about the centre (zoom), then translate by -cameraPosition so a pan
   // moves the world opposite the camera. transformOrigin centre keeps zoom anchored to the middle.
   const cameraStyle: React.CSSProperties = {
@@ -169,6 +201,7 @@ export const Scene: React.FC<SceneProps> = ({ scene, defs: baseDefs, alpha }) =>
               light={light}
               stylekit={stylekit}
               layersById={layersById}
+              depth01={layerDepth01(l, zMin, zMax)}
             />
           );
         })}
@@ -197,6 +230,12 @@ export interface LayerViewProps {
    * (absent inside a clip's local layer set, which has no scene-level attach) → attach is a no-op.
    */
   layersById?: Map<string, Layer>;
+  /**
+   * The layer's effective depth in [0,1] (1 = near, 0 = far) — the depth grade + aerial-perspective
+   * haze signal (M8b-b). Computed by the parent <Scene> (explicit parallax, else z-normalised). When
+   * absent (e.g. inside a clip's local set) the layer is treated as near (no haze / no grade).
+   */
+  depth01?: number | undefined;
 }
 
 /** Build the bare sub-renderer for a layer (no shading). Asset layers fold parallax themselves. */
@@ -207,6 +246,7 @@ function renderSub(
   parallaxOffset: readonly [number, number],
   stylekit: StyleKit,
   light: Light,
+  depth01?: number,
 ): React.ReactNode {
   switch (layer.type) {
     case 'asset': {
@@ -253,6 +293,7 @@ function renderSub(
             easings={easings}
             paint={stylekit.floor.shading ? stylekit.paint : undefined}
             light={light}
+            depth01={depth01}
           />
         </ParallaxWrapper>
       );
@@ -311,12 +352,12 @@ function renderSub(
  * filters/gradients are static styles; the contact-shadow anchor is a deterministically-evaluated
  * position.
  */
-export const LayerView: React.FC<LayerViewProps> = ({ layer, defs, easings, parallaxOffset, light, stylekit, layersById }) => {
+export const LayerView: React.FC<LayerViewProps> = ({ layer, defs, easings, parallaxOffset, light, stylekit, layersById, depth01 }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
   const floor = stylekit.floor;
 
-  const sub = renderSub(layer, defs, easings, parallaxOffset, stylekit, light);
+  const sub = renderSub(layer, defs, easings, parallaxOffset, stylekit, light, depth01);
   const shading = resolveShading(layer.shading, stylekit.shading);
 
   // Floor toggle (I3): shading=false → skip ALL §11.1 shading (no object filter, no contact shadow).
@@ -364,8 +405,8 @@ export const LayerView: React.FC<LayerViewProps> = ({ layer, defs, easings, para
   // A pure CSS `saturate()/brightness()` fragment from the layer's effective depth. Background-exempt
   // (it IS the atmosphere) and floor-gated. Applied as an outer wrapper so it grades the whole layer.
   const depthFx =
-    paint && floor.parallax && !isBackground
-      ? depthGrade(layerParallax(layer), paint)
+    paint && floor.parallax && !isBackground && depth01 !== undefined
+      ? depthGrade(depth01, paint)
       : undefined;
   const graded = depthFx ? (
     <AbsoluteFill style={{ filter: depthFx }} data-depth={layer.id}>

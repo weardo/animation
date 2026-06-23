@@ -1,0 +1,60 @@
+# examples/icon-demo.yaml — M7b ICON/ILLUSTRATION INGEST demo.
+#
+# Renders three INGESTED open-license icons (lucide, ISC) as `object`-provider layers. The glyph
+# geometry was fetched ONCE OFFLINE by `factory:ingest-icons` and committed as content-addressed
+# library entries (library/icons/<id>/<id>.spec.json, cataloged under the `icons` namespace with full
+# provenance + license) — the render replays the FIXED cached spec, so it is byte-deterministic even
+# though the fetch is not (CLAUDE.md golden rule 1).
+#
+# The point of the demo: an ingested icon is JUST a flat-vector prop. We do ZERO per-icon styling —
+# each icon renders as a colored badge + its outline glyph, and the ACTIVE stylekit (default
+# kurzgesagt) form-shades the badge for free, exactly like any prop fill. A new look = new DATA
+# (a different `style:`), never a code edit.
+#
+# Build it (verify on stills first — ~14s):
+#   npm run factory:ingest-icons          # (re)ingest the icon set into library/icons/
+#   tsx src/cli/render.ts examples/icon-demo.yaml --project icon-demo --frames auto
+
+title: "Icon Ingest"
+style: kurzgesagt
+
+cast:
+  # Each cast member refs an INGESTED icon library entry (kind=rig, provider=object). The loader
+  # inlines the co-located sidecar spec (proc:// + the `icons` namespace) into the Scene IR.
+  heart:
+    ref: icon_heart
+  lightbulb:
+    ref: icon_lightbulb
+  rocket:
+    ref: icon_rocket
+
+beats:
+  - id: icons
+    say: "Open-license icons, ingested as props and shaded by the style for free."
+    show:
+      # A soft backdrop so the form-shading reads.
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+
+      # Three ingested icons as standalone object layers on distinct staging anchors. `scale` sizes the
+      # prop; the badge + glyph come straight from the cached spec; the stylekit paints the rest.
+      - actor: heart
+        as: ic_heart
+        at: left_third
+        args: { z: 10, scale: 130 }
+      - actor: lightbulb
+        as: ic_bulb
+        at: center
+        args: { z: 11, scale: 150 }
+      - actor: rocket
+        as: ic_rocket
+        at: right_third
+        args: { z: 10, scale: 130 }
+
+      - text: "Ingested. Form-shaded. Free."
+        as: caption
+        at: bottom
+        args: { z: 20, size: 64, weight: 700, color: ink }
+
+    camera: establishing
+    duration: { seconds: 3 }

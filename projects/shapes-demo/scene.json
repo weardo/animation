@@ -129,6 +129,17 @@
             "breathe": 0.03,
             "waveRaise": 150
           }
+        },
+        "mounts": {
+          "head_top": {
+            "bone": "head"
+          },
+          "handR": {
+            "bone": "armR"
+          },
+          "handL": {
+            "bone": "armL"
+          }
         }
       }
     },
@@ -301,7 +312,40 @@
       }
     }
   },
-  "audio": [],
+  "audio": [
+    {
+      "id": "narration-primitives",
+      "kind": "narration",
+      "src": "audio://audio/36b9e8303ab11c3a.wav",
+      "at": 0,
+      "duration_frames": 93,
+      "transcript": "Every shape is a socket; the library is the plug."
+    },
+    {
+      "id": "narration-morph",
+      "kind": "narration",
+      "src": "audio://audio/38ac637d9b1c3d80.wav",
+      "at": 72,
+      "duration_frames": 109,
+      "transcript": "Now watch one become another — geometry and colour together."
+    }
+  ],
+  "captions": [
+    {
+      "id": "caption-primitives",
+      "text": "Every shape is a socket; the library is the plug.",
+      "at": 0,
+      "duration_frames": 93,
+      "mode": "line"
+    },
+    {
+      "id": "caption-morph",
+      "text": "Now watch one become another — geometry and colour together.",
+      "at": 72,
+      "duration_frames": 109,
+      "mode": "line"
+    }
+  ],
   "scenes": [
     {
       "id": "primitives",
@@ -720,7 +764,7 @@
   "provenance": {
     "story_ir_hash": "sha1:94125d5afc44691520db469ae52b1b52fb67581a",
     "passes": [
-      "lower@2.0"
+      "lower@2.2"
     ]
   }
 }

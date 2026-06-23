@@ -71,3 +71,7 @@ export {
 
 // Loader facade (the P2-pass entry point).
 export { Library } from './loader.js';
+
+// ADR-001 (M7a) formal boundary contracts: the storage seam (LibraryResolver) + the ref→def
+// adapter (AssetRefResolver). `Library` implements both; an alternate backend is a drop-in.
+export type { LibraryResolver, AssetRefResolver } from './interfaces.js';

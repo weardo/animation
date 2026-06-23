@@ -1,0 +1,41 @@
+{
+  "lockfile_version": "1",
+  "algorithm": "object-hash@sha1/v1",
+  "refs": {
+    "bg_gradient@1.0.0": {
+      "namespace": "backgrounds",
+      "id": "bg_gradient",
+      "version": "1.0.0",
+      "hash": "84e83292f11d2fa767ca742a60d548a44653c621",
+      "deps": []
+    },
+    "icon_heart@1.0.0": {
+      "namespace": "icons",
+      "id": "icon_heart",
+      "version": "1.0.0",
+      "hash": "0db46e994b6ce1a63ab455deb640dbf625978260",
+      "deps": []
+    },
+    "icon_lightbulb@1.0.0": {
+      "namespace": "icons",
+      "id": "icon_lightbulb",
+      "version": "1.0.0",
+      "hash": "673616a0b98e1a96e6ca438ed60e4a0538eb4771",
+      "deps": []
+    },
+    "icon_rocket@1.0.0": {
+      "namespace": "icons",
+      "id": "icon_rocket",
+      "version": "1.0.0",
+      "hash": "d19eca248c084b55d35d6c90c95771b96102dc7d",
+      "deps": []
+    },
+    "kurzgesagt@1.0.0": {
+      "namespace": "stylekits",
+      "id": "kurzgesagt",
+      "version": "1.0.0",
+      "hash": "c70eaa416ae16cd7b5d3667908f01b12f559c8be",
+      "deps": []
+    }
+  }
+}

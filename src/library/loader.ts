@@ -25,6 +25,7 @@ import {
   type LockVerifyResult,
 } from './resolver.js';
 import type { Lockfile } from './lockfile.js';
+import type { LibraryResolver, AssetRefResolver } from './interfaces.js';
 import {
   loadCatalog,
   readLockfile,
@@ -33,7 +34,12 @@ import {
   DEFAULT_LOCK_PATH,
 } from './io.js';
 
-export class Library {
+// ADR-001 (M7a): `Library` is the concrete implementation of the two formal boundary contracts —
+// the storage seam {@link LibraryResolver} (§4: catalog lookup → content hash, lockfile pin/verify)
+// and the ref→def adapter {@link AssetRefResolver} (§2/§5: `proc://` embedding + provider-from-catalog
+// + the spec-pack `toStyleKit`/`toClip`/… resolvers). The `implements` clause is a compile-time
+// assertion that the EXISTING methods satisfy both interfaces verbatim (no behavior change).
+export class Library implements LibraryResolver, AssetRefResolver {
   /** In-pass resolution cache so a repeated ref is hashed exactly once (dedup, spec §13.2). */
   private readonly cache = new Map<string, ResolvedEntry>();
 
@@ -109,7 +115,7 @@ export class Library {
       // we search the known catalog namespaces (a data convention) and embed the first match; if none
       // exists the provider falls back to its own default spec (e.g. core-objects' STAR_SPEC).
       const id = r.entry.uri.replace(/^proc:\/\//, '').split('/')[0] ?? '';
-      const NAMESPACES = ['characters', 'props', 'objects'] as const;
+      const NAMESPACES = ['characters', 'props', 'objects', 'icons'] as const;
       for (const ns of NAMESPACES) {
         const specPath = resolvePath(this.rootDir, 'library', ns, id, `${id}.spec.json`);
         if (existsSync(specPath)) {

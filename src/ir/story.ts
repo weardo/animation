@@ -15,6 +15,7 @@
 // schema migration. Audio/TTS is NOT modeled here yet.
 
 import { z } from 'zod';
+import { PostSchema } from './scene.js';
 
 /** A named palette token reference (resolved later in Scene IR `defs.palette`). */
 const PaletteRefSchema = z.string().min(1);
@@ -354,6 +355,15 @@ export const StoryIRSchema = z
      * floor OFF for a flat/technical result. The style is DATA (library/stylekits/*.json), not core.
      */
     style: z.string().min(1).optional(),
+    /**
+     * Optional film-level POST grade (M8a): a final, COMPOSITION-LEVEL effect stack applied over the
+     * WHOLE rendered frame (color_grade / vignette / grain / …), reusing the SAME core-effects ops the
+     * per-layer `effects[]` use. Each entry is loosely typed `{ kind, ...params }` and validated at
+     * render by the effect's own Zod (via the engine `effects` registry). Omitted → no grade (a strict
+     * no-op; scenes without `post` render byte-identically to before). Carried verbatim by the lowering
+     * pass into Scene IR `post[]`. Pure CSS/SVG filters → byte-deterministic on the CPU raster.
+     */
+    post: z.array(PostSchema).optional(),
     /** Named cast: generic refs/actors → a library entry (+ optional provider/palette intent). */
     cast: z.record(CastEntrySchema).default({}),
     beats: z.array(BeatSchema).min(1),

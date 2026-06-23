@@ -1,0 +1,92 @@
+# examples/post-demo.yaml — the M8a film-level `post[]` COMPOSITION GRADE vertical slice.
+#
+# Where `effects[]` grades ONE layer (examples/effects-demo.yaml), the story-level `post[]` grades the
+# WHOLE finished frame — every scene + transition — AFTER the scene graph composites. It is the final
+# "look" pass: a warm filmic grade + darkened corners + a touch of grain over the entire video.
+#
+# REUSE (CLAUDE.md r.3): `post[]` is the SAME core-effects vocabulary as `effects[]` — the compositor
+# (src/render/Composition.tsx → PostGrade) looks each `kind` up in the engine `effects` registry via the
+# very same resolveEffects/applyEffects glue, just wrapped around the TransitionSeries instead of one
+# layer. No new effect engine, no Remotion primitive reimplemented. The audio + caption tracks are
+# siblings of the graded frame, so the grade never touches them.
+#
+# DETERMINISM (r.1): pure CSS/SVG filters (color_grade = CSS chain, vignette = radial-gradient overlay,
+# grain = seeded feTurbulence) → CPU raster renders byte-identical across cold processes. The grade is a
+# pure function of (post[], frame); the SVG filter id is the fixed `fx-__post__`.
+#
+# A film WITHOUT `post[]` is a strict no-op (applyEffects returns the frame untouched) — proven by
+# rendering this same scene with the `post:` block removed.
+#
+# Build it (verify on stills first, then full video):
+#   tsx src/cli/render.ts examples/post-demo.yaml --project post-demo --name "Post" --frames auto
+#   tsx src/cli/render.ts examples/post-demo.yaml --project post-demo --name "Post"
+
+title: "Post"
+
+# Film-level POST grade: applied over the whole frame, in authored order.
+#   1. color_grade — a WARM filmic look: slightly brighter, punchier contrast, richer saturation, a
+#      small hue rotation toward amber.
+#   2. vignette    — darken the corners so the eye centres (radial-gradient wrapper over the frame).
+#   3. grain       — a faint, seeded film-grain texture over everything (deterministic).
+post:
+  - { kind: color_grade, brightness: 1.06, contrast: 1.12, saturate: 1.25, hue: -8 }
+  - { kind: vignette, amount: 0.42, softness: 0.45 }
+  - { kind: grain, amount: 0.08, size: 0.9, seed: 5 }
+
+# DOMAIN-AGNOSTIC (ADR-007): no cast — just shapes + a generator, every layer declared per beat.
+beats:
+  # ----------------------------------------------------------------------------------------------
+  # SCENE 1 — a calm composition the grade has something to work on: a soft gradient backdrop, a
+  # twinkling starfield, and a centred circle. The warm grade + vignette + grain land over all of it.
+  # ----------------------------------------------------------------------------------------------
+  - id: ungraded_world
+    say: "First, the world is composited."
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - generator: scatter
+        as: stars
+        args:
+          motif: star
+          count: 70
+          size: [2, 6]
+          colors: [light, accent]
+          anim: twinkle
+          anim_speed: 0.4
+          opacity: 0.85
+      - shape: circle
+        as: orb
+        at: center
+        args:
+          z: 12
+          scale: 100
+          params: { radius: 130 }
+          fill:
+            gradient:
+              type: radial
+              stops: [[light, 0.0], [accent2, 1.0]]
+          stroke: { color: ink, width: 4 }
+    camera: establishing
+    duration: { seconds: 3 }
+    transition: { kind: fade, duration: 18 }
+
+  # ----------------------------------------------------------------------------------------------
+  # SCENE 2 — a second composition (a gold star) so the grade is visibly applied ACROSS scenes and
+  # OVER the fade transition between them, not just to a single still.
+  # ----------------------------------------------------------------------------------------------
+  - id: graded_world
+    say: "Then one warm grade falls over the whole film."
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - shape: star
+        as: hero_star
+        at: center
+        args:
+          z: 12
+          scale: 90
+          params: { points: 5, innerRadius: 55, outerRadius: 120 }
+          fill: { a: 0, k: accent }
+          stroke: { color: light, width: 5 }
+    camera: slow_push_in
+    duration: { seconds: 3 }

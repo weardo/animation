@@ -12,6 +12,7 @@
     "build:neuron": "tsx src/cli/render.ts examples/neuron.yaml --project neuron-demo --name \"Neuron\"",
     "factory:gen": "tsx factory-gen-entry.ts",
     "factory:gen-preset": "tsx src/cli/factory-gen-preset.ts",
+    "factory:ingest-icons": "tsx ingest-icons-entry.ts",
     "factory:bundle": "tsx src/cli/factory-bundle.ts",
     "factory:list": "tsx src/cli/factory-list.ts",
     "export:otio": "tsx src/cli/export-otio.ts",
@@ -28,6 +29,7 @@
     "@remotion/shapes": "^4.0.481",
     "@remotion/transitions": "^4.0.481",
     "culori": "^4.0.2",
+    "d3-geo": "^3.1.1",
     "d3-shape": "3.2.0",
     "flubber": "^0.4.2",
     "object-hash": "3.0.0",
@@ -37,17 +39,20 @@
     "react-dom": "19.0.0",
     "remotion": "4.0.481",
     "simplex-noise": "4.0.3",
+    "topojson-client": "^3.1.0",
     "yaml": "2.7.0",
     "zod": "3.24.1",
     "zod-to-json-schema": "3.24.1"
   },
   "devDependencies": {
     "@types/culori": "^4.0.1",
+    "@types/d3-geo": "^3.1.0",
     "@types/d3-shape": "3.1.7",
     "@types/node": "22.10.5",
     "@types/object-hash": "3.0.6",
     "@types/react": "19.0.0",
     "@types/react-dom": "19.0.0",
+    "@types/topojson-client": "^3.1.5",
     "tsx": "4.19.2",
     "typescript": "5.7.3"
   }

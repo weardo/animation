@@ -530,7 +530,7 @@
   "provenance": {
     "story_ir_hash": "sha1:10ef2ade6cb28df2fb104dcc49a7a386aee7a458",
     "passes": [
-      "lower@2.1"
+      "lower@2.2"
     ]
   }
 }

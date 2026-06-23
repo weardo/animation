@@ -59,7 +59,7 @@ import { resolveScenePalette, paletteDiff, interpolatePalettes } from './color-s
 
 /** This pass's id + version — folded into cache keys / provenance (spec §5). */
 export const PASS_ID = 'lower';
-export const PASS_VERSION = '2.1';
+export const PASS_VERSION = '2.2';
 
 /**
  * The default render config: a 1920×1080, 30fps film. Generic — no domain assumptions. A scene's
@@ -1080,6 +1080,10 @@ export function lowerStory(story: StoryIR, opts: LowerOptions = {}): LoweredScen
     audio: [],
     captions: [],
     scenes,
+    // M8a: carry the film-level POST grade VERBATIM into Scene IR `post[]` (the compositor applies it
+    // over the whole frame via the core-effects registry). Omitted in the story → omitted here (strict
+    // no-op; a film without `post` stays byte-identical). Validated at render by each effect's own Zod.
+    ...(story.post && story.post.length > 0 ? { post: story.post } : {}),
     provenance: {
       story_ir_hash: hash,
       passes: [`${PASS_ID}@${PASS_VERSION}`],

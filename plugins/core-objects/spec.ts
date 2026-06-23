@@ -25,6 +25,7 @@ export const ObjectKindSchema = z.enum([
   'planet', // a ringed planet disc (idle: gentle bob)
   'gear', // a cog/gear wheel (idle: rotate)
   'arrow', // a directional arrow (static)
+  'icon', // an INGESTED open-license glyph: a filled badge (form-shaded) + outline strokes from `glyph`
 ]);
 export type ObjectKind = z.infer<typeof ObjectKindSchema>;
 
@@ -52,6 +53,31 @@ export const ObjectSpecSchema = z
      * the renderer pick part variants — here it makes the rig-layer `parts` field functional for props.
      */
     parts: z.record(z.string()).default({}),
+    /**
+     * INGESTED-ICON geometry (only read by `kind: "icon"`). A normalized open-license glyph: the SVG
+     * path `d` strings extracted from the source icon + its viewBox, so the draw routine can scale the
+     * glyph into the prop's local `size` box and stroke it in the palette `ink`. This is pure DATA
+     * (no executable SVG) produced OFFLINE by `factory:ingest-icons` and content-addressed; the icon
+     * is drawn ON a filled badge so the active stylekit form-shades it for free (like any prop fill).
+     * Absent → the draw routine renders only the badge (graceful).
+     */
+    glyph: z
+      .object({
+        /** Extracted path `d` commands from the source SVG (geometry only; never raw markup). */
+        paths: z.array(z.string().min(1)).default([]),
+        /** The source viewBox `[minX, minY, w, h]` the paths are authored in (for scale-to-fit). */
+        viewBox: z.tuple([z.number(), z.number(), z.number(), z.number()]).default([0, 0, 24, 24]),
+        /** Source stroke width in viewBox units (lucide/tabler are stroked icons; default 2). */
+        strokeWidth: z.number().nonnegative().default(2),
+        /** Whether the source paths are FILLED (CC0 solid icons) vs STROKED outlines. */
+        filled: z.boolean().default(false),
+        /** Show the colored badge behind the glyph (form-shaded). Off → a bare glyph (line-art). */
+        badge: z.boolean().default(true),
+        /** Badge shape: a rounded square or a disc. */
+        badgeShape: z.enum(['rounded', 'circle']).default('rounded'),
+      })
+      .strict()
+      .optional(),
     /** Idle-motion amplitudes (gated by the stylekit liveness floor at render). Kurzgesagt defaults. */
     motion: z
       .object({

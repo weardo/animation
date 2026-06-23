@@ -1,0 +1,33 @@
+{
+  "id": "icon_globe",
+  "kind": "icon",
+  "palette": {
+    "fill": "#4d9be6",
+    "fillDark": "#2f6fb0",
+    "ink": "#16243f",
+    "accent": "#ffce4a"
+  },
+  "size": 60,
+  "stroke": 4,
+  "parts": {},
+  "glyph": {
+    "paths": [
+      "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20",
+      "M2 12h20"
+    ],
+    "viewBox": [
+      0,
+      0,
+      24,
+      24
+    ],
+    "strokeWidth": 2,
+    "filled": false,
+    "badge": true,
+    "badgeShape": "rounded"
+  },
+  "motion": {
+    "amp": 1,
+    "spinHz": 0.15
+  }
+}

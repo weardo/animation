@@ -1,8 +1,11 @@
 # Remaining Capability Roadmap — "cover all of it"
 
-**Date:** 2026-06-23 · **Status:** Planned (decisions locked via the 2026-06-23 Q&A). Sequenced to run
-AFTER the painting-style workflow (`wag7nnvs2`) lands — two workflows editing the render core +
-`library/index.json` concurrently would collide.
+**Date:** 2026-06-23 · **Status:** In progress (decisions locked via the 2026-06-23 Q&A). **Batch A
+landed 2026-06-23: ✅ M7a interfaces · ✅ M7b icons · ✅ M7c maps · ✅ M8a post[] grade; ✅ M8b paint
+follow-ons (Batch B).** Still open: M4a/M4b (Whisper install), M5 director (+ LLM seam), M6 Tier-B GPU
+(perceptual tier), M9 AI asset-gen — plus the ADR-001 `LibraryResolver` REMOTE variant + a specified
+bundle/export format. Sequenced to run AFTER the painting-style workflow (`wag7nnvs2`) landed — two
+workflows editing the render core + `library/index.json` concurrently would collide.
 
 This is the full tail after the architecture (ADR-001→008), the ADR-003 vocabulary (#1–10), ADR-004,
 and the audio MVP. Every item obeys the golden rules: determinism (CPU byte-exact OR offline-cached
@@ -57,20 +60,31 @@ them (stays byte-exact). Verify with VMAF against a reference, not `cmp`. ADR-00
 perceptual-tier reframe.
 
 ## M7 — Library breadth
-**7a. ADR-001 formal interfaces.** Extract `AssetProvider` + `LibraryResolver` TS interfaces in
-`src/library` (formalize what loader/resolver already do). Mechanical; no behavior change.
-**7b. Iconify/unDraw bulk ingest.** A CLI that ingests open icon/illustration sets (MIT/CC0) as
-`object`-provider library entries (SVG → catalog entries, content-addressed). Bulk vocabulary; the
-`object` provider already renders them. Licensing recorded per set.
-**7c. D3-geo maps.** A `map` generator plugin (peer of core-dataviz): d3-geo + topojson → SVG paths
-(choropleth / projection / draw-on). Pure → deterministic. Closes the data-viz maps gap.
+**7a. ADR-001 formal interfaces. ✅ DONE (2026-06-23).** `LibraryResolver` (storage seam) + the
+library-side `AssetRefResolver` (ref→def adapter) are explicit TS interfaces in
+`src/library/interfaces.ts`; `Library implements` both (compile-time assertion, ZERO behavior change).
+The render-time `AssetProvider` half (`instantiate`/`render`/`dispose`) is already behind the plugin
+`providers` registry per ADR-005/006/007. ADR-001 → Integrated/DONE. (Remaining: the `LibraryResolver`
+REMOTE variant + a specified bundle/export format.)
+**7b. Iconify/unDraw bulk ingest. ✅ DONE (2026-06-23).** `factory:ingest-icons` ingests open-license
+SVGs (lucide-static, ISC) OFFLINE → core-objects `ObjectSpec` (`kind:"icon"`, geometry only) under the
+`icons` catalog namespace, content-addressed + provenance/license recorded. Validator injected from a
+repo-root entry (like `factory:gen`) so `src/` imports no plugin. Renders as a form-shadeable
+badge+glyph. Shipped ~10 icons.
+**7c. D3-geo maps. ✅ DONE (2026-06-23).** A `map` generator in core-dataviz (peer of `chart`): d3-geo
+projections + `geoPath` + topojson-client; geometry is DATA (inline TopoJSON/GeoJSON in params,
+selected by the `world-map` generator-preset → `library/maps/`), domain-clean, choropleth + draw-on,
+pure → deterministic.
 
 ## M8 — Finishing passes
-**8a. `post[]` composition grade.** Wire the reserved IR `post[]` field to a final composition-level
-effects stack (color grade / vignette / grain over the whole frame) in `Composition.tsx`, reusing
-core-effects ops. Pure → deterministic.
-**8b. Painting-style follow-ons.** Per-silhouette form-shade + far-layer atmospheric tint (the design's
-listed follow-ons) — fold into the paint system once `wag7nnvs2` lands.
+**8a. `post[]` composition grade. ✅ DONE (2026-06-23).** The reserved Story-IR/Scene-IR `post[]` is
+wired to a film-level effect stack in `Composition.tsx` (`PostGrade`) wrapping the whole composited
+frame, REUSING the same core-effects ops (`resolveEffects`/`applyEffects`) the per-layer `effects[]`
+use. Empty/absent → strict no-op (byte-identical to before); dropped on `--alpha`; pure → deterministic.
+**8b. Painting-style follow-ons. ✅ DONE (2026-06-23).** All DATA/mechanism in `src/render/paint.ts`:
+a softer 4-stop ramp + per-silhouette ramp orientation (radial for round/blobby, linear-along-major-axis
+for elongated) + aerial perspective (far layers haze their whole fill ramp toward the atmosphere colour,
+silhouette-perfect). `kurzgesagt-nature` DATA retuned.
 
 ## M9 — AI asset-gen (OpenVINO SD on Iris Xe, cached)
 A `factory:imagegen` build CLI: prompt + seed + model → OpenVINO/stable-diffusion.cpp on the iGPU →
@@ -82,9 +96,9 @@ build step, so render stays fast + byte-deterministic. Stretch: MobileDiffusion 
 
 ## Sequencing (avoid concurrent tree collisions)
 1. **(running)** painting-style `wag7nnvs2` — owns render core + `library/index.json` right now.
-2. On paint completion → **Batch A** (no render-core / no shared-JSON contention with each other,
-   lane-separated): M7a interfaces · M7c maps · M8a post[] grade · M4a whisper captions.
-3. **Batch B:** M5 director (+ LLM seam) · M4b lip-sync · M8b paint follow-ons.
+2. On paint completion → **Batch A** (lane-separated): **✅ M7a interfaces · ✅ M7b icons · ✅ M7c maps ·
+   ✅ M8a post[] grade DONE (2026-06-23)**; M4a whisper captions still open (needs Whisper install).
+3. **Batch B:** M5 director (+ LLM seam) · M4b lip-sync · **✅ M8b paint follow-ons DONE (2026-06-23)**.
 4. **Batch C:** M6 Tier-B GPU (perceptual) · M9 AI asset-gen (both need installs: GPU stack / OpenVINO).
 5. Each batch closes with `verify-render` + `refine-standard` (ADRs 009→…, DECISIONS, CLAUDE.md).
 

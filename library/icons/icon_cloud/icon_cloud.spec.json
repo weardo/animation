@@ -1,0 +1,32 @@
+{
+  "id": "icon_cloud",
+  "kind": "icon",
+  "palette": {
+    "fill": "#4d9be6",
+    "fillDark": "#2f6fb0",
+    "ink": "#16243f",
+    "accent": "#ffce4a"
+  },
+  "size": 60,
+  "stroke": 4,
+  "parts": {},
+  "glyph": {
+    "paths": [
+      "M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"
+    ],
+    "viewBox": [
+      0,
+      0,
+      24,
+      24
+    ],
+    "strokeWidth": 2,
+    "filled": false,
+    "badge": true,
+    "badgeShape": "rounded"
+  },
+  "motion": {
+    "amp": 1,
+    "spinHz": 0.15
+  }
+}

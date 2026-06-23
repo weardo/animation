@@ -1,0 +1,102 @@
+# examples/map-demo.yaml — a 3-scene story whose ONLY job is to SHOWCASE the new `map` GENERATOR
+# (M7c — D3-geo maps; peer of the `chart` generator in the core-dataviz plugin). Each beat renders
+# the SAME world geometry (the `world-map` generator-preset, which inlines the world-atlas 110m
+# TopoJSON as DATA) but swaps ONE map facet — first the plain world draws on, then a choropleth
+# colors a handful of features, then a different projection reframes the globe.
+#
+# THE THREE BEATS (one map facet per beat, authored as semantic `args` only — no coords/frames):
+#   m1  WORLD DRAW-ON   plain land fill, outlines stroke ON via stroke-dashoffset, fade in   (establishing)
+#   m2  CHOROPLETH      a `choropleth` map (feature name → palette token) recolors regions  [fade] (push-in)
+#   m3  PROJECTION      the same data under an `equal-earth` projection, calm hold           [fade] (hold)
+#
+# HOW IT WIRES (ADR-007 domain-agnostic — every layer is DECLARED, nothing injected): each beat's
+# `show[]` lists a gradient background (asset, z=0) then a `generator: world-map` item with `as:` (a
+# handle → deterministic seed + stable layer id) and `args:` (free-form params that OVERRIDE the
+# preset's locked params — most specific wins; validated by the `map` generator's own Zod at render).
+# The lowering pass expands the `world-map` preset → `{ gen:"map", params:{ topology…, … } }`, merges
+# the args over it, and emits one generator layer per item. Colors are palette TOKENS resolved against
+# `defs.palette`. The geometry itself is DATA in the preset — the plugin hardcodes NO country.
+#
+# DOMAIN-CLEAN NOTE: the choropleth keys below (country names) live ONLY in this EXAMPLE (data), never
+# in `src/` or the plugin logic — exactly like the `chart` demo's category labels.
+#
+# Build it (compiles + vendors assets + renders one continuous mp4):
+#   tsx src/cli/render.ts examples/map-demo.yaml --project map-demo --name "Map Demo"
+
+title: "Map Demo"
+style: plain   # a flat/technical look suits a data map (no painterly form-shading on the geography)
+
+cast: {}
+
+beats:
+  # m1 — WORLD DRAW-ON. The world map strokes on (outline reveal) then fades its land in. First scene,
+  # no inbound transition.
+  - id: m1
+    say: "A map of the whole world, drawing itself in."
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - generator: world-map
+        as: world
+        args:
+          projection: natural-earth
+          fit: true
+          fill: accent2          # pale land
+          fill_opacity: 0.9
+          stroke: bg             # dark coastlines
+          stroke_width: 0.6
+          draw_on: { duration: 26, stagger: 0, easing: easeOut }
+          draw_on_stroke: true   # outlines reveal via stroke-dashoffset
+          draw_on_fill: true     # land fades in behind the outline
+          opacity: 1
+    camera: establishing
+    duration: { seconds: 3 }
+
+  # m2 — CHOROPLETH. A few regions recolor from a `{ name: token }` data map; the rest sit in the
+  # no-data fill. Fade in, slow push.
+  - id: m2
+    say: "Color a few regions, and the data speaks."
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - generator: world-map
+        as: world
+        args:
+          projection: natural-earth
+          fit: true
+          key_field: name        # key the choropleth by the feature's `name` property
+          no_data_fill: bg2      # muted base for un-keyed features
+          stroke: bg
+          stroke_width: 0.6
+          # The DATA map (country names live in this example only — domain-clean plugin):
+          choropleth:
+            Brazil: accent
+            India: accent
+            "United States of America": accent2
+            China: accent2
+            Australia: light
+            "South Africa": light
+          opacity: 1
+    camera: slow_push_in
+    duration: { seconds: 4 }
+    transition: { kind: fade, duration: 18 }
+
+  # m3 — PROJECTION. The same geometry reframed under an equal-earth projection; calm hold.
+  - id: m3
+    say: "The same earth, seen a different way."
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - generator: world-map
+        as: world
+        args:
+          projection: equal-earth
+          fit: true
+          fill: accent2
+          fill_opacity: 0.9
+          stroke: bg
+          stroke_width: 0.6
+          opacity: 1
+    camera: hold
+    duration: { seconds: 3 }
+    transition: { kind: fade, duration: 18 }

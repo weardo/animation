@@ -242,18 +242,18 @@
         "form": {
           "type": "linear",
           "lightDeg": 270,
-          "shadowL": -0.3,
-          "highlightL": 0.17,
-          "warmHighlight": 14,
-          "coolShadow": -20
+          "shadowL": -0.34,
+          "highlightL": 0.2,
+          "warmHighlight": 16,
+          "coolShadow": -24
         },
         "glow": {
           "radius": 16,
           "intensity": 0.75
         },
         "rim": {
-          "width": 2,
-          "lightL": 0.24
+          "width": 2.5,
+          "lightL": 0.28
         },
         "texture": {
           "kind": "grain",
@@ -273,10 +273,10 @@
             "radius": 0.7,
             "intensity": 0.85
           },
-          "depthDesaturate": 0.28
+          "depthDesaturate": 0.34
         },
         "shape": {
-          "blobiness": 0.3
+          "blobiness": 0.6
         }
       }
     }
@@ -621,7 +621,7 @@
   "provenance": {
     "story_ir_hash": "sha1:f6004cf2d5ea201244597be7dc97b62ea5056136",
     "passes": [
-      "lower@2.1"
+      "lower@2.2"
     ]
   }
 }

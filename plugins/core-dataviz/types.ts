@@ -159,3 +159,78 @@ export const ChartParamsSchema = z.discriminatedUnion('kind', [
 ]);
 
 export type ChartParams = z.infer<typeof ChartParamsSchema>;
+
+// --- map (geographic) -------------------------------------------------------------------------
+
+/**
+ * The `map` generator params contract — a SECOND data-viz generator (peer of `chart`), registered
+ * under its own `gen` name. Reuses the shared `DrawOnSchema` ramp.
+ *
+ * GEOMETRY IS DATA (DOMAIN-CLEAN): the map carries an inline `topology` (TopoJSON) or `geojson`
+ * (GeoJSON FeatureCollection) in `params` — NO country/region hardcoded in the plugin; which map is
+ * selected by naming a generator-preset whose params hold the geometry. Both are opaque
+ * `z.record(z.unknown())` here (decoded/validated structurally by d3-geo/topojson at render).
+ */
+export const MapParamsSchema = z
+  .object({
+    /** Inline TopoJSON Topology (e.g. `library/maps/world-110m.json`). Decoded via topojson-client. */
+    topology: z.record(z.unknown()).optional(),
+    /** Which TopoJSON `objects` key to mesh (e.g. "countries"); defaults to the first object. */
+    object: z.string().optional(),
+    /** Inline GeoJSON FeatureCollection (alternative to `topology`). */
+    geojson: z.record(z.unknown()).optional(),
+
+    /** The map projection. */
+    projection: z
+      .enum([
+        'natural-earth',
+        'mercator',
+        'equal-earth',
+        'equirectangular',
+        'orthographic',
+        'azimuthal-equal-area',
+      ])
+      .default('natural-earth'),
+    /** Auto-fit the projection to the layer box (inset-aware). When false, use scale/center/translate. */
+    fit: z.boolean().default(true),
+    /** Explicit projection scale (only when `fit` is false). */
+    scale: z.number().positive().optional(),
+    /** Projection geographic center [lon, lat] (when `fit` is false). */
+    center: z.tuple([z.number(), z.number()]).optional(),
+    /** Projection rotation [lambda, phi, gamma] degrees (e.g. to spin an orthographic globe). */
+    rotate: z.tuple([z.number(), z.number(), z.number()]).optional(),
+    /** Plotting-area inset inside the layer box (room for a frame/labels), used by `fit`. */
+    inset: PlotInsetSchema.default({ top: 24, right: 24, bottom: 24, left: 24 }),
+
+    /** Base land fill (CSS color OR a `defs.palette` token). Generic neutral default. */
+    fill: z.string().default('#3a4a60'),
+    /** Land fill opacity 0..1. */
+    fill_opacity: z.number().min(0).max(1).default(1),
+    /** Feature outline stroke (CSS color OR a `defs.palette` token). Generic neutral default. */
+    stroke: z.string().default('#1a2230'),
+    /** Outline stroke width in px. */
+    stroke_width: z.number().min(0).default(0.75),
+
+    /**
+     * Choropleth fill: a `{ featureKey: color }` map. `featureKey` is read from each feature's
+     * `key_field` (a property name, or "id" for the GeoJSON feature id). Color = CSS or palette token.
+     */
+    choropleth: z.record(z.string()).optional(),
+    /** Which feature field to key the choropleth by ("id" → the feature id; else a property name). */
+    key_field: z.string().default('name'),
+    /** Fill for features the choropleth map omits (when choropleth is active). */
+    no_data_fill: z.string().default('#2a3340'),
+
+    /** Draw-on growth animation (shared ramp; staggers per feature). */
+    draw_on: DrawOnSchema.default({ duration: 0, stagger: 0 }),
+    /** Reveal each outline via stroke-dashoffset over the draw-on ramp. */
+    draw_on_stroke: z.boolean().default(false),
+    /** Fade each fill in over the draw-on ramp. */
+    draw_on_fill: z.boolean().default(false),
+
+    /** Layer opacity 0..1. */
+    opacity: z.number().min(0).max(1).default(1),
+  })
+  .strip();
+
+export type MapParams = z.infer<typeof MapParamsSchema>;

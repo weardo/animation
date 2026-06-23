@@ -11,7 +11,7 @@
 // DETERMINISM (CLAUDE.md r.1): every function here is pure — a function of (color, paint, light). No
 // clock, no RNG. Same inputs ⇒ same hex strings ⇒ byte-identical SVG/CSS every run (CPU raster).
 
-import { converter, formatHex } from 'culori';
+import { converter, formatHex, interpolate as culoriInterpolate } from 'culori';
 import type { Paint, StyleLight as Light } from '../ir/stylekit.js';
 import type { Effect } from '../ir/index.js';
 
@@ -35,10 +35,27 @@ export function shade(color: string, dL: number, dH = 0, chromaScale = 1): strin
   return formatHex({ mode: 'oklch', l, c, h }) ?? color;
 }
 
-/** A resolved form-shade ramp: highlight → base → shadow (#rrggbb), warm light / cool shadow applied. */
+/**
+ * Mix `color` toward `target` by `t` (0 = color, 1 = target) in OKLab (perceptually even). Returns a
+ * #rrggbb. Pure culori. Used for AERIAL-PERSPECTIVE hazing of far layers toward the atmosphere colour.
+ */
+export function mixToward(color: string, target: string, t: number): string {
+  if (t <= 0) return color;
+  const tt = clamp(t, 0, 1);
+  const mixer = culoriInterpolate([color, target], 'oklab');
+  return formatHex(mixer(tt)) ?? color;
+}
+
+/**
+ * A resolved form-shade ramp. `highlight`/`base`/`shadow` are the limited-palette anchors; `mid` is a
+ * MIDTONE between base and shadow (M8b-c: a SOFTER ramp reads less plasticky — the reference's foliage
+ * goes highlight → base → midtone → shadow, not a hard two-stop sweep). All are #rrggbb. Warm-light /
+ * cool-shadow hue shifts applied.
+ */
 export interface Ramp {
   highlight: string;
   base: string;
+  mid: string;
   shadow: string;
 }
 
@@ -46,13 +63,16 @@ export interface Ramp {
  * Derive a shade-ramp from a single fill color via the paint model (design §1, decision 1: AUTO).
  * The HIGHLIGHT is lighter (+`highlightL`) and rotated WARM (`warmHighlight`); the SHADOW is darker
  * (`shadowL`) and rotated COOL (`coolShadow`) — exactly the "limited rich palette" discipline of the
- * reference (lighter-toward-the-light, cooler-in-shadow). Pure culori math.
+ * reference (lighter-toward-the-light, cooler-in-shadow). The MIDTONE (M8b-c) sits ~45% of the way
+ * from base to shadow (a partial L-drop + a partial cool shift) so the falloff is gradual, not a
+ * two-stop step. Pure culori math.
  */
 export function ramp(color: string, paint: Paint): Ramp {
   const f = paint.form;
   return {
     highlight: shade(color, f.highlightL, f.warmHighlight, 1.04),
     base: color,
+    mid: shade(color, f.shadowL * 0.42, f.coolShadow * 0.45, 0.97),
     shadow: shade(color, f.shadowL, f.coolShadow, 0.92),
   };
 }
@@ -79,28 +99,94 @@ export interface FormGradient {
   stops: ReadonlyArray<{ offset: number; color: string }>;
 }
 
-export function formGradient(color: string, paint: Paint, light: Light): FormGradient {
-  const r = ramp(color, paint);
+/**
+ * A shape's silhouette hint for PER-SHAPE form-shading (M8b-a). `aspect` = bbox width / height in
+ * SCREEN space (so a tall trunk is <1, a wide mound >1). `blobiness` (0=hard geometry, 1=organic) is
+ * the resolved `paint.shape.blobiness` the caller may override per shape. Absent → a 1:1 hard shape.
+ */
+export interface ShapeHint {
+  aspect: number;
+  blobiness: number;
+  /**
+   * Effective depth (1 = near, 0 = far). When < 1 the ramp colours haze TOWARD the atmosphere colour
+   * (M8b-b aerial perspective), so a far trunk's whole shade-ramp — not just an overlay — desaturates
+   * into the backdrop. Absent → near (no haze).
+   */
+  depth01?: number | undefined;
+}
+
+/**
+ * The form-shading gradient for a shape (M8b-a: PER-SILHOUETTE, not one global sweep). The light
+ * azimuth gives the shade DIRECTION; the shape's own bbox `aspect` re-orients that direction into the
+ * shape's objectBoundingBox space so a THIN trunk shades across its true (vertical) major axis instead
+ * of being washed by a single global linear sweep, and the highlight pool scales to the shape's size.
+ *
+ * Mechanism: objectBoundingBox space is the shape's bbox normalised to a unit square, so a screen-space
+ * unit light vector (dx,dy) must be DIVIDED by (aspect, 1) to keep its true angle once the box is
+ * squashed — without this a vertical light on a 1:8 trunk would still read as a near-horizontal sweep
+ * after the box stretch. We then renormalise. ORGANIC shapes (high `blobiness`) bias toward a RADIAL
+ * pool (the reference's foliage blobs read as rounded volumes, not flat ramps) regardless of the kit's
+ * `form.type`; hard shapes keep the kit's type. A softer 4-stop ramp (highlight→base→mid→shadow).
+ */
+export function formGradient(
+  color: string,
+  paint: Paint,
+  light: Light,
+  hint?: ShapeHint,
+): FormGradient {
+  let r = ramp(color, paint);
+  // M8b-b: aerial perspective — haze the whole ramp toward the atmosphere colour for FAR shapes, so a
+  // distant trunk/foliage clump desaturates INTO the backdrop (silhouette-perfect, since it's the
+  // fill colour itself, not a rectangular overlay). Strength = how far + the kit's depthDesaturate.
+  const depth = hint?.depth01;
+  if (depth !== undefined && depth < 0.999) {
+    const target = atmosphereTintColor(paint);
+    if (target) {
+      const t = clamp((1 - clamp(depth, 0, 1)) * (1 - clamp(depth, 0, 1)) * paint.atmosphere.depthDesaturate, 0, 0.7);
+      if (t > 0.004) {
+        r = {
+          highlight: mixToward(r.highlight, target, t),
+          base: mixToward(r.base, target, t),
+          mid: mixToward(r.mid, target, t),
+          shadow: mixToward(r.shadow, target, t),
+        };
+      }
+    }
+  }
   // light azimuth: the paint override (design §1 "or inherit stylekit.light" — fall back to the scene
   // light when the kit declares a sentinel <0 to defer to the light).
   const deg = paint.form.lightDeg < 0 ? light.dir : paint.form.lightDeg;
   const rad = (deg * Math.PI) / 180;
-  const dx = Math.cos(rad);
-  const dy = Math.sin(rad);
+  // Screen-space light direction, then mapped into the shape's objectBoundingBox space by the bbox
+  // aspect so the ramp follows the shape's OWN major axis (per-silhouette orientation).
+  const aspect = hint && hint.aspect > 0 ? hint.aspect : 1;
+  let ux = Math.cos(rad) / aspect;
+  let uy = Math.sin(rad);
+  const mag = Math.hypot(ux, uy) || 1;
+  ux /= mag;
+  uy /= mag;
   // linear: from the lit side (towards the light) to the away side.
-  const x1 = 0.5 + dx * 0.5;
-  const y1 = 0.5 + dy * 0.5;
-  const x2 = 0.5 - dx * 0.5;
-  const y2 = 0.5 - dy * 0.5;
+  const x1 = clamp(0.5 + ux * 0.5, 0, 1);
+  const y1 = clamp(0.5 + uy * 0.5, 0, 1);
+  const x2 = clamp(0.5 - ux * 0.5, 0, 1);
+  const y2 = clamp(0.5 - uy * 0.5, 0, 1);
   // radial: pool the highlight slightly toward the light.
-  const fx = clamp(0.5 + dx * 0.28, 0, 1);
-  const fy = clamp(0.5 + dy * 0.28, 0, 1);
+  const fx = clamp(0.5 + ux * 0.28, 0, 1);
+  const fy = clamp(0.5 + uy * 0.28, 0, 1);
   const stops = [
     { offset: 0, color: r.highlight },
-    { offset: 0.45, color: r.base },
+    { offset: 0.34, color: r.base },
+    { offset: 0.68, color: r.mid },
     { offset: 1, color: r.shadow },
   ];
-  return { type: paint.form.type, x1, y1, x2, y2, cx: 0.5, cy: 0.5, r: 0.72, fx, fy, stops };
+  // Organic (blobby) ROUNDED shapes read better as rounded volumes → bias to radial; ELONGATED shapes
+  // (a tall trunk / wide bar, aspect far from 1) keep the kit's LINEAR ramp along their major axis so
+  // the volume reads as a cylinder, not a sphere. Hard (low-blobiness) shapes always keep the kit.
+  const blob = hint?.blobiness ?? paint.shape.blobiness;
+  const elongation = Math.max(aspect, 1 / aspect); // 1 = round, >1 = elongated
+  const organic = blob >= 0.5 && elongation < 1.7;
+  const type = organic ? 'radial' : paint.form.type;
+  return { type, x1, y1, x2, y2, cx: 0.5, cy: 0.5, r: 0.72, fx, fy, stops };
 }
 
 /** A stable, collision-free gradient id for a layer's form-fill (mirrors ShapeLayer's id convention). */
@@ -182,8 +268,23 @@ export function depthGrade(depth01: number, paint: Paint): string | undefined {
   if (amt <= 0) return undefined;
   const far = clamp(1 - depth01, 0, 1);
   if (far <= 0.001) return undefined;
-  const desat = 1 - far * amt; // saturate(<1)
-  const dark = 1 - far * amt * 0.5; // brightness(<1)
+  // M8b-b: the per-shape ramp now hazes far fills TOWARD the atmosphere colour (which already shifts
+  // value), so this outer grade only needs a GENTLE extra desaturate — a heavy brightness cut here on
+  // top of the haze crushed dark tokens (trunks) to near-black. Keep saturate, trim brightness.
+  const desat = 1 - far * amt * 0.7; // saturate(<1)
+  const dark = 1 - far * amt * 0.18; // brightness(<1) — light touch; haze carries the value shift
   if (desat > 0.999 && dark > 0.999) return undefined;
   return `saturate(${desat.toFixed(3)}) brightness(${dark.toFixed(3)})`;
 }
+
+/**
+ * The mid-tone of the atmosphere backdrop — the colour FAR layers tint toward (aerial perspective).
+ * Picks the middle backdrop stop (the body of the gradient, not its dark extremes). Pure; undefined
+ * when no backdrop is authored.
+ */
+export function atmosphereTintColor(paint: Paint): string | undefined {
+  const stops = paint.atmosphere.backdrop;
+  if (!stops || stops.length === 0) return undefined;
+  return stops[Math.floor((stops.length - 1) / 2)] ?? stops[0];
+}
+

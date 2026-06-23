@@ -137,6 +137,45 @@ export function objectMarkup(spec: ObjectSpec, frame: number, fps: number, liven
         `</g>`
       );
     }
+    case 'icon': {
+      // An INGESTED open-license glyph (M7b): a form-shadeable colored BADGE with the icon's outline
+      // strokes (or filled shapes) drawn on top in the palette ink. The glyph geometry is pure DATA
+      // produced offline by `factory:ingest-icons` (path `d` strings + source viewBox) — never raw
+      // markup, so dangerouslySetInnerHTML stays safe. Idle: a gentle bob (gated by liveness).
+      const g = spec.glyph;
+      const bob = liveness ? Math.sin(t * TAU * 0.18) * 2 * amp : 0;
+      const badgeR = r; // badge radius == prop size
+      const badge =
+        g && g.badge === false
+          ? ''
+          : (g?.badgeShape ?? 'rounded') === 'circle'
+            ? `<circle cx="0" cy="0" r="${f2(badgeR)}" fill="${P.fill}" stroke="${P.ink}" stroke-width="${sw}"/>`
+            : `<rect x="${f2(-badgeR)}" y="${f2(-badgeR)}" width="${f2(badgeR * 2)}" height="${f2(badgeR * 2)}" rx="${f2(badgeR * 0.32)}" fill="${P.fill}" stroke="${P.ink}" stroke-width="${sw}"/>`;
+      let glyphMarkup = '';
+      if (g && g.paths.length > 0) {
+        const [vx, vy, vw, vh] = g.viewBox;
+        // Scale the source glyph to fit inside the badge with padding, centred on origin.
+        const pad = 0.62; // glyph occupies 62% of the badge box
+        const span = Math.max(vw, vh) || 24;
+        const scale = (badgeR * 2 * pad) / span;
+        // viewBox-centre → local origin: translate by half the box, then scale, then re-centre.
+        const cx = vx + vw / 2;
+        const cy = vy + vh / 2;
+        const glyphColor = P.ink;
+        const inner = g.paths
+          .map((d) =>
+            g.filled
+              ? `<path d="${d}" fill="${glyphColor}" stroke="none"/>`
+              : `<path d="${d}" fill="none" stroke="${glyphColor}" stroke-width="${f2(g.strokeWidth)}" stroke-linecap="round" stroke-linejoin="round"/>`,
+          )
+          .join('');
+        glyphMarkup =
+          `<g transform="scale(${scale.toFixed(5)}) translate(${f2(-cx)} ${f2(-cy)})">` +
+          inner +
+          `</g>`;
+      }
+      return `<g transform="translate(0 ${f2(bob)})">` + badge + glyphMarkup + `</g>`;
+    }
     default:
       return '';
   }

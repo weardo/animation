@@ -1,8 +1,11 @@
-// core-dataviz — a built-in data-viz plugin shipped AS A PLUGIN (ADR-005/007). It OWNS the chart
-// implementation (bar / line / pie+donut via d3-shape arc/pie/line/area + a dependency-free linear
-// scale — all in THIS directory + its own Zod params) and contributes ONE generator `chart` into the
-// engine's `generators` extension point via `api.registerGenerator`. The chart dispatches internally
-// on a `kind` discriminant.
+// core-dataviz — a built-in data-viz plugin shipped AS A PLUGIN (ADR-005/007). It OWNS two generators
+// (all in THIS directory + their own Zod params), contributed into the engine's `generators` extension
+// point via `api.registerGenerator`:
+//   • `chart` — bar / line / pie+donut via d3-shape arc/pie/line/area + a dependency-free linear
+//     scale; dispatches internally on a `kind` discriminant.
+//   • `map`   — geographic maps via d3-geo (projections + geoPath) + topojson-client; the GEOMETRY is
+//     DATA (inline TopoJSON/GeoJSON in params, selected by a generator-preset) so the logic is
+//     domain-clean (hardcodes no country/region).
 //
 // ADR-007: the code lives here, NOT in core — the engine owns only the generic `GeneratorComponent`
 // contract (engine/generator.ts) and the `generators` registry; the dependency arrow points
@@ -14,6 +17,7 @@
 
 import type { EngineAPI, Plugin } from '../../src/engine/index.js';
 import { Chart } from './chart.js';
+import { MapGen } from './map.js';
 
 import manifestJson from './plugin.json' with { type: 'json' };
 import { parseManifest } from '../../src/engine/index.js';
@@ -26,6 +30,9 @@ export const coreDatavizPlugin: Plugin = {
   register(api: EngineAPI): void {
     // Key MUST match the Scene-IR `generator.gen` field. `chart` dispatches bar/line/pie on `kind`.
     api.registerGenerator('chart', Chart);
+    // `map` — d3-geo geographic maps (peer of `chart`). The GEOMETRY is DATA (inline TopoJSON/GeoJSON
+    // in params, selected via a generator-preset); the plugin logic is domain-clean (no country names).
+    api.registerGenerator('map', MapGen);
   },
 };
 

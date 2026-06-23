@@ -77,6 +77,11 @@ export interface ShapeLayerProps {
   paint?: Paint | undefined;
   /** The scene light — drives the form-gradient direction when `paint` is active. */
   light?: Light | undefined;
+  /**
+   * Effective depth (1 = near, 0 = far) — the layer's parallax factor. When < 1 AND paint is active,
+   * the form-ramp colours HAZE toward the atmosphere colour (M8b-b aerial perspective). Absent → near.
+   */
+  depth01?: number | undefined;
 }
 
 /** A resolved primitive: its path `d` plus the intrinsic box `@remotion/shapes` reports. */
@@ -314,7 +319,7 @@ function evalColorFill(
  * solid or a deterministic-id gradient; stroke is optional. The layer transform + parallax + shading
  * are applied by the parent <Scene> via the same wrappers as other layers.
  */
-export const ShapeLayer: React.FC<ShapeLayerProps> = ({ layer, palette, easings, paint, light }) => {
+export const ShapeLayer: React.FC<ShapeLayerProps> = ({ layer, palette, easings, paint, light, depth01 }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
   const easingTable: Easings = easings ?? {};
@@ -397,7 +402,16 @@ export const ShapeLayer: React.FC<ShapeLayerProps> = ({ layer, palette, easings,
     // volumetric. Deterministic id from the layer id (no collision; byte-identical markup). Absent
     // paint → the flat solid (back-compat / `style: plain`).
     if (paint && light) {
-      const fg = formGradient(solid, paint, light);
+      // PER-SILHOUETTE hint (M8b-a): the shape's own bbox aspect (screen-space w/h — uniform scale
+      // cancels, so the local box ratio is the screen ratio) re-orients the form ramp along the shape's
+      // OWN major axis (a tall trunk shades vertically, a wide mound horizontally), and the resolved
+      // organic-ness (`paint.shape.blobiness`) biases blobs toward a rounded radial volume.
+      const hint = {
+        aspect: (box.width || 1) / (box.height || 1),
+        blobiness: paint.shape.blobiness,
+        depth01,
+      };
+      const fg = formGradient(solid, paint, light, hint);
       const id = formGradientId(layer.id);
       const fstops = fg.stops.map((s, i) => (
         <stop key={i} offset={`${(s.offset * 100).toFixed(2)}%`} stopColor={s.color} />

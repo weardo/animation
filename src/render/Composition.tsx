@@ -44,6 +44,7 @@ import { transitions } from '../engine/index.js';
 import { Scene } from './Scene.js';
 import { CaptionTrack } from './CaptionTrack.js';
 import { easingFn } from './stylekit.js';
+import { resolveEffects, applyEffects } from './effects.js';
 
 // P3 (alpha): `inputProps` is the Scene IR PLUS an optional transient render-time `_alpha` flag the
 // CLI sets ONLY for an `--alpha` render. It is NOT part of scene.json (the canonical record stays a
@@ -241,6 +242,30 @@ const MusicTrack: React.FC<{ cues: SceneIR['audio'] }> = ({ cues }) => {
   );
 };
 
+/**
+ * POST GRADE (M8a, spec §15 / roadmap M8) — the film-level `post[]` stack applied over the WHOLE
+ * composited frame (every scene + transition), AFTER the scene graph renders. It REUSES the exact same
+ * core-effects ops + compositor glue the per-layer `effects[]` use ({@link resolveEffects}/
+ * {@link applyEffects}, which look each `kind` up in the engine `effects` registry) — no new effect
+ * engine, no Remotion primitive reimplemented (CLAUDE.md r.3). The whole TransitionSeries output is the
+ * "layer" the grade wraps: color_grade / vignette / grain over the finished frame.
+ *
+ * DETERMINISM (r.1): a pure function of (`post[]`, frame). `useCurrentFrame()` feeds animatable post
+ * params; each EffectImpl.build is pure; the SVG-filter id is content-derived from a fixed layer id.
+ * No clock / RNG. An empty / absent `post[]` is a strict no-op — {@link applyEffects} returns the child
+ * untouched, so a film WITHOUT post grade renders byte-identically to before.
+ *
+ * NOTE: the grade wraps ONLY the visual frame (the TransitionSeries), NOT the audio/caption tracks —
+ * those are siblings, so a color grade never affects the muxed audio or the subtitle pills.
+ */
+const PostGrade: React.FC<{ post: SceneIR['post']; children: React.ReactNode }> = ({ post, children }) => {
+  const frame = useCurrentFrame();
+  if (!post || post.length === 0) return <>{children}</>;
+  // A fixed, scene-independent layer id → a stable SVG <filter id="fx-__post__"> (byte-identical markup).
+  const resolved = resolveEffects('__post__', post, frame);
+  return <>{applyEffects(resolved, '__post__', children)}</>;
+};
+
 /** One scene segment, rendered by the existing per-frame <Scene> compositor. `alpha` drops backdrops. */
 const SceneSegment: React.FC<{ scene: SceneType; defs: SceneIR['defs']; alpha?: boolean | undefined }> = ({
   scene,
@@ -297,9 +322,16 @@ export const SceneIRComposition: React.FC<SceneIRCompositionProps> = (props) => 
     );
   });
 
+  // M8a: the film-level POST grade wraps the WHOLE visual frame (the scene/transition graph). An alpha
+  // render skips the grade — like the background fill, grading would flatten the alpha channel (and the
+  // grade belongs to the finished film, not a compositing plate). Absent/empty post[] → strict no-op.
+  const post = alpha ? undefined : sceneIR.post;
+
   return (
     <AbsoluteFill style={bg ? { backgroundColor: bg } : undefined}>
-      <TransitionSeries>{children}</TransitionSeries>
+      <PostGrade post={post}>
+        <TransitionSeries>{children}</TransitionSeries>
+      </PostGrade>
       {/* Music bed (A3): one looping <Audio> under the whole film, ducked per-frame while narration
           speaks. Rendered first so it sits beneath narration/sfx in the mix. Dropped on alpha. */}
       {!alpha && <MusicTrack cues={sceneIR.audio} />}

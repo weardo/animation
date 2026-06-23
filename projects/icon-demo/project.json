@@ -1,0 +1,32 @@
+{
+  "project_version": "1.0",
+  "id": "icon-demo",
+  "name": "icon-demo",
+  "created": "2026-06-23T06:01:31.891Z",
+  "updated": "2026-06-23T06:01:31.891Z",
+  "config": {
+    "w": 1920,
+    "h": 1080,
+    "fps": 30,
+    "duration_frames": 90
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "9e8475df55f3402f4bd58077e924ddaee2a644d5",
+  "engine": "remotion@4.0.481",
+  "deps": [
+    "bg_gradient@1.0.0",
+    "icon_heart@1.0.0",
+    "icon_lightbulb@1.0.0",
+    "icon_rocket@1.0.0"
+  ],
+  "assets": [
+    "assets/bg_gradient.svg",
+    "assets/fonts/DejaVuSans.ttf"
+  ],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  }
+}

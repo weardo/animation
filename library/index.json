@@ -494,6 +494,268 @@
           "license": "CC0"
         }
       }
+    },
+    "icons": {
+      "icon_heart": {
+        "id": "icon_heart",
+        "version": "1.0.0",
+        "kind": "rig",
+        "format": "procedural",
+        "provider": "object",
+        "uri": "proc://icon_heart",
+        "tags": [
+          "icon",
+          "object",
+          "ingested",
+          "lucide"
+        ],
+        "deps": [],
+        "manifest": {
+          "mounts": {},
+          "variants": {
+            "variant": []
+          }
+        },
+        "provenance": {
+          "source": "lucide@0.469.0 (https://lucide.dev) — icon \"heart\"",
+          "spec_hash": "53c939e2231739a3fd61e1ae45f0bb52dbc3230a",
+          "license": "ISC"
+        }
+      },
+      "icon_lightbulb": {
+        "id": "icon_lightbulb",
+        "version": "1.0.0",
+        "kind": "rig",
+        "format": "procedural",
+        "provider": "object",
+        "uri": "proc://icon_lightbulb",
+        "tags": [
+          "icon",
+          "object",
+          "ingested",
+          "lucide"
+        ],
+        "deps": [],
+        "manifest": {
+          "mounts": {},
+          "variants": {
+            "variant": []
+          }
+        },
+        "provenance": {
+          "source": "lucide@0.469.0 (https://lucide.dev) — icon \"lightbulb\"",
+          "spec_hash": "ecc37affdac11d0ab0e57b183e3afa6846d995d7",
+          "license": "ISC"
+        }
+      },
+      "icon_rocket": {
+        "id": "icon_rocket",
+        "version": "1.0.0",
+        "kind": "rig",
+        "format": "procedural",
+        "provider": "object",
+        "uri": "proc://icon_rocket",
+        "tags": [
+          "icon",
+          "object",
+          "ingested",
+          "lucide"
+        ],
+        "deps": [],
+        "manifest": {
+          "mounts": {},
+          "variants": {
+            "variant": []
+          }
+        },
+        "provenance": {
+          "source": "lucide@0.469.0 (https://lucide.dev) — icon \"rocket\"",
+          "spec_hash": "e7c6e9f2c6209ae12780ad6966404c6297a379ce",
+          "license": "ISC"
+        }
+      },
+      "icon_star": {
+        "id": "icon_star",
+        "version": "1.0.0",
+        "kind": "rig",
+        "format": "procedural",
+        "provider": "object",
+        "uri": "proc://icon_star",
+        "tags": [
+          "icon",
+          "object",
+          "ingested",
+          "lucide"
+        ],
+        "deps": [],
+        "manifest": {
+          "mounts": {},
+          "variants": {
+            "variant": []
+          }
+        },
+        "provenance": {
+          "source": "lucide@0.469.0 (https://lucide.dev) — icon \"star\"",
+          "spec_hash": "5d6568e31dcb3bbcc5cbc81381cef41e210cd287",
+          "license": "ISC"
+        }
+      },
+      "icon_leaf": {
+        "id": "icon_leaf",
+        "version": "1.0.0",
+        "kind": "rig",
+        "format": "procedural",
+        "provider": "object",
+        "uri": "proc://icon_leaf",
+        "tags": [
+          "icon",
+          "object",
+          "ingested",
+          "lucide"
+        ],
+        "deps": [],
+        "manifest": {
+          "mounts": {},
+          "variants": {
+            "variant": []
+          }
+        },
+        "provenance": {
+          "source": "lucide@0.469.0 (https://lucide.dev) — icon \"leaf\"",
+          "spec_hash": "cfe453cfff6ae84436fd1098ee501335b8bde358",
+          "license": "ISC"
+        }
+      },
+      "icon_cloud": {
+        "id": "icon_cloud",
+        "version": "1.0.0",
+        "kind": "rig",
+        "format": "procedural",
+        "provider": "object",
+        "uri": "proc://icon_cloud",
+        "tags": [
+          "icon",
+          "object",
+          "ingested",
+          "lucide"
+        ],
+        "deps": [],
+        "manifest": {
+          "mounts": {},
+          "variants": {
+            "variant": []
+          }
+        },
+        "provenance": {
+          "source": "lucide@0.469.0 (https://lucide.dev) — icon \"cloud\"",
+          "spec_hash": "ce330e4923dc4d91bbe1563dac97142306df8617",
+          "license": "ISC"
+        }
+      },
+      "icon_sun": {
+        "id": "icon_sun",
+        "version": "1.0.0",
+        "kind": "rig",
+        "format": "procedural",
+        "provider": "object",
+        "uri": "proc://icon_sun",
+        "tags": [
+          "icon",
+          "object",
+          "ingested",
+          "lucide"
+        ],
+        "deps": [],
+        "manifest": {
+          "mounts": {},
+          "variants": {
+            "variant": []
+          }
+        },
+        "provenance": {
+          "source": "lucide@0.469.0 (https://lucide.dev) — icon \"sun\"",
+          "spec_hash": "39f2c17ac376e5bff8168682390e97db9a02a428",
+          "license": "ISC"
+        }
+      },
+      "icon_globe": {
+        "id": "icon_globe",
+        "version": "1.0.0",
+        "kind": "rig",
+        "format": "procedural",
+        "provider": "object",
+        "uri": "proc://icon_globe",
+        "tags": [
+          "icon",
+          "object",
+          "ingested",
+          "lucide"
+        ],
+        "deps": [],
+        "manifest": {
+          "mounts": {},
+          "variants": {
+            "variant": []
+          }
+        },
+        "provenance": {
+          "source": "lucide@0.469.0 (https://lucide.dev) — icon \"globe\"",
+          "spec_hash": "b0ae623c600e16af822849da9c9c131d46de37d0",
+          "license": "ISC"
+        }
+      },
+      "icon_tree_pine": {
+        "id": "icon_tree_pine",
+        "version": "1.0.0",
+        "kind": "rig",
+        "format": "procedural",
+        "provider": "object",
+        "uri": "proc://icon_tree_pine",
+        "tags": [
+          "icon",
+          "object",
+          "ingested",
+          "lucide"
+        ],
+        "deps": [],
+        "manifest": {
+          "mounts": {},
+          "variants": {
+            "variant": []
+          }
+        },
+        "provenance": {
+          "source": "lucide@0.469.0 (https://lucide.dev) — icon \"tree-pine\"",
+          "spec_hash": "b43303b0a89ff6d70be36de68b591e5396a2fefb",
+          "license": "ISC"
+        }
+      },
+      "icon_sprout": {
+        "id": "icon_sprout",
+        "version": "1.0.0",
+        "kind": "rig",
+        "format": "procedural",
+        "provider": "object",
+        "uri": "proc://icon_sprout",
+        "tags": [
+          "icon",
+          "object",
+          "ingested",
+          "lucide"
+        ],
+        "deps": [],
+        "manifest": {
+          "mounts": {},
+          "variants": {
+            "variant": []
+          }
+        },
+        "provenance": {
+          "source": "lucide@0.469.0 (https://lucide.dev) — icon \"sprout\"",
+          "spec_hash": "0d19db3a7d2e3245bed9a40866e273052a7ff563",
+          "license": "ISC"
+        }
+      }
     }
   }
 }
