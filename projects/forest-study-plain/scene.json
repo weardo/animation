@@ -1,0 +1,536 @@
+{
+  "scene_ir_version": "1.0",
+  "config": {
+    "w": 1920,
+    "h": 1080,
+    "fps": 30,
+    "duration_frames": 90
+  },
+  "defs": {
+    "palette": {
+      "bg": "#f4f4f4",
+      "bg2": "#e8e8e8",
+      "accent": "#3b82f6",
+      "accent2": "#10b981",
+      "ink": "#1f2937",
+      "light": "#ffffff",
+      "shadow": "#94a3b8"
+    },
+    "easings": {
+      "linear": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "smooth": [
+        0.25,
+        0.1,
+        0.25,
+        1
+      ],
+      "easeIn": [
+        0.42,
+        0,
+        1,
+        1
+      ],
+      "easeOut": [
+        0,
+        0,
+        0.58,
+        1
+      ],
+      "easeInOut": [
+        0.42,
+        0,
+        0.58,
+        1
+      ],
+      "pop": "smooth"
+    },
+    "assets": {},
+    "rigs": {},
+    "clips": {},
+    "stylekit": {
+      "easings": {
+        "linear": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "smooth": [
+          0.25,
+          0.1,
+          0.25,
+          1
+        ],
+        "easeIn": [
+          0.42,
+          0,
+          1,
+          1
+        ],
+        "easeOut": [
+          0,
+          0,
+          0.58,
+          1
+        ],
+        "easeInOut": [
+          0.42,
+          0,
+          0.58,
+          1
+        ]
+      },
+      "defaultEasings": {
+        "linear": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "smooth": [
+          0.25,
+          0.1,
+          0.25,
+          1
+        ],
+        "easeIn": [
+          0.42,
+          0,
+          1,
+          1
+        ],
+        "easeOut": [
+          0,
+          0,
+          0.58,
+          1
+        ],
+        "easeInOut": [
+          0.42,
+          0,
+          0.58,
+          1
+        ],
+        "pop": "smooth"
+      },
+      "palette": {
+        "bg": "#f4f4f4",
+        "bg2": "#e8e8e8",
+        "accent": "#3b82f6",
+        "accent2": "#10b981",
+        "ink": "#1f2937",
+        "light": "#ffffff",
+        "shadow": "#94a3b8"
+      },
+      "motion": {
+        "spring": {
+          "stiffness": 100,
+          "damping": 20,
+          "mass": 1
+        },
+        "springHeavy": {
+          "stiffness": 100,
+          "damping": 20,
+          "mass": 1
+        },
+        "springBouncy": {
+          "stiffness": 100,
+          "damping": 20,
+          "mass": 1
+        },
+        "idle": {
+          "swayAmplitudeDeg": 0,
+          "swaySpeedHz": 0,
+          "driftAmplitudePx": 0,
+          "driftSpeedHz": 0,
+          "saccadeAmplitudeDeg": 0,
+          "saccadeMeanSeconds": 1
+        },
+        "breathing": {
+          "amplitude": 0,
+          "periodSeconds": 4
+        },
+        "blink": {
+          "rateHz": 0,
+          "closeFrames": 0
+        },
+        "stagger": {
+          "offsetFrames": 0
+        },
+        "parallax": {
+          "nearFactor": 1,
+          "farFactor": 1
+        },
+        "motionBlurShutter": 180
+      },
+      "light": {
+        "dir": 270,
+        "elevation": 90,
+        "color": "#ffffff",
+        "intensity": 0,
+        "ambient": 1
+      },
+      "shading": {
+        "form": false,
+        "contact_shadow": false,
+        "rim": 0,
+        "ao": false,
+        "glow": 0
+      },
+      "floor": {
+        "liveness": false,
+        "parallax": false,
+        "shading": false,
+        "nonLinearMotion": false
+      }
+    }
+  },
+  "audio": [
+    {
+      "id": "narration-forest",
+      "kind": "narration",
+      "src": "audio://audio/25eb128c01ae224e.wav",
+      "at": 0,
+      "duration_frames": 97,
+      "transcript": "The style does the work; the content stays dumb."
+    }
+  ],
+  "captions": [
+    {
+      "id": "caption-forest",
+      "text": "The style does the work; the content stays dumb.",
+      "at": 0,
+      "duration_frames": 97,
+      "mode": "line"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "forest",
+      "at": 0,
+      "duration_frames": 90,
+      "labels": {
+        "reveal": 45
+      },
+      "camera": {
+        "position": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": [
+                0,
+                -20
+              ],
+              "e": "smooth"
+            },
+            {
+              "t": 90,
+              "s": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        "zoom": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": 0.92,
+              "e": "smooth"
+            },
+            {
+              "t": 90,
+              "s": 1
+            }
+          ]
+        }
+      },
+      "layers": [
+        {
+          "type": "shape",
+          "id": "L_shape_mound",
+          "z": 6,
+          "shape": {
+            "kind": "ellipse",
+            "rx": 760,
+            "ry": 320
+          },
+          "fill": {
+            "a": 0,
+            "k": "leaf"
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                960,
+                810
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 130
+            }
+          }
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_trunk_far",
+          "z": 7,
+          "shape": {
+            "kind": "rect",
+            "width": 64,
+            "height": 560,
+            "cornerRadius": 22
+          },
+          "fill": {
+            "a": 0,
+            "k": "trunk"
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                960,
+                540
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 100
+            }
+          }
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_trunk_l",
+          "z": 9,
+          "shape": {
+            "kind": "rect",
+            "width": 100,
+            "height": 640,
+            "cornerRadius": 28
+          },
+          "fill": {
+            "a": 0,
+            "k": "trunk"
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                640,
+                540
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 100
+            }
+          }
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_trunk_r",
+          "z": 9,
+          "shape": {
+            "kind": "rect",
+            "width": 108,
+            "height": 660,
+            "cornerRadius": 30
+          },
+          "fill": {
+            "a": 0,
+            "k": "trunk"
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                1280,
+                540
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 100
+            }
+          }
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_foliage_tl",
+          "z": 11,
+          "shape": {
+            "kind": "ellipse",
+            "rx": 175,
+            "ry": 118
+          },
+          "fill": {
+            "a": 0,
+            "k": "leaf"
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                480,
+                270
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 125
+            }
+          }
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_foliage_tc",
+          "z": 12,
+          "shape": {
+            "kind": "ellipse",
+            "rx": 205,
+            "ry": 135
+          },
+          "fill": {
+            "a": 0,
+            "k": "leaf"
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                960,
+                270
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 150
+            }
+          }
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_foliage_tr",
+          "z": 11,
+          "shape": {
+            "kind": "ellipse",
+            "rx": 180,
+            "ry": 120
+          },
+          "fill": {
+            "a": 0,
+            "k": "leafDeep"
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                1440,
+                270
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 125
+            }
+          }
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_foliage_ml",
+          "z": 10,
+          "shape": {
+            "kind": "ellipse",
+            "rx": 150,
+            "ry": 100
+          },
+          "fill": {
+            "a": 0,
+            "k": "leafDeep"
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                384,
+                648
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 105
+            }
+          }
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_foliage_mr",
+          "z": 10,
+          "shape": {
+            "kind": "ellipse",
+            "rx": 158,
+            "ry": 104
+          },
+          "fill": {
+            "a": 0,
+            "k": "leaf"
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                1536,
+                648
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 105
+            }
+          }
+        },
+        {
+          "type": "generator",
+          "id": "L_gen_scatter_flowers",
+          "z": 1,
+          "gen": "scatter",
+          "seed": 1138065277,
+          "params": {
+            "motif": "blob",
+            "count": 120,
+            "size": [
+              7,
+              18
+            ],
+            "colors": [
+              "magenta",
+              "ember2",
+              "light",
+              "violet"
+            ],
+            "distribution": "random",
+            "anim": "none",
+            "opacity": 0.95
+          }
+        }
+      ]
+    }
+  ],
+  "provenance": {
+    "story_ir_hash": "sha1:10ef2ade6cb28df2fb104dcc49a7a386aee7a458",
+    "passes": [
+      "lower@2.1"
+    ]
+  }
+}

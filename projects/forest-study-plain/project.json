@@ -1,0 +1,24 @@
+{
+  "project_version": "1.0",
+  "id": "forest-study-plain",
+  "name": "forest-study-plain",
+  "created": "2026-06-23T04:13:52.772Z",
+  "updated": "2026-06-23T04:13:52.772Z",
+  "config": {
+    "w": 1920,
+    "h": 1080,
+    "fps": 30,
+    "duration_frames": 90
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "b3e31a9585573aa97032870e049587b66ef595da",
+  "engine": "remotion@4.0.481",
+  "deps": [],
+  "assets": [],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  }
+}

@@ -2,8 +2,8 @@
   "project_version": "1.0",
   "id": "character",
   "name": "character",
-  "created": "2026-06-22T10:43:16.402Z",
-  "updated": "2026-06-22T10:43:16.402Z",
+  "created": "2026-06-23T04:12:05.843Z",
+  "updated": "2026-06-23T04:12:05.843Z",
   "config": {
     "w": 1920,
     "h": 1080,
@@ -13,7 +13,7 @@
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "33155590a9679eafb197abe810c88470636c3c59",
+  "scene_ir_hash": "6f0abbd6d9c0cf95849e29a005442836328e9593",
   "engine": "remotion@4.0.481",
   "deps": [
     "bg_gradient@1.0.0",

@@ -137,10 +137,96 @@ export const FloorSchema = z
   .strict();
 export type Floor = z.infer<typeof FloorSchema>;
 
+// ---------------------------------------------------------------------------------------------------
+// PAINT model (Painting Style System design §1) — the OPTIONAL "painting" sub-table that turns a flat
+// vector look into the reference's PAINTED look: gradient form-shading (auto shade-ramps), glow, rim,
+// in-fill texture, and scene atmosphere. It is style DATA (lives in `library/stylekits/*.json`); the
+// render-side MECHANISM (src/render/paint.ts + shading.tsx) reads it. Optional + floor-gated: a kit
+// with no `paint` (or `floor.shading=false`) renders FLAT — paint is opt-out, never mandated.
+// ---------------------------------------------------------------------------------------------------
+
+/** Gradient FORM-SHADING params: how a solid fill becomes a volumetric ramp (auto-derived via culori). */
+export const PaintFormSchema = z
+  .object({
+    /** 'linear' (ramp along the light) | 'radial' (highlight pools toward the light point). */
+    type: z.enum(['linear', 'radial']),
+    /** Light direction (screen-space azimuth, deg) the ramp runs along. */
+    lightDeg: z.number(),
+    /** OKLab L delta on the AWAY side (negative = darker shadow). */
+    shadowL: z.number(),
+    /** OKLab L delta on the LIGHT side (positive = lighter highlight). */
+    highlightL: z.number(),
+    /** Hue rotation (deg) of the highlight toward WARM. */
+    warmHighlight: z.number(),
+    /** Hue rotation (deg) of the shadow toward COOL. */
+    coolShadow: z.number(),
+  })
+  .strict();
+export type PaintForm = z.infer<typeof PaintFormSchema>;
+
+/** Soft outer GLOW for `glow`-flagged layers (reuses the core-effects `glow` op). */
+export const PaintGlowSchema = z
+  .object({ radius: z.number(), intensity: z.number() })
+  .strict();
+export type PaintGlow = z.infer<typeof PaintGlowSchema>;
+
+/** RIM (edge) light: a lighter inner edge where the light hits. */
+export const PaintRimSchema = z
+  .object({ width: z.number(), lightL: z.number() })
+  .strict();
+export type PaintRim = z.infer<typeof PaintRimSchema>;
+
+/** In-fill TEXTURE so fills read as PAINTED, not flat vector (reuses the core-effects `grain` op). */
+export const PaintTextureSchema = z
+  .object({ kind: z.enum(['grain']), amount: z.number(), scale: z.number() })
+  .strict();
+export type PaintTexture = z.infer<typeof PaintTextureSchema>;
+
+/** A scene focal-light POOL (a warm wash over the centre of interest). */
+export const PaintFocalSchema = z
+  .object({
+    at: z.enum(['center']),
+    color: z.string(),
+    radius: z.number(),
+    intensity: z.number(),
+  })
+  .strict();
+export type PaintFocal = z.infer<typeof PaintFocalSchema>;
+
+/** Scene-level ATMOSPHERE: a dark backdrop gradient, vignette, focal pool, and depth desaturation. */
+export const PaintAtmosphereSchema = z
+  .object({
+    /** Dark rich base gradient stops (top→bottom). */
+    backdrop: z.array(z.string()),
+    /** Vignette strength 0..1 (darkened corners). */
+    vignette: z.number(),
+    /** A focal light pool over the centre. */
+    focal: PaintFocalSchema,
+    /** Far (low-parallax / high-z) layers → darker + desaturated (atmospheric depth) 0..1. */
+    depthDesaturate: z.number(),
+  })
+  .strict();
+export type PaintAtmosphere = z.infer<typeof PaintAtmosphereSchema>;
+
+/** The complete PAINT model carried in `defs.stylekit.paint` (design §1). Every field required once present. */
+export const PaintSchema = z
+  .object({
+    form: PaintFormSchema,
+    glow: PaintGlowSchema,
+    rim: PaintRimSchema,
+    texture: PaintTextureSchema,
+    atmosphere: PaintAtmosphereSchema,
+    /** Organic-form default for shape primitives (reserved hint; 0 = hard geometry). */
+    shape: z.object({ blobiness: z.number() }).strict(),
+  })
+  .strict();
+export type Paint = z.infer<typeof PaintSchema>;
+
 /**
  * A complete StyleKit: a named curve `easings` table + `defaultEasings` (the `defs.easings` seed) +
  * a `palette` token set + the `motion` sub-table + a scene `light` + default `shading` + the `floor`
- * toggles. This is the shape carried in the Scene IR as `defs.stylekit` and read at render time.
+ * toggles + an OPTIONAL `paint` model (the painted look). This is the shape carried in the Scene IR
+ * as `defs.stylekit` and read at render time.
  */
 export const StyleKitSchema = z
   .object({
@@ -154,6 +240,8 @@ export const StyleKitSchema = z
     light: StyleLightSchema,
     shading: StyleShadingSchema,
     floor: FloorSchema,
+    /** OPTIONAL painting model (design §1). Absent → flat (no form-shading/glow/atmosphere). */
+    paint: PaintSchema.optional(),
   })
   .strict();
 export type StyleKit = z.infer<typeof StyleKitSchema>;

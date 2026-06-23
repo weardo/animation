@@ -51,7 +51,8 @@ import { getBoundingBox } from '@remotion/paths';
 import type { Easings, Palette, ShapeLayer as ShapeLayerIR } from '../ir/index.js';
 import { resolveFill } from '../engine/index.js';
 import { evalNumber, evalVec2 } from './eval.js';
-import { easingFn, type EasingFunction } from './stylekit.js';
+import { easingFn, type EasingFunction, type Light, type Paint } from './stylekit.js';
+import { formGradient, formGradientId, rimColor } from './paint.js';
 
 /** flubber's path-string interpolator: (from, to, opts) → (t ∈ [0,1]) → SVG `d`. */
 type FlubberInterpolate = (
@@ -67,6 +68,15 @@ export interface ShapeLayerProps {
   palette?: Palette | undefined;
   /** `defs.easings` so transform + morph keyframes resolve their `e` names (never linear). */
   easings?: Easings | undefined;
+  /**
+   * The resolved paint model (`defs.stylekit.paint`) — when present AND the layer has a SOLID `fill`,
+   * the flat fill is replaced by an auto-derived FORM-SHADING gradient (highlight→base→shadow via
+   * culori), so the shape paints itself volumetric like the reference (design §2). Absent → flat fill
+   * (back-compat / `style: plain`). The parent <Scene> only passes this when `floor.shading` is on.
+   */
+  paint?: Paint | undefined;
+  /** The scene light — drives the form-gradient direction when `paint` is active. */
+  light?: Light | undefined;
 }
 
 /** A resolved primitive: its path `d` plus the intrinsic box `@remotion/shapes` reports. */
@@ -304,7 +314,7 @@ function evalColorFill(
  * solid or a deterministic-id gradient; stroke is optional. The layer transform + parallax + shading
  * are applied by the parent <Scene> via the same wrappers as other layers.
  */
-export const ShapeLayer: React.FC<ShapeLayerProps> = ({ layer, palette, easings }) => {
+export const ShapeLayer: React.FC<ShapeLayerProps> = ({ layer, palette, easings, paint, light }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
   const easingTable: Easings = easings ?? {};
@@ -343,6 +353,13 @@ export const ShapeLayer: React.FC<ShapeLayerProps> = ({ layer, palette, easings 
   const gradId = `shape-grad-${layer.id}`;
   let fillValue = '#ffffff';
   let gradientDef: React.ReactNode = null;
+  // PAINT rim (design §2): a lighter inner edge derived from the ramp highlight, painted ON THE LIT
+  // SIDE only. Implemented as a second stroked copy of the path masked by a light-direction gradient
+  // (opaque toward the light, transparent away) so the edge brightens where the light hits — exactly
+  // the reference's rim on trunk/canopy edges. Built only when paint+light are active AND the fill is
+  // a SOLID token (a gradient/authored fill keeps the author's intent). Deterministic ids from layer id.
+  let rimStroke: { color: string; width: number; maskId: string } | undefined;
+  let rimMaskDef: React.ReactNode = null;
   const fill = layer.fill;
   if (fill === undefined) {
     fillValue = '#ffffff';
@@ -374,7 +391,49 @@ export const ShapeLayer: React.FC<ShapeLayerProps> = ({ layer, palette, easings 
     }
     fillValue = `url(#${gradId})`;
   } else {
-    fillValue = evalColorFill(fill as { a: 0 | 1; k: string | MorphKeyframe[] }, frame, easingTable, palette);
+    const solid = evalColorFill(fill as { a: 0 | 1; k: string | MorphKeyframe[] }, frame, easingTable, palette);
+    // PAINT form-fill (design §2): when a paint model is active, the SOLID fill becomes an auto-derived
+    // shade-ramp gradient (highlight→base→shadow via culori) along the light — the shape paints itself
+    // volumetric. Deterministic id from the layer id (no collision; byte-identical markup). Absent
+    // paint → the flat solid (back-compat / `style: plain`).
+    if (paint && light) {
+      const fg = formGradient(solid, paint, light);
+      const id = formGradientId(layer.id);
+      const fstops = fg.stops.map((s, i) => (
+        <stop key={i} offset={`${(s.offset * 100).toFixed(2)}%`} stopColor={s.color} />
+      ));
+      gradientDef =
+        fg.type === 'radial' ? (
+          <radialGradient id={id} cx={fg.cx} cy={fg.cy} r={fg.r} fx={fg.fx} fy={fg.fy}>
+            {fstops}
+          </radialGradient>
+        ) : (
+          <linearGradient id={id} x1={fg.x1} y1={fg.y1} x2={fg.x2} y2={fg.y2}>
+            {fstops}
+          </linearGradient>
+        );
+      fillValue = `url(#${id})`;
+      // RIM: a lighter inner stroke that fades from the lit side (opaque) to the away side (clear),
+      // using the SAME light-direction endpoints as the form gradient so the bright edge sits where
+      // the light hits. The mask gradient goes white→transparent along (x1,y1)→(x2,y2).
+      if (paint.rim.width > 0 && paint.rim.lightL > 0) {
+        const maskId = `paint-rim-${layer.id}`;
+        rimStroke = { color: rimColor(solid, paint), width: paint.rim.width, maskId };
+        rimMaskDef = (
+          <>
+            <linearGradient id={`${maskId}-g`} x1={fg.x1} y1={fg.y1} x2={fg.x2} y2={fg.y2}>
+              <stop offset="0%" stopColor="#fff" stopOpacity={1} />
+              <stop offset="55%" stopColor="#fff" stopOpacity={0} />
+            </linearGradient>
+            <mask id={maskId} maskContentUnits="objectBoundingBox">
+              <rect x="0" y="0" width="1" height="1" fill={`url(#${maskId}-g)`} />
+            </mask>
+          </>
+        );
+      }
+    } else {
+      fillValue = solid;
+    }
   }
 
   // --- stroke (optional) ---
@@ -403,8 +462,23 @@ export const ShapeLayer: React.FC<ShapeLayerProps> = ({ layer, palette, easings 
         style={wrapperStyle}
         xmlns="http://www.w3.org/2000/svg"
       >
-        {gradientDef ? <defs>{gradientDef}</defs> : null}
+        {gradientDef || rimMaskDef ? (
+          <defs>
+            {gradientDef}
+            {rimMaskDef}
+          </defs>
+        ) : null}
         <path d={d} fill={fillValue} stroke={strokeColor} strokeWidth={strokeWidth} />
+        {/* PAINT rim: an inner highlight stroke on the lit edge (masked by the light-direction gradient). */}
+        {rimStroke ? (
+          <path
+            d={d}
+            fill="none"
+            stroke={rimStroke.color}
+            strokeWidth={rimStroke.width}
+            mask={`url(#${rimStroke.maskId})`}
+          />
+        ) : null}
       </svg>
     </AbsoluteFill>
   );

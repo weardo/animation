@@ -2,8 +2,8 @@
   "project_version": "1.0",
   "id": "m2-demo",
   "name": "m2-demo",
-  "created": "2026-06-23T01:21:05.555Z",
-  "updated": "2026-06-23T01:21:05.555Z",
+  "created": "2026-06-23T04:25:20.089Z",
+  "updated": "2026-06-23T04:25:20.089Z",
   "config": {
     "w": 1920,
     "h": 1080,
@@ -13,7 +13,7 @@
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "59c8c5cbf1e5f370878ad7d8c3412f2dac4dff72",
+  "scene_ir_hash": "c4f97adbdf492c2cc9c75b2fa22a1b83adbe00d7",
   "engine": "remotion@4.0.481",
   "deps": [
     "bg_gradient@1.0.0",

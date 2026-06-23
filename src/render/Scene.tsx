@@ -37,12 +37,14 @@ import { resolveAttach } from './attach.js';
 import { applyEffects, resolveEffects } from './effects.js';
 import { NEUTRAL_STYLEKIT, type Light, type StyleKit } from './stylekit.js';
 import {
+  Atmosphere,
   ContactShadow,
   objectFilter,
   resolveLight,
   resolveShading,
   SceneLook,
 } from './shading.js';
+import { depthGrade, paintEffects } from './paint.js';
 
 export interface SceneProps {
   /** One Scene-IR `scene` (its layers + camera + labels). */
@@ -148,6 +150,9 @@ export const Scene: React.FC<SceneProps> = ({ scene, defs: baseDefs, alpha }) =>
 
   return (
     <AbsoluteFill data-scene={scene.id}>
+      {/* --- Scene ATMOSPHERE (design §3): dark backdrop gradient + warm focal pool, BEHIND the world.
+          Gated by floor.shading + a paint model; skipped for `--alpha` so transparency shows through. */}
+      {floor.shading && !alpha && stylekit.paint && <Atmosphere paint={stylekit.paint} />}
       <AbsoluteFill style={cameraStyle}>
         {ordered.map(({ l }) => {
           // --- 2. Per-layer parallax counter-shift: cameraPosition * (1 - parallax) ---
@@ -172,7 +177,9 @@ export const Scene: React.FC<SceneProps> = ({ scene, defs: baseDefs, alpha }) =>
       {/* Floor toggle (I3): shading=false → no scene-level light wash / vignette (flat look). */}
       {/* P3 (alpha): the screen-space wash/vignette is a full-frame overlay that would tint the
           transparent canvas — skip it for an `--alpha` render so the background stays clear. */}
-      {floor.shading && !alpha && <SceneLook light={scene.light} defaultLight={stylekit.light} />}
+      {floor.shading && !alpha && (
+        <SceneLook light={scene.light} defaultLight={stylekit.light} paint={stylekit.paint} />
+      )}
     </AbsoluteFill>
   );
 };
@@ -236,9 +243,17 @@ function renderSub(
     case 'shape':
       // First-class shape (ADR-003 #1): @remotion/shapes primitives + flubber morph + fill/gradient/
       // stroke. Wrapped in parallax like rig/generator so it gets depth + the §11.1 shading/effects.
+      // PAINT (design §2): pass the resolved paint model + light so a SOLID fill becomes a form-shading
+      // ramp gradient — gated by floor.shading (off → flat fill, `style: plain`).
       return (
         <ParallaxWrapper offset={parallaxOffset} id={layer.id}>
-          <ShapeLayer layer={layer} palette={defs.palette} easings={easings} />
+          <ShapeLayer
+            layer={layer}
+            palette={defs.palette}
+            easings={easings}
+            paint={stylekit.floor.shading ? stylekit.paint : undefined}
+            light={light}
+          />
         </ParallaxWrapper>
       );
     case 'text':
@@ -330,11 +345,35 @@ export const LayerView: React.FC<LayerViewProps> = ({ layer, defs, easings, para
     sub
   );
 
+  // PAINTING mechanism (design §2/§4) — paint-DERIVED effects (in-fill TEXTURE + GLOW), reusing the
+  // SAME engine `effects` registry (core-effects `grain`/`glow`) as authored effects, so nothing is
+  // re-implemented. Gated by floor.shading + a paint model; skipped for the full-frame background (it
+  // sits in the scene atmosphere already). Glow is emitted only for glow-flagged layers (the resolved
+  // §11.1 `shading.glow > 0`). These run BEFORE the authored effects[] so author intent composes last.
+  const paint = floor.shading && !isBackground ? stylekit.paint : undefined;
+  const paintFx = paint ? paintEffects(layer.id, paint, shading.glow > 0, light) : [];
+  const allFx =
+    paintFx.length > 0 ? [...paintFx, ...(layer.effects ?? [])] : layer.effects;
   // Authored per-layer effects[] stack (ADR-003 #2) — composited ON TOP of the §11.1 shading + the
   // parallax wrappers, in `effects[]` order. Resolved through the engine `effects` registry (the
   // core-effects plugin). Layers without `effects[]` are returned unchanged (backward-compatible).
-  const resolved = resolveEffects(layer.id, layer.effects, frame);
+  const resolved = resolveEffects(layer.id, allFx, frame);
   const withEffects = applyEffects(resolved, layer.id, shaded);
+
+  // DEPTH grade (design §3/§4): far (low-parallax) layers darken + desaturate toward the atmosphere.
+  // A pure CSS `saturate()/brightness()` fragment from the layer's effective depth. Background-exempt
+  // (it IS the atmosphere) and floor-gated. Applied as an outer wrapper so it grades the whole layer.
+  const depthFx =
+    paint && floor.parallax && !isBackground
+      ? depthGrade(layerParallax(layer), paint)
+      : undefined;
+  const graded = depthFx ? (
+    <AbsoluteFill style={{ filter: depthFx }} data-depth={layer.id}>
+      {withEffects}
+    </AbsoluteFill>
+  ) : (
+    withEffects
+  );
 
   // --- COMPOSITING (M2 §11): per-layer track matte / mask, then blend mode — applied GENERICALLY to
   // every layer type, on top of shading + effects + parallax. A LAYER matte (`matte.from`) renders the
@@ -355,7 +394,7 @@ export const LayerView: React.FC<LayerViewProps> = ({ layer, defs, easings, para
     }
   }
   const matteAsset = layer.matte?.ref ? defs.assets[layer.matte.ref] : undefined;
-  const matted = applyMatte(withEffects, layer.matte, layer.id, {
+  const matted = applyMatte(graded, layer.matte, layer.id, {
     asset: matteAsset,
     matteSource,
     shapeClip,

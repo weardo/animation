@@ -1,0 +1,75 @@
+# examples/paint-study.yaml — the Painting Style System study (design §5). The CONTENT is deliberately
+# DUMB: a handful of blob/ellipse SHAPE primitives + a scatter field. NO bespoke "tree"/"foliage"
+# object exists. The LOOK — form-shaded volume, rich limited palette, glow, dark atmospheric ground,
+# vignette, grain — comes ENTIRELY from the selected `kurzgesagt-nature` stylekit's `paint` model
+# applied generically by the shading mechanism. Success = the STYLE carries the reference look, not
+# the objects. (Compare to style-ref/pHJIhxZEoxg/cand/c-0008, c-0017.)
+#
+# Build it:
+#   tsx src/cli/render.ts examples/paint-study.yaml --project paint-study --name "Paint Study"
+#
+# Flip the proof: `style: plain` (floor.shading off) renders the SAME shapes FLAT — paint is opt-out.
+
+title: "Paint Study"
+style: kurzgesagt-nature
+
+beats:
+  - id: forest
+    say: "Style does the work; the content stays dumb."
+    show:
+      # GROUND MOUND — a wide ellipse of grass, low in frame; the dark atmosphere + depth grade sink it.
+      - shape: ellipse
+        as: mound
+        at: bottom
+        args: { z: 5, scale: 200, params: { rx: 620, ry: 220 }, fill: { a: 0, k: leafDeep } }
+
+      # TRUNKS — plain rounded rects, the deep violet trunk token; form-shading gives them a lit edge.
+      - shape: rect
+        as: trunk_l
+        at: left
+        args: { z: 7, scale: 100, params: { width: 70, height: 360, cornerRadius: 20 }, fill: { a: 0, k: trunk } }
+      - shape: rect
+        as: trunk_r
+        at: right
+        args: { z: 7, scale: 100, params: { width: 80, height: 380, cornerRadius: 22 }, fill: { a: 0, k: trunk } }
+
+      # FOLIAGE BLOBS — plain ellipses, no per-object art. The paint form-fill ramps each solid leaf
+      # token into a volumetric highlight->shadow gradient; grain + rim make them read as painted.
+      - shape: ellipse
+        as: foliage_l
+        at: top_left
+        args: { z: 8, scale: 130, params: { rx: 150, ry: 95 }, fill: { a: 0, k: leaf } }
+      - shape: ellipse
+        as: foliage_c
+        at: top
+        args: { z: 9, scale: 150, params: { rx: 175, ry: 110 }, fill: { a: 0, k: leaf } }
+      - shape: ellipse
+        as: foliage_r
+        at: top_right
+        args: { z: 8, scale: 125, params: { rx: 150, ry: 90 }, fill: { a: 0, k: leafDeep } }
+
+      # SCATTERED FLOWERS — the scatter generator dotting the mound with small bright blobs (ambience).
+      - generator: scatter
+        as: flowers
+        args:
+          motif: blob
+          count: 90
+          size: [6, 16]
+          colors: [magenta, ember2, light, violet]
+          distribution: random
+          anim: none
+          opacity: 0.95
+
+      # A GLOWING FOCAL element (mycelium/ember motif) — flagged for glow via shading so the paint glow
+      # op blooms it against the dark ground (proves the glow path, like the reference's lit roots).
+      - shape: circle
+        as: ember
+        at: center
+        args:
+          z: 11
+          scale: 60
+          params: { radius: 50 }
+          fill: { a: 0, k: ember }
+          shading: { glow: 0.9 }
+    camera: establishing
+    duration: { seconds: 3 }

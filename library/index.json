@@ -259,6 +259,23 @@
           "source": "factory (deterministic transparent pulse — VP9/yuva420p, frame-exact via OffthreadVideo)",
           "license": "CC0"
         }
+      },
+      "an32_video": {
+        "id": "an32_video",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/an32.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "news"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "x.com/jaggirm/status/2065924227811975441 (IAF An-32 crash, Jorhat, 2026-06-13)",
+          "license": "editorial/news"
+        }
       }
     },
     "generators": {
@@ -398,6 +415,26 @@
         "deps": [],
         "provenance": {
           "source": "factory (ADR-008 I3 floor opt-out)",
+          "license": "CC0"
+        }
+      },
+      "kurzgesagt-nature": {
+        "id": "kurzgesagt-nature",
+        "version": "1.0.0",
+        "kind": "stylekit",
+        "format": "stylekit",
+        "uri": "stylekit://kurzgesagt-nature",
+        "tags": [
+          "stylekit",
+          "kurzgesagt",
+          "nature",
+          "paint",
+          "painted",
+          "atmosphere"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "factory (Painting Style System design 2026-06-23 — paint model DATA)",
           "license": "CC0"
         }
       }

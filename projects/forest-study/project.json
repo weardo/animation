@@ -1,0 +1,24 @@
+{
+  "project_version": "1.0",
+  "id": "forest-study",
+  "name": "forest-study",
+  "created": "2026-06-23T04:24:09.091Z",
+  "updated": "2026-06-23T04:24:09.091Z",
+  "config": {
+    "w": 1920,
+    "h": 1080,
+    "fps": 30,
+    "duration_frames": 90
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "fa695bcdeb3a20cc599ab4cbae3ccba859f7571b",
+  "engine": "remotion@4.0.481",
+  "deps": [],
+  "assets": [],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  }
+}

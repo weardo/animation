@@ -1,0 +1,84 @@
+# examples/forest-study.yaml — the Painting Style System study (design §5), FOREST CROSS-SECTION
+# target (reference frames style-ref/pHJIhxZEoxg/cand/c-0008, c-0017). The CONTENT is deliberately
+# DUMB: a handful of ellipse/rect SHAPE primitives + a scatter field of flower dots. There is NO
+# bespoke "tree"/"foliage"/"flower" object anywhere — just generic shapes with solid palette-token
+# fills, placed on named layout anchors. The reference LOOK — volumetric form-shaded foliage blobs,
+# dark lit trunks, a grass mound, scattered flowers, vignette, grain, a warm atmospheric backlight —
+# comes ENTIRELY from the selected `kurzgesagt-nature` stylekit's `paint` model, applied generically
+# by the shading mechanism. Success = the STYLE carries the painted nature look, not the objects.
+#
+# Build it:
+#   tsx src/cli/render.ts examples/forest-study.yaml --project forest-study --frames auto
+#
+# Flip the proof: `style: plain` (floor.shading off) renders the SAME shapes FLAT — paint is opt-out.
+
+title: "Forest Study Plain"
+style: plain
+
+beats:
+  - id: forest
+    say: "The style does the work; the content stays dumb."
+    show:
+      # --- GROUND: a wide grass MOUND low in frame. A plain ellipse; the form-fill ramps the green
+      #     into a lit dome, the depth grade + vignette sink its far edges into atmosphere. ---
+      - shape: ellipse
+        as: mound
+        at: bottom
+        args: { z: 6, scale: 130, params: { rx: 760, ry: 320 }, fill: { a: 0, k: leaf } }
+
+      # --- TRUNKS: plain rounded rects in the deep violet trunk token. Form-shading gives each a lit
+      #     near-edge + a cool shadow side, exactly the reference's dark backlit trunks. Three trunks
+      #     on distinct anchors at three depths (z). ---
+      - shape: rect
+        as: trunk_far
+        at: center
+        args: { z: 7, scale: 100, params: { width: 64, height: 560, cornerRadius: 22 }, fill: { a: 0, k: trunk } }
+      - shape: rect
+        as: trunk_l
+        at: left_third
+        args: { z: 9, scale: 100, params: { width: 100, height: 640, cornerRadius: 28 }, fill: { a: 0, k: trunk } }
+      - shape: rect
+        as: trunk_r
+        at: right_third
+        args: { z: 9, scale: 100, params: { width: 108, height: 660, cornerRadius: 30 }, fill: { a: 0, k: trunk } }
+
+      # --- CANOPY: foliage BLOBS — plain ellipses, no per-object art. The paint form-fill ramps each
+      #     solid leaf token into a volumetric highlight->shadow gradient; grain + rim make them read
+      #     as painted clumps. Clustered across the top like the reference canopy (distinct anchors). ---
+      - shape: ellipse
+        as: foliage_tl
+        at: top_left
+        args: { z: 11, scale: 125, params: { rx: 175, ry: 118 }, fill: { a: 0, k: leaf } }
+      - shape: ellipse
+        as: foliage_tc
+        at: top
+        args: { z: 12, scale: 150, params: { rx: 205, ry: 135 }, fill: { a: 0, k: leaf } }
+      - shape: ellipse
+        as: foliage_tr
+        at: top_right
+        args: { z: 11, scale: 125, params: { rx: 180, ry: 120 }, fill: { a: 0, k: leafDeep } }
+      - shape: ellipse
+        as: foliage_ml
+        at: stage_left
+        args: { z: 10, scale: 105, params: { rx: 150, ry: 100 }, fill: { a: 0, k: leafDeep } }
+      - shape: ellipse
+        as: foliage_mr
+        at: stage_right
+        args: { z: 10, scale: 105, params: { rx: 158, ry: 104 }, fill: { a: 0, k: leaf } }
+
+      # --- SCATTERED FLOWERS: the scatter generator dotting the scene with small bright blobs. No
+      #     bespoke flower art — just colored dots; the atmosphere + glow give them the reference's
+      #     wildflower ambience along the grass. ---
+      - generator: scatter
+        as: flowers
+        args:
+          motif: blob
+          count: 120
+          size: [7, 18]
+          colors: [magenta, ember2, light, violet]
+          distribution: random
+          anim: none
+          opacity: 0.95
+
+    camera: establishing
+    duration: { seconds: 3 }

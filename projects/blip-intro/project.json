@@ -2,8 +2,8 @@
   "project_version": "1.0",
   "id": "blip-intro",
   "name": "blip-intro",
-  "created": "2026-06-22T19:02:10.615Z",
-  "updated": "2026-06-22T19:02:10.615Z",
+  "created": "2026-06-23T04:16:44.263Z",
+  "updated": "2026-06-23T04:16:44.263Z",
   "config": {
     "w": 1920,
     "h": 1080,
@@ -13,7 +13,7 @@
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "d43bd0df06e2ae683579a4b2c7cfc26b6f00d974",
+  "scene_ir_hash": "6f0abbd6d9c0cf95849e29a005442836328e9593",
   "engine": "remotion@4.0.481",
   "deps": [
     "bg_gradient@1.0.0",

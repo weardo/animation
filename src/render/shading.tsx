@@ -17,7 +17,8 @@
 
 import React from 'react';
 import { AbsoluteFill } from 'remotion';
-import { lightVector, type Light, type ShadingSpec } from './stylekit.js';
+import { lightVector, type Light, type Paint, type ShadingSpec } from './stylekit.js';
+import { backdropGradient } from './paint.js';
 
 /**
  * Merge an authored (partial) light over the DEFAULT light — which now comes from the SELECTED
@@ -136,13 +137,18 @@ export const ContactShadow: React.FC<{
 export const SceneLook: React.FC<{
   light?: Partial<Light> | undefined;
   defaultLight: Light;
-}> = ({ light, defaultLight }) => {
+  /** Optional paint model — its `atmosphere.vignette` scales the vignette strength (design §3). */
+  paint?: Paint | undefined;
+}> = ({ light, defaultLight, paint }) => {
   const L = resolveLight(light, defaultLight);
   const v = lightVector(L.dir);
   // gradient runs along the light direction: lit color at the source side → cool shade opposite.
   const angle = (Math.atan2(-v.y, -v.x) * 180) / Math.PI + 90;
   const litA = 0.18 * L.intensity;
   const shadeA = 0.26 * (1 - L.ambient);
+  // Vignette strength: the paint model's `atmosphere.vignette` (design §3) when present; else the
+  // long-standing default 0.42 (so existing demos are unchanged when no paint is set).
+  const vig = paint ? Math.max(0, Math.min(0.95, paint.atmosphere.vignette)) : 0.42;
   return (
     <AbsoluteFill style={{ pointerEvents: 'none' }}>
       <AbsoluteFill
@@ -153,9 +159,38 @@ export const SceneLook: React.FC<{
       />
       <AbsoluteFill
         style={{
-          background: `radial-gradient(125% 105% at 50% 40%, rgba(0,0,0,0) 56%, rgba(4,6,12,0.42) 100%)`,
+          background: `radial-gradient(125% 105% at 50% 40%, rgba(0,0,0,0) 56%, rgba(4,6,12,${vig.toFixed(3)}) 100%)`,
         }}
       />
+    </AbsoluteFill>
+  );
+};
+
+/**
+ * Scene ATMOSPHERE (design §3) — the dark rich BACKDROP gradient + a warm FOCAL light pool, rendered
+ * BEHIND the world (the first thing painted) so every layer sits in an atmospheric space like the
+ * reference frames. Screen-space, static per frame (pure CSS gradients) → deterministic. Gated by the
+ * caller (`floor.shading` + a `paint` present); returns null when there is no backdrop authored.
+ *
+ *   • BACKDROP — a top→bottom linear gradient over `paint.atmosphere.backdrop` (deep rich base).
+ *   • FOCAL    — a soft radial pool (`paint.atmosphere.focal`) of warm light over the centre of
+ *     interest, screen-blended so it adds luminance without washing the backdrop flat.
+ */
+export const Atmosphere: React.FC<{ paint: Paint }> = ({ paint }) => {
+  const bg = backdropGradient(paint);
+  if (!bg) return null;
+  const f = paint.atmosphere.focal;
+  const radiusPct = (Math.max(0, Math.min(1, f.radius)) * 100).toFixed(0);
+  const focal =
+    f.intensity > 0
+      ? `radial-gradient(${radiusPct}% ${radiusPct}% at 50% 42%, ${rgba(f.color, Math.min(1, f.intensity))} 0%, rgba(0,0,0,0) 70%)`
+      : undefined;
+  return (
+    <AbsoluteFill style={{ pointerEvents: 'none' }} data-atmosphere>
+      <AbsoluteFill style={{ background: bg }} />
+      {focal ? (
+        <AbsoluteFill style={{ background: focal, mixBlendMode: 'screen' }} />
+      ) : null}
     </AbsoluteFill>
   );
 };

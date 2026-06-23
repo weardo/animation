@@ -1,0 +1,13 @@
+{
+  "lockfile_version": "1",
+  "algorithm": "object-hash@sha1/v1",
+  "refs": {
+    "kurzgesagt-nature@1.0.0": {
+      "namespace": "stylekits",
+      "id": "kurzgesagt-nature",
+      "version": "1.0.0",
+      "hash": "7760b7dc0f3036683907580bffb8a089a2b4e945",
+      "deps": []
+    }
+  }
+}

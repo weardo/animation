@@ -39,6 +39,13 @@ export {
   StyleLightSchema,
   StyleShadingSchema,
   FloorSchema,
+  PaintSchema,
+  PaintFormSchema,
+  PaintGlowSchema,
+  PaintRimSchema,
+  PaintTextureSchema,
+  PaintFocalSchema,
+  PaintAtmosphereSchema,
 } from '../ir/stylekit.js';
 export type {
   StyleKit,
@@ -54,6 +61,13 @@ export type {
   StyleLight as Light,
   StyleShading as ShadingSpec,
   Floor,
+  Paint,
+  PaintForm,
+  PaintGlow,
+  PaintRim,
+  PaintTexture,
+  PaintFocal,
+  PaintAtmosphere,
 } from '../ir/stylekit.js';
 
 // A resolved easing function: maps a normalized progress t∈[0,1] → eased value (often outside

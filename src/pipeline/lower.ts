@@ -59,7 +59,7 @@ import { resolveScenePalette, paletteDiff, interpolatePalettes } from './color-s
 
 /** This pass's id + version — folded into cache keys / provenance (spec §5). */
 export const PASS_ID = 'lower';
-export const PASS_VERSION = '2.0';
+export const PASS_VERSION = '2.1';
 
 /**
  * The default render config: a 1920×1080, 30fps film. Generic — no domain assumptions. A scene's
@@ -488,6 +488,9 @@ function buildShapeLayer(item: ShowItem, index: number): LoweredLayer {
     ...(args['fill'] !== undefined ? { fill: args['fill'] as ShapeLayer['fill'] } : {}),
     ...(args['stroke'] !== undefined ? { stroke: args['stroke'] as ShapeLayer['stroke'] } : {}),
     ...(Array.isArray(args['effects']) ? { effects: args['effects'] as Effect[] } : {}),
+    // Per-layer shading override (generic; e.g. `shading: { glow: 0.9 }` flags a layer for the paint
+    // GLOW). Passes straight through to the Scene-IR layer (validated by the layer Zod at the boundary).
+    ...(args['shading'] !== undefined ? { shading: args['shading'] as ShapeLayer['shading'] } : {}),
     ...(Object.keys(transform).length > 0 ? { transform } : {}),
   };
 
