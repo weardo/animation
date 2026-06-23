@@ -29,6 +29,7 @@ import {
   useVideoConfig,
 } from 'remotion';
 import { Lottie, type LottieAnimationData } from '@remotion/lottie';
+import { getVideoMetadata } from '@remotion/media-utils';
 import type { AssetDef, Easings, FootageLayer as FootageLayerIR } from '../ir/index.js';
 import { evalNumber, evalVec2 } from './eval.js';
 
@@ -107,6 +108,57 @@ const LottieFootage: React.FC<{
 };
 
 /**
+ * Video footage. Two fixes the real-world test surfaced:
+ *  • LOOP (was a bug): the source must repeat over its OWN length, not the composition's. We read the
+ *    video's real duration (getVideoMetadata, gated by delayRender → deterministic) and Loop on that
+ *    (÷ playbackRate, since a retimed clip occupies fewer/more timeline frames). The old code Looped on
+ *    the whole-composition duration, so it never restarted → froze on the last frame past the source end.
+ *  • MUTED (a per-project SETTING, not a default opinion): pass `muted` straight to <OffthreadVideo>.
+ *    We do NOT force a value — the LAYER decides (story `muted:`); absent → Remotion's own behavior.
+ */
+const VideoFootage: React.FC<{
+  url: string;
+  playbackRate: number;
+  fit: NonNullable<FootageLayerIR['fit']>;
+  loop: boolean;
+  muted: boolean;
+}> = ({ url, playbackRate, fit, loop, muted }) => {
+  const { fps } = useVideoConfig();
+  const [srcFrames, setSrcFrames] = useState<number | null>(null);
+  const [handle] = useState(() => delayRender(`Probing video footage: ${url}`));
+
+  useEffect(() => {
+    if (!loop) {
+      continueRender(handle); // no Loop → no metadata needed
+      return;
+    }
+    let cancelled = false;
+    getVideoMetadata(url)
+      .then((m) => {
+        if (cancelled) return;
+        setSrcFrames(Math.max(1, Math.round((m.durationInSeconds * fps) / playbackRate)));
+        continueRender(handle);
+      })
+      .catch((err) => cancelRender(err));
+    return () => {
+      cancelled = true;
+    };
+  }, [url, loop, fps, playbackRate, handle]);
+
+  const video = (
+    <OffthreadVideo
+      src={url}
+      playbackRate={playbackRate}
+      muted={muted}
+      style={{ width: '100%', height: '100%', objectFit: fit, display: 'block' }}
+    />
+  );
+  if (!loop) return video;
+  if (srcFrames == null) return null; // delayRender gates the frame until the real length is known
+  return <Loop durationInFrames={srcFrames}>{video}</Loop>;
+};
+
+/**
  * Render one Scene-IR footage layer: its (animated) transform wrapping the frame-seeked media. The
  * media kind comes from the resolved asset def — `video` → `<OffthreadVideo>`, `lottie` → `<Lottie>`.
  * `from` offsets which source frame plays (via a `<Sequence from={-from}>` time-shift); `loop` wraps
@@ -114,7 +166,7 @@ const LottieFootage: React.FC<{
  */
 export const FootageLayer: React.FC<FootageLayerProps> = ({ layer, assetDef, easings }) => {
   const frame = useCurrentFrame();
-  const { width, height, durationInFrames } = useVideoConfig();
+  const { width, height } = useVideoConfig();
   const easingTable: Easings = easings ?? {};
 
   // The layer's own `{a,k}` transform at this frame (optional → identity defaults). Default position
@@ -147,14 +199,9 @@ export const FootageLayer: React.FC<FootageLayerProps> = ({ layer, assetDef, eas
 
   let media: React.ReactNode;
   if (assetDef.kind === 'video') {
-    const video = (
-      <OffthreadVideo
-        src={url}
-        playbackRate={playbackRate}
-        style={{ width: '100%', height: '100%', objectFit: fit, display: 'block' }}
-      />
-    );
-    media = loop ? <Loop durationInFrames={durationInFrames}>{video}</Loop> : video;
+    // `muted` is the LAYER's setting (story `muted:`), defaulting to Remotion's own behavior — we
+    // never force mute/unmute in core. Loop (when set) repeats over the source's real length.
+    media = <VideoFootage url={url} playbackRate={playbackRate} fit={fit} loop={loop} muted={layer.muted ?? false} />;
   } else if (assetDef.kind === 'lottie') {
     media = <LottieFootage url={url} loop={loop} playbackRate={playbackRate} />;
   } else {

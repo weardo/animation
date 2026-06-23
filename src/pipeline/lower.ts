@@ -673,6 +673,7 @@ function buildFootageLayer(item: ShowItem, index: number): LoweredLayer {
   const from = typeof item.from === 'number' ? item.from : typeof args['from'] === 'number' ? (args['from'] as number) : undefined;
   const playbackRate = typeof args['playbackRate'] === 'number' ? (args['playbackRate'] as number) : undefined;
   const loop = typeof args['loop'] === 'boolean' ? (args['loop'] as boolean) : undefined;
+  const muted = typeof args['muted'] === 'boolean' ? (args['muted'] as boolean) : undefined;
   const fit =
     args['fit'] === 'cover' || args['fit'] === 'contain' || args['fit'] === 'fill'
       ? (args['fit'] as FootageLayer['fit'])
@@ -686,6 +687,7 @@ function buildFootageLayer(item: ShowItem, index: number): LoweredLayer {
     ...(from !== undefined ? { from } : {}),
     ...(playbackRate !== undefined ? { playbackRate } : {}),
     ...(loop !== undefined ? { loop } : {}),
+    ...(muted !== undefined ? { muted } : {}),
     ...(fit !== undefined ? { fit } : {}),
     ...(parallax !== undefined ? { parallax } : {}),
     ...(Object.keys(transform).length > 0 ? { transform } : {}),
