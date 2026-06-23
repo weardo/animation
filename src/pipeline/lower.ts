@@ -59,7 +59,7 @@ import { resolveScenePalette, paletteDiff, interpolatePalettes } from './color-s
 
 /** This pass's id + version — folded into cache keys / provenance (spec §5). */
 export const PASS_ID = 'lower';
-export const PASS_VERSION = '2.5';
+export const PASS_VERSION = '2.6';
 
 /**
  * The default render config: a 1920×1080, 30fps film. Generic — no domain assumptions. A scene's
@@ -627,18 +627,27 @@ function buildClipLayer(item: ShowItem, index: number): LoweredLayer {
   const id = `L_clip_${item.as ?? `${refName(ref)}_${index}`}`;
   const z = typeof args['z'] === 'number' ? (args['z'] as number) : 15;
 
-  // Group transform: scale/rotation/opacity from args (position comes from the anchor via layout). A
-  // bare number wraps as a static `{a:0,k}` channel; an authored `{a,k}` object passes straight
-  // through (so an effect like motion_blur has a real animated move to smear).
+  // Group transform: scale/rotation/opacity/POSITION from args. A bare number → static `{a:0,k}`; an
+  // authored `{a,k}` passes straight through. POSITION accepts a `[x,y]` pixel pair or an `{a,k}` vec2 —
+  // explicit placement for staging a rig INSTANCE precisely (the director leaves it untouched). When
+  // omitted, position comes from the `at` anchor via the layout pass (back-compat). Mirrors buildShapeLayer.
   const transform: Transform = {};
   const channel = (v: unknown): Transform['scale'] | undefined =>
     typeof v === 'number' ? { a: 0, k: v } : v && typeof v === 'object' ? (v as Transform['scale']) : undefined;
+  const positionChannel = (v: unknown): Transform['position'] | undefined =>
+    Array.isArray(v) && v.length === 2 && v.every((n) => typeof n === 'number')
+      ? { a: 0, k: v as [number, number] }
+      : v && typeof v === 'object' && !Array.isArray(v)
+        ? (v as Transform['position'])
+        : undefined;
   const scaleCh = channel(args['scale']);
   const rotationCh = channel(args['rotation']);
   const opacityCh = channel(args['opacity']);
+  const positionCh = positionChannel(args['position']);
   if (scaleCh) transform.scale = scaleCh;
   if (rotationCh) transform.rotation = rotationCh;
   if (opacityCh) transform.opacity = opacityCh;
+  if (positionCh) transform.position = positionCh;
 
   // The clip's exposed-param overrides: everything in `args` EXCEPT the structural group keys, which
   // are consumed above (z/scale/rotation/opacity/parallax/effects/from/duration_frames). What remains

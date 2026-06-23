@@ -27,6 +27,7 @@ import objectHash from 'object-hash';
 import { runPipeline, lowerStory } from '../pipeline/index.js';
 import type { Frontend } from '../pipeline/index.js';
 import { parseStory } from '../pipeline/parse.js';
+import { withLocalClips, isLocalClip } from '../pipeline/project-clips.js';
 import { Library } from '../library/index.js';
 import type { SceneIR, Format } from '../ir/index.js';
 import { applyNarration } from './narrate-pass.js';
@@ -70,21 +71,27 @@ const ENGINE = 'remotion@4.0.481';
  * the canonical `name@1.0.0` (matching how lowering resolves an unversioned story ref). Sorted +
  * deduped for a stable, diffable lock.
  */
-function lockRefsForScene(sceneIR: SceneIR): string[] {
+function lockRefsForScene(sceneIR: SceneIR, projectDir?: string): string[] {
   const refs = new Set<string>();
   const add = (name: string): void => {
     refs.add(name.includes('@') ? name : `${name}@1.0.0`);
   };
   for (const name of Object.keys(sceneIR.defs?.assets ?? {})) add(name);
   for (const name of Object.keys(sceneIR.defs?.rigs ?? {})) add(name);
-  // Clip (nested-composition) defs are content-addressed library entries too — pin each one (and its
-  // transitively-nested clips, all present in `defs.clips` after the recursive resolve) into the lock.
-  for (const name of Object.keys(sceneIR.defs?.clips ?? {})) add(name);
+  // Clip defs from the shared library are pinned; PROJECT-LOCAL rigs (a `<projectDir>/rigs/<name>.clip.*`
+  // file) are NOT library deps — they travel inside the project bundle, so they are excluded from the lock.
+  for (const name of Object.keys(sceneIR.defs?.clips ?? {})) {
+    if (projectDir && isLocalClip(projectDir, name)) continue;
+    add(name);
+  }
   return [...refs].sort();
 }
 
-function libraryFrontend(library: Library, format?: Format): Frontend {
-  return { parse: parseStory, lower: (story) => lowerStory(story, { library, format }) };
+function libraryFrontend(library: Library, format?: Format, projectDir?: string): Frontend {
+  // PROJECT-LOCAL rigs (golden rule 6): clip refs resolve from the portable project's own `<dir>/rigs/`
+  // first, then fall back to the shared library. `projectDir` is the story's own directory.
+  const lib = projectDir ? withLocalClips(library, projectDir) : library;
+  return { parse: parseStory, lower: (story) => lowerStory(story, { library: lib, format }) };
 }
 
 // P3: output container/codec selection. The DEFAULT stays h264 mp4 (byte-deterministic on the CPU
@@ -454,7 +461,7 @@ async function main(): Promise<void> {
 
     const library = Library.open(PROJECT_ROOT);
     console.log(`[render] compiling '${target}' → project '${id}'`);
-    sceneIR = runPipeline(storyPath, { rootDir: PROJECT_ROOT, frontend: libraryFrontend(library, format), cacheKeyExtra: format });
+    sceneIR = runPipeline(storyPath, { rootDir: PROJECT_ROOT, frontend: libraryFrontend(library, format, dirname(storyPath)), cacheKeyExtra: format });
 
     // M3 NARRATION (OFFLINE asset-gen; golden rule 2). When beats carry `say` and audio isn't disabled,
     // synthesize TTS into the project's self-contained assets/audio/ (content-addressed, cached) and
@@ -499,7 +506,7 @@ async function main(): Promise<void> {
       }
     }
 
-    const refs = lockRefsForScene(sceneIR);
+    const refs = lockRefsForScene(sceneIR, dirname(storyPath));
     writeSource(paths, readFileSync(storyPath, 'utf8'));
     writeSceneIR(paths, sceneIR);
     writeFileSync(paths.lock, JSON.stringify(library.buildLock(refs), null, 2) + '\n', 'utf8');
