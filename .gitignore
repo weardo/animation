@@ -44,3 +44,8 @@ library/**/*.preview.svg
 .venv-*/
 tts-proto/
 style-ref/
+.wf-*.js
+.install-*.sh
+.m4-*.sh
+*.log
+public/generated/
