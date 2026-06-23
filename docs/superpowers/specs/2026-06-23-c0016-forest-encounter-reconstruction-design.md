@@ -1,77 +1,78 @@
 # Scene Reconstruction — c-0016 "Forest Encounter" (caterpillar × bird)
 
-**Date:** 2026-06-23 · **Status:** Proposed (for review before implementation). The first real *scene*
-reconstruction: take a simple Kurzgesagt frame (`style-ref/pHJIhxZEoxg/cand/c-0016.jpg`) and rebuild it
-from our primitives + factories — **recognizable in our style** (not a pixel-match), with **proper
-modularity so it animates later**.
+**Date:** 2026-06-23 · **Status:** Proposed (rev. 2 — flat-shape construction + lean build). Rebuild a
+simple Kurzgesagt frame (`style-ref/pHJIhxZEoxg/cand/c-0016.jpg`) from our primitives — **recognizable in
+our style**, modular so it animates later. This is a SCENE-BUILD (static), not animation; no audio.
 
 ## The reference
 
-A character close-up: a foreground **plant** (forked brown branch + 2-tone diagonal-split leaves) on the
-lower-left; a small colorful **caterpillar** perched on a leaf; a large **bird** (red head/body, blue
-wing, light belly, purple beak, layered eye) entering from the right, facing the caterpillar; all over a
-soft out-of-focus **green bokeh** background.
+A foreground **plant** (forked brown branch + 2-tone diagonal-split leaves), a small colorful
+**caterpillar** on a leaf, a big **bird** (crimson body, navy wing, pale-blue belly, violet+navy beak,
+layered eye) facing it, over a soft out-of-focus **green bokeh** background.
 
-## Principle — the scene is an ASSEMBLY of reusable modules, not one monolithic drawing
+## Construction principle — FLAT SHAPES, stacked (the key style fact)
 
-Fidelity target: *recognizable composition + palette + style*, our shapes. Each subject is a reusable
-library **`clip`** (a nested pre-composition with declared `params`) so it (a) reads as one unit, (b)
-recomposes/instances elsewhere, and (c) exposes **animation hooks** (params we keyframe later). Build the
-clips first (each verifiable in isolation), then assemble the scene, then (a later milestone) animate.
+Kurzgesagt objects are built from **many FLAT-colored shapes layered together**, NOT gradient-shaded blobs:
+- **Flat fills only on objects.** Volume/shading comes from STACKING 2-3 flat shapes — a base color + a
+  lighter "lit" flat shape + (sometimes) a darker flat shadow shape. E.g. a leaf = a base-green shape + a
+  yellow-green LIT half split on a diagonal; a beak = a violet shape + a navy tip shape.
+- **No strokes / no hard borders.** Shapes carry NO outline; an edge is just one flat color meeting
+  another (or the background). The "midrib" is the seam between two flat shapes.
+- **Brilliant, saturated colors** — never dull/muddy.
+- **Color CONTRAST does the work of outlines AND the visual appeal.** Adjacent flat regions are kept
+  distinct by deliberate contrast — complementary (crimson bird on green), value (navy wing vs crimson
+  body), warm/cool (pale-blue belly vs crimson) — so NO stroke is needed and the image pops. The colour
+  boundary IS the edge. Rule when authoring a clip: pick each shape's colour to CONTRAST its neighbour,
+  not just to be locally "correct."
+- **Figure-ground via saturation:** vivid SATURATED subjects sit against a DARKER, DESATURATED bokeh
+  background → subjects leap forward. The saturation/value gap is the depth cue (not a gradient).
+- **Gradients + blur are RARE and reserved:** only large continuous areas (a sky/BG) + GLOWS + the
+  out-of-focus **bokeh** background (a soft blurred green). Objects never use them.
 
-## Modules (each a reusable library `clip`, painted by the `kurzgesagt-nature` stylekit)
+⇒ **Do NOT use the `kurzgesagt-nature` form-shading paint here.** Use a FLAT stylekit (`floor.shading`
+off → no auto form-shading / rim / atmosphere) with a **vivid palette** (`library/stylekits/kurzgesagt-flat.json`,
+authored as part of this work). The shading is *more flat shapes*, authored in the clip — not a fill effect.
 
-1. **`leaf`** — one 2-tone form-shaded leaf (an organic blob `shape` with a diagonal lighter highlight
-   half + a stroke). Params: `size`, `tilt`, `tone` (palette token). The atomic unit the plant reuses.
-2. **`plant`** — a forked brown branch (`shape` path, tapering) + several `leaf` clip instances at
-   authored positions/tilts. Params: `sway` (later → a gentle rotation of the whole clip), `leafCount`.
-3. **`caterpillar`** — a body of N rounded **segment `shape`s** in a row along a path (NOT the removed
-   bead-string — explicit shape segments so we fully control silhouette + crawl) + a head `shape` with
-   eyes (layered circles) + antennae (`shape`). Params: `segments`, `crawl` (phase → later a travelling
-   undulation + along-leaf translate), `palette`.
-4. **`bird`** — a shape-composite head/body: body (`shape`), wing (`shape`, overlaid), belly (`shape`),
-   beak (elongated `shape`), eye (layered circles + highlight). Params: `headTurn`, `blink`, `beakOpen`
-   (all later animation hooks; static defaults now). Built as a clip of stacked shapes for a precise
-   silhouette (vs the generic blob-creature provider — noted as an alternative if we want built-in
-   liveness later).
+## Modules — each a reusable library `clip` of FLAT shapes (with animation-hook params)
 
-Plus a non-clip background layer:
+1. **`leaf`** — a base leaf `shape` (flat saturated green, no stroke) + a second flat LIT shape (yellow-green)
+   clipped to a diagonal half. Params: `size`, `tilt`, `tone`.
+2. **`plant`** — a forked brown branch (a flat `shape` path; optional flat lighter-side shape) + several
+   `leaf` clip instances at authored positions/tilts. Params: `sway`, `leafCount`.
+3. **`caterpillar`** — N flat rounded segment `shape`s along a gentle arc (each maybe 2 flats for a hint of
+   roundness) + a flat head with stacked-circle eyes + antennae. Params: `segments`, `crawl`, `palette`.
+4. **`bird`** — stacked flat shapes: crimson body, navy wing, pale-blue belly, beak (violet + navy tip),
+   eye (stacked flat circles + a flat highlight). Faces LEFT. Params: `headTurn`, `blink`, `beakOpen`.
 
-5. **Bokeh BG** — a dark-green vertical gradient base (`asset`/`shape`) + a `scatter` of large soft
-   light-green blobs at low z, with a heavy **`blur` effect** (core-effects) → depth-of-field. Params
-   live in the scatter args + the blur radius.
+Plus the background:
+
+5. **Bokeh BG** — a dark-green base + a `scatter` of soft light-green blobs at low z, heavy core-effects
+   **`blur`** (depth-of-field). The one place gradient/blur belongs.
 
 ## Scene assembly (`projects/c0016-encounter`)
 
-A single-beat story that places, back-to-front: bokeh BG (z 0, parallax ~0.2) → `bird` clip (right, mid
-z) → `plant` clip (lower-left, near z) → `caterpillar` clip (simply POSITIONED on a plant leaf via its
-transform; `attach` mounts are for rig channels and aren't needed here). Style `kurzgesagt-nature`. No narration/audio yet
-(scene-only). A later pass adds camera + the per-clip animation params + maybe a line of `say`.
+One beat, ~3-4s, NO audio. Back-to-front: bokeh BG → `bird` (right, facing left) → `plant` (lower-left)
+→ `caterpillar` (positioned on a plant leaf via its transform). `style: kurzgesagt-flat`.
 
-## Build order (step by step — render-verify each on stills before moving on)
+## Build process — LEAN (it's a scene build, not animation)
 
-1. **`leaf` clip** → a tiny test scene of 3 leaves at different tilts. Verify form-shading + the 2-tone split read.
-2. **`plant` clip** (branch + leaf instances) → verify the plant reads.
-3. **`caterpillar` clip** (segments + face) → verify on a plain bg.
-4. **`bird` clip** (composite shapes) → verify the silhouette reads.
-5. **Assemble** the bokeh BG + all three clips into `c0016-encounter` → compare to the reference frame.
-6. **Polish** palette/positions/depth to "recognizable"; (later milestone) animate the param hooks + camera.
+Author each clip, render a quick STILL to eyeball it reads, move on — **no per-object test project with
+audio, no narration, no per-module determinism gate.** Order:
+1. `kurzgesagt-flat` stylekit (vivid palette, flat) + the **`leaf`** clip (plant depends on it).
+2. **`plant`**, **`caterpillar`**, **`bird`** — independent, build in parallel.
+3. **Assemble** bokeh BG + the three clips → `c0016-encounter`; render a still; compare to the reference.
+   ONE determinism + gates check here (byte-identical stills cross-process, domain-clean, typecheck).
+4. Polish palette/positions to "recognizable."
 
-## Determinism, reuse, gates
+## Reuse, determinism, gates, animation-readiness
 
-- Each clip is a library entry (content-addressed, cataloged, lockable) per `new-library-entry`; instances
-  get id-namespacing + seed derivation (existing clip machinery) → deterministic.
-- Reuse: `shape` (`@remotion/shapes`/paths), `scatter` generator, `blur` effect (core-effects), the clip
-  pre-comp machinery, the `attach` mount, the `kurzgesagt-nature` paint. No new primitive is needed —
-  this is an *assembly* exercise (the point: prove the factory composes a real scene).
-- Gates (`verify-render`): CPU-raster byte-identical across cold processes; domain-clean (no "bird"/
-  "caterpillar" hardcoded in `src/` — they're library clips + story data); typecheck; the clips render
-  in isolation AND assembled.
-- Animation-readiness: every subject is a clip with named `params` that are the future keyframe targets
-  (sway/crawl/headTurn/blink/beakOpen) — so "animate it later" is adding `{a,k}` to those params + a camera
-  move, no restructuring.
+- Reuse only: `shape`/@remotion/shapes, `scatter`, core-effects `blur`, the clip pre-comp machinery, the
+  flat stylekit palette. No new primitive (assembly exercise). No audio pass runs.
+- Determinism: flat shapes + clips are pure → byte-identical stills cross-process (checked once at assembly).
+- Domain-clean: `src/` names no `bird`/`caterpillar`/`leaf` — they are library clips + story DATA.
+- Animation-ready: each clip's params (`sway`/`crawl`/`headTurn`/`blink`/`beakOpen`) are the future keyframe
+  targets, so animating later is additive (`{a,k}` on params + a camera move), no restructuring.
 
 ## Out of scope (now)
 
-Animation itself (this delivers the static, modular reconstruction + the param hooks); audio; a
-pixel-faithful match. Those are follow-on steps once the assembly reads right.
+Animation, audio, pixel-faithful match. This delivers the static modular reconstruction + the param hooks.
