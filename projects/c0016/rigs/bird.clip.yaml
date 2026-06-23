@@ -1,85 +1,77 @@
-# bird — stacked flat shapes: crimson head/body, navy wing, pale-blue belly, two-tone beak (violet +
-# navy tip), stacked-circle eye with a peach highlight. Faces LEFT (beak extends left). Flat, NO stroke.
-# Rig-local coords: each part's morph path is centred on its OWN origin (the renderer centres a morph on
-# its bbox), and `transform.position` places that part within the rig (origin ~ the head centre).
+# bird — PRIMITIVE flat shapes (centred at their transform.position, predictable composition).
+# Crimson head (big near-circle) + body ellipse continuing off bottom-right; violet capsule beak
+# ATTACHED to the lower-front of the head (overlaps head, juts LEFT) + navy tip; navy wing; pale-blue
+# belly; stacked-circle eye. Faces LEFT. Flat, NO stroke. Origin = head centre.
 duration_frames: 90
 params:
   headTurn: { type: number, default: 0 }   # future: head rotation hook (deg)
   blink: { type: number, default: 0 }      # future: eyelid hook (0 open .. 1 shut)
   beakOpen: { type: number, default: 0 }   # future: lower-mandible hook
 layers:
-  # --- body / head: big crimson rounded mass (centred on its own origin) ---
+  # --- body: crimson ellipse below/right of the head, continuing off the bottom-right edge ---
   - type: shape
     id: body
     z: 1
-    morph:
-      a: 0
-      k: "M -360 -120 C -360 -360 -160 -440 80 -440 C 360 -440 440 -220 440 40
-          C 440 300 380 460 200 460 C -20 460 -360 240 -360 -120 Z"
-    fill: { a: 0, k: "#c81d3a" }
-    transform: { position: { a: 0, k: [60, 40] } }
-  # --- belly: pale-blue front-chest patch, LOWER-LEFT of the head ---
+    shape: { kind: ellipse, rx: 420, ry: 470 }
+    fill: { a: 0, k: "#c4123a" }
+    transform: { position: { a: 0, k: [260, 520] } }
+  # --- head: big crimson near-circle, upper area ---
+  - type: shape
+    id: head
+    z: 2
+    shape: { kind: circle, radius: 380 }
+    fill: { a: 0, k: "#c4123a" }
+    transform: { position: { a: 0, k: [0, 0] } }
+  # --- belly: pale blue-grey patch, front-bottom of the head/chest ---
   - type: shape
     id: belly
-    z: 2
-    morph:
-      a: 0
-      k: "M -120 -150 C -60 -200 60 -190 120 -120 C 170 -40 170 140 120 230
-          C 60 300 -120 300 -170 200 C -210 110 -180 -80 -120 -150 Z"
-    fill: { a: 0, k: "#cfe3ee" }
-    transform: { position: { a: 0, k: [-220, 360] } }
-  # --- wing: navy mass on the LOWER-RIGHT body ---
+    z: 6
+    shape: { kind: ellipse, rx: 175, ry: 260 }
+    fill: { a: 0, k: "#cde0ec" }
+    transform: { position: { a: 0, k: [-120, 500] } }
+  # --- wing: dark navy rounded mass on the lower-right body ---
   - type: shape
     id: wing
-    z: 3
-    morph:
-      a: 0
-      k: "M -200 -160 C 40 -220 230 -120 240 60 C 250 260 140 360 -40 360
-          C -200 360 -300 180 -270 20 C -255 -70 -260 -120 -200 -160 Z"
-    fill: { a: 0, k: "#243a6b" }
-    transform: { position: { a: 0, k: [160, 420] } }
-  # --- beak upper: violet, juts far LEFT off the head ---
+    z: 4
+    shape: { kind: ellipse, rx: 330, ry: 300 }
+    fill: { a: 0, k: "#1f3a63" }
+    transform: { position: { a: 0, k: [300, 430] } }
+  # --- beak upper: violet thick rounded capsule, juts LEFT; right end overlaps the head ---
   - type: shape
     id: beak
-    z: 4
-    morph:
-      a: 0
-      k: "M -210 0 C -120 -44 120 -40 200 -16 C 230 -4 230 8 200 22
-          C 120 50 -120 50 -210 18 C -245 8 -245 -8 -210 0 Z"
-    fill: { a: 0, k: "#6b4fbf" }
-    transform: { position: { a: 0, k: [-360, 30] } }
-  # --- beak tip: darker navy, at the far-LEFT point ---
+    z: 5
+    shape: { kind: ellipse, rx: 210, ry: 72 }
+    fill: { a: 0, k: "#6e4fb0" }
+    transform: { position: { a: 0, k: [-230, 70] } }
+  # --- beak tip: small navy ellipse at the far-LEFT end of the beak ---
   - type: shape
     id: beak_tip
-    z: 5
-    morph:
-      a: 0
-      k: "M -70 -10 C -20 -42 30 -36 48 -8 C 60 14 52 40 28 56
-          C -2 74 -48 64 -66 32 C -88 0 -92 -36 -70 -10 Z"
-    fill: { a: 0, k: "#1c2b52" }
-    transform: { position: { a: 0, k: [-540, 26] } }
-  # --- eye stack: navy ring -> blue iris -> dark pupil -> peach highlight (upper area of head) ---
+    z: 6
+    shape: { kind: ellipse, rx: 46, ry: 56 }
+    fill: { a: 0, k: "#1c2a4f" }
+    transform: { position: { a: 0, k: [-420, 66] } }
+  # --- eye stack: navy ring -> blue iris -> near-black pupil -> peach highlight (upper-right of head) ---
   - type: shape
     id: eye_ring
-    z: 6
-    shape: { kind: circle, radius: 60 }
-    fill: { a: 0, k: "#1c2b52" }
-    transform: { position: { a: 0, k: [120, -40] } }
+    z: 7
+    shape: { kind: circle, radius: 58 }
+    fill: { a: 0, k: "#1c2a4f" }
+    transform: { position: { a: 0, k: [150, -70] } }
   - type: shape
     id: eye_iris
-    z: 7
+    z: 8
     shape: { kind: circle, radius: 42 }
-    fill: { a: 0, k: "#3a5a9c" }
-    transform: { position: { a: 0, k: [120, -40] } }
+    fill: { a: 0, k: "#3a5fa0" }
+    transform: { position: { a: 0, k: [150, -70] } }
   - type: shape
     id: eye_pupil
-    z: 8
-    shape: { kind: circle, radius: 25 }
+    z: 9
+    shape: { kind: circle, radius: 22 }
     fill: { a: 0, k: "#0a1226" }
-    transform: { position: { a: 0, k: [112, -34] } }
+    transform: { position: { a: 0, k: [142, -64] } }
   - type: shape
     id: eye_hi
-    z: 9
-    shape: { kind: circle, radius: 14 }
-    fill: { a: 0, k: "#f6d8b0" }
-    transform: { position: { a: 0, k: [156, -66] } }
+    z: 10
+    shape: { kind: circle, radius: 13 }
+    fill: { a: 0, k: "#f3d4a8" }
+    transform: { position: { a: 0, k: [168, -88] } }

@@ -18,34 +18,34 @@ beats:
           z: 0
           position: [960, 540]
           params: { width: 1920, height: 1080 }
-          fill: { a: 0, k: "#0f2e22" }
+          fill: { a: 0, k: "#16382a" }
       - generator: scatter
         as: bokeh
         args:
           z: 1
-          count: 20
+          count: 18
           motif: blob
           blobbiness: 0.5
-          size: [150, 360]
-          colors: ["#2f7d4f", "#3f9d5f", "#256b43", "#1f6b44"]
+          size: [180, 380]
+          colors: ["#2f6b45", "#3f8a55", "#2f6b45", "#296142"]
           distribution: random
           opacity: 0.5
           glow: true
           region: { x: 0, y: 0, w: 1920, h: 1080 }
           effects:
-            - { kind: blur, radius: 46 }
+            - { kind: blur, radius: 50 }
 
-      # 2. BIRD — right, facing left, big head filling the right edge, mid depth.
+      # 2. BIRD — right, facing left, big head filling the right edge, CROPPED by right+bottom, mid depth.
       - clip: bird
         as: bird
-        args: { z: 10, position: [1640, 520], scale: 115 }
+        args: { z: 10, position: [1640, 500], scale: 110 }
 
-      # 3. PLANT — lower-left/centre forked branch, near depth.
+      # 3. PLANT — bottom-centre-left forked branch, near depth.
       - clip: plant
         as: plant
-        args: { z: 20, position: [560, 720], scale: 115 }
+        args: { z: 20, position: [620, 760], scale: 115 }
 
       # 4. CATERPILLAR — perched on the plant's upper (perch) leaf, front depth.
       - clip: caterpillar
         as: caterpillar
-        args: { z: 30, position: [660, 470] }
+        args: { z: 30, position: [710, 300] }
