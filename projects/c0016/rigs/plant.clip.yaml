@@ -1,86 +1,92 @@
-# plant — a brown forked branch from PRIMITIVE rounded rects (predictable composition) + nested LEAF
-# clip instances (clip-in-clip; collectClipDefs recurses + resolves `leaf` project-locally). The trunk
-# is a rounded rect rising from the bottom; two forks are rotated rounded rects whose LOWER ends meet
-# the fork point (~[0,-30]); a darker side facet adds a hint of round. Flat shapes, NO stroke.
-# Origin near the fork; trunk grows downward (+y), forks + leaves spread up.
+# plant — a brown forked branch (PRIMITIVE rounded rects, predictable composition) + nested LEAF clip
+# instances (clip-in-clip; collectClipDefs recurses + resolves `leaf` project-locally). Thicker, taller
+# trunk; the leaves form a LAYERED, OVERLAPPING cluster (a prominent down-left pair + a dense canopy + a
+# big horizontal perch leaf + lower-centre hangers) — NOT an even radial fan. Flat shapes, NO stroke.
+# Origin near the fork (~[0,-30]); trunk grows downward (+y), forks + leaves spread up.
 duration_frames: 90
 params:
   sway: { type: number, default: 0 }      # future: whole-plant rotation hook (deg)
-  leafCount: { type: number, default: 7 } # documented hook (static layout here)
+  leafCount: { type: number, default: 8 } # documented hook (static layout here)
 layers:
-  # --- main trunk: a tall rounded rect rising from the bottom to the fork point ---
+  # --- main trunk: a thick tall rounded rect rising from the bottom to the fork point ---
   - type: shape
     id: trunk
     z: 1
-    shape: { kind: rect, width: 92, height: 520, cornerRadius: 40 }
+    shape: { kind: rect, width: 124, height: 580, cornerRadius: 54 }
     fill: { a: 0, k: "#9a5a2a" }
-    transform: { position: { a: 0, k: [0, 230] }, rotation: { a: 0, k: { $param: sway } } }
+    transform: { position: { a: 0, k: [0, 250] }, rotation: { a: 0, k: { $param: sway } } }
   # darker side facet down the right of the trunk (hint of round)
   - type: shape
     id: trunk_facet
     z: 2
-    shape: { kind: rect, width: 30, height: 500, cornerRadius: 15 }
+    shape: { kind: rect, width: 40, height: 556, cornerRadius: 20 }
     fill: { a: 0, k: "#7c451f" }
-    transform: { position: { a: 0, k: [28, 230] }, rotation: { a: 0, k: { $param: sway } } }
-  # left fork: rounded rect, lower end at the fork point, sweeping up-left
+    transform: { position: { a: 0, k: [40, 250] }, rotation: { a: 0, k: { $param: sway } } }
+  # left fork: thick rounded rect, lower end at the fork point, sweeping up-left
   - type: shape
     id: fork_left
     z: 1
-    shape: { kind: rect, width: 66, height: 360, cornerRadius: 33 }
+    shape: { kind: rect, width: 82, height: 380, cornerRadius: 41 }
     fill: { a: 0, k: "#9a5a2a" }
-    transform: { position: { a: 0, k: [-111, -172] }, rotation: { a: 0, k: 38 } }
-  # right fork: rounded rect, lower end at the fork point, sweeping up-right
+    transform: { position: { a: 0, k: [-120, -176] }, rotation: { a: 0, k: 38 } }
+  # right fork: thick rounded rect, lower end at the fork point, sweeping up-right
   - type: shape
     id: fork_right
     z: 1
-    shape: { kind: rect, width: 66, height: 350, cornerRadius: 33 }
+    shape: { kind: rect, width: 80, height: 360, cornerRadius: 40 }
     fill: { a: 0, k: "#7c451f" }
-    transform: { position: { a: 0, k: [98, -175] }, rotation: { a: 0, k: -34 } }
+    transform: { position: { a: 0, k: [104, -178] }, rotation: { a: 0, k: -34 } }
 
-  # --- LEAVES: nested leaf clip instances (clip-in-clip). ~7 leaves. ---
-  # lower-left pair on the left fork (the reference's down-left leaf cluster)
+  # --- LEAVES: nested leaf clip instances (clip-in-clip), a LAYERED overlapping cluster (8). ---
+  # prominent DOWN-LEFT pair (big, pointing down-left — the reference's strong lower-left leaves)
   - type: clip
-    id: leaf_ll
+    id: leaf_dl1
     ref: leaf
     z: 3
     args: { tone: "#4cc23f" }
-    transform: { position: { a: 0, k: [-300, -40] }, scale: { a: 0, k: 120 }, rotation: { a: 0, k: 26 } }
+    transform: { position: { a: 0, k: [-360, 30] }, scale: { a: 0, k: 145 }, rotation: { a: 0, k: 16 } }
   - type: clip
-    id: leaf_ll2
+    id: leaf_dl2
     ref: leaf
-    z: 3
+    z: 4
     args: { tone: "#3fae3a" }
-    transform: { position: { a: 0, k: [-220, -200] }, scale: { a: 0, k: 100 }, rotation: { a: 0, k: 50 } }
-  # lower-centre hanging leaves on the right fork
+    transform: { position: { a: 0, k: [-250, -140] }, scale: { a: 0, k: 120 }, rotation: { a: 0, k: 46 } }
+  # dense CANOPY (top), overlapping — a big back leaf, an angled left, the perch, an angled right
   - type: clip
-    id: leaf_lc
+    id: leaf_canopy_back
     ref: leaf
     z: 3
-    args: { tone: "#46bf42" }
-    transform: { position: { a: 0, k: [220, 30] }, scale: { a: 0, k: 105 }, rotation: { a: 0, k: -56 } }
-  - type: clip
-    id: leaf_lc2
-    ref: leaf
-    z: 3
-    args: { tone: "#3fae3a" }
-    transform: { position: { a: 0, k: [250, -170] }, scale: { a: 0, k: 92 }, rotation: { a: 0, k: -36 } }
-  # canopy cluster (top) — leaves fanning up
+    args: { tone: "#3aaa37" }
+    transform: { position: { a: 0, k: [-30, -440] }, scale: { a: 0, k: 150 }, rotation: { a: 0, k: 14 } }
   - type: clip
     id: leaf_top_l
     ref: leaf
     z: 4
     args: { tone: "#4cc23f" }
-    transform: { position: { a: 0, k: [-150, -380] }, scale: { a: 0, k: 120 }, rotation: { a: 0, k: 38 } }
-  # PERCH leaf — the caterpillar's perch: BIG + roughly horizontal, at the top
+    transform: { position: { a: 0, k: [-190, -360] }, scale: { a: 0, k: 126 }, rotation: { a: 0, k: 44 } }
+  # PERCH leaf — the caterpillar's seat: BIG + roughly horizontal, front of the canopy
   - type: clip
     id: leaf_perch
     ref: leaf
-    z: 5
+    z: 6
     args: { tone: "#52c84a" }
-    transform: { position: { a: 0, k: [70, -360] }, scale: { a: 0, k: 175 }, rotation: { a: 0, k: 8 } }
+    transform: { position: { a: 0, k: [120, -378] }, scale: { a: 0, k: 200 }, rotation: { a: 0, k: 5 } }
   - type: clip
     id: leaf_top_r
     ref: leaf
     z: 4
+    args: { tone: "#3fae3a" }
+    transform: { position: { a: 0, k: [330, -300] }, scale: { a: 0, k: 116 }, rotation: { a: 0, k: -30 } }
+  # lower-centre hangers on the right fork (pointing down)
+  - type: clip
+    id: leaf_lc1
+    ref: leaf
+    z: 3
+    args: { tone: "#46bf42" }
+    transform: { position: { a: 0, k: [235, 40] }, scale: { a: 0, k: 116 }, rotation: { a: 0, k: -60 } }
+  - type: clip
+    id: leaf_lc2
+    ref: leaf
+    z: 3
     args: { tone: "#3aaa37" }
-    transform: { position: { a: 0, k: [300, -300] }, scale: { a: 0, k: 100 }, rotation: { a: 0, k: -28 } }
+    transform: { position: { a: 0, k: [285, -150] }, scale: { a: 0, k: 96 }, rotation: { a: 0, k: -34 } }
