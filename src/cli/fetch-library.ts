@@ -10,7 +10,7 @@
 // resulting mirror is identical bytes to the source, so resolution + the lockfile pin are preserved.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { resolve as resolvePath, dirname, join } from 'node:path';
+import { resolve as resolvePath, dirname, join, isAbsolute, sep } from 'node:path';
 import { createHash } from 'node:crypto';
 
 const ROOT = process.cwd();
@@ -36,12 +36,23 @@ async function main(): Promise<void> {
   const into = resolvePath(ROOT, flag('--into') ?? join('dist', 'library-fetched'));
 
   const manifest = JSON.parse((await fetchBytes(`${baseUrl}/files.json`)).toString('utf8')) as FilesManifest;
+  // The manifest comes from an UNTRUSTED remote, so each path is attacker-controlled. Validate BEFORE
+  // any fetch/write (zip-slip / arbitrary-write defense): reject absolute paths + `..` traversal, and
+  // confirm the resolved destination stays strictly under the mirror's library root. The per-file
+  // sha256 verifies BYTES, not PATHS — path safety must be enforced separately.
+  const libRoot = resolvePath(into, 'library');
   let ok = 0;
   for (const f of manifest.files) {
+    if (typeof f.path !== 'string' || isAbsolute(f.path) || f.path.split(/[\\/]/).includes('..')) {
+      throw new Error(`unsafe manifest path (rejected): ${f.path}`);
+    }
+    const dst = resolvePath(libRoot, f.path);
+    if (dst !== libRoot && !dst.startsWith(libRoot + sep)) {
+      throw new Error(`manifest path escapes mirror dir (rejected): ${f.path}`);
+    }
     const bytes = await fetchBytes(`${baseUrl}/library/${f.path}`);
     const hash = createHash('sha256').update(bytes).digest('hex');
     if (hash !== f.hash) throw new Error(`hash mismatch for ${f.path}: got ${hash.slice(0, 12)}…, expected ${f.hash.slice(0, 12)}…`);
-    const dst = join(into, 'library', f.path);
     mkdirSync(dirname(dst), { recursive: true });
     writeFileSync(dst, bytes);
     ok += 1;
