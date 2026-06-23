@@ -42,6 +42,7 @@ export {
   FormatSchema,
   AspectSchema,
   MusicSchema,
+  AudioTrackSchema,
 } from './story.js';
 export type {
   StoryIR,
@@ -57,6 +58,7 @@ export type {
   Format,
   Aspect,
   Music,
+  AudioTrack,
 } from './story.js';
 
 // StyleKit IR schema (ADR-008 I2) — pure Zod shape of a selectable house style (no render dep).

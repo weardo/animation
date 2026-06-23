@@ -793,6 +793,21 @@ export const AudioCueSchema = z
       })
       .strict()
       .optional(),
+    // GENERIC per-track compositing controls (any cue, any kind) — these map 1:1 to Remotion <Audio>
+    // props (golden rule 3: reuse, never reimplement). Layering/overlap is free (every cue renders as
+    // its own <Audio>; Remotion muxes them). All optional → omitted = today's behavior (back-compat).
+    /** Base linear volume 0..1 (default 1). Multiplied by the fade envelope (and music ducking). */
+    volume: z.number().min(0).max(1).optional(),
+    /** Playback speed → Remotion `<Audio playbackRate>` (>1 faster, <1 slower; default 1). */
+    playback_rate: z.number().positive().optional(),
+    /** CROP: source frames to skip at the start → Remotion `<Audio trimBefore>` (at the source's own fps). */
+    trim_before: z.number().int().nonnegative().optional(),
+    /** CROP: source frame to stop at → Remotion `<Audio trimAfter>`. */
+    trim_after: z.number().int().positive().optional(),
+    /** Linear FADE-IN length in timeline frames (volume ramps 0→1 over the cue's first `fade_in` frames). */
+    fade_in: z.number().int().nonnegative().optional(),
+    /** Linear FADE-OUT length in timeline frames (volume ramps 1→0 over the cue's last `fade_out` frames). */
+    fade_out: z.number().int().nonnegative().optional(),
   })
   .strict();
 export type AudioCue = z.infer<typeof AudioCueSchema>;

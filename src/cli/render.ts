@@ -32,6 +32,7 @@ import type { SceneIR, Format } from '../ir/index.js';
 import { applyNarration } from './narrate-pass.js';
 import { applySfx } from './sfx-pass.js';
 import { applyMusic } from './music-pass.js';
+import { applyAudioTracks } from './audio-pass.js';
 import type { NarrateEngine } from './narrate.js';
 import { COMPOSITION_ID } from '../render/Root.js';
 import {
@@ -489,6 +490,12 @@ async function main(): Promise<void> {
       if (music && story.music) {
         mkdirSync(assetsDir, { recursive: true });
         sceneIR = applyMusic(sceneIR, story, { assetsDir, rootDir: PROJECT_ROOT });
+      }
+      // GENERAL LAYERED AUDIO (story.audio[]): mix/overlap/crop/speed/fade any track. Under the same
+      // --no-audio master switch; additive with narration/sfx/music. Each track → a generic audio cue.
+      if (story.audio && story.audio.length > 0) {
+        mkdirSync(assetsDir, { recursive: true });
+        sceneIR = applyAudioTracks(sceneIR, story, { assetsDir, rootDir: PROJECT_ROOT });
       }
     }
 

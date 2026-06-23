@@ -1,0 +1,28 @@
+{
+  "project_version": "1.0",
+  "id": "audio-layers",
+  "name": "audio-layers",
+  "created": "2026-06-23T11:43:08.875Z",
+  "updated": "2026-06-23T11:43:08.875Z",
+  "config": {
+    "w": 1920,
+    "h": 1080,
+    "fps": 30,
+    "duration_frames": 120
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "38fdf51c67c6318a49f9e1e1dda50db512039e6c",
+  "engine": "remotion@4.0.481",
+  "deps": [
+    "bg_gradient@1.0.0"
+  ],
+  "assets": [
+    "assets/bg_gradient.svg"
+  ],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  }
+}

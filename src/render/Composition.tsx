@@ -112,43 +112,56 @@ function resolveAudioUrl(src: string): string {
 }
 
 /**
- * The narration AUDIO track. Each AudioCue is a Remotion <Audio> inside a <Sequence from={cue.at}> so
- * it starts at the BEAT's global timeline frame. Remotion MUXES this into the encode automatically
- * (h264 + aac) when <Audio> is present — we do NOT reimplement audio mixing (ADR-003: never
- * reimplement a Remotion primitive). DETERMINISM: the wav is a FIXED, content-addressed file produced
- * OFFLINE (golden rule 2), so the decoded audio stream is byte-identical across renders. An alpha
- * render (delivery/compositing) drops audio — the canonical muxed record is the default h264 mp4.
- * The `volume` prop is the hook for later ducking (music bed); narration plays at full volume now.
+ * Per-cue VOLUME ENVELOPE — a pure function of the LOCAL frame (0..duration within the cue's <Sequence>):
+ * base `volume` (default 1) scaled by a linear `fade_in` ramp (0→1 over the first N frames) and a
+ * `fade_out` ramp (1→0 over the last N frames). Deterministic (golden rule 1). Returns 1 for a plain
+ * cue with no controls → identical to before (back-compat).
  */
-const NarrationTrack: React.FC<{ cues: SceneIR['audio'] }> = ({ cues }) => (
-  <>
-    {(cues ?? [])
-      .filter((cue) => cue.kind === 'narration' && typeof cue.src === 'string')
-      .map((cue) => (
-        <Sequence key={cue.id} from={cue.at} durationInFrames={Math.max(1, cue.duration_frames)} layout="none">
-          <Audio src={resolveAudioUrl(cue.src as string)} />
-        </Sequence>
-      ))}
-  </>
-);
+function cueVolumeAt(cue: SceneIR['audio'][number], localFrame: number): number {
+  const dur = Math.max(1, cue.duration_frames);
+  const base = cue.volume ?? 1;
+  let env = 1;
+  const fi = cue.fade_in ?? 0;
+  const fo = cue.fade_out ?? 0;
+  if (fi > 0 && localFrame < fi) env = Math.min(env, localFrame / fi);
+  if (fo > 0 && localFrame > dur - fo) env = Math.min(env, Math.max(0, (dur - localFrame) / fo));
+  return base * env;
+}
 
 /**
- * The SFX track (A2). Each `kind:"sfx"` AudioCue is a one-shot Remotion <Audio> inside a
- * <Sequence from={cue.at}> placed at its EVENT frame on the global timeline (an element entrance or a
- * beat accent — lowered by the sfx pass). The wavs are FIXED, ffmpeg-synthesized files vendored into
- * assets/audio/ (golden rule 2), so the decoded stream is byte-identical across renders. Remotion muxes
- * every <Audio> together with the narration into one aac track — we never reimplement mixing (ADR-003).
- * Dropped on an alpha render, like narration (sfx belong to the finished film).
+ * The GENERIC AUDIO track — every non-music cue (narration, sfx, and any author-declared `audio`
+ * track: ambience/foley/a second bed/…) rendered as its own Remotion <Audio> in a <Sequence from={at}>.
+ * LAYERING/OVERLAP is free: each cue is an independent <Audio> at its own `at` window, and Remotion
+ * MUXES them all into one aac track (ADR-003: never reimplement mixing). Per-track compositing maps 1:1
+ * to native Remotion <Audio> props — `volume` (envelope callback: base × fade in/out), `playbackRate`
+ * (speed up/down), `trimBefore`/`trimAfter` (CROP the source), and `loop` (tile a short clip across the
+ * cue window). Each prop is only set when the IR carries it, so a plain narration/sfx cue renders
+ * EXACTLY as before (byte-identical). DETERMINISM: wavs are FIXED content-addressed files (golden rule
+ * 2) and every control is a pure fn of the frame. Dropped on an alpha render (audio belongs to the film).
  */
-const SfxTrack: React.FC<{ cues: SceneIR['audio'] }> = ({ cues }) => (
+const GenericAudioTrack: React.FC<{ cues: SceneIR['audio'] }> = ({ cues }) => (
   <>
     {(cues ?? [])
-      .filter((cue) => cue.kind === 'sfx' && typeof cue.src === 'string')
-      .map((cue) => (
-        <Sequence key={cue.id} from={cue.at} durationInFrames={Math.max(1, cue.duration_frames)} layout="none">
-          <Audio src={resolveAudioUrl(cue.src as string)} />
-        </Sequence>
-      ))}
+      .filter((cue) => cue.kind !== 'music' && typeof cue.src === 'string')
+      .map((cue) => {
+        const dur = Math.max(1, cue.duration_frames);
+        const hasEnvelope = cue.volume !== undefined || (cue.fade_in ?? 0) > 0 || (cue.fade_out ?? 0) > 0;
+        const audio = (
+          <Audio
+            src={resolveAudioUrl(cue.src as string)}
+            {...(hasEnvelope ? { volume: (f: number) => cueVolumeAt(cue, f) } : {})}
+            {...(cue.playback_rate !== undefined ? { playbackRate: cue.playback_rate } : {})}
+            {...(cue.trim_before !== undefined ? { trimBefore: cue.trim_before } : {})}
+            {...(cue.trim_after !== undefined ? { trimAfter: cue.trim_after } : {})}
+            {...(cue.loop ? { loop: true } : {})}
+          />
+        );
+        return (
+          <Sequence key={cue.id} from={cue.at} durationInFrames={dur} layout="none">
+            {audio}
+          </Sequence>
+        );
+      })}
   </>
 );
 
@@ -335,11 +348,10 @@ export const SceneIRComposition: React.FC<SceneIRCompositionProps> = (props) => 
       {/* Music bed (A3): one looping <Audio> under the whole film, ducked per-frame while narration
           speaks. Rendered first so it sits beneath narration/sfx in the mix. Dropped on alpha. */}
       {!alpha && <MusicTrack cues={sceneIR.audio} />}
-      {/* Narration track (M3): <Audio> cues muxed by Remotion. Dropped on an alpha (compositing) render
-          — the canonical muxed record is the default h264 mp4 (audio belongs to the finished film). */}
-      {!alpha && <NarrationTrack cues={sceneIR.audio} />}
-      {/* SFX track (A2): event-anchored one-shot sound effects, muxed by Remotion. Dropped on alpha. */}
-      {!alpha && <SfxTrack cues={sceneIR.audio} />}
+      {/* Generic audio track: every non-music cue (narration · sfx · author-declared ambience/foley/
+          layered beds) as an independent <Audio> with native per-track volume/fade/playbackRate/trim/
+          loop, all muxed by Remotion. Layering + overlap are free. Dropped on an alpha render. */}
+      {!alpha && <GenericAudioTrack cues={sceneIR.audio} />}
       {/* Caption track (A1): narration-synced on-screen subtitles, derived from the same cues. Dropped
           on an alpha render — captions belong to the finished film, like the narration track. */}
       {!alpha && <CaptionTrack captions={sceneIR.captions} />}

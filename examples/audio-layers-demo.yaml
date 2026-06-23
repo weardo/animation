@@ -1,0 +1,22 @@
+title: "Audio Layers"
+audio:
+  - src: calm        # built-in bed, looped low under everything, with fades
+    at: 0
+    volume: 0.5
+    loop: true
+    fade_in: 15
+    fade_out: 20
+  - src: whoosh      # built-in sfx, overlapping, sped up 1.5x
+    at: { seconds: 1 }
+    speed: 1.5
+    volume: 0.9
+  - src: ding        # another sfx, later, slowed 0.8x
+    at: { seconds: 2 }
+    speed: 0.8
+    volume: 0.8
+beats:
+  - id: b1
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+    duration: { seconds: 4 }

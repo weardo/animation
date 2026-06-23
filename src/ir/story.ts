@@ -393,6 +393,40 @@ export const MusicSchema = z.union([
 ]);
 export type Music = z.infer<typeof MusicSchema>;
 
+/**
+ * A general LAYERED audio track (mix/overlap/crop/speed/fade any sound). Lowers to a Scene-IR AudioCue
+ * whose controls map 1:1 to Remotion `<Audio>` (golden rule 3). `src` is a built-in bed/sfx NAME, an
+ * `asset://` ref, or a public-relative path. Every control is optional; tracks freely overlap (each is
+ * its own `<Audio>`, Remotion muxes them).
+ */
+export const AudioTrackSchema = z
+  .object({
+    /** Built-in bed/sfx name · `asset://…` ref · public-relative path. */
+    src: z.string().min(1),
+    /** Cue kind label (default `"audio"`). Not `"music"` — music is the dedicated ducked bed. */
+    kind: z.string().min(1).optional(),
+    /** Start on the timeline: frames (number) or `{ seconds }`. Default 0. */
+    at: z.union([z.number().nonnegative(), z.object({ seconds: z.number().nonnegative() }).strict()]).optional(),
+    /** Track length: `{ seconds }` / `{ frames }`. Default = source length (or whole timeline if looped). */
+    duration: DurationSchema.optional(),
+    /** Base linear volume 0..1 (default 1). */
+    volume: z.number().min(0).max(1).optional(),
+    /** Playback speed (>1 faster, <1 slower) → `playback_rate`. */
+    speed: z.number().positive().optional(),
+    /** Loop the (short) source to fill the track window. */
+    loop: z.boolean().optional(),
+    /** Linear fade-in / fade-out length in FRAMES. */
+    fade_in: z.number().int().nonnegative().optional(),
+    fade_out: z.number().int().nonnegative().optional(),
+    /** CROP the source (source frames): `before` to skip at the start, `after` to stop at. */
+    trim: z
+      .object({ before: z.number().int().nonnegative().optional(), after: z.number().int().positive().optional() })
+      .strict()
+      .optional(),
+  })
+  .strict();
+export type AudioTrack = z.infer<typeof AudioTrackSchema>;
+
 /** The Story IR root. */
 export const StoryIRSchema = z
   .object({
@@ -404,6 +438,13 @@ export const StoryIRSchema = z
      * `--no-music` switches.
      */
     music: MusicSchema.optional(),
+    /**
+     * General LAYERED audio tracks (A-layer): mix/overlap/crop/speed/fade any sound. Each entry is an
+     * independent track muxed under the film alongside narration/sfx/music. See {@link AudioTrackSchema}.
+     * Omitted → none. Synthesized/vendored OFFLINE (golden rule 2); the cached wav is the deterministic
+     * record; under the `--no-audio` master switch.
+     */
+    audio: z.array(AudioTrackSchema).optional(),
     /** Optional output format (I1): aspect preset or explicit size + fps. Omitted → 1920×1080@30. */
     format: FormatSchema.optional(),
     /**

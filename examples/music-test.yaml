@@ -1,0 +1,8 @@
+title: "Music Test"
+music: { ref: calm, gain: 0.6 }
+beats:
+  - id: b1
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+    duration: { seconds: 4 }
