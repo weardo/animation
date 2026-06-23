@@ -26,6 +26,7 @@ import type { SceneIR } from '../ir/index.js';
 import type { Frontend, LoweredSceneIR } from './contract.js';
 import { parseStory, PASS_ID as PARSE_PASS_ID, PASS_VERSION as PARSE_PASS_VERSION } from './parse.js';
 import { lowerStory, PASS_ID as LOWER_PASS_ID, PASS_VERSION as LOWER_PASS_VERSION } from './lower.js';
+import { director, DIRECTOR_PASS } from './director.js';
 import { layout, LAYOUT_PASS } from './layout.js';
 import { camera, CAMERA_PASS } from './camera.js';
 import { validate, VALIDATE_PASS } from './validate.js';
@@ -53,6 +54,29 @@ export {
   PASS_VERSION as LOWER_PASS_VERSION,
 } from './lower.js';
 export type { LowerOptions, LibraryLike } from './lower.js';
+
+// P7 — Director (heuristic default / llm opt-in): scores layout + picks camera per beat.
+export {
+  director,
+  DIRECTOR_PASS,
+  makeDirector,
+  applyPlan,
+  validatePlan,
+  HeuristicDirector,
+  LlmDirector,
+  DirectorPlanSchema,
+  ScenePlanSchema,
+  PlacementSchema,
+} from './director.js';
+export type {
+  Director,
+  DirectorKind,
+  DirectorOptions,
+  DirectorPlan,
+  ScenePlan,
+  Placement,
+  LlmDirectorOptions,
+} from './director.js';
 
 // lite-P6 / lite-P8 / V — the back-end passes (this directory).
 export { layout, LAYOUT_PASS, ANCHORS, resolveAnchor, isAnchorName } from './layout.js';
@@ -83,6 +107,7 @@ export const DEFAULT_CACHE_DIR = '.cache';
 const PASS_CHAIN = [
   `${PARSE_PASS_ID}@${PARSE_PASS_VERSION}`,
   `${LOWER_PASS_ID}@${LOWER_PASS_VERSION}`,
+  DIRECTOR_PASS,
   LAYOUT_PASS,
   CAMERA_PASS,
   VALIDATE_PASS,
@@ -130,10 +155,17 @@ const DEFAULT_FRONTEND: Frontend = { parse: parseStory, lower: lowerStory };
  * Exported so callers/tests can drive the deterministic tail of the pipeline directly. Pure:
  * returns a validated {@link SceneIR}; does not mutate the input.
  */
-export function runBackend(lowered: LoweredSceneIR): SceneIR {
-  const laidOut = layout(lowered);
-  const directed = camera(laidOut);
-  return validate(directed);
+export function runBackend(
+  lowered: LoweredSceneIR,
+  opts: { rootDir?: string } = {}
+): SceneIR {
+  // P7 — Director: score layout placements + pick a camera move per beat (heuristic default; the
+  // story's `director: "llm"` opts into the cached claude -p planner). Runs FIRST so the lite layout
+  // (P6) + camera (P8) passes finish resolving whatever the director (and the author) left.
+  const planned = director(lowered, { ...(opts.rootDir ? { rootDir: opts.rootDir } : {}) });
+  const laidOut = layout(planned);
+  const directedCam = camera(laidOut);
+  return validate(directedCam);
 }
 
 /**
@@ -172,8 +204,8 @@ export function runPipeline(
   const story = frontend.parse(scriptContents);
   const lowered = frontend.lower(story);
 
-  // --- back-end (lite-P6 layout, lite-P8 camera, V validate) ---
-  const scene = runBackend(lowered);
+  // --- back-end (P7 director, lite-P6 layout, lite-P8 camera, V validate) ---
+  const scene = runBackend(lowered, { rootDir });
 
   // --- cache write ---
   if (cachingEnabled) {

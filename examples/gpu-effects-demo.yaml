@@ -1,0 +1,105 @@
+# examples/gpu-effects-demo.yaml — the M6 Tier-B GPU effects + transition vertical slice (PERCEPTUAL tier).
+#
+# This is the ONLY non-byte-exact tier in the factory. The per-layer `effects[]` entries below name
+# `gpu_*` ops, and the scene boundaries use the `gl-dissolve` transition — both contributed by the
+# `gpu-effects` PLUGIN (pixi.js v8 + pixi-filters, WebGL). They render ONLY on the GPU perceptual tier
+# (gl:"angle", the Iris Xe iGPU) and are verified PERCEPTUALLY (VMAF/SSIM), NOT byte-exact `cmp`.
+#
+# GATING (CLAUDE.md r.1 — the CPU raster default stays byte-identical): the gpu-effects plugin is
+# registered ONLY for a `--gpu` build (render.ts bakes a webpack `process.env.GPU_TIER` flag that
+# render-entry reads). So you MUST render this with --gpu:
+#
+#   tsx src/cli/render.ts examples/gpu-effects-demo.yaml --project gpu-effects-demo --name "GPU Effects" --gpu --frames auto
+#
+# On the CPU/byte-exact tier the GPU effect kinds are unregistered: the `gpu_*` effects would throw
+# (a GPU story needs the GPU tier) and `gl-dissolve` degrades to a `fade` (the compositor fallback).
+# This demo is therefore a GPU-tier story — author GPU effects only when you render with --gpu.
+#
+# DETERMINISM (honest, M6): every GPU draw is a PURE function of `frame` (no clock / Math.random); the
+# GPU shader is the only non-determinism, which is exactly what the perceptual tier accepts.
+
+title: "GPU Effects"
+
+# DOMAIN-AGNOSTIC (ADR-007): no cast — only shapes/generators + their GPU effects[] stacks. Every layer
+# is DECLARED per beat via show[]; the compiler injects nothing.
+
+beats:
+  # ----------------------------------------------------------------------------------------------
+  # SCENE 1 — GPU BLOOM + GODRAYS. A bright shape carries a GPU AdvancedBloom (multi-pass GPU bloom),
+  # and volumetric GODRAYS (a GPU-raymarched light-shaft shader) wash the frame — both additive (screen).
+  # ----------------------------------------------------------------------------------------------
+  - id: bloom_and_rays
+    say: "On the GPU tier, light is rendered with shaders."
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - shape: circle
+        as: sun
+        at: center
+        args:
+          z: 12
+          scale: 90
+          params: { radius: 120 }
+          fill: { a: 0, k: accent }
+          stroke: { color: light, width: 4 }
+          effects:
+            # GPU multi-pass bloom (AdvancedBloomFilter) — expensive on CPU, cheap on the iGPU.
+            - { kind: gpu_bloom, color: "#ffd9a0", threshold: 0.25, bloomScale: 1.6, blur: 10, intensity: 0.85 }
+            # GPU volumetric god rays (GodrayFilter), animated by frame (pure).
+            - { kind: gpu_godrays, angle: 30, gain: 0.5, lacunarity: 2.5, color: "#fff1c0", speed: 0.012, opacity: 0.55 }
+    camera: establishing
+    duration: { seconds: 3 }
+    # GL noise-DISSOLVE transition (shader-generated dissolve mask on the GPU).
+    transition: { kind: gl-dissolve, duration: 20, scale: 14 }
+
+  # ----------------------------------------------------------------------------------------------
+  # SCENE 2 — GPU SHOCKWAVE. An expanding radial ripple (ShockwaveFilter, a GPU distortion shader)
+  # pulses out from center on a loop, parameterised by frame.
+  # ----------------------------------------------------------------------------------------------
+  - id: shockwave
+    say: "A shockwave is a distortion shader, expanding by frame."
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - shape: star
+        as: core
+        at: center
+        args:
+          z: 12
+          scale: 80
+          params: { points: 6, innerRadius: 50, outerRadius: 110 }
+          fill: { a: 0, k: accent2 }
+          stroke: { color: light, width: 4 }
+          effects:
+            - { kind: gpu_shockwave, cx: 0.5, cy: 0.5, speed: 8, amplitude: 34, wavelength: 170, color: "#9fd0ff", period: 60, opacity: 0.7 }
+    camera: slow_push_in
+    duration: { seconds: 3 }
+    transition: { kind: gl-dissolve, duration: 20, scale: 18 }
+
+  # ----------------------------------------------------------------------------------------------
+  # SCENE 3 — GPU CRT + GLITCH. A retro CRT screen shader (scanlines + barrel curvature + vignette,
+  # animated noise) plus a digital GLITCH (RGB split + sliced bands) — both pure GPU shaders.
+  # ----------------------------------------------------------------------------------------------
+  - id: crt_glitch
+    say: "And the whole frame can wear a CRT and a glitch."
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - shape: rect
+        as: panel
+        at: center
+        args:
+          z: 12
+          scale: 100
+          params: { width: 420, height: 260, cornerRadius: 18 }
+          fill:
+            gradient:
+              type: linear
+              angle: 90
+              stops: [[accent, 0.0], [accent2, 1.0]]
+          stroke: { color: ink, width: 4 }
+          effects:
+            - { kind: gpu_crt, lineWidth: 3, lineContrast: 0.35, noise: 0.18, curvature: 1.2, vignetting: 0.3, opacity: 0.9 }
+            - { kind: gpu_glitch, slices: 8, offset: 50, direction: 0, color: "#ffffff", opacity: 0.5 }
+    camera: slow_push_in
+    duration: { seconds: 3 }

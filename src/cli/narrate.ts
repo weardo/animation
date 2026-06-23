@@ -20,7 +20,7 @@
 // env; the cached wav is the deterministic record regardless of which engine produced it.
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve as resolvePath } from 'node:path';
 
 import objectHash from 'object-hash';
@@ -294,4 +294,339 @@ export function synthNarration(
 
 function truncate(s: string, n = 48): string {
   return s.length > n ? `${s.slice(0, n)}…` : s;
+}
+
+// --- M4 whisper word-sync alignment (OFFLINE, build-time, content-addressed cache) ---
+//
+// Like TTS, forced-alignment runs ONCE OFFLINE at build into a content-addressed cache and the render
+// replays the FIXED cached JSON → byte-deterministic even though whisper is not bit-exact across
+// machines (golden rule 1: the cached artifact is the record, not the engine). The whisper engine
+// lives in an isolated venv (.venv-whisper) + a small CLI (scripts/tts/align_whisper.py); a missing
+// venv / model / alignment error NEVER fails the build — the caller falls back to even-split captions.
+
+/** The isolated faster-whisper venv + the alignment CLI (run OFFLINE; never at render). */
+const WHISPER_PYTHON = '.venv-whisper/bin/python';
+const ALIGN_SCRIPT = 'scripts/tts/align_whisper.py';
+const WHISPER_MODEL = 'small';
+
+/** One aligned word: the spoken token + its start/end in SECONDS (from faster-whisper). */
+export interface AlignedWord {
+  word: string;
+  start: number;
+  end: number;
+}
+
+/** Where a cached alignment lives + whether it came from whisper or the even-split fallback. */
+export interface AlignResult {
+  /** Per-word timings (seconds). Empty only if both whisper AND fallback produced nothing. */
+  words: AlignedWord[];
+  /** True when these timings came from a fresh/cached whisper run; false = even-split fallback. */
+  aligned: boolean;
+  /** True when this call reused an existing cached alignment JSON (skip-if-exists). */
+  cached: boolean;
+}
+
+/**
+ * Content-address an alignment: hash(wav content-address + transcript + model). The wav hash already
+ * folds in engine/voice/wpm/tone/style, so a different-sounding clip re-aligns; folding the transcript
+ * in too keeps the key self-describing. Distinct prefix length from the wav hash is irrelevant — the
+ * file lives under a separate `align/` folder.
+ */
+export function alignHash(wavHash: string, transcript: string): string {
+  return objectHash({ wav: wavHash, text: transcript, model: WHISPER_MODEL }).slice(0, 16);
+}
+
+/** Read + validate a cached alignment JSON ([{word,start,end}]); returns null if malformed. */
+function readAlignJson(jsonPath: string): AlignedWord[] | null {
+  try {
+    const raw = JSON.parse(readFileSync(jsonPath, 'utf8')) as unknown;
+    if (!Array.isArray(raw)) return null;
+    const words: AlignedWord[] = [];
+    for (const e of raw) {
+      if (
+        e && typeof e === 'object' &&
+        typeof (e as AlignedWord).word === 'string' &&
+        typeof (e as AlignedWord).start === 'number' &&
+        typeof (e as AlignedWord).end === 'number'
+      ) {
+        words.push({ word: (e as AlignedWord).word, start: (e as AlignedWord).start, end: (e as AlignedWord).end });
+      }
+    }
+    return words.length > 0 ? words : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Force-align a cached narration wav to its transcript → per-word timings, CACHED content-addressed
+ * (skip-if-exists) under `<audioDir>/align/<hash>.json`. DETERMINISTIC: a cache hit replays the FIXED
+ * JSON; a cache miss runs whisper ONCE into the cache. NEVER fails the build — if the whisper venv /
+ * model is missing or alignment errors, returns `{aligned:false}` (the caller keeps the even-split
+ * cadence). `wavHash` is the wav's content-address (from {@link NarrateResult}); `rootDir` locates the
+ * isolated venv + CLI.
+ */
+export function alignNarration(
+  wavPath: string,
+  wavHash: string,
+  transcript: string,
+  audioDir: string,
+  rootDir: string,
+): AlignResult {
+  const alignDir = resolvePath(audioDir, 'align');
+  const hash = alignHash(wavHash, transcript);
+  const jsonPath = resolvePath(alignDir, `${hash}.json`);
+
+  // Cache hit → replay the FIXED JSON (the deterministic record).
+  if (existsSync(jsonPath)) {
+    const cachedWords = readAlignJson(jsonPath);
+    if (cachedWords) return { words: cachedWords, aligned: true, cached: true };
+    // A malformed cache file: fall through to re-run (it will overwrite).
+  }
+
+  const py = resolvePath(rootDir, WHISPER_PYTHON);
+  const script = resolvePath(rootDir, ALIGN_SCRIPT);
+  if (!existsSync(py) || !existsSync(script)) {
+    return { words: [], aligned: false, cached: false };
+  }
+
+  mkdirSync(alignDir, { recursive: true });
+  try {
+    execFileSync(
+      py,
+      [script, '--wav', wavPath, '--out', jsonPath, '--model', WHISPER_MODEL],
+      { stdio: 'pipe', env: { ...process.env, HF_HOME: process.env['HF_HOME'] ?? HF_HOME } },
+    );
+  } catch {
+    return { words: [], aligned: false, cached: false };
+  }
+
+  const words = existsSync(jsonPath) ? readAlignJson(jsonPath) : null;
+  if (!words) return { words: [], aligned: false, cached: false };
+  return { words, aligned: true, cached: false };
+}
+
+/**
+ * Map whisper's per-word seconds to the CaptionCue `wordsTimed[]` (token + LOCAL frame offset `at` +
+ * `dur` in frames, relative to the cue start). Pure + deterministic: a function of the alignment + fps
+ * + the cue's local window. Clamps each word into `[0, durationFrames)` and ensures `dur >= 1` so the
+ * renderer always has a non-empty reveal window. The TOKENS come from whisper (its segmentation), not
+ * the authored text — so a word the synth elided/merged stays consistent with what was actually spoken.
+ */
+export function timedWordsFromAlignment(
+  words: AlignedWord[],
+  fps: number,
+  durationFrames: number,
+): Array<{ w: string; at: number; dur: number }> {
+  const timed: Array<{ w: string; at: number; dur: number }> = [];
+  for (const { word, start, end } of words) {
+    const token = word.trim();
+    if (!token) continue;
+    const atF = Math.max(0, Math.min(durationFrames - 1, Math.round(start * fps)));
+    const endF = Math.max(atF + 1, Math.min(durationFrames, Math.round(end * fps)));
+    timed.push({ w: token, at: atF, dur: endF - atF });
+  }
+  return timed;
+}
+
+// --- M4b lip-sync visemes: per-frame mouth-openness from the cached narration wav (OFFLINE, cached) ---
+//
+// Like TTS + alignment, the viseme/openness track is produced ONCE OFFLINE at build into a CONTENT-
+// ADDRESSED cache (hash of the wav + fps + analyzer version, skip-if-exists); the render replays the
+// FIXED samples → byte-deterministic even though the analyzer is not bit-exact across machines (golden
+// rule 1: the cached artifact is the record, not the generator). The render NEVER runs this — it reads
+// the cached `mouth` track from the Scene IR and the provider interprets it.
+//
+// SIGNAL: a simple, robust short-time RMS ENERGY ENVELOPE. We decode the wav to mono f32 PCM via ffmpeg
+// (always available — no python/venv), bin the samples into one window per output frame, take each
+// window's RMS, then map RMS → 0..1 openness with a perceptual curve (a noise floor + a soft knee + a
+// gamma) and a tiny attack/decay smoothing so the mouth doesn't chatter. Louder ⇒ wider; silence ⇒
+// closed. OPTIONAL viseme LABELS: when a whisper alignment is supplied, frames INSIDE a spoken word are
+// labelled "open" and frames in the gaps "closed" (a coarse class a part-swap provider may use); without
+// alignment the label track is omitted (openness-only). A missing/failed ffmpeg decode NEVER fails the
+// build — we return null and the caller emits no mouth track (the rig idles).
+
+/** The analyzer version — folded into the cache key so a curve change re-derives (cache-invalidation). */
+const MOUTH_ANALYZER_VERSION = '1';
+/** The RMS analysis sample rate (mono). Low enough to be cheap, high enough for a clean envelope. */
+const MOUTH_PCM_RATE = 16000;
+
+/** One per-frame mouth sample: openness in [0,1] + an optional coarse viseme class label. */
+export interface MouthTrackData {
+  /** Sampling rate (fps) the envelope was computed at (matches the scene fps). */
+  fps: number;
+  /** Per-LOCAL-frame openness in [0,1] (0 closed … 1 wide). Length = the narration's frame span. */
+  open: number[];
+  /** OPTIONAL coarse per-frame viseme class label (same length as `open`); omitted = openness-only. */
+  viseme?: string[];
+}
+
+/**
+ * Content-address a mouth track: hash(wav content-address + fps + frame count + analyzer version +
+ * whether viseme labels were derived). The wav hash already folds in engine/voice/wpm/tone/style, so a
+ * different-sounding clip re-derives; folding fps/frames keeps the cached samples valid for exactly the
+ * render config they were computed at.
+ */
+export function mouthHash(wavHash: string, fps: number, durationFrames: number, labelled: boolean): string {
+  return objectHash({
+    wav: wavHash,
+    fps,
+    frames: durationFrames,
+    labelled,
+    analyzer: MOUTH_ANALYZER_VERSION,
+  }).slice(0, 16);
+}
+
+/** Decode a wav to mono f32 PCM samples via ffmpeg (deterministic — a fixed file). Null on any error. */
+function decodePcm(wavPath: string): Float32Array | null {
+  try {
+    const buf = execFileSync(
+      'ffmpeg',
+      ['-v', 'error', '-i', wavPath, '-ac', '1', '-ar', String(MOUTH_PCM_RATE), '-f', 'f32le', '-'],
+      { maxBuffer: 1 << 28 }, // up to 256 MB of PCM (a long narration clip); returns a Buffer
+    ) as Buffer;
+    if (buf.length < 4) return null;
+    // Reinterpret the byte buffer as little-endian float32 (ffmpeg `f32le`). Copy to align the view.
+    const aligned = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.length - (buf.length % 4));
+    return new Float32Array(aligned);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Map a window RMS to a perceptual mouth openness in [0,1]: subtract a noise floor, normalize against a
+ * reference loudness, apply a gamma so quiet speech still opens the mouth a little, and clamp. Pure.
+ */
+function rmsToOpenness(rms: number): number {
+  const FLOOR = 0.01; // below this is treated as silence (closed)
+  const REF = 0.18; // RMS that maps to a wide-open mouth (typical speech peak for our TTS levels)
+  const GAMMA = 0.6; // < 1 lifts mid energies so normal speech reads as a clearly moving mouth
+  const x = (rms - FLOOR) / (REF - FLOOR);
+  if (x <= 0) return 0;
+  const clamped = x >= 1 ? 1 : x;
+  return Math.pow(clamped, GAMMA);
+}
+
+/**
+ * Compute a per-frame openness envelope (0..1) from mono PCM. Bins the samples into `durationFrames`
+ * windows (one per output frame), takes each window's RMS, maps to openness, then applies a one-pole
+ * attack/decay smoother so the mouth opens fast and closes a touch slower (natural, no chatter). Pure +
+ * deterministic — a function of the samples + frame count only (the PCM rate is implicit in the buffer
+ * length spread over `durationFrames` windows).
+ */
+export function opennessEnvelope(pcm: Float32Array, durationFrames: number): number[] {
+  const total = pcm.length;
+  const open = new Array<number>(durationFrames).fill(0);
+  if (total === 0 || durationFrames <= 0) return open;
+  const samplesPerFrame = total / durationFrames;
+  for (let f = 0; f < durationFrames; f++) {
+    const start = Math.floor(f * samplesPerFrame);
+    const end = Math.min(total, Math.floor((f + 1) * samplesPerFrame));
+    let sumSq = 0;
+    let n = 0;
+    for (let i = start; i < end; i++) {
+      const s = pcm[i] ?? 0;
+      sumSq += s * s;
+      n++;
+    }
+    const rms = n > 0 ? Math.sqrt(sumSq / n) : 0;
+    open[f] = rmsToOpenness(rms);
+  }
+  // One-pole attack/decay smoothing (deterministic; coefficients are fps-independent enough for our use).
+  const ATTACK = 0.6; // toward a louder target quickly
+  const DECAY = 0.35; // close a bit slower
+  let prev = 0;
+  for (let f = 0; f < durationFrames; f++) {
+    const target = open[f] ?? 0;
+    const coeff = target > prev ? ATTACK : DECAY;
+    const v = prev + (target - prev) * coeff;
+    open[f] = Math.round(v * 1000) / 1000; // fixed precision → byte-stable JSON
+    prev = v;
+  }
+  return open;
+}
+
+/**
+ * Derive a coarse per-frame viseme CLASS LABEL from a whisper alignment: frames inside a spoken word →
+ * "open", frames in the silent gaps → "closed" (a class a part-swap mouth provider MAY use). Length =
+ * `durationFrames`. Pure. Returns null when no alignment is available (caller omits the label track).
+ */
+export function visemeLabels(
+  words: AlignedWord[],
+  fps: number,
+  durationFrames: number,
+): string[] | null {
+  if (words.length === 0) return null;
+  const labels = new Array<string>(durationFrames).fill('closed');
+  for (const { start, end } of words) {
+    const a = Math.max(0, Math.floor(start * fps));
+    const b = Math.min(durationFrames, Math.ceil(end * fps));
+    for (let f = a; f < b; f++) labels[f] = 'open';
+  }
+  return labels;
+}
+
+/** Read + validate a cached mouth-track JSON; returns null if malformed. */
+function readMouthJson(jsonPath: string): MouthTrackData | null {
+  try {
+    const raw = JSON.parse(readFileSync(jsonPath, 'utf8')) as unknown;
+    if (!raw || typeof raw !== 'object') return null;
+    const o = raw as Partial<MouthTrackData>;
+    if (typeof o.fps !== 'number' || !Array.isArray(o.open)) return null;
+    if (!o.open.every((n) => typeof n === 'number')) return null;
+    const out: MouthTrackData = { fps: o.fps, open: o.open as number[] };
+    if (Array.isArray(o.viseme) && o.viseme.every((s) => typeof s === 'string')) {
+      out.viseme = o.viseme as string[];
+    }
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Derive (or reuse) the per-frame mouth/viseme track for a narration clip, CACHED content-addressed
+ * (skip-if-exists) under `<audioDir>/mouth/<hash>.json`. DETERMINISTIC: a cache hit replays the FIXED
+ * samples; a cache miss decodes the wav ONCE (ffmpeg → RMS envelope) into the cache. NEVER fails the
+ * build — a missing/failed ffmpeg decode returns null (the caller emits no mouth track → the rig idles).
+ *
+ * `wavHash` is the wav's content-address (from {@link NarrateResult}); `durationFrames` the narration's
+ * frame span at `fps`; `alignWords` an optional whisper alignment (its presence adds a coarse viseme
+ * label track). The samples are LOCAL-frame indexed (frame 0 = the clip's start).
+ */
+export function mouthTrackForNarration(
+  wavPath: string,
+  wavHash: string,
+  fps: number,
+  durationFrames: number,
+  audioDir: string,
+  alignWords?: AlignedWord[],
+): MouthTrackData | null {
+  const labelled = !!alignWords && alignWords.length > 0;
+  const mouthDir = resolvePath(audioDir, 'mouth');
+  const hash = mouthHash(wavHash, fps, durationFrames, labelled);
+  const jsonPath = resolvePath(mouthDir, `${hash}.json`);
+
+  // Cache hit → replay the FIXED samples (the deterministic record).
+  if (existsSync(jsonPath)) {
+    const cached = readMouthJson(jsonPath);
+    if (cached) return cached;
+    // Malformed cache file: fall through to re-derive (it will overwrite).
+  }
+
+  const pcm = decodePcm(wavPath);
+  if (!pcm) return null; // ffmpeg unavailable/failed → no mouth track (never fail the build)
+
+  const open = opennessEnvelope(pcm, durationFrames);
+  const data: MouthTrackData = { fps, open };
+  if (labelled) {
+    const labels = visemeLabels(alignWords as AlignedWord[], fps, durationFrames);
+    if (labels) data.viseme = labels;
+  }
+
+  mkdirSync(mouthDir, { recursive: true });
+  // Stable key order + fixed-precision numbers → byte-stable JSON (a re-derive on the same inputs matches).
+  writeFileSync(jsonPath, JSON.stringify(data));
+  return data;
 }

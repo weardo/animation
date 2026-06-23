@@ -45,6 +45,19 @@ export const ProvenanceSchema = z
     /** Factory-generated assets: the generator + the content hash of the source spec. */
     generator: z.string().optional(),
     spec_hash: z.string().optional(),
+    // AI-generated assets (M9, factory:imagegen): the FULL request that produced the artifact, so the
+    // image is reproducible (same request → same content-addressed cache key → same cached PNG). These
+    // are pure provenance/audit metadata — the deterministic record is the cached PNG, not the model.
+    prompt: z.string().optional(),
+    negative: z.string().optional(),
+    seed: z.number().optional(),
+    model: z.string().optional(),
+    steps: z.number().optional(),
+    guidance: z.number().optional(),
+    size: z.string().optional(),
+    cache_hash: z.string().optional(),
+    /** False when a deterministic placeholder stood in (the AI engine was unavailable at build). */
+    generated: z.boolean().optional(),
   })
   .strict();
 export type Provenance = z.infer<typeof ProvenanceSchema>;

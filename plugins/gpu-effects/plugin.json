@@ -1,0 +1,10 @@
+{
+  "id": "gpu-effects",
+  "version": "1.0.0",
+  "contributes": ["effects", "transitions"],
+  "license": "MIT",
+  "provenance": {
+    "author": "animation-factory",
+    "source": "built-in"
+  }
+}

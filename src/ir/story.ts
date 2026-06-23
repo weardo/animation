@@ -231,6 +231,9 @@ export const StoryTransitionSchema = z
       'morph-match',
       'match-cut',
       'camera-continuous',
+      // Tier-B GPU transition (M6): a shader noise-DISSOLVE, contributed by the gpu-effects PLUGIN and
+      // active ONLY on the --gpu perceptual tier; on the byte-exact CPU tier it degrades to `fade`.
+      'gl-dissolve',
     ]),
     /** Direction for directional kinds (wipe/slide). */
     dir: z.enum(['left', 'right', 'up', 'down']).optional(),
@@ -419,6 +422,16 @@ export const StoryIRSchema = z
      * pass into Scene IR `post[]`. Pure CSS/SVG filters → byte-deterministic on the CPU raster.
      */
     post: z.array(PostSchema).optional(),
+    /**
+     * Optional DIRECTOR selection (M5). Picks WHO plans layout + camera for the film:
+     *   • "heuristic" (default) — a pure, deterministic, LOCAL scorer (balance / focal weight /
+     *     headroom / rule-of-thirds / safe-area for the aspect) that also picks a camera move per beat;
+     *   • "llm" — an OPT-IN director that shells to `claude -p` ONCE to emit a layout/camera PLAN as
+     *     DATA, validated by Zod and CACHED content-addressed; the render replays the FIXED cached plan
+     *     (byte-deterministic + offline) and falls back to the heuristic when `claude -p` is unavailable.
+     * Omitted → "heuristic". An EXPLICITLY-authored camera/position always wins over the director.
+     */
+    director: z.enum(['heuristic', 'llm']).optional(),
     /** Named cast: generic refs/actors → a library entry (+ optional provider/palette intent). */
     cast: z.record(CastEntrySchema).default({}),
     beats: z.array(BeatSchema).min(1),

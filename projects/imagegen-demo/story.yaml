@@ -1,0 +1,37 @@
+# examples/imagegen-demo.yaml — M9 AI asset-gen slice: a Stable-Diffusion-generated PNG as a prop.
+#
+# Golden rule 2: AI touches ONLY the offline library. The `crystal_prop` asset was generated ONCE
+# OFFLINE by `factory:imagegen` (Stable Diffusion on OpenVINO, .venv-sd) into a CONTENT-ADDRESSED
+# cache and registered as a library `asset` (kind=asset, format=image). The render NEVER runs SD — it
+# replays the FIXED cached PNG via the AssetLayer <Img>, so the video is byte-deterministic even though
+# SD is stochastic (golden rule 1: the cached PNG is the record, not the model).
+#
+#   1. generate the prop (offline, once):
+#        npm run factory:imagegen -- --prompt "a glowing blue crystal gem, flat vector illustration, \
+#          simple, centered, white background" --id crystal_prop --seed 42 --steps 8 --model lcm \
+#          --width 384 --height 384 --guidance 1.0
+#   2. render this story (replays the cached PNG, no SD):
+#        npm run render -- examples/imagegen-demo.yaml --project imagegen-demo --name "AI Crystal"
+#
+# DOMAIN-AGNOSTIC (ADR-007): the story DECLARES its whole scene via `show[]`. A generated PNG is just
+# another `asset` ref — the lowering pass treats it exactly like any authored SVG/image background or
+# prop. `scale` + `at` size and place it as a foreground prop (vs a full-frame background).
+
+title: "AI Crystal"
+
+cast:
+  crystal:
+    ref: crystal_prop # → library generated/crystal_prop@1.0.0 (asset, format=image; SD-generated PNG)
+
+beats:
+  - id: b1
+    say: "This crystal was painted by Stable Diffusion, then baked into the library."
+    show:
+      # A soft gradient background (low z, far parallax) — fills the frame.
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      # The SD-generated prop: scaled down + centered so it reads as a foreground object, not a backdrop.
+      - asset: crystal_prop
+        at: center
+        args: { z: 10, parallax: 0.4, scale: 55 }
+    camera: slow_push_in

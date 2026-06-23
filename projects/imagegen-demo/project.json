@@ -1,0 +1,30 @@
+{
+  "project_version": "1.0",
+  "id": "imagegen-demo",
+  "name": "AI Crystal",
+  "created": "2026-06-23T10:25:25.552Z",
+  "updated": "2026-06-23T10:25:25.552Z",
+  "config": {
+    "w": 1920,
+    "h": 1080,
+    "fps": 30,
+    "duration_frames": 120
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "7e75582e7414bbb0055bc36ab1142c9614e21967",
+  "engine": "remotion@4.0.481",
+  "deps": [
+    "bg_gradient@1.0.0",
+    "crystal_prop@1.0.0"
+  ],
+  "assets": [
+    "assets/bg_gradient.svg",
+    "assets/generated/crystal_prop.png"
+  ],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  }
+}

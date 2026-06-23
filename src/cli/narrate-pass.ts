@@ -14,10 +14,14 @@
 
 import { resolve as resolvePath } from 'node:path';
 
-import type { SceneIR, AudioCue, CaptionCue, StoryIR, Beat, Voice } from '../ir/index.js';
+import type { SceneIR, Scene, Layer, AudioCue, CaptionCue, MouthTrack, StoryIR, Beat, Voice } from '../ir/index.js';
 import {
   synthNarration,
+  alignNarration,
+  timedWordsFromAlignment,
+  mouthTrackForNarration,
   type NarrateEngine,
+  type AlignedWord,
   DEFAULT_ENGINE,
   DEFAULT_VOICE,
   DEFAULT_WPM,
@@ -36,9 +40,23 @@ const KNOWN_ENGINES: ReadonlySet<NarrateEngine> = new Set<NarrateEngine>([
  * invalidation rule). The wav cache key already incorporates the full NarrateRequest (engine/voice/
  * wpm/tone/style), so a voice change re-synthesizes a fresh wav regardless; this version pins the
  * pass behavior in provenance.
+ *
+ * M4 (whisper word-sync captions): after synthesizing/locating a narration wav, force-align it to its
+ * transcript via faster-whisper (OFFLINE, cached content-addressed) → per-word LOCAL frame timings on
+ * the `words`-mode CaptionCue (`wordsTimed[]`), so the renderer reveals words on their REAL spoken
+ * times. This changes the emitted captions → bump the version (cache-invalidation rule). Whisper
+ * missing / alignment failing → the even-split `words[]` fallback (never fail the build).
+ *
+ * M4b (lip-sync visemes): for each narrated beat whose scene has a SPEAKER rig layer (the first
+ * on-screen actor — the same convention `resolveBeatVoice` uses to pick the cast voice), derive a
+ * per-frame mouth-openness / viseme track OFFLINE from the cached narration wav (RMS energy envelope →
+ * 0..1, cached content-addressed) and attach it to that rig layer's generic `mouth` channel. The
+ * blob-creature provider reads it to open/close in sync; other providers ignore it. Opt-in (default on;
+ * `--no-lip-sync` off). A beat with no narration → no mouth track (the rig idles). This changes the
+ * emitted scene → bump the version (cache-invalidation rule). ffmpeg missing → no track (never fail).
  */
 export const PASS_ID = 'narrate';
-export const PASS_VERSION = '1.1';
+export const PASS_VERSION = '1.3';
 
 /**
  * Resolve the EFFECTIVE voice for one beat's narration: the per-beat override ?? the speaking cast
@@ -92,10 +110,36 @@ export interface NarrateOptions {
    */
   captions?: boolean | undefined;
   /**
-   * Caption cadence: `line` (whole line for the cue window — default) or `words` (cumulative even-split
-   * word reveal across `duration_frames`, a deterministic karaoke without whisper word-timestamps).
+   * Caption cadence: `line` (whole line for the cue window — default) or `words` (cumulative word
+   * reveal across `duration_frames`; timed by whisper forced-alignment when available, else even-split).
    */
   captionMode?: 'line' | 'words' | undefined;
+  /**
+   * M4: force-align each narration wav to its transcript via faster-whisper (OFFLINE, cached content-
+   * addressed) for PRECISE per-word caption timings (`words` mode only). Default true; missing whisper
+   * venv / alignment failure falls back to even-split (never fails the build). `--no-word-align` sets
+   * this false to skip the (slow, first-run only) whisper step and use even-split directly.
+   */
+  align?: boolean | undefined;
+  /**
+   * M4b: derive a per-frame MOUTH-OPENNESS / viseme track from each narration wav (OFFLINE, cached
+   * content-addressed) and attach it to the speaking rig layer's generic `mouth` channel so a provider
+   * (blob-creature) can lip-sync. Default true; `--no-lip-sync` sets this false. ffmpeg missing / decode
+   * failure → no track (the rig idles; never fails the build). A beat with no narration carries none.
+   */
+  lipSync?: boolean | undefined;
+}
+
+/**
+ * The SPEAKER rig-layer id for a beat: the first on-screen `actor`'s handle (`as ?? actor`), matching
+ * how lowering names a rig layer (`L_rig_<handle>`) and how {@link resolveBeatVoice} picks the cast
+ * voice. Returns undefined when the beat brings no actor on screen (no rig to lip-sync). Pure.
+ */
+function speakerRigId(beat: Beat): string | undefined {
+  const item = (beat.show ?? []).find((s) => s.actor);
+  if (!item) return undefined;
+  const handle = item.as ?? item.actor;
+  return handle ? `L_rig_${handle}` : undefined;
 }
 
 /**
@@ -121,10 +165,19 @@ export function applyNarration(sceneIR: SceneIR, story: StoryIR, opts: NarrateOp
   // Captions are re-derived here from this run's narration lines (replace any prior caption set).
   const wantCaptions = opts.captions !== false;
   const captionMode = opts.captionMode ?? 'line';
+  const wantAlign = opts.align !== false && captionMode === 'words';
+  const wantLipSync = opts.lipSync !== false;
   const captions: CaptionCue[] = [];
+  // M4b: mouth tracks keyed by the SPEAKER rig-layer id (one per narrated beat with an on-screen actor),
+  // applied onto that scene's rig layer after the loop. scene.id === beat.id, so a (sceneId, rigId) pair
+  // is unique; we key by `${sceneId}::${rigId}`.
+  const mouthByLayer = new Map<string, MouthTrack>();
 
   let synthCount = 0;
   let cachedCount = 0;
+  let alignedCount = 0; // captions with REAL whisper word timings
+  let evenSplitCount = 0; // word-mode captions that fell back to even-split
+  let lipSyncCount = 0; // beats that got a mouth track
   for (const beat of story.beats) {
     const say = beat.say?.trim();
     if (!say) continue;
@@ -168,9 +221,11 @@ export function applyNarration(sceneIR: SceneIR, story: StoryIR, opts: NarrateOp
       transcript: say,
     });
 
-    // A1 CAPTION: one caption per narration line, sharing the cue's exact window (deterministic —
-    // same authored text + same at/duration → same caption; no whisper). `words` mode pre-tokenizes so
-    // the renderer reveals an even-split cumulative line.
+    // CAPTION: one caption per narration line, sharing the cue's exact window. `line` mode is the
+    // whole transcript for the window. `words` mode pre-tokenizes for an even-split reveal AND (M4)
+    // attempts whisper forced-alignment for REAL per-word timings. We KEEP any computed alignment to
+    // reuse as M4b viseme labels (so lip-sync gets word/gap classes for free when captions aligned).
+    let alignWords: AlignedWord[] | undefined;
     if (wantCaptions) {
       const cap: CaptionCue = {
         id: `caption-${beat.id}`,
@@ -179,8 +234,47 @@ export function applyNarration(sceneIR: SceneIR, story: StoryIR, opts: NarrateOp
         duration_frames: durationFrames,
         mode: captionMode,
       };
-      if (captionMode === 'words') cap.words = say.split(/\s+/).filter(Boolean);
+      if (captionMode === 'words') {
+        // Even-split fallback tokens (always present so the renderer never needs to re-tokenize).
+        cap.words = say.split(/\s+/).filter(Boolean);
+        // M4: force-align the cached wav → real per-word timings (OFFLINE, content-addressed cache).
+        // Whisper missing / failed → keep the even-split fallback (never fail the build).
+        if (wantAlign) {
+          const al = alignNarration(res.wavPath, res.hash, say, audioDir, opts.rootDir);
+          if (al.aligned && al.words.length > 0) {
+            alignWords = al.words; // reused below for coarse viseme labels (no extra whisper run)
+            const timed = timedWordsFromAlignment(al.words, fps, durationFrames);
+            if (timed.length > 0) {
+              cap.wordsTimed = timed;
+              alignedCount += 1;
+            } else {
+              evenSplitCount += 1;
+            }
+          } else {
+            evenSplitCount += 1;
+          }
+        } else {
+          evenSplitCount += 1;
+        }
+      }
       captions.push(cap);
+    }
+
+    // M4b LIP-SYNC: derive a per-frame mouth-openness/viseme track from this clip's cached wav (OFFLINE,
+    // content-addressed; ffmpeg RMS envelope) and stage it for the beat's SPEAKER rig layer. The track is
+    // LOCAL-frame indexed (frame 0 = the clip's start = the scene start, since the cue `at` === scene.at),
+    // so the provider samples it by its own scene-local frame. Opt-in; ffmpeg missing → no track (idle).
+    if (wantLipSync) {
+      const rigId = speakerRigId(beat);
+      if (rigId) {
+        const md = mouthTrackForNarration(res.wavPath, res.hash, fps, durationFrames, audioDir, alignWords);
+        if (md) {
+          const track: MouthTrack = { fps: md.fps, open: md.open };
+          if (md.viseme) track.viseme = md.viseme;
+          mouthByLayer.set(`${beat.id}::${rigId}`, track);
+          lipSyncCount += 1;
+        }
+      }
     }
   }
 
@@ -188,13 +282,41 @@ export function applyNarration(sceneIR: SceneIR, story: StoryIR, opts: NarrateOp
   cues.sort((a, b) => a.at - b.at || a.id.localeCompare(b.id));
   captions.sort((a, b) => a.at - b.at || a.id.localeCompare(b.id));
 
+  // M4b: apply the staged mouth tracks onto the speaker rig layers (immutable rewrite). A scene's rig
+  // layer gets `mouth` iff this run derived a track for it; lip-sync off / no actor / no narration → no
+  // change (the rig idles, byte-identical to before). Pure structural attach: no clock, no RNG.
+  const scenes: Scene[] = mouthByLayer.size === 0
+    ? sceneIR.scenes
+    : sceneIR.scenes.map((scene) => {
+        let touched = false;
+        const layers: Layer[] = scene.layers.map((layer) => {
+          if (layer.type !== 'rig') return layer;
+          const track = mouthByLayer.get(`${scene.id}::${layer.id}`);
+          if (!track) return layer;
+          touched = true;
+          return { ...layer, mouth: track };
+        });
+        return touched ? { ...scene, layers } : scene;
+      });
+
   console.log(
     `[narrate] default engine=${defaultEngine} (per-beat voice/tone overrides honored) → ` +
       `${cues.filter((c) => c.kind === 'narration').length} narration cue(s) ` +
       `(${synthCount} synthesized, ${cachedCount} cached)` +
-      (wantCaptions ? ` + ${captions.length} caption(s) [${captionMode}]` : ' (captions off)') +
+      (wantCaptions
+        ? ` + ${captions.length} caption(s) [${captionMode}]` +
+          (captionMode === 'words'
+            ? ` (${alignedCount} whisper-aligned, ${evenSplitCount} even-split)`
+            : '')
+        : ' (captions off)') +
+      (wantLipSync ? ` + ${lipSyncCount} lip-sync mouth track(s)` : ' (lip-sync off)') +
       ` → ${audioDir}`,
   );
 
-  return { ...sceneIR, audio: cues, captions: wantCaptions ? captions : (sceneIR.captions ?? []) };
+  return {
+    ...sceneIR,
+    audio: cues,
+    captions: wantCaptions ? captions : (sceneIR.captions ?? []),
+    scenes,
+  };
 }

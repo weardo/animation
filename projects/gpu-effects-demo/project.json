@@ -1,0 +1,28 @@
+{
+  "project_version": "1.0",
+  "id": "gpu-effects-demo",
+  "name": "GPU Effects",
+  "created": "2026-06-23T09:48:31.211Z",
+  "updated": "2026-06-23T09:48:31.211Z",
+  "config": {
+    "w": 1920,
+    "h": 1080,
+    "fps": 30,
+    "duration_frames": 250
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "2cb53f5ef10b57c6fd6992c2b0498bf48ec109f2",
+  "engine": "remotion@4.0.481",
+  "deps": [
+    "bg_gradient@1.0.0"
+  ],
+  "assets": [
+    "assets/bg_gradient.svg"
+  ],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  }
+}

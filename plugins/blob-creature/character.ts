@@ -31,11 +31,42 @@ export function waveAngle(frame: number, fps: number, clips: readonly RigClip[],
 }
 
 /**
+ * Build the mouth markup at a given openness (0 = closed rest smile … 1 = wide open). M4b lip-sync:
+ * the provider feeds a per-frame openness sampled from the rig layer's `mouth` track. At openness 0 we
+ * draw the original resting smile (a Q-curve) so a creature with NO mouth track looks exactly as before
+ * (back-compat). As openness rises we morph to an open ellipse (a dark oral cavity) whose height grows
+ * with openness — a simple, robust, deterministic lip-sync that reads clearly at video scale. Pure: a
+ * function of (spec, openness) only.
+ */
+function mouthMarkup(spec: CharacterSpec, openness: number): string {
+  const o = openness <= 0 ? 0 : openness >= 1 ? 1 : openness;
+  const ink = spec.palette.ink;
+  const my = spec.beak.cy + 24; // mouth centre y (just below the resting-smile baseline)
+  if (o < 0.06) {
+    // Resting smile — the original static mouth (byte-identical to pre-M4b when no track is present).
+    return `<path d="M -11 ${spec.beak.cy + 22} Q 0 ${spec.beak.cy + 30} 11 ${spec.beak.cy + 22}" stroke="${ink}" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  }
+  // Open mouth: a filled ellipse (oral cavity) that grows in height with openness; width opens a little
+  // too. Fixed precision so the markup STRING is byte-stable across runs (CLAUDE.md r.1).
+  const rx = (8 + 4 * o).toFixed(2);
+  const ry = (1.5 + 8.5 * o).toFixed(2);
+  return (
+    `<ellipse cx="0" cy="${f2(my)}" rx="${rx}" ry="${ry}" fill="${ink}"/>` +
+    // A subtle lip outline so the open mouth reads against the body even at small openings.
+    `<ellipse cx="0" cy="${f2(my)}" rx="${rx}" ry="${ry}" fill="none" stroke="${ink}" stroke-width="2"/>`
+  );
+}
+
+/**
  * Build the animated SVG markup for a character at a frame. Drawn centred on local origin (0,0).
  *
  * `liveness` (ADR-008 I3, default true) gates the always-alive idle: when false, the creature holds
  * a STATIC neutral pose (no bob/sway/breathe/blink) for a flat/technical look. An authored wave clip
  * (an explicit action, not ambient liveness) still plays so explicit motion is never suppressed.
+ *
+ * `mouthOpen` (M4b lip-sync, default 0) is the per-frame mouth openness the provider sampled from the
+ * rig layer's `mouth` track (0 = closed resting smile → 1 = wide). 0 (no track / a beat without
+ * narration) draws the original static smile, so a creature without lip-sync is byte-identical to before.
  */
 export function characterMarkup(
   spec: CharacterSpec,
@@ -43,6 +74,7 @@ export function characterMarkup(
   fps: number,
   clips: readonly RigClip[],
   liveness = true,
+  mouthOpen = 0,
 ): string {
   const t = frame / fps;
   const P = spec.palette;
@@ -108,7 +140,7 @@ export function characterMarkup(
     `<circle cx="0" cy="${spec.head.cy}" r="${spec.head.r}" fill="${P.body}" stroke="${P.ink}" stroke-width="4"/>` +
     `<ellipse cx="${(spec.head.r * 0.4).toFixed(1)}" cy="${(spec.head.cy - spec.head.r * 0.4).toFixed(1)}" rx="16" ry="11" fill="${P.white}" opacity="0.22"/>` +
     cheeks + eye(-1) + eye(1) + beak +
-    `<path d="M -11 ${spec.beak.cy + 22} Q 0 ${spec.beak.cy + 30} 11 ${spec.beak.cy + 22}" stroke="${P.ink}" stroke-width="3" fill="none" stroke-linecap="round"/>` +
+    mouthMarkup(spec, mouthOpen) +
     `</g>`
   );
 }

@@ -1,0 +1,20 @@
+{
+  "lockfile_version": "1",
+  "algorithm": "object-hash@sha1/v1",
+  "refs": {
+    "bg_gradient@1.0.0": {
+      "namespace": "backgrounds",
+      "id": "bg_gradient",
+      "version": "1.0.0",
+      "hash": "84e83292f11d2fa767ca742a60d548a44653c621",
+      "deps": []
+    },
+    "crystal_prop@1.0.0": {
+      "namespace": "generated",
+      "id": "crystal_prop",
+      "version": "1.0.0",
+      "hash": "2ad7b7a0247c185dfe1d1949166d22f65b4995af",
+      "deps": []
+    }
+  }
+}

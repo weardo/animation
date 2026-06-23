@@ -1,0 +1,723 @@
+{
+  "scene_ir_version": "1.0",
+  "config": {
+    "w": 1920,
+    "h": 1080,
+    "fps": 30,
+    "duration_frames": 321
+  },
+  "defs": {
+    "palette": {
+      "bg": "#1b2a4a",
+      "bg2": "#24386b",
+      "accent": "#ffcf4d",
+      "accent2": "#4d9fff",
+      "ink": "#0d1b33",
+      "light": "#fff6e0",
+      "shadow": "#0a1326"
+    },
+    "easings": {
+      "smooth": [
+        0.4,
+        0,
+        0.2,
+        1
+      ],
+      "pop": "backOut",
+      "backOut": [
+        0.34,
+        1.56,
+        0.64,
+        1
+      ],
+      "anticipate": [
+        0.36,
+        0,
+        0.66,
+        -0.56
+      ],
+      "easeIn": [
+        0.4,
+        0,
+        1,
+        1
+      ],
+      "easeOut": [
+        0,
+        0,
+        0.2,
+        1
+      ],
+      "linear": [
+        0,
+        0,
+        1,
+        1
+      ]
+    },
+    "assets": {
+      "bg_gradient": {
+        "uri": "asset://bg_gradient.svg",
+        "kind": "svg"
+      }
+    },
+    "rigs": {},
+    "clips": {},
+    "stylekit": {
+      "easings": {
+        "linear": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "smooth": [
+          0.4,
+          0,
+          0.2,
+          1
+        ],
+        "easeOut": [
+          0,
+          0,
+          0.2,
+          1
+        ],
+        "easeIn": [
+          0.4,
+          0,
+          1,
+          1
+        ],
+        "snappy": [
+          0.25,
+          0.1,
+          0.25,
+          1
+        ],
+        "anticipate": [
+          0.36,
+          0,
+          0.66,
+          -0.56
+        ],
+        "backOut": [
+          0.34,
+          1.56,
+          0.64,
+          1
+        ],
+        "backInOut": [
+          0.68,
+          -0.6,
+          0.32,
+          1.6
+        ],
+        "expoOut": [
+          0.16,
+          1,
+          0.3,
+          1
+        ]
+      },
+      "defaultEasings": {
+        "smooth": [
+          0.4,
+          0,
+          0.2,
+          1
+        ],
+        "pop": "backOut",
+        "backOut": [
+          0.34,
+          1.56,
+          0.64,
+          1
+        ],
+        "anticipate": [
+          0.36,
+          0,
+          0.66,
+          -0.56
+        ],
+        "easeIn": [
+          0.4,
+          0,
+          1,
+          1
+        ],
+        "easeOut": [
+          0,
+          0,
+          0.2,
+          1
+        ],
+        "linear": [
+          0,
+          0,
+          1,
+          1
+        ]
+      },
+      "palette": {
+        "bg": "#1b2a4a",
+        "bg2": "#24386b",
+        "accent": "#ffcf4d",
+        "accent2": "#4d9fff",
+        "ink": "#0d1b33",
+        "light": "#fff6e0",
+        "shadow": "#0a1326"
+      },
+      "motion": {
+        "spring": {
+          "stiffness": 180,
+          "damping": 14,
+          "mass": 1
+        },
+        "springHeavy": {
+          "stiffness": 120,
+          "damping": 20,
+          "mass": 1.4
+        },
+        "springBouncy": {
+          "stiffness": 220,
+          "damping": 10,
+          "mass": 1
+        },
+        "idle": {
+          "swayAmplitudeDeg": 1.5,
+          "swaySpeedHz": 0.15,
+          "driftAmplitudePx": 2,
+          "driftSpeedHz": 0.1,
+          "saccadeAmplitudeDeg": 3,
+          "saccadeMeanSeconds": 1.8
+        },
+        "breathing": {
+          "amplitude": 0.02,
+          "periodSeconds": 4
+        },
+        "blink": {
+          "rateHz": 0.25,
+          "closeFrames": 4
+        },
+        "stagger": {
+          "offsetFrames": 6
+        },
+        "parallax": {
+          "nearFactor": 1,
+          "farFactor": 0.1
+        },
+        "motionBlurShutter": 180
+      },
+      "light": {
+        "dir": 295,
+        "elevation": 60,
+        "color": "#fff6e0",
+        "intensity": 0.85,
+        "ambient": 0.38
+      },
+      "shading": {
+        "form": true,
+        "contact_shadow": true,
+        "rim": 0.3,
+        "ao": true,
+        "glow": 0
+      },
+      "floor": {
+        "liveness": true,
+        "parallax": true,
+        "shading": true,
+        "nonLinearMotion": true
+      }
+    }
+  },
+  "audio": [
+    {
+      "id": "narration-open",
+      "kind": "narration",
+      "src": "audio://audio/3a760e6bcc676367.wav",
+      "at": 0,
+      "duration_frames": 64,
+      "transcript": "A good director never centers everything."
+    },
+    {
+      "id": "narration-ensemble",
+      "kind": "narration",
+      "src": "audio://audio/dfd555a5224c8f81.wav",
+      "at": 72,
+      "duration_frames": 100,
+      "transcript": "It scores balance, focal weight, headroom, and the thirds."
+    },
+    {
+      "id": "narration-focus",
+      "kind": "narration",
+      "src": "audio://audio/2434677c43950791.wav",
+      "at": 159,
+      "duration_frames": 77,
+      "transcript": "One subject? It pushes in to draw your eye."
+    },
+    {
+      "id": "narration-override",
+      "kind": "narration",
+      "src": "audio://audio/2954a07a5c6be00a.wav",
+      "at": 231,
+      "duration_frames": 67,
+      "transcript": "But when you direct it yourself, you win."
+    }
+  ],
+  "captions": [
+    {
+      "id": "caption-open",
+      "text": "A good director never centers everything.",
+      "at": 0,
+      "duration_frames": 64,
+      "mode": "line"
+    },
+    {
+      "id": "caption-ensemble",
+      "text": "It scores balance, focal weight, headroom, and the thirds.",
+      "at": 72,
+      "duration_frames": 100,
+      "mode": "line"
+    },
+    {
+      "id": "caption-focus",
+      "text": "One subject? It pushes in to draw your eye.",
+      "at": 159,
+      "duration_frames": 77,
+      "mode": "line"
+    },
+    {
+      "id": "caption-override",
+      "text": "But when you direct it yourself, you win.",
+      "at": 231,
+      "duration_frames": 67,
+      "mode": "line"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "open",
+      "at": 0,
+      "duration_frames": 90,
+      "labels": {
+        "reveal": 45
+      },
+      "camera": {
+        "position": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": [
+                0,
+                -20
+              ],
+              "e": "smooth"
+            },
+            {
+              "t": 90,
+              "s": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        "zoom": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": 0.92,
+              "e": "smooth"
+            },
+            {
+              "t": 90,
+              "s": 1
+            }
+          ]
+        }
+      },
+      "layers": [
+        {
+          "type": "asset",
+          "id": "L_asset_bg_gradient_0",
+          "z": 0,
+          "ref": "bg_gradient",
+          "parallax": 0
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_hero",
+          "z": 8,
+          "shape": {
+            "kind": "circle",
+            "radius": 95
+          },
+          "fill": {
+            "gradient": {
+              "type": "radial",
+              "stops": [
+                [
+                  "light",
+                  0
+                ],
+                [
+                  "accent2",
+                  1
+                ]
+              ]
+            }
+          },
+          "stroke": {
+            "color": "ink",
+            "width": 4
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                960,
+                676.8
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 90
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "ensemble",
+      "at": 72,
+      "duration_frames": 105,
+      "labels": {
+        "reveal": 52
+      },
+      "camera": {
+        "position": {
+          "a": 0,
+          "k": [
+            0,
+            0
+          ]
+        },
+        "zoom": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": 1.15,
+              "e": "smooth"
+            },
+            {
+              "t": 105,
+              "s": 1
+            }
+          ]
+        }
+      },
+      "layers": [
+        {
+          "type": "asset",
+          "id": "L_asset_bg_gradient_0",
+          "z": 0,
+          "ref": "bg_gradient",
+          "parallax": 0
+        },
+        {
+          "type": "text",
+          "id": "L_text_title",
+          "z": 30,
+          "content": "COMPOSITION",
+          "font": "DejaVu Sans",
+          "fontUri": "asset://fonts/DejaVuSans.ttf",
+          "size": 96,
+          "weight": 800,
+          "color": "light",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                1216,
+                403.19999999999993
+              ]
+            }
+          }
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_a",
+          "z": 6,
+          "shape": {
+            "kind": "star",
+            "points": 5,
+            "innerRadius": 45,
+            "outerRadius": 100
+          },
+          "fill": {
+            "a": 0,
+            "k": "accent"
+          },
+          "stroke": {
+            "color": "light",
+            "width": 4
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                960,
+                676.8
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 60
+            }
+          }
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_b",
+          "z": 6,
+          "shape": {
+            "kind": "polygon",
+            "points": 6,
+            "radius": 90
+          },
+          "fill": {
+            "a": 0,
+            "k": "accent2"
+          },
+          "stroke": {
+            "color": "ink",
+            "width": 4
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                1728,
+                540
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 60
+            }
+          }
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_c",
+          "z": 6,
+          "shape": {
+            "kind": "triangle",
+            "length": 160,
+            "direction": "up"
+          },
+          "fill": {
+            "a": 0,
+            "k": "accent"
+          },
+          "stroke": {
+            "color": "ink",
+            "width": 4
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                192,
+                540
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 60
+            }
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 18
+      }
+    },
+    {
+      "id": "focus",
+      "at": 159,
+      "duration_frames": 90,
+      "labels": {
+        "reveal": 45
+      },
+      "camera": {
+        "position": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": [
+                0,
+                0
+              ],
+              "e": "smooth"
+            },
+            {
+              "t": 90,
+              "s": [
+                60,
+                0
+              ]
+            }
+          ]
+        },
+        "zoom": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": 1,
+              "e": "smooth"
+            },
+            {
+              "t": 90,
+              "s": 1.15
+            }
+          ]
+        }
+      },
+      "layers": [
+        {
+          "type": "asset",
+          "id": "L_asset_bg_gradient_0",
+          "z": 0,
+          "ref": "bg_gradient",
+          "parallax": 0
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_subject",
+          "z": 8,
+          "shape": {
+            "kind": "heart"
+          },
+          "fill": {
+            "a": 0,
+            "k": "accent"
+          },
+          "stroke": {
+            "color": "light",
+            "width": 5
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                960,
+                676.8
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 80
+            }
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 18
+      }
+    },
+    {
+      "id": "override",
+      "at": 231,
+      "duration_frames": 90,
+      "labels": {
+        "reveal": 45
+      },
+      "camera": {
+        "position": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": [
+                0,
+                0
+              ],
+              "e": "smooth"
+            },
+            {
+              "t": 90,
+              "s": [
+                80,
+                0
+              ]
+            }
+          ]
+        },
+        "zoom": {
+          "a": 0,
+          "k": 1
+        }
+      },
+      "layers": [
+        {
+          "type": "asset",
+          "id": "L_asset_bg_gradient_0",
+          "z": 0,
+          "ref": "bg_gradient",
+          "parallax": 0
+        },
+        {
+          "type": "shape",
+          "id": "L_shape_pinned",
+          "z": 7,
+          "shape": {
+            "kind": "rect",
+            "width": 200,
+            "height": 130,
+            "cornerRadius": 20
+          },
+          "fill": {
+            "a": 0,
+            "k": "accent2"
+          },
+          "stroke": {
+            "color": "light",
+            "width": 4
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                1440,
+                270
+              ]
+            },
+            "scale": {
+              "a": 0,
+              "k": 70
+            }
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 18
+      }
+    }
+  ],
+  "provenance": {
+    "story_ir_hash": "sha1:a678fcf3589dc818082eb8be3fcb0901ca513d69",
+    "passes": [
+      "lower@2.4"
+    ]
+  }
+}

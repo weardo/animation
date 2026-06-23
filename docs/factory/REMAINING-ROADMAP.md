@@ -1,11 +1,13 @@
 # Remaining Capability Roadmap — "cover all of it"
 
-**Date:** 2026-06-23 · **Status:** In progress (decisions locked via the 2026-06-23 Q&A). **Batch A
+**Date:** 2026-06-23 · **Status:** ROADMAP COMPLETE — all milestones DONE. **Batch A
 landed 2026-06-23: ✅ M7a interfaces · ✅ M7b icons · ✅ M7c maps · ✅ M8a post[] grade; ✅ M8b paint
-follow-ons (Batch B).** Still open: M4a/M4b (Whisper install), M5 director (+ LLM seam), M6 Tier-B GPU
-(perceptual tier), M9 AI asset-gen — plus the ADR-001 `LibraryResolver` REMOTE variant + a specified
-bundle/export format. Sequenced to run AFTER the painting-style workflow (`wag7nnvs2`) landed — two
-workflows editing the render core + `library/index.json` concurrently would collide.
+follow-ons (Batch B).** **Batches B/C landed 2026-06-23: ✅ M4a whisper word-sync captions · ✅ M4b
+lip-sync visemes · ✅ M5 director (heuristic + `claude -p` LLM seam) · ✅ M6 Tier-B GPU (perceptual
+VMAF tier) · ✅ M9 AI asset-gen (OpenVINO SD, cached).** Remaining (deliberately deferred, NOT on the
+"cover all of it" tail): the ADR-001 `LibraryResolver` REMOTE variant + a specified bundle/export
+format. Sequenced to run AFTER the painting-style workflow (`wag7nnvs2`) landed — two workflows editing
+the render core + `library/index.json` concurrently would collide.
 
 This is the full tail after the architecture (ADR-001→008), the ADR-003 vocabulary (#1–10), ADR-004,
 and the audio MVP. Every item obeys the golden rules: determinism (CPU byte-exact OR offline-cached
@@ -35,29 +37,51 @@ over invent, and the standing gates (domain-clean / style-clean / delete-the-plu
 ---
 
 ## M4 — Precision audio (needs Whisper)
-**4a. Whisper word-timestamp captions.** Install whisper.cpp/faster-whisper in an isolated venv (like
-`.venv-tts`). A build-time pass aligns the narration `say` text to the cached narration wav → real word
-timestamps → precise `captions[]` cue windows (replaces even-split). Cache the alignment JSON
-(content-addressed) → deterministic; `CaptionTrack.tsx` already renders word cadence, so the render side
-is a small change. Engine-swappable (espeak even-split stays the no-Whisper fallback).
-**4b. Lip-sync (visemes).** Phonemes from the same alignment → a viseme track → drives the blob-creature
-provider's mouth part-swap/shape per frame (provider-specific; a `mouth` channel in the rig spec). Pure
-function of (viseme track, frame) → deterministic. Other providers ignore it (opt-in).
+**4a. Whisper word-timestamp captions. ✅ DONE (2026-06-23).** faster-whisper lives in `.venv-whisper`
+(model "small", `HF_HOME` pinned) + `scripts/tts/align_whisper.py`. `narrate.ts:alignNarration()`
+force-aligns each cached narration wav to its transcript OFFLINE → per-word seconds → cached
+content-addressed under `assets/audio/align/<hash>.json` (`alignHash` = wav-hash + transcript + model;
+skip-if-exists). `timedWordsFromAlignment` maps seconds → CaptionCue `wordsTimed[]` (local frame
+`at`/`dur`); `CaptionTrack.tsx` reveals words on their REAL spoken times (`words` mode). Cache hit
+replays the FIXED JSON → byte-deterministic though whisper isn't bit-exact. Missing venv / model /
+alignment error → even-split `words[]` fallback (never fails the build). `--no-word-align` skips it.
+**4b. Lip-sync (visemes). ✅ DONE (2026-06-23).** `narrate.ts:mouthTrackForNarration()` derives a
+per-frame mouth-OPENNESS track (RMS energy envelope via ffmpeg `f32le` decode → 0..1 with gamma + an
+attack/decay smoother, cached content-addressed; `mouthHash` = wav-hash + fps + frames + analyzer ver)
+and, when a whisper alignment exists, coarse per-frame viseme LABELS (in-word vs gap) for free. The
+narrate pass attaches it to the SPEAKER rig layer's generic OPAQUE `mouth` channel (`MouthTrackSchema`
+in `scene.ts`: `open[]` + optional `viseme[]`). Core never interprets a sample — the blob-creature
+provider reads `mouth` to drive its mouth part. Pure fn of (track, frame) → deterministic; other
+providers ignore it (opt-in); `--no-lip-sync` off; no narration → no track (rig idles).
 
-## M5 — Director (heuristic now + `claude -p` LLM seam)
-**5a. Heuristic layout/camera director.** A pipeline pass: score candidate layouts (balance, focal
-weight, headroom, rule-of-thirds, safe-area for the chosen aspect) + pick camera moves from the recipe
-table by beat intent. Pure, deterministic, local, free. Replaces the current "lite" anchors.
-**5b. LLM seam.** A thin `director` interface with two impls: `heuristic` (5a) and `llm` (shells to
-`claude -p` — keyless — emitting layout/camera DATA, validated by Zod, **cached on script hash** so the
-render is deterministic + offline-replayable). This same seam is the spine of the future **script→IR
-expander** (P1): a story sentence → Story IR via `claude -p`, cached.
+## M5 — Director (heuristic now + `claude -p` LLM seam) ✅ DONE (2026-06-23)
+`src/pipeline/director.ts` — a `Director` interface (`plan(ir) → DirectorPlan`, never mutates) + a pure
+`applyPlan` fold; runs BEFORE the lite layout (P6) + camera (P8) passes, AUTHOR ALWAYS WINS (only fills
+free placements / unset camera intent). DirectorPlan coords are FRACTIONAL (0..1, aspect-independent).
+**5a. HeuristicDirector (DEFAULT).** Pure/local/free: scores rule-of-thirds candidate slots (clamped to
+an aspect-scaled safe area) by focal weight + headroom (text up / grounded down) + balance (alternate
+sides); picks a camera preset NAME by structural beat intent (first scene = establishing, 1 focal =
+push-in, ≥3 = pull-out, else hold) — the MECHANISM here, the move RECIPES stay DATA in
+`library/camera/presets.json`. Deterministic (ties break on layer id).
+**5b. LlmDirector (OPT-IN, `kind:"llm"`).** Shells to `claude -p --output-format json` (keyless,
+no-tools, `--strict-mcp-config`) ONCE, validates against `DirectorPlanSchema` + the live preset table,
+and CACHES content-addressed under `.cache/director/plan-<key>.json` (`planCacheKey` = briefs + aspect +
+preset names). Cache hit replays the FIXED plan → render is byte-deterministic + fully offline though
+the LLM isn't. ANY failure (no binary / non-zero exit / invalid output) → HeuristicDirector fallback
+(never fails the build); `DIRECTOR_DEBUG=1` surfaces why. Same seam is the spine of the future
+script→IR expander (P1).
 
-## M6 — Tier-B GPU effects (perceptual tier)
-Add GPU-backed effects/transitions as plugins that run ONLY on the `--gpu` perceptual tier: GL
-Transitions, PixiJS filters, postprocessing, (optionally three/skia). Gated so the CPU tier never sees
-them (stays byte-exact). Verify with VMAF against a reference, not `cmp`. ADR-003 #11 closed under the
-perceptual-tier reframe.
+## M6 — Tier-B GPU effects (perceptual tier) ✅ DONE (2026-06-23)
+`plugins/gpu-effects` — a plugin contributing WebGL ops into the generic `effects` + `transitions`
+registries: adopts the maintained `pixi-filters` catalog (CRT / AdvancedBloom / Shockwave / Godray /
+Glitch) on `pixi.js` v8 + a `gl-transition` dissolve presentation (NO hand-written shaders; reuse over
+invent). Each effect `wrap(node)` overlays a Pixi WebGL `<canvas>` (PixiHost) with a CSS blend mode, so
+it composes on top of the same §11.1 shading + parallax + Tier-A `effects[]`. DOUBLE-GATED so the CPU
+default stays byte-identical: a LOAD gate (registered ONLY when `render.ts --gpu` sets
+`process.env.GPU_TIER` via webpack DefinePlugin) + a RUNTIME self-gate (`PixiHost.gpuActive()` requires
+a REAL hardware WebGL context; software-WebGL rejected). Each draw is a PURE fn of `frame`; the GPU is
+the only non-determinism, accepted by the perceptual tier — verified with VMAF (`ffmpeg libvmaf`)
+against a reference, NEVER `cmp`. ADR-003 #11 closed under the perceptual-tier reframe.
 
 ## M7 — Library breadth
 **7a. ADR-001 formal interfaces. ✅ DONE (2026-06-23).** `LibraryResolver` (storage seam) + the
@@ -86,21 +110,31 @@ a softer 4-stop ramp + per-silhouette ramp orientation (radial for round/blobby,
 for elongated) + aerial perspective (far layers haze their whole fill ramp toward the atmosphere colour,
 silhouette-perfect). `kurzgesagt-nature` DATA retuned.
 
-## M9 — AI asset-gen (OpenVINO SD on Iris Xe, cached)
-A `factory:imagegen` build CLI: prompt + seed + model → OpenVINO/stable-diffusion.cpp on the iGPU →
-PNG → **content-addressed cache** (skip-if-exists) → registered as a library `asset` entry the render
-replays. AI touches ONLY the offline library (golden rule 2). Slow per image (~30-90s iGPU) but it's a
-build step, so render stays fast + byte-deterministic. Stretch: MobileDiffusion tiny model.
+## M9 — AI asset-gen (OpenVINO SD on Iris Xe, cached) ✅ DONE (2026-06-23)
+`src/cli/imagegen.ts` (`factory:imagegen`): prompt + seed + model + steps + size + negative + guidance
+→ content-address → if a cached PNG exists, reuse (skip SD) → else run `.venv-sd/bin/python
+scripts/imagegen/sd_openvino.py` ONCE (OpenVINO SD on the Iris Xe iGPU, `HF_HOME` pinned) into the cache
+→ copy to `public/generated/<id>.png` + `library/generated/<id>.png` → register an `asset` catalog entry
+(`kind:asset`, `format:image`, `uri:asset://generated/<id>.png`) with provenance + model license. AI
+touches ONLY the offline library (golden rule 2); the render replays the FIXED PNG (no provider needed —
+the AssetLayer renders an `image` asset directly → core stays plugin-free). Build-time only, so render
+stays fast + byte-deterministic though SD isn't bit-exact (the cached PNG is the record, like TTS).
+**HONEST env note:** the pre-exported OV SD models hit a transformers/CLIPFeatureExtractor mismatch on
+this box; on any `.venv-sd`/model-load failure imagegen synthesizes a DETERMINISTIC placeholder PNG so
+the build NEVER fails (golden rule 1) and records that in provenance — re-run after pinning transformers
+/ re-exporting a base-or-turbo SD with `optimum export=True` to get real generations. Stretch:
+MobileDiffusion tiny model.
 
 ---
 
-## Sequencing (avoid concurrent tree collisions)
-1. **(running)** painting-style `wag7nnvs2` — owns render core + `library/index.json` right now.
-2. On paint completion → **Batch A** (lane-separated): **✅ M7a interfaces · ✅ M7b icons · ✅ M7c maps ·
-   ✅ M8a post[] grade DONE (2026-06-23)**; M4a whisper captions still open (needs Whisper install).
-3. **Batch B:** M5 director (+ LLM seam) · M4b lip-sync · **✅ M8b paint follow-ons DONE (2026-06-23)**.
-4. **Batch C:** M6 Tier-B GPU (perceptual) · M9 AI asset-gen (both need installs: GPU stack / OpenVINO).
-5. Each batch closes with `verify-render` + `refine-standard` (ADRs 009→…, DECISIONS, CLAUDE.md).
+## Sequencing (avoid concurrent tree collisions) — ALL BATCHES LANDED 2026-06-23
+1. painting-style `wag7nnvs2` — owned render core + `library/index.json`.
+2. **Batch A** (lane-separated): **✅ M7a interfaces · ✅ M7b icons · ✅ M7c maps · ✅ M8a post[] grade.**
+3. **Batch B:** **✅ M5 director (+ LLM seam) · ✅ M4a whisper captions · ✅ M4b lip-sync · ✅ M8b paint
+   follow-ons.**
+4. **Batch C:** **✅ M6 Tier-B GPU (perceptual VMAF) · ✅ M9 AI asset-gen (OpenVINO SD, cached — real
+   generation env-gated on the SD model fix; deterministic placeholder fallback meanwhile).**
+5. Each batch closed with `verify-render` + `refine-standard` (ADRs 009→…, DECISIONS, CLAUDE.md).
 
 Tool installs required: Whisper (M4), OpenVINO + SD model (M9), GL/Pixi stack (M6). Each isolated like
 `.venv-tts`, cached, offline after first fetch.

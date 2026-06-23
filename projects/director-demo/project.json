@@ -1,0 +1,29 @@
+{
+  "project_version": "1.0",
+  "id": "director-demo",
+  "name": "Director",
+  "created": "2026-06-23T09:06:50.319Z",
+  "updated": "2026-06-23T09:06:50.319Z",
+  "config": {
+    "w": 1920,
+    "h": 1080,
+    "fps": 30,
+    "duration_frames": 321
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "2668ad7e915a55f1e52d1e9bb0080df603bb0479",
+  "engine": "remotion@4.0.481",
+  "deps": [
+    "bg_gradient@1.0.0"
+  ],
+  "assets": [
+    "assets/bg_gradient.svg",
+    "assets/fonts/DejaVuSans.ttf"
+  ],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  }
+}

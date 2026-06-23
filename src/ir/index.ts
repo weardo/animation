@@ -135,6 +135,8 @@ export {
   TransitionSchema,
   AudioCueSchema,
   CaptionCueSchema,
+  TimedWordSchema,
+  MouthTrackSchema,
   ProvenanceSchema,
 } from './scene.js';
 export type {
@@ -175,6 +177,8 @@ export type {
   Transition,
   AudioCue,
   CaptionCue,
+  TimedWord,
+  MouthTrack,
   Provenance,
 } from './scene.js';
 

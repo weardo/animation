@@ -71,6 +71,12 @@ export type LoweredScene = Omit<Scene, 'camera' | 'layers'> & {
  */
 export type LoweredSceneIR = Omit<SceneIR, 'scenes'> & {
   scenes: LoweredScene[];
+  /**
+   * TRANSIENT director selection (M5) carried from the Story IR through lowering so the back-end's
+   * director pass (P7) knows which impl to run ("heuristic" default / "llm" opt-in). NOT part of the
+   * final Scene IR — the validate (V) boundary strips it. Omitted → the default heuristic director.
+   */
+  director?: 'heuristic' | 'llm';
 };
 
 // ---------------------------------------------------------------------------------------------

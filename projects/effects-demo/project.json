@@ -1,9 +1,9 @@
 {
   "project_version": "1.0",
   "id": "effects-demo",
-  "name": "effects-demo",
-  "created": "2026-06-22T09:45:15.891Z",
-  "updated": "2026-06-22T09:45:15.891Z",
+  "name": "Effects",
+  "created": "2026-06-23T09:44:56.096Z",
+  "updated": "2026-06-23T09:44:56.096Z",
   "config": {
     "w": 1920,
     "h": 1080,
@@ -13,7 +13,7 @@
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "30e35e7b0dbb93d1294ce9722d26b265899c5ac0",
+  "scene_ir_hash": "02e419ec9863cb0480d294fb77a8f0dea89f87b4",
   "engine": "remotion@4.0.481",
   "deps": [
     "bg_gradient@1.0.0"

@@ -1,0 +1,761 @@
+{
+  "scene_ir_version": "1.0",
+  "config": {
+    "w": 1920,
+    "h": 1080,
+    "fps": 30,
+    "duration_frames": 360
+  },
+  "defs": {
+    "palette": {
+      "bg": "#1b2a4a",
+      "bg2": "#24386b",
+      "accent": "#ffcf4d",
+      "accent2": "#4d9fff",
+      "ink": "#0d1b33",
+      "light": "#fff6e0",
+      "shadow": "#0a1326"
+    },
+    "easings": {
+      "smooth": [
+        0.4,
+        0,
+        0.2,
+        1
+      ],
+      "pop": "backOut",
+      "backOut": [
+        0.34,
+        1.56,
+        0.64,
+        1
+      ],
+      "anticipate": [
+        0.36,
+        0,
+        0.66,
+        -0.56
+      ],
+      "easeIn": [
+        0.4,
+        0,
+        1,
+        1
+      ],
+      "easeOut": [
+        0,
+        0,
+        0.2,
+        1
+      ],
+      "linear": [
+        0,
+        0,
+        1,
+        1
+      ]
+    },
+    "assets": {
+      "bg_gradient": {
+        "uri": "asset://bg_gradient.svg",
+        "kind": "svg"
+      }
+    },
+    "rigs": {
+      "blip": {
+        "uri": "proc://blip",
+        "provider": "blob-creature",
+        "spec": {
+          "id": "blip",
+          "name": "Blip",
+          "palette": {
+            "body": "#4aa3ff",
+            "bodyDark": "#2f86e0",
+            "ink": "#16243f",
+            "belly": "#d6ecff",
+            "accent": "#ffce4a",
+            "white": "#ffffff",
+            "cheek": "#ff7eb0"
+          },
+          "head": {
+            "r": 66,
+            "cy": -66
+          },
+          "body": {
+            "rx": 70,
+            "ry": 68,
+            "cy": 28
+          },
+          "belly": {
+            "rx": 42,
+            "ry": 36,
+            "cy": 48
+          },
+          "eyes": {
+            "spacing": 26,
+            "cy": -74,
+            "r": 17,
+            "pupil": 8
+          },
+          "beak": {
+            "show": true,
+            "width": 24,
+            "depth": 16,
+            "cy": -50
+          },
+          "cheeks": {
+            "show": true,
+            "r": 9,
+            "spacing": 46,
+            "cy": -50
+          },
+          "arms": {
+            "width": 18,
+            "length": 66,
+            "shoulderY": 6,
+            "rest": 14
+          },
+          "legs": {
+            "width": 20,
+            "height": 40,
+            "spacing": 24,
+            "footRx": 23,
+            "footRy": 12,
+            "footCy": 120
+          },
+          "motion": {
+            "bob": 5,
+            "swayDeg": 1.6,
+            "breathe": 0.03,
+            "waveRaise": 150
+          }
+        },
+        "mounts": {
+          "head_top": {
+            "bone": "head"
+          },
+          "handR": {
+            "bone": "armR"
+          },
+          "handL": {
+            "bone": "armL"
+          }
+        }
+      }
+    },
+    "clips": {},
+    "stylekit": {
+      "easings": {
+        "linear": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "smooth": [
+          0.4,
+          0,
+          0.2,
+          1
+        ],
+        "easeOut": [
+          0,
+          0,
+          0.2,
+          1
+        ],
+        "easeIn": [
+          0.4,
+          0,
+          1,
+          1
+        ],
+        "snappy": [
+          0.25,
+          0.1,
+          0.25,
+          1
+        ],
+        "anticipate": [
+          0.36,
+          0,
+          0.66,
+          -0.56
+        ],
+        "backOut": [
+          0.34,
+          1.56,
+          0.64,
+          1
+        ],
+        "backInOut": [
+          0.68,
+          -0.6,
+          0.32,
+          1.6
+        ],
+        "expoOut": [
+          0.16,
+          1,
+          0.3,
+          1
+        ]
+      },
+      "defaultEasings": {
+        "smooth": [
+          0.4,
+          0,
+          0.2,
+          1
+        ],
+        "pop": "backOut",
+        "backOut": [
+          0.34,
+          1.56,
+          0.64,
+          1
+        ],
+        "anticipate": [
+          0.36,
+          0,
+          0.66,
+          -0.56
+        ],
+        "easeIn": [
+          0.4,
+          0,
+          1,
+          1
+        ],
+        "easeOut": [
+          0,
+          0,
+          0.2,
+          1
+        ],
+        "linear": [
+          0,
+          0,
+          1,
+          1
+        ]
+      },
+      "palette": {
+        "bg": "#1b2a4a",
+        "bg2": "#24386b",
+        "accent": "#ffcf4d",
+        "accent2": "#4d9fff",
+        "ink": "#0d1b33",
+        "light": "#fff6e0",
+        "shadow": "#0a1326"
+      },
+      "motion": {
+        "spring": {
+          "stiffness": 180,
+          "damping": 14,
+          "mass": 1
+        },
+        "springHeavy": {
+          "stiffness": 120,
+          "damping": 20,
+          "mass": 1.4
+        },
+        "springBouncy": {
+          "stiffness": 220,
+          "damping": 10,
+          "mass": 1
+        },
+        "idle": {
+          "swayAmplitudeDeg": 1.5,
+          "swaySpeedHz": 0.15,
+          "driftAmplitudePx": 2,
+          "driftSpeedHz": 0.1,
+          "saccadeAmplitudeDeg": 3,
+          "saccadeMeanSeconds": 1.8
+        },
+        "breathing": {
+          "amplitude": 0.02,
+          "periodSeconds": 4
+        },
+        "blink": {
+          "rateHz": 0.25,
+          "closeFrames": 4
+        },
+        "stagger": {
+          "offsetFrames": 6
+        },
+        "parallax": {
+          "nearFactor": 1,
+          "farFactor": 0.1
+        },
+        "motionBlurShutter": 180
+      },
+      "light": {
+        "dir": 295,
+        "elevation": 60,
+        "color": "#fff6e0",
+        "intensity": 0.85,
+        "ambient": 0.38
+      },
+      "shading": {
+        "form": true,
+        "contact_shadow": true,
+        "rim": 0.3,
+        "ao": true,
+        "glow": 0
+      },
+      "floor": {
+        "liveness": true,
+        "parallax": true,
+        "shading": true,
+        "nonLinearMotion": true
+      }
+    }
+  },
+  "audio": [
+    {
+      "id": "narration-b1",
+      "kind": "narration",
+      "src": "audio://audio/ccc9cb0aaa267371.wav",
+      "at": 0,
+      "duration_frames": 59,
+      "transcript": "This line uses the default voice."
+    },
+    {
+      "id": "narration-b2",
+      "kind": "narration",
+      "src": "audio://audio/ed0cb6ff06fcae13.wav",
+      "at": 120,
+      "duration_frames": 47,
+      "transcript": "And this one is intense!"
+    },
+    {
+      "id": "narration-b3",
+      "kind": "narration",
+      "src": "audio://audio/1cd83d090f3fcca9.wav",
+      "at": 240,
+      "duration_frames": 89,
+      "transcript": "Now, gently and with care."
+    }
+  ],
+  "captions": [
+    {
+      "id": "caption-b1",
+      "text": "This line uses the default voice.",
+      "at": 0,
+      "duration_frames": 59,
+      "mode": "words",
+      "words": [
+        "This",
+        "line",
+        "uses",
+        "the",
+        "default",
+        "voice."
+      ],
+      "wordsTimed": [
+        {
+          "w": "This",
+          "at": 0,
+          "dur": 8
+        },
+        {
+          "w": "line",
+          "at": 8,
+          "dur": 9
+        },
+        {
+          "w": "uses",
+          "at": 17,
+          "dur": 8
+        },
+        {
+          "w": "the",
+          "at": 25,
+          "dur": 6
+        },
+        {
+          "w": "default",
+          "at": 31,
+          "dur": 7
+        },
+        {
+          "w": "voice.",
+          "at": 38,
+          "dur": 10
+        }
+      ]
+    },
+    {
+      "id": "caption-b2",
+      "text": "And this one is intense!",
+      "at": 120,
+      "duration_frames": 47,
+      "mode": "words",
+      "words": [
+        "And",
+        "this",
+        "one",
+        "is",
+        "intense!"
+      ],
+      "wordsTimed": [
+        {
+          "w": "And",
+          "at": 0,
+          "dur": 7
+        },
+        {
+          "w": "this",
+          "at": 7,
+          "dur": 7
+        },
+        {
+          "w": "one",
+          "at": 14,
+          "dur": 5
+        },
+        {
+          "w": "is",
+          "at": 19,
+          "dur": 4
+        },
+        {
+          "w": "intense.",
+          "at": 23,
+          "dur": 10
+        }
+      ]
+    },
+    {
+      "id": "caption-b3",
+      "text": "Now, gently and with care.",
+      "at": 240,
+      "duration_frames": 89,
+      "mode": "words",
+      "words": [
+        "Now,",
+        "gently",
+        "and",
+        "with",
+        "care."
+      ],
+      "wordsTimed": [
+        {
+          "w": "Now,",
+          "at": 0,
+          "dur": 17
+        },
+        {
+          "w": "gently",
+          "at": 26,
+          "dur": 11
+        },
+        {
+          "w": "and",
+          "at": 37,
+          "dur": 16
+        },
+        {
+          "w": "with",
+          "at": 53,
+          "dur": 9
+        },
+        {
+          "w": "care.",
+          "at": 62,
+          "dur": 12
+        }
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "id": "b1",
+      "at": 0,
+      "duration_frames": 120,
+      "labels": {
+        "reveal": 60
+      },
+      "camera": {
+        "position": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": [
+                0,
+                0
+              ],
+              "e": "smooth"
+            },
+            {
+              "t": 120,
+              "s": [
+                60,
+                0
+              ]
+            }
+          ]
+        },
+        "zoom": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": 1,
+              "e": "smooth"
+            },
+            {
+              "t": 120,
+              "s": 1.15
+            }
+          ]
+        }
+      },
+      "layers": [
+        {
+          "type": "asset",
+          "id": "L_asset_bg_gradient_0",
+          "z": 0,
+          "ref": "bg_gradient",
+          "parallax": 0
+        }
+      ]
+    },
+    {
+      "id": "b2",
+      "at": 120,
+      "duration_frames": 120,
+      "labels": {
+        "reveal": 60
+      },
+      "camera": {
+        "position": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": [
+                0,
+                0
+              ],
+              "e": "smooth"
+            },
+            {
+              "t": 120,
+              "s": [
+                60,
+                0
+              ]
+            }
+          ]
+        },
+        "zoom": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": 1,
+              "e": "smooth"
+            },
+            {
+              "t": 120,
+              "s": 1.15
+            }
+          ]
+        }
+      },
+      "layers": [
+        {
+          "type": "asset",
+          "id": "L_asset_bg_gradient_0",
+          "z": 0,
+          "ref": "bg_gradient",
+          "parallax": 0
+        },
+        {
+          "type": "rig",
+          "id": "L_rig_blip",
+          "z": 10,
+          "ref": "blip",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                960,
+                669.6
+              ]
+            },
+            "scale": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "pop"
+                },
+                {
+                  "t": 12,
+                  "s": 100
+                }
+              ]
+            },
+            "opacity": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "pop"
+                },
+                {
+                  "t": 12,
+                  "s": 100
+                }
+              ]
+            }
+          },
+          "rig_state": {
+            "clips": [
+              {
+                "anim": "idle",
+                "loop": true
+              },
+              {
+                "anim": "wave",
+                "loop": false,
+                "at": 60
+              },
+              {
+                "anim": "idle",
+                "loop": true,
+                "at": 108
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "b3",
+      "at": 240,
+      "duration_frames": 120,
+      "labels": {
+        "reveal": 60
+      },
+      "camera": {
+        "position": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": [
+                0,
+                0
+              ],
+              "e": "smooth"
+            },
+            {
+              "t": 120,
+              "s": [
+                60,
+                0
+              ]
+            }
+          ]
+        },
+        "zoom": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": 1,
+              "e": "smooth"
+            },
+            {
+              "t": 120,
+              "s": 1.15
+            }
+          ]
+        }
+      },
+      "layers": [
+        {
+          "type": "asset",
+          "id": "L_asset_bg_gradient_0",
+          "z": 0,
+          "ref": "bg_gradient",
+          "parallax": 0
+        },
+        {
+          "type": "rig",
+          "id": "L_rig_blip",
+          "z": 10,
+          "ref": "blip",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                960,
+                669.6
+              ]
+            },
+            "scale": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "pop"
+                },
+                {
+                  "t": 12,
+                  "s": 100
+                }
+              ]
+            },
+            "opacity": {
+              "a": 1,
+              "k": [
+                {
+                  "t": 0,
+                  "s": 0,
+                  "e": "pop"
+                },
+                {
+                  "t": 12,
+                  "s": 100
+                }
+              ]
+            }
+          },
+          "rig_state": {
+            "clips": [
+              {
+                "anim": "idle",
+                "loop": true
+              },
+              {
+                "anim": "idle",
+                "loop": false,
+                "at": 60
+              },
+              {
+                "anim": "idle",
+                "loop": true,
+                "at": 108
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "provenance": {
+    "story_ir_hash": "sha1:ab56fa46692e54f39d827ed6872c81bcdfbb28c5",
+    "passes": [
+      "lower@2.2"
+    ]
+  }
+}

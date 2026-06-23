@@ -379,6 +379,33 @@ export const AssetLayerSchema = z
   .strict();
 export type AssetLayer = z.infer<typeof AssetLayerSchema>;
 
+/**
+ * A per-frame MOUTH / VISEME track (M4b lip-sync) carried on a rig layer. GENERIC + OPAQUE to the core:
+ * core never interprets a sample's meaning — it is just an array the PROVIDER reads to drive its mouth
+ * (open/close or part-swap). Produced OFFLINE at build from the cached narration wav (a short-time RMS
+ * energy envelope resampled to fps → 0..1 openness, optionally a coarse viseme label), CACHED content-
+ * addressed, so the render replays the FIXED data → byte-deterministic even though the analyzer is not
+ * bit-exact across machines (golden rule 1). Opt-in: a beat with no narration carries no track (the rig
+ * idles); a provider that does not understand it ignores it. Pure function of (track, frame).
+ *
+ * The samples are LOCAL-frame indexed: `open[k]` is the mouth openness (0..1) at LOCAL frame `k` of the
+ * layer's scene (frame 0 = the narration's start, which the lowering aligns to the scene start). `fps`
+ * pins the sampling rate the envelope was computed at (the renderer reads its own fps; they match by
+ * construction). Optional `viseme[]` carries a coarse per-frame viseme CLASS LABEL (e.g. a phoneme group
+ * or "closed"/"open"/"wide") a provider MAY use for part-swap mouths; absent → openness-only.
+ */
+export const MouthTrackSchema = z
+  .object({
+    /** Sampling rate (fps) the openness envelope was computed at. */
+    fps: z.number().positive(),
+    /** Per-LOCAL-frame openness in [0,1] (0 = closed, 1 = wide). Length = the narration's frame span. */
+    open: z.array(z.number().min(0).max(1)),
+    /** OPTIONAL coarse per-frame viseme class label (provider-interpreted); same length as `open`. */
+    viseme: z.array(z.string()).optional(),
+  })
+  .strict();
+export type MouthTrack = z.infer<typeof MouthTrackSchema>;
+
 /** rig layer: a DragonBones rig with a transform + rig_state.clips. */
 export const RigLayerSchema = z
   .object({
@@ -388,6 +415,13 @@ export const RigLayerSchema = z
     ref: z.string().min(1),
     transform: TransformSchema.optional(),
     rig_state: RigStateSchema,
+    /**
+     * M4b LIP-SYNC: an OPAQUE per-frame mouth/viseme track the PROVIDER interprets to drive its mouth in
+     * sync with the narration (opt-in). Core never reads a sample's meaning — it just carries the track.
+     * Produced OFFLINE from the cached narration wav + cached content-addressed (deterministic). Absent
+     * → the rig idles (a beat with no narration, or lip-sync disabled). See {@link MouthTrackSchema}.
+     */
+    mouth: MouthTrackSchema.optional(),
     // --- compositional fields (M2, spec §8.1) ---
     /**
      * INTRA-RIG variant selection (spec §8.1): axis name → chosen part/skin name (e.g.
@@ -672,6 +706,11 @@ export const TransitionSchema = z
       'morph-match',
       'match-cut',
       'camera-continuous',
+      // Tier-B GPU transition (M6): a shader noise-DISSOLVE. Contributed by the gpu-effects PLUGIN and
+      // resolved ONLY on the --gpu perceptual tier; on the byte-exact CPU tier the kind is unregistered
+      // and the compositor falls back to `fade` (no plugin loaded → CPU output unchanged). The enum lists
+      // it so a GPU story validates; core holds no GPU look — the presentation lives in the plugin.
+      'gl-dissolve',
     ]),
     /** Direction for directional kinds (wipe/slide). */
     dir: z.enum(['left', 'right', 'up', 'down']).optional(),
@@ -767,12 +806,31 @@ export type AudioCue = z.infer<typeof AudioCueSchema>;
  * renders it as a styled, readable caption (bottom-centre, semi-opaque bg) in a `<Sequence>` timed to
  * the cue. `mode` selects the on-screen cadence:
  *   • `line`  — the full transcript line shows for the whole cue window (the default).
- *   • `words` — the words reveal cumulatively, EVEN-SPLIT across `duration_frames` (a deterministic
- *     karaoke-style progression that needs no whisper word-timestamps; precise word alignment is the
- *     deferred whisper follow-up). `words[]` carries the tokens so the renderer needn't re-tokenize.
+ *   • `words` — the words reveal cumulatively across `duration_frames`. If `wordsTimed[]` is present
+ *     (M4 whisper forced-alignment), the renderer reveals each word at its REAL spoken time; otherwise
+ *     it falls back to an EVEN-SPLIT progression over `words[]` (a deterministic karaoke that needs no
+ *     whisper). `words[]` carries the plain tokens (even-split fallback / re-tokenize avoidance).
  * Carried as a top-level `SceneIR.captions[]` (parallel to `audio[]`), emitted by the narrate pass and
  * dropped on an alpha render (the caption belongs to the finished film, like the narration track).
+ *
+ * M4 PRECISE TIMING: `wordsTimed[]` carries per-word LOCAL frame offsets (`at` = frames from the cue
+ * start, `dur` = reveal length in frames) derived OFFLINE from the cached narration wav via faster-
+ * whisper forced-alignment (`alignNarration`), CACHED content-addressed so the render replays FIXED
+ * data → byte-deterministic. Absent (whisper missing / alignment failed) → the even-split `words[]`
+ * fallback keeps the current behavior (never fail the build).
  */
+export const TimedWordSchema = z
+  .object({
+    /** The spoken token (from whisper's segmentation). */
+    w: z.string().min(1),
+    /** LOCAL frame offset from the cue start at which this word begins. */
+    at: z.number().int().nonnegative(),
+    /** Reveal length in frames (>= 1). */
+    dur: z.number().int().positive(),
+  })
+  .strict();
+export type TimedWord = z.infer<typeof TimedWordSchema>;
+
 export const CaptionCueSchema = z
   .object({
     id: z.string().min(1),
@@ -782,10 +840,16 @@ export const CaptionCueSchema = z
     at: z.number().int().nonnegative(),
     /** On-screen length in frames (matches the source narration cue's `duration_frames`). */
     duration_frames: z.number().int().positive(),
-    /** Cadence: whole line, or cumulative even-split word reveal. Default `line`. */
+    /** Cadence: whole line, or cumulative word reveal (timed if `wordsTimed`, else even-split). Default `line`. */
     mode: z.enum(['line', 'words']).default('line'),
     /** Pre-tokenized words (for `mode:"words"`); the renderer reveals them even-split across the window. */
     words: z.array(z.string()).optional(),
+    /**
+     * M4 whisper forced-alignment: per-word LOCAL frame timings (token + `at` + `dur`, relative to the
+     * cue start). When present (and `mode:"words"`), the renderer reveals each word at its REAL spoken
+     * time instead of even-split. Produced OFFLINE + cached content-addressed → deterministic.
+     */
+    wordsTimed: z.array(TimedWordSchema).optional(),
   })
   .strict();
 export type CaptionCue = z.infer<typeof CaptionCueSchema>;

@@ -1,0 +1,125 @@
+# examples/director-demo.yaml — the M5 DIRECTOR vertical slice (heuristic default; LLM seam opt-in).
+#
+# The director REPLACES the lite layout's dumb "everything-to-center" anchor + the lite camera's
+# "default = hold". For every beat it SCORES placement of the focal subjects (balance / focal weight /
+# headroom / rule-of-thirds / safe-area for the chosen aspect) and PICKS a camera move by beat intent
+# from library/camera/presets.json. It is PURE + DETERMINISTIC (a function of the Scene IR).
+#
+# KEY: none of the shapes/text below declare an `at` anchor and none of the beats declare a `camera`.
+# The DIRECTOR places + frames them. The last beat shows that an EXPLICIT author `at`/`camera` WINS
+# (the director only fills what the author left to the machine).
+#
+# DEFAULT director = "heuristic" (this file). To try the OPT-IN LLM director (shells to `claude -p`
+# ONCE, validates + caches the plan content-addressed; replays the FIXED plan at render → byte-
+# deterministic + offline; falls back to the heuristic if claude -p is unavailable), set:  director: llm
+#
+# Build it:
+#   tsx src/cli/render.ts examples/director-demo.yaml --project director-demo --name "Director"
+
+title: "The Director"
+
+# director: heuristic   # the default — pure/local/deterministic. Set to `llm` for the opt-in planner.
+
+beats:
+  # ----------------------------------------------------------------------------------------------
+  # BEAT 1 — establishing. The FIRST scene with a single focal subject: the director picks the
+  # "establishing" ease-in and grounds the subject low-centre (rule-of-thirds, with headroom).
+  # ----------------------------------------------------------------------------------------------
+  - id: open
+    say: "A good director never centers everything."
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      # One hero shape, NO `at` — the director scores its placement.
+      - shape: circle
+        as: hero
+        args:
+          z: 8
+          scale: 90
+          params: { radius: 95 }
+          fill:
+            gradient:
+              type: radial
+              stops: [[light, 0.0], [accent2, 1.0]]
+          stroke: { color: ink, width: 4 }
+    duration: { seconds: 3 }
+
+  # ----------------------------------------------------------------------------------------------
+  # BEAT 2 — THREE focal subjects + a title, NONE placed. The director spreads them across the
+  # rule-of-thirds (balance: alternating sides; headroom: the title biases UP), and — a busy tableau —
+  # picks "slow_pull_out" to reveal the whole frame.
+  # ----------------------------------------------------------------------------------------------
+  - id: ensemble
+    say: "It scores balance, focal weight, headroom, and the thirds."
+    transition: { kind: fade, duration: 18 }
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - text: "COMPOSITION"
+        as: title
+        args: { z: 30, size: 96, weight: 800, color: light }
+      - shape: star
+        as: a
+        args:
+          z: 6
+          scale: 60
+          params: { points: 5, innerRadius: 45, outerRadius: 100 }
+          fill: { a: 0, k: accent }
+          stroke: { color: light, width: 4 }
+      - shape: polygon
+        as: b
+        args:
+          z: 6
+          scale: 60
+          params: { points: 6, radius: 90 }
+          fill: { a: 0, k: accent2 }
+          stroke: { color: ink, width: 4 }
+      - shape: triangle
+        as: c
+        args:
+          z: 6
+          scale: 60
+          params: { length: 160, direction: up }
+          fill: { a: 0, k: accent }
+          stroke: { color: ink, width: 4 }
+    duration: { seconds: 3.5 }
+
+  # ----------------------------------------------------------------------------------------------
+  # BEAT 3 — a single subject again: the director pushes in ("slow_push_in") to draw attention.
+  # ----------------------------------------------------------------------------------------------
+  - id: focus
+    say: "One subject? It pushes in to draw your eye."
+    transition: { kind: fade, duration: 18 }
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - shape: heart
+        as: subject
+        args:
+          z: 8
+          scale: 80
+          fill: { a: 0, k: accent }
+          stroke: { color: light, width: 5 }
+    duration: { seconds: 3 }
+
+  # ----------------------------------------------------------------------------------------------
+  # BEAT 4 — AUTHOR OVERRIDE. This beat pins an explicit `at: top_right` anchor AND a `camera`. The
+  # director RESPECTS both (it only fills what the author leaves to the machine).
+  # ----------------------------------------------------------------------------------------------
+  - id: override
+    say: "But when you direct it yourself, you win."
+    transition: { kind: fade, duration: 18 }
+    camera: pan_right
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - shape: rect
+        as: pinned
+        at: top_right
+        args:
+          z: 7
+          scale: 70
+          params: { width: 200, height: 130, cornerRadius: 20 }
+          fill: { a: 0, k: accent2 }
+          stroke: { color: light, width: 4 }
+    duration: { seconds: 3 }

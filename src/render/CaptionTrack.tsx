@@ -5,15 +5,19 @@
 // narration line plays.
 //
 // REUSE over invent (ADR-003): captions are plain styled DOM text in a Remotion `<Sequence>` — no
-// new primitive. We deliberately DON'T pull `@remotion/captions` here: that package's value is
-// page-grouping a whisper token STREAM with real timestamps; we authored the `say` line ourselves, so
-// the cue text + window are already exact and a hand-tokenized even-split (`words` mode) is fully
-// deterministic without whisper. The precision-caption (whisper word-alignment) path stays the
-// documented later follow-up.
+// new primitive. We deliberately DON'T pull `@remotion/captions` here: the cue text + window are
+// already exact (we authored the `say` line), and the `words` reveal is a pure function of frame.
 //
-// DETERMINISM (CLAUDE.md r.1): a pure function of (cue, frame) — the `words` reveal is `floor` of an
-// even-split of the LOCAL frame across `duration_frames`. No Date.now / Math.random; the font is the
-// vendored local DejaVu Sans face the TextLayer already registers (shared @font-face cache).
+// WORD REVEAL (`words` mode), two paths:
+//   • M4 PRECISE — when the cue carries `wordsTimed[]` (whisper forced-alignment, produced OFFLINE +
+//     cached → deterministic), each word reveals at its REAL spoken LOCAL frame (`at`). The shown
+//     count = how many words have a start `at <= local frame`.
+//   • EVEN-SPLIT fallback — no `wordsTimed`: word i is shown once the local frame passes (i+1)/N of
+//     the window (`floor` of an even split). Deterministic without whisper.
+//
+// DETERMINISM (CLAUDE.md r.1): a pure function of (cue, frame). No Date.now / Math.random; the font is
+// the vendored local DejaVu Sans face the TextLayer already registers (shared @font-face cache). The
+// `wordsTimed[]` timings come from a CACHED alignment JSON (the deterministic record), not a live run.
 
 import React from 'react';
 import { AbsoluteFill, Sequence, useCurrentFrame, useVideoConfig } from 'remotion';
@@ -34,13 +38,24 @@ const CaptionCueView: React.FC<{ cue: CaptionCue }> = ({ cue }) => {
 
   let text = cue.text;
   if (cue.mode === 'words') {
-    const words = cue.words && cue.words.length > 0 ? cue.words : cue.text.split(/\s+/).filter(Boolean);
-    if (words.length > 0) {
-      // Even-split: word i is fully shown once the local frame passes (i+1)/N of the window. `floor`
-      // makes the reveal a deterministic step function of the frame (no easing, no sub-pixel drift).
-      const per = cue.duration_frames / words.length;
-      const shown = Math.max(1, Math.min(words.length, Math.floor(frame / per) + 1));
-      text = words.slice(0, shown).join(' ');
+    if (cue.wordsTimed && cue.wordsTimed.length > 0) {
+      // M4 PRECISE: reveal each word at its REAL spoken local frame. A word is shown once the local
+      // frame reaches its start `at` (a deterministic step function of the frame). At least one word
+      // shows from the start so the pill is never momentarily empty.
+      const tw = cue.wordsTimed;
+      let shown = 0;
+      for (const w of tw) if (frame >= w.at) shown += 1;
+      shown = Math.max(1, Math.min(tw.length, shown));
+      text = tw.slice(0, shown).map((w) => w.w).join(' ');
+    } else {
+      const words = cue.words && cue.words.length > 0 ? cue.words : cue.text.split(/\s+/).filter(Boolean);
+      if (words.length > 0) {
+        // Even-split: word i is fully shown once the local frame passes (i+1)/N of the window. `floor`
+        // makes the reveal a deterministic step function of the frame (no easing, no sub-pixel drift).
+        const per = cue.duration_frames / words.length;
+        const shown = Math.max(1, Math.min(words.length, Math.floor(frame / per) + 1));
+        text = words.slice(0, shown).join(' ');
+      }
     }
   }
 

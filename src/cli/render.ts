@@ -21,6 +21,7 @@ import { execFileSync } from 'node:child_process';
 
 import { bundle } from '@remotion/bundler';
 import { selectComposition, renderMedia, renderStill } from '@remotion/renderer';
+import webpack from 'webpack';
 import objectHash from 'object-hash';
 
 import { runPipeline, lowerStory } from '../pipeline/index.js';
@@ -142,8 +143,12 @@ interface Args {
   wpm?: number | undefined;
   /** A1 captions: emit narration-synced on-screen subtitles (default on). `--no-captions` skips it. */
   captions: boolean;
-  /** Caption cadence: `line` (default) or `words` (cumulative even-split reveal). */
+  /** Caption cadence: `line` (default) or `words` (cumulative reveal; whisper-timed when available). */
   captionMode?: 'line' | 'words' | undefined;
+  /** M4 word-align: force-align captions with whisper for precise word timing (default on, `words` mode). */
+  wordAlign: boolean;
+  /** M4b lip-sync: derive a mouth track from narration to drive the speaker rig (default on). `--no-lip-sync` skips it. */
+  lipSync: boolean;
   /** A3 music bed: play+duck the story's `music` track (default on). `--no-music` skips it. */
   music: boolean;
 }
@@ -228,9 +233,15 @@ function parseArgs(argv: string[]): Args {
   // --caption-mode line|words selects the on-screen cadence (default line).
   const captions = !argv.includes('--no-captions');
   const captionMode = (flag('--caption-mode') === 'words' ? 'words' : 'line') as 'line' | 'words';
+  // M4 word-align: whisper forced-alignment for precise per-word caption timing (`words` mode). On by
+  // default; --no-word-align skips the (slow first-run) whisper step and uses even-split directly.
+  const wordAlign = !argv.includes('--no-word-align');
+  // M4b lip-sync: derive a mouth/viseme track from narration to drive the speaker rig (on by default
+  // under the --no-audio master switch); --no-lip-sync skips just the mouth derivation.
+  const lipSync = !argv.includes('--no-lip-sync');
   // A3 music bed: on by default (under the same --no-audio master switch); --no-music skips just music.
   const music = !argv.includes('--no-music');
-  return { target: positional[0] ?? 'examples/character.yaml', id: flag('--project'), name: flag('--name'), frames: flag('--frames'), gpu: argv.includes('--gpu'), format, out, audio, engine, voice, wpm, captions, captionMode, music };
+  return { target: positional[0] ?? 'examples/character.yaml', id: flag('--project'), name: flag('--name'), frames: flag('--frames'), gpu: argv.includes('--gpu'), format, out, audio, engine, voice, wpm, captions, captionMode, wordAlign, lipSync, music };
 }
 
 /**
@@ -312,7 +323,7 @@ const CONCURRENCY = process.env['RENDER_CONCURRENCY']
  * scene.json — the canonical record stays a pure Scene IR). The compositor reads it to render on a
  * transparent canvas (omit the bg fill + drop backdrop layers) so the RGBA channel survives.
  */
-async function prepare(sceneIR: SceneIR, publicDir: string, alpha = false) {
+async function prepare(sceneIR: SceneIR, publicDir: string, alpha = false, gpu = false) {
   const serveUrl = await bundle({
     entryPoint: REMOTION_ENTRY,
     publicDir,
@@ -322,6 +333,14 @@ async function prepare(sceneIR: SceneIR, publicDir: string, alpha = false) {
         ...config.resolve,
         extensionAlias: { ...(config.resolve?.extensionAlias ?? {}), '.js': ['.ts', '.tsx', '.js'], '.jsx': ['.tsx', '.jsx'] },
       },
+      // TIER GATE (M6): bake the GPU-tier flag into the bundle so render-entry registers the gpu-effects
+      // plugin ONLY for a `--gpu` build. DefinePlugin replaces `process.env.GPU_TIER` with a literal, so
+      // a CPU bundle (gpu=false) statically drops the GPU plugin branch (and tree-shakes its WebGL code)
+      // → the CPU raster tier is byte-identical to before. A GPU bundle wires the perceptual tier in.
+      plugins: [
+        ...(config.plugins ?? []),
+        new webpack.DefinePlugin({ 'process.env.GPU_TIER': JSON.stringify(gpu ? '1' : '') }),
+      ],
     }),
   });
   const inputProps = (alpha
@@ -337,7 +356,7 @@ async function prepare(sceneIR: SceneIR, publicDir: string, alpha = false) {
  * reimplement a primitive). x264-specific tuning (preset/crf) only applies to the h264 codecs.
  */
 async function renderScene(sceneIR: SceneIR, videoOut: string, publicDir: string, gpu: boolean, out: OutSpec): Promise<{ frames: number }> {
-  const { serveUrl, composition, inputProps } = await prepare(sceneIR, publicDir, out.alpha);
+  const { serveUrl, composition, inputProps } = await prepare(sceneIR, publicDir, out.alpha, gpu);
   const isH264 = out.codec === 'h264' || out.codec === 'h265';
   try {
     console.log(`[render] video ${composition.width}x${composition.height}@${composition.fps} (${composition.durationInFrames}f) [${gpu ? 'GPU/perceptual' : 'CPU/byte-exact'}] codec=${out.codec}${out.alpha ? ' +alpha' : ''} → ${videoOut}`);
@@ -374,7 +393,7 @@ async function renderScene(sceneIR: SceneIR, videoOut: string, publicDir: string
  * validation. Frames are byte-identical to the corresponding video frames (same scene IR + CPU raster).
  */
 async function renderStills(sceneIR: SceneIR, framesDir: string, frameList: number[], publicDir: string, gpu: boolean, alpha = false): Promise<string[]> {
-  const { serveUrl, composition, inputProps } = await prepare(sceneIR, publicDir, alpha);
+  const { serveUrl, composition, inputProps } = await prepare(sceneIR, publicDir, alpha, gpu);
   mkdirSync(framesDir, { recursive: true });
   const out: string[] = [];
   try {
@@ -411,7 +430,7 @@ function makeThumbnail(p: ProjectPaths, frame: number): void {
 }
 
 async function main(): Promise<void> {
-  const { target, id: idFlag, name, frames, gpu, format, out, audio, engine, voice, wpm, captions, captionMode, music } = parseArgs(process.argv.slice(2));
+  const { target, id: idFlag, name, frames, gpu, format, out, audio, engine, voice, wpm, captions, captionMode, wordAlign, lipSync, music } = parseArgs(process.argv.slice(2));
 
   let paths: ProjectPaths;
   let sceneIR: SceneIR;
@@ -447,7 +466,7 @@ async function main(): Promise<void> {
       const hasSay = story.beats.some((b) => b.say?.trim());
       if (hasSay) {
         mkdirSync(assetsDir, { recursive: true });
-        sceneIR = applyNarration(sceneIR, story, { engine, voice, wpm, assetsDir, rootDir: PROJECT_ROOT, captions, captionMode });
+        sceneIR = applyNarration(sceneIR, story, { engine, voice, wpm, assetsDir, rootDir: PROJECT_ROOT, captions, captionMode, align: wordAlign, lipSync });
       }
       // A2 SFX (OFFLINE asset-gen; golden rule 2). Beats may attach a sound effect to an event —
       // `show[].sfx` (an element entrance) or `beat.sfx[]` (a beat accent). The sfx pass synthesizes

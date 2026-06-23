@@ -13,7 +13,7 @@
 import React from 'react';
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from 'remotion';
 import type { ProviderProps } from '../../src/engine/index.js';
-import type { Easings } from '../../src/ir/index.js';
+import type { Easings, RigLayer } from '../../src/ir/index.js';
 import { evalNumber, evalVec2 } from '../../src/render/eval.js';
 import { parseSpec, applyParts, BLIP_SPEC, type CharacterSpec } from './spec.js';
 import { characterMarkup } from './character.js';
@@ -26,6 +26,20 @@ function resolveSpec(raw: Record<string, unknown> | undefined): CharacterSpec {
   } catch {
     return BLIP_SPEC;
   }
+}
+
+/**
+ * Sample the rig layer's M4b `mouth` track at a SCENE-LOCAL frame → openness in [0,1]. The track is
+ * local-frame indexed (frame 0 = the narration's start = the scene start, by construction in the
+ * narrate pass), so we index by the provider's own `useCurrentFrame()` (already scene-local). Out of
+ * range (before/after the narration span) → 0 (closed). Pure + deterministic. This is the ONLY place
+ * the provider interprets the otherwise-opaque track; core never reads it.
+ */
+function sampleMouthOpenness(mouth: RigLayer['mouth'], localFrame: number): number {
+  if (!mouth || !Array.isArray(mouth.open) || mouth.open.length === 0) return 0;
+  if (localFrame < 0 || localFrame >= mouth.open.length) return 0;
+  const v = mouth.open[localFrame];
+  return typeof v === 'number' ? v : 0;
 }
 
 /**
@@ -52,7 +66,10 @@ export const BlobCreatureProvider: React.FC<ProviderProps> = ({ layer, rigDef, e
   // stylekit). When `floor.liveness` is false, the creature holds a static neutral pose (no bob/sway/
   // breathe/blink) for a flat/technical look.
   const liveness = stylekit?.floor?.liveness ?? true;
-  const markup = characterMarkup(character, frame, fps, layer.rig_state.clips, liveness);
+  // M4b lip-sync: sample the optional `mouth` track (opaque to core; THIS provider interprets it) at the
+  // scene-local frame → mouth openness 0..1. Absent → 0 (the resting smile, byte-identical to pre-M4b).
+  const mouthOpen = sampleMouthOpenness(layer.mouth, frame);
+  const markup = characterMarkup(character, frame, fps, layer.rig_state.clips, liveness, mouthOpen);
 
   const wrapperStyle: React.CSSProperties = {
     position: 'absolute',

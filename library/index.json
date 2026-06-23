@@ -756,6 +756,35 @@
           "license": "ISC"
         }
       }
+    },
+    "generated": {
+      "crystal_prop": {
+        "id": "crystal_prop",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "image",
+        "uri": "asset://generated/crystal_prop.png",
+        "tags": [
+          "m9",
+          "generated",
+          "ai",
+          "sd-openvino",
+          "lcm"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "stable-diffusion-openvino: OpenVINO/LCM_Dreamshaper_v7-fp16-ov (Latent Consistency, SimianLuo)",
+          "prompt": "a glowing blue crystal gem, flat vector illustration, simple, centered, white background",
+          "seed": 42,
+          "model": "lcm",
+          "steps": 8,
+          "guidance": 1,
+          "size": "384x384",
+          "cache_hash": "ca829c9a9675eaae",
+          "license": "CreativeML-OpenRAIL-M",
+          "generated": true
+        }
+      }
     }
   }
 }

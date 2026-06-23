@@ -2,8 +2,8 @@
   "project_version": "1.0",
   "id": "narration-demo",
   "name": "Narration",
-  "created": "2026-06-23T01:21:29.844Z",
-  "updated": "2026-06-23T01:21:29.844Z",
+  "created": "2026-06-23T08:36:47.353Z",
+  "updated": "2026-06-23T08:36:47.353Z",
   "config": {
     "w": 1920,
     "h": 1080,
@@ -13,7 +13,7 @@
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "52ccda30aa36556f7599d83b52637384abaf69a0",
+  "scene_ir_hash": "8d9fcf4a71f6ab9dc20dd393d0ef5363ee8fc70c",
   "engine": "remotion@4.0.481",
   "deps": [
     "bg_gradient@1.0.0",

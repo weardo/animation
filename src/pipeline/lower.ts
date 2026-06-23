@@ -59,7 +59,7 @@ import { resolveScenePalette, paletteDiff, interpolatePalettes } from './color-s
 
 /** This pass's id + version — folded into cache keys / provenance (spec §5). */
 export const PASS_ID = 'lower';
-export const PASS_VERSION = '2.2';
+export const PASS_VERSION = '2.4';
 
 /**
  * The default render config: a 1920×1080, 30fps film. Generic — no domain assumptions. A scene's
@@ -382,6 +382,18 @@ function buildAssetLayer(item: ShowItem, index: number): LoweredLayer {
   const z = typeof args['z'] === 'number' ? (args['z'] as number) : 0;
   const parallax = typeof args['parallax'] === 'number' ? (args['parallax'] as number) : 0;
   const effects = Array.isArray(args['effects']) ? (args['effects'] as Effect[]) : undefined;
+  // Optional transform channels (generic, author-controlled; mirrors the shape/reusable layers). A
+  // background omits these and fills the frame; a PROP (e.g. an imagegen'd PNG) sets scale/position to
+  // be placed and sized. A bare number → a static `{a:0,k}` channel; an authored `{a,k}` passes through.
+  const channel = (v: unknown): Transform['scale'] | undefined =>
+    typeof v === 'number' ? { a: 0, k: v } : v && typeof v === 'object' ? (v as Transform['scale']) : undefined;
+  const transform: Transform = {};
+  const scaleCh = channel(args['scale']);
+  const rotationCh = channel(args['rotation']);
+  const opacityCh = channel(args['opacity']);
+  if (scaleCh) transform.scale = scaleCh;
+  if (rotationCh) transform.rotation = rotationCh;
+  if (opacityCh) transform.opacity = opacityCh;
   const layer: AssetLayer = {
     type: 'asset',
     id,
@@ -389,6 +401,7 @@ function buildAssetLayer(item: ShowItem, index: number): LoweredLayer {
     z,
     parallax,
     ...(effects && effects.length > 0 ? { effects } : {}),
+    ...(Object.keys(transform).length > 0 ? { transform } : {}),
   };
   // An explicit `at` stages the asset; a background typically omits it (no position needed).
   if (typeof item.at === 'string') return { ...layer, anchor: item.at } as LoweredLayer;
@@ -494,9 +507,10 @@ function buildShapeLayer(item: ShowItem, index: number): LoweredLayer {
     ...(Object.keys(transform).length > 0 ? { transform } : {}),
   };
 
-  // Carry the placement anchor (default "center") for the layout pass to resolve to a position.
-  const anchor = typeof item.at === 'string' ? item.at : 'center';
-  return { ...layer, anchor } as LoweredLayer;
+  // Carry the AUTHOR placement anchor only (M5). When the author omits `at`, NO anchor is emitted —
+  // the director (P7) scores a position for the layer. An explicit `at` (even "center") is author intent.
+  if (typeof item.at === 'string') return { ...layer, anchor: item.at } as LoweredLayer;
+  return layer;
 }
 
 /**
@@ -549,9 +563,11 @@ function buildTextLayer(item: ShowItem, index: number): LoweredLayer {
     ...(Object.keys(transform).length > 0 ? { transform } : {}),
   };
 
-  // Carry the placement anchor (default "center") for the layout pass to resolve to a position.
-  const anchor = typeof item.at === 'string' ? item.at : 'center';
-  return { ...layer, anchor } as LoweredLayer;
+  // Carry the AUTHOR placement anchor only (M5). When the author omits `at`, NO anchor is emitted —
+  // the director (P7) scores a position for the layer (default placement is the director's job, not a
+  // baked-in "center"). An explicit `at` (even "center") is author intent the director leaves alone.
+  if (typeof item.at === 'string') return { ...layer, anchor: item.at } as LoweredLayer;
+  return layer;
 }
 
 /**
@@ -642,9 +658,10 @@ function buildClipLayer(item: ShowItem, index: number): LoweredLayer {
     ...(effects && effects.length > 0 ? { effects } : {}),
   };
 
-  // Carry the placement anchor (default "center") for the layout pass to resolve to a position.
-  const anchor = typeof item.at === 'string' ? item.at : 'center';
-  return { ...layer, anchor } as LoweredLayer;
+  // Carry the AUTHOR placement anchor only (M5). When the author omits `at`, NO anchor is emitted —
+  // the director (P7) scores a position for the layer. An explicit `at` (even "center") is author intent.
+  if (typeof item.at === 'string') return { ...layer, anchor: item.at } as LoweredLayer;
+  return layer;
 }
 
 /**
@@ -786,9 +803,10 @@ function buildRigLayer(
     ...(attach ? { attach } : {}),
     ...(effects && effects.length > 0 ? { effects } : {}),
   };
-  // Placement: an explicit `at`, else a generic default staging anchor for a standing subject.
-  const anchor = typeof item.at === 'string' ? item.at : 'bench';
-  return { ...layer, anchor } as LoweredLayer;
+  // Placement (M5): carry an explicit author `at` only. When omitted, NO anchor is emitted — the
+  // director (P7) scores a grounded position for the rig (default staging is the director's job).
+  if (typeof item.at === 'string') return { ...layer, anchor: item.at } as LoweredLayer;
+  return layer;
 }
 
 // --- scene builder ----------------------------------------------------------------------------
@@ -1080,6 +1098,9 @@ export function lowerStory(story: StoryIR, opts: LowerOptions = {}): LoweredScen
     audio: [],
     captions: [],
     scenes,
+    // M5: carry the story's DIRECTOR selection (transient — stripped at the validate boundary) so the
+    // back-end director pass (P7) knows which impl to run. Omitted → the default heuristic director.
+    ...(story.director ? { director: story.director } : {}),
     // M8a: carry the film-level POST grade VERBATIM into Scene IR `post[]` (the compositor applies it
     // over the whole frame via the core-effects registry). Omitted in the story → omitted here (strict
     // no-op; a film without `post` stays byte-identical). Validated at render by each effect's own Zod.
