@@ -1,0 +1,545 @@
+{
+  "scene_ir_version": "1.0",
+  "config": {
+    "w": 1080,
+    "h": 1920,
+    "fps": 30,
+    "duration_frames": 898
+  },
+  "defs": {
+    "palette": {
+      "bg": "#1b2a4a",
+      "bg2": "#24386b",
+      "accent": "#ffcf4d",
+      "accent2": "#4d9fff",
+      "ink": "#0d1b33",
+      "light": "#fff6e0",
+      "shadow": "#0a1326"
+    },
+    "easings": {
+      "smooth": [
+        0.4,
+        0,
+        0.2,
+        1
+      ],
+      "pop": "backOut",
+      "backOut": [
+        0.34,
+        1.56,
+        0.64,
+        1
+      ],
+      "anticipate": [
+        0.36,
+        0,
+        0.66,
+        -0.56
+      ],
+      "easeIn": [
+        0.4,
+        0,
+        1,
+        1
+      ],
+      "easeOut": [
+        0,
+        0,
+        0.2,
+        1
+      ],
+      "linear": [
+        0,
+        0,
+        1,
+        1
+      ]
+    },
+    "assets": {
+      "bg_gradient": {
+        "uri": "asset://bg_gradient.svg",
+        "kind": "svg"
+      },
+      "an32_video": {
+        "uri": "asset://video/an32.mp4",
+        "kind": "video"
+      }
+    },
+    "rigs": {},
+    "clips": {},
+    "stylekit": {
+      "easings": {
+        "linear": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "smooth": [
+          0.4,
+          0,
+          0.2,
+          1
+        ],
+        "easeOut": [
+          0,
+          0,
+          0.2,
+          1
+        ],
+        "easeIn": [
+          0.4,
+          0,
+          1,
+          1
+        ],
+        "snappy": [
+          0.25,
+          0.1,
+          0.25,
+          1
+        ],
+        "anticipate": [
+          0.36,
+          0,
+          0.66,
+          -0.56
+        ],
+        "backOut": [
+          0.34,
+          1.56,
+          0.64,
+          1
+        ],
+        "backInOut": [
+          0.68,
+          -0.6,
+          0.32,
+          1.6
+        ],
+        "expoOut": [
+          0.16,
+          1,
+          0.3,
+          1
+        ]
+      },
+      "defaultEasings": {
+        "smooth": [
+          0.4,
+          0,
+          0.2,
+          1
+        ],
+        "pop": "backOut",
+        "backOut": [
+          0.34,
+          1.56,
+          0.64,
+          1
+        ],
+        "anticipate": [
+          0.36,
+          0,
+          0.66,
+          -0.56
+        ],
+        "easeIn": [
+          0.4,
+          0,
+          1,
+          1
+        ],
+        "easeOut": [
+          0,
+          0,
+          0.2,
+          1
+        ],
+        "linear": [
+          0,
+          0,
+          1,
+          1
+        ]
+      },
+      "palette": {
+        "bg": "#1b2a4a",
+        "bg2": "#24386b",
+        "accent": "#ffcf4d",
+        "accent2": "#4d9fff",
+        "ink": "#0d1b33",
+        "light": "#fff6e0",
+        "shadow": "#0a1326"
+      },
+      "motion": {
+        "spring": {
+          "stiffness": 180,
+          "damping": 14,
+          "mass": 1
+        },
+        "springHeavy": {
+          "stiffness": 120,
+          "damping": 20,
+          "mass": 1.4
+        },
+        "springBouncy": {
+          "stiffness": 220,
+          "damping": 10,
+          "mass": 1
+        },
+        "idle": {
+          "swayAmplitudeDeg": 1.5,
+          "swaySpeedHz": 0.15,
+          "driftAmplitudePx": 2,
+          "driftSpeedHz": 0.1,
+          "saccadeAmplitudeDeg": 3,
+          "saccadeMeanSeconds": 1.8
+        },
+        "breathing": {
+          "amplitude": 0.02,
+          "periodSeconds": 4
+        },
+        "blink": {
+          "rateHz": 0.25,
+          "closeFrames": 4
+        },
+        "stagger": {
+          "offsetFrames": 6
+        },
+        "parallax": {
+          "nearFactor": 1,
+          "farFactor": 0.1
+        },
+        "motionBlurShutter": 180
+      },
+      "light": {
+        "dir": 295,
+        "elevation": 60,
+        "color": "#fff6e0",
+        "intensity": 0.85,
+        "ambient": 0.38
+      },
+      "shading": {
+        "form": true,
+        "contact_shadow": true,
+        "rim": 0.3,
+        "ao": true,
+        "glow": 0
+      },
+      "floor": {
+        "liveness": true,
+        "parallax": true,
+        "shading": true,
+        "nonLinearMotion": true
+      }
+    }
+  },
+  "audio": [
+    {
+      "id": "music-bed",
+      "kind": "music",
+      "src": "audio://audio/calm.wav",
+      "at": 0,
+      "duration_frames": 898,
+      "loop": true,
+      "loop_frames": 240,
+      "mix": {
+        "gain": 0.28,
+        "duck": 0.1,
+        "fade": 14
+      }
+    },
+    {
+      "id": "narration-title",
+      "kind": "narration",
+      "src": "audio://audio/5b1805bd64ec1a1e.wav",
+      "at": 0,
+      "duration_frames": 316,
+      "transcript": "On June thirteenth, 2026, an Indian Air Force An-32 transport aircraft crashed while landing at Jorhat Air Force Station in Assam."
+    },
+    {
+      "id": "narration-facts",
+      "kind": "narration",
+      "src": "audio://audio/88115d0a7407ce5b.wav",
+      "at": 344,
+      "duration_frames": 326,
+      "transcript": "The aircraft caught fire after touchdown. Five air warriors lost their lives. The co-pilot survived with injuries, and a court of inquiry has been ordered."
+    },
+    {
+      "id": "narration-tribute",
+      "kind": "narration",
+      "src": "audio://audio/d7c9162dea3e4cca.wav",
+      "at": 688,
+      "duration_frames": 156,
+      "transcript": "The nation pays tribute to the fallen — their service remembered with pride."
+    }
+  ],
+  "captions": [
+    {
+      "id": "caption-title",
+      "text": "On June thirteenth, 2026, an Indian Air Force An-32 transport aircraft crashed while landing at Jorhat Air Force Station in Assam.",
+      "at": 0,
+      "duration_frames": 316,
+      "mode": "line"
+    },
+    {
+      "id": "caption-facts",
+      "text": "The aircraft caught fire after touchdown. Five air warriors lost their lives. The co-pilot survived with injuries, and a court of inquiry has been ordered.",
+      "at": 344,
+      "duration_frames": 326,
+      "mode": "line"
+    },
+    {
+      "id": "caption-tribute",
+      "text": "The nation pays tribute to the fallen — their service remembered with pride.",
+      "at": 688,
+      "duration_frames": 156,
+      "mode": "line"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "title",
+      "at": 0,
+      "duration_frames": 360,
+      "labels": {
+        "reveal": 180
+      },
+      "camera": {
+        "position": {
+          "a": 0,
+          "k": [
+            0,
+            0
+          ]
+        },
+        "zoom": {
+          "a": 0,
+          "k": 1
+        }
+      },
+      "layers": [
+        {
+          "type": "asset",
+          "id": "L_asset_bg_gradient_0",
+          "z": 0,
+          "ref": "bg_gradient",
+          "parallax": 0
+        },
+        {
+          "type": "footage",
+          "id": "L_footage_clip",
+          "z": 5,
+          "ref": "an32_video",
+          "loop": true,
+          "muted": true,
+          "fit": "contain",
+          "parallax": 0,
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                960
+              ]
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "L_text_text_2",
+          "z": 20,
+          "content": "IAF AN-32 CRASH\nJorhat, Assam · 13 June 2026",
+          "font": "DejaVu Sans",
+          "fontUri": "asset://fonts/DejaVuSans.ttf",
+          "size": 60,
+          "weight": 800,
+          "color": "light",
+          "lineHeight": 1.3,
+          "anim": {
+            "preset": "rise",
+            "duration": 20,
+            "distance": 48
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                480
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "facts",
+      "at": 344,
+      "duration_frames": 360,
+      "labels": {
+        "reveal": 180
+      },
+      "camera": {
+        "position": {
+          "a": 0,
+          "k": [
+            0,
+            0
+          ]
+        },
+        "zoom": {
+          "a": 0,
+          "k": 1
+        }
+      },
+      "layers": [
+        {
+          "type": "asset",
+          "id": "L_asset_bg_gradient_0",
+          "z": 0,
+          "ref": "bg_gradient",
+          "parallax": 0
+        },
+        {
+          "type": "footage",
+          "id": "L_footage_clip",
+          "z": 5,
+          "ref": "an32_video",
+          "loop": true,
+          "muted": true,
+          "fit": "contain",
+          "parallax": 0,
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                960
+              ]
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "L_text_text_2",
+          "z": 20,
+          "content": "5 personnel lost",
+          "font": "DejaVu Sans",
+          "fontUri": "asset://fonts/DejaVuSans.ttf",
+          "size": 56,
+          "weight": 800,
+          "color": "light",
+          "anim": {
+            "preset": "fade",
+            "duration": 18
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                480
+              ]
+            }
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 16
+      }
+    },
+    {
+      "id": "tribute",
+      "at": 688,
+      "duration_frames": 210,
+      "labels": {
+        "reveal": 105
+      },
+      "camera": {
+        "position": {
+          "a": 0,
+          "k": [
+            0,
+            0
+          ]
+        },
+        "zoom": {
+          "a": 0,
+          "k": 1
+        }
+      },
+      "layers": [
+        {
+          "type": "asset",
+          "id": "L_asset_bg_gradient_0",
+          "z": 0,
+          "ref": "bg_gradient",
+          "parallax": 0
+        },
+        {
+          "type": "text",
+          "id": "L_text_text_1",
+          "z": 20,
+          "content": "In honour of the fallen",
+          "font": "DejaVu Sans",
+          "fontUri": "asset://fonts/DejaVuSans.ttf",
+          "size": 50,
+          "weight": 800,
+          "color": "light",
+          "anim": {
+            "preset": "rise",
+            "duration": 20,
+            "distance": 36
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                480
+              ]
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "L_text_text_2",
+          "z": 20,
+          "content": "Sqn Ldr Prashant Singh\nFlt Lt Shubham Kumar\nSgt Jitendra Sharma\nAgniveervayu Khemaram Kumawat\nAgniveervayu Danish Alam",
+          "font": "DejaVu Sans",
+          "fontUri": "asset://fonts/DejaVuSans.ttf",
+          "size": 34,
+          "weight": 500,
+          "color": "light",
+          "lineHeight": 1.6,
+          "anim": {
+            "preset": "fade",
+            "duration": 28
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                960
+              ]
+            }
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 16
+      }
+    }
+  ],
+  "provenance": {
+    "story_ir_hash": "sha1:30152d275e244375793b1606d05e0760f6533473",
+    "passes": [
+      "lower@2.0"
+    ]
+  }
+}

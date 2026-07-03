@@ -1,0 +1,57 @@
+# examples/an32-tribute.yaml — a 30-second VERTICAL news tribute (real end-to-end test of the factory).
+# Source: a tweet's video (IAF An-32 crash, Jorhat, Assam, 2026-06-13) + researched, sourced facts.
+# Respectful/factual: dark sober base, restrained motion, white text, footage + narration + captions.
+# Exercises: format (9:16) · footage layer (the tweet video) · XTTS narration · auto-captions ·
+# music bed + ducking · text/lower-thirds · scene transitions.
+
+title: "IAF An-32 Tribute"
+format:
+  aspect: "9:16"            # 1080×1920 vertical
+music: { ref: calm, gain: 0.28, duck: 0.10, fade: 14 }   # low, somber bed; ducks under narration
+
+beats:
+  # ── b1 — TITLE ────────────────────────────────────────────────────────────────
+  - id: title
+    duration: 12          # ≥ the spoken narration length (~10.5s) so cues don't overlap the next beat
+    say: "On June thirteenth, 2026, an Indian Air Force An-32 transport aircraft crashed while landing at Jorhat Air Force Station in Assam."
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - footage: an32_video
+        as: clip
+        at: center
+        args: { z: 5, loop: true, muted: true, fit: contain, parallax: 0 }   # this project: mute the clip's own audio
+      - text: "IAF AN-32 CRASH\nJorhat, Assam · 13 June 2026"
+        at: top
+        args: { z: 20, size: 60, weight: 800, color: light, lineHeight: 1.3, anim: { preset: rise, duration: 20, distance: 48 } }
+
+  # ── b2 — WHAT HAPPENED (footage focus; captions carry the narration) ───────────
+  - id: facts
+    duration: 12          # ≥ narration (~10.9s)
+    transition: { kind: fade, duration: 16 }
+    say: "The aircraft caught fire after touchdown. Five air warriors lost their lives. The co-pilot survived with injuries, and a court of inquiry has been ordered."
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - footage: an32_video
+        as: clip
+        at: center
+        args: { z: 5, loop: true, muted: true, fit: contain, parallax: 0 }   # this project: mute the clip's own audio
+      - text: "5 personnel lost"
+        at: top
+        args: { z: 20, size: 56, weight: 800, color: light, anim: { preset: fade, duration: 18 } }
+
+  # ── b3 — TRIBUTE (the five names) ──────────────────────────────────────────────
+  - id: tribute
+    duration: 7           # ≥ narration (~5.2s)
+    transition: { kind: fade, duration: 16 }
+    say: "The nation pays tribute to the fallen — their service remembered with pride."
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - text: "In honour of the fallen"
+        at: top
+        args: { z: 20, size: 50, weight: 800, color: light, anim: { preset: rise, duration: 20, distance: 36 } }
+      - text: "Sqn Ldr Prashant Singh\nFlt Lt Shubham Kumar\nSgt Jitendra Sharma\nAgniveervayu Khemaram Kumawat\nAgniveervayu Danish Alam"
+        at: center
+        args: { z: 20, size: 34, weight: 500, color: light, lineHeight: 1.6, anim: { preset: fade, duration: 28 } }

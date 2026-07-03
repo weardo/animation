@@ -1,0 +1,31 @@
+{
+  "project_version": "1.0",
+  "id": "an32-tribute",
+  "name": "An-32 Tribute",
+  "created": "2026-06-23T02:43:22.662Z",
+  "updated": "2026-06-23T02:43:22.662Z",
+  "config": {
+    "w": 1080,
+    "h": 1920,
+    "fps": 30,
+    "duration_frames": 898
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "c1495ff5ad3d20bfb6b74cad2678ab8938b74ee6",
+  "engine": "remotion@4.0.481",
+  "deps": [
+    "an32_video@1.0.0",
+    "bg_gradient@1.0.0"
+  ],
+  "assets": [
+    "assets/bg_gradient.svg",
+    "assets/video/an32.mp4",
+    "assets/fonts/DejaVuSans.ttf"
+  ],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  }
+}

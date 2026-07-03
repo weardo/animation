@@ -1,0 +1,67 @@
+# examples/voices-demo.yaml — the OPTIONAL voice/tone authoring surface (per-cast + per-beat).
+#
+# Demonstrates the swappable TTS abstraction (src/cli/narrate.ts) driven from the STORY: a beat's
+# narration `say` is synthesized OFFLINE at build into a content-addressed, cached wav (golden rule 2:
+# TTS never touches frames/runtime), and the effective VOICE is resolved per beat as:
+#     beat override (voice:/tone:)  ??  speaking cast member's standing cast[].voice  ??  engine defaults.
+# All voice fields are OPTIONAL + back-compat: a plain string `say` with NO voice anywhere still uses
+# the DEFAULT_ENGINE (chatterbox) + per-engine default voice (beat b1 below). DETERMINISM (golden rule
+# 1): the cached wav is the deterministic record — the engine runs ONCE (skip-if-exists), so a re-render
+# replays the FIXED wav byte-identically even though a TTS engine is stochastic. A missing/broken engine
+# venv NEVER fails the build — it falls back to espeak-ng.
+#
+# Run: tsx src/cli/render.ts examples/voices-demo.yaml --project voices-demo --name "Voices"
+
+title: "Voices"
+
+cast:
+  # blip carries a STANDING voice (chatterbox, neutral expressiveness). A beat that brings blip on
+  # screen inherits this voice unless the beat overrides it (b2/b3 below).
+  blip:
+    ref: blip # → library characters/blip@1.0.0 (procedural blob-creature rig)
+    palette: warm
+    voice:
+      engine: chatterbox
+      exaggeration: 0.5 # neutral delivery
+      cfg: 0.5
+
+beats:
+  # b1 — DEFAULT voice. No cast voice in play here (no actor) and no beat override → the run defaults
+  # (chatterbox, the per-engine default voice). The plain-string `say` back-compat path.
+  - id: b1
+    say: "This line uses the default voice."
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+    camera: slow_push_in
+
+  # b2 — chatterbox INTENSE. blip's standing chatterbox voice, with a per-beat override cranking the
+  # expressiveness (exaggeration 0.8). Shows beat voice merging over cast voice (only the changed field).
+  - id: b2
+    say: "And this one is intense!"
+    voice:
+      exaggeration: 0.8
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - actor: blip
+    action:
+      - on: blip
+        do: wave
+    camera: slow_push_in
+
+  # b3 — parler DESCRIBED tone. A full per-beat voice override switches the engine to parler and
+  # describes the delivery; the `tone:` shorthand could also set it (`voice.tone` wins if both given).
+  - id: b3
+    say: "Now, gently and with care."
+    voice:
+      engine: parler
+      tone: "warm, gentle, empathetic"
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - actor: blip
+    action:
+      - on: blip
+        do: idle
+    camera: slow_push_in

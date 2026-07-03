@@ -1,0 +1,27 @@
+{
+  "lockfile_version": "1",
+  "algorithm": "object-hash@sha1/v1",
+  "refs": {
+    "an32_video@1.0.0": {
+      "namespace": "backgrounds",
+      "id": "an32_video",
+      "version": "1.0.0",
+      "hash": "c06c99f3c976567c10b1968cca722d613684355a",
+      "deps": []
+    },
+    "bg_gradient@1.0.0": {
+      "namespace": "backgrounds",
+      "id": "bg_gradient",
+      "version": "1.0.0",
+      "hash": "84e83292f11d2fa767ca742a60d548a44653c621",
+      "deps": []
+    },
+    "kurzgesagt@1.0.0": {
+      "namespace": "stylekits",
+      "id": "kurzgesagt",
+      "version": "1.0.0",
+      "hash": "c70eaa416ae16cd7b5d3667908f01b12f559c8be",
+      "deps": []
+    }
+  }
+}
