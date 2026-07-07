@@ -1,57 +1,78 @@
-# hormuz-reel — CINEMATIC DARK news-explainer reel (Johnny Harris style, Hinglish).
-# 9:16 vertical geopolitics explainer on the Strait of Hormuz chokepoint. Premium visual standard:
-# near-black background + focal radial glow, REGION-ZOOMED maps with glowing highlighted countries,
-# huge Mukta-ExtraBold dual-script (Devanagari+Latin) headlines with glow/shadow, a story-level
-# post-grade (contrast + vignette + grain) for cinematic depth. Voice: Sarvam Bulbul (shubh).
-#
-# Verify visuals FAST on stills:  render projects/hormuz-reel/story.yaml --project hormuz-reel --frames auto --no-audio
-# Full reel (Sarvam VO):          SARVAM_API_KEY=... render projects/hormuz-reel/story.yaml --project hormuz-reel --engine sarvam --voice shubh
-title: "Hormuz — Cinematic Reel"
+# hormuz-reel — CINEMATIC geopolitics reel with a COHERENT 10-stage narrative arc.
+# Thesis: chokepoints are the hidden battleground of geopolitics, and India vs China are racing to
+# escape them. Stages: HOOK → SETUP → STAKES → TURN → ESCALATION → THE MOVE → THE COUNTER → INSIGHT
+# → PAYOFF → CTA. Hinglish VO (Sarvam shubh). Cinematic dark + map v2 toolkit (routes/markers/fly-to/
+# ocean/graticule) + OFFICIAL India map (world-in) + Mukta ExtraBold dual-script type.
+title: "Chokepoint Wars — Cinematic Reel"
 style: plain
-
 format:
   aspect: "9:16"
   fps: 30
 
-# CINEMATIC POST GRADE (whole-frame): punch contrast, heavy vignette, subtle film grain → depth.
 post:
   - { kind: color_grade, brightness: 1.0, contrast: 1.18, saturate: 1.15 }
   - { kind: vignette, amount: 0.6, softness: 0.5 }
   - { kind: grain, amount: 0.055, size: 0.9, seed: 7 }
 
+# Dark, tense music bed (built-in `drone`) — auto-ducked low while the narration speaks.
+music: { ref: drone, gain: 0.32, duck: 0.11, fade: 14 }
+
 cast: {}
 
-# Reusable font URIs (Mukta ExtraBold = dual-script heavy display; one font for all Hinglish).
-# (repeated per text layer below; a story-level text default is a later ergonomic win)
-
 beats:
-  # ============================================================ B1 — HOOK ============================
+  # ==================================================== B1 — HOOK ====================================
   - id: hook
-    say: "ये है Strait of Hormuz, दुनिया का सबसे important तेल रास्ता।"
+    say: "समंदर का एक छोटा सा रास्ता, जो पूरी दुनिया की economy हिला सकता है।"
     show:
-      # near-black base
       - shape: rect
         as: bg
         args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
-      # warm focal glow (blurred amber orb, low opacity) — cinematic spotlight
+      # wide Indian-Ocean view, textured, no highlight — sets the "sea routes" theme
       - generator: world-in
         as: world
         args:
           projection: mercator
           fit: false
-          center: [50, 27]
-          scale: 780
+          center: [72, 14]
+          scale: 250
+          fill: "#141c28"
+          no_data_fill: "#141c28"
+          stroke: "#243040"
+          stroke_width: 0.6
+          ocean: "#0a1420"
+          graticule: { step: 12, color: "#1a2636", opacity: 0.4, width: 0.6 }
+          draw_on: { duration: 22, easing: easeOut }
+          draw_on_fill: true
+      - text: "एक रास्ता। पूरी दुनिया।"
+        as: hooktext
+        at: center
+        args: { z: 20, size: 92, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 12, intensity: 0.6 }, { kind: drop_shadow, dx: 0, dy: 5, blur: 18, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 22, distance: 80 } }
+    camera: slow_push_in
+    duration: { seconds: 5.5 }
+
+  # ==================================================== B2 — SETUP (Hormuz) ==========================
+  - id: setup
+    say: "ये है Strait of Hormuz। सिर्फ़ चालीस किलोमीटर चौड़ा, लेकिन दुनिया का बीस परसेंट तेल यहीं से गुज़रता है।"
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - generator: world-in
+        as: world
+        args:
+          projection: mercator
+          fit: false
+          center: [52, 27]
+          scale: 800
           center_to: [55, 26]
           scale_to: 1050
-          fly: { delay: 24, duration: 70, easing: easeInOut }
-          key_field: name
+          fly: { delay: 30, duration: 80, easing: easeInOut }
           fill: "#141c28"
           no_data_fill: "#141c28"
           stroke: "#243040"
           stroke_width: 0.8
-          draw_on: { duration: 24, stagger: 0, easing: easeOut }
-          draw_on_stroke: true
-          draw_on_fill: true
+          ocean: "#0a1420"
+          graticule: { step: 8, color: "#1a2636", opacity: 0.4, width: 0.6 }
           choropleth:
             Iran: "#ffb020"
             "Saudi Arabia": "#ffb020"
@@ -59,9 +80,6 @@ beats:
             Oman: "#ffb020"
             Qatar: "#ffb020"
             Kuwait: "#ffb020"
-          ocean: "#0a1420"
-          graticule: { step: 8, color: "#1a2636", opacity: 0.45, width: 0.6 }
-          # shipping route: out of the Strait of Hormuz into the Arabian Sea (glowing, draws on, arrow)
           routes:
             - coords: [[56.4, 26.6], [58.5, 24.5], [62, 22], [66, 20]]
               color: "#ffd34d"
@@ -69,47 +87,78 @@ beats:
               arc: true
               arrow: true
               glow: 7
-              draw_on: { delay: 20, duration: 34, easing: easeInOut }
-          # port / chokepoint markers
+              draw_on: { delay: 24, duration: 40, easing: easeInOut }
           markers:
             - { coord: [56.4, 26.6], label: "Hormuz", color: "#ffd34d", radius: 11, label_size: 40 }
-            - { coord: [54.4, 24.5], label: "Dubai", color: "#f5f7fa", radius: 8, label_size: 30 }
-          markers_pop: { delay: 10, duration: 20, stagger: 10 }
-          effects:
-            - { kind: glow, color: "#ffb020", radius: 6, intensity: 0.4 }
+          markers_pop: { delay: 14, duration: 20 }
       - text: "STRAIT OF HORMUZ"
         as: title
         at: top
-        args: { z: 20, size: 78, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", tracking: 2, effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.8 } ], anim: { preset: rise, duration: 22, distance: 70 } }
-      - text: "दुनिया का तेल रास्ता"
+        args: { z: 20, size: 72, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", tracking: 2, effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 22, distance: 60 } }
+      - text: "20% वैश्विक तेल"
         as: sub
         at: bottom
-        args: { z: 20, size: 54, weight: 800, color: "#ffb020", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 8, intensity: 0.6 } ], anim: { preset: fade, duration: 18 } }
-    camera: slow_push_in
-    duration: { seconds: 5.5 }
+        args: { z: 20, size: 56, weight: 800, color: "#ffb020", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 8, intensity: 0.6 } ], anim: { preset: fade, duration: 18 } }
+    camera: hold
+    duration: { seconds: 8.5 }
+    transition: { kind: fade, duration: 16 }
 
-  # ============================================================ B2 — THE STAT =========================
-  - id: stat
-    say: "दुनिया का करीब twenty percent oil इसी रास्ते से गुज़रता है।"
+  # ==================================================== B3 — STAKES ==================================
+  - id: stakes
+    say: "अगर ये एक रास्ता बंद हो जाए, तो पूरी दुनिया में पेट्रोल के दाम आसमान छू लें।"
     show:
       - shape: rect
         as: bg
         args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
-      - text: "20%"
-        as: bignum
+      - text: "⛔"
+        as: icon
         at: center
-        args: { z: 10, size: 400, weight: 800, color: "#ffb020", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 22, intensity: 1.0 }, { kind: drop_shadow, dx: 0, dy: 8, blur: 24, color: "#000000", opacity: 0.7 } ], anim: { preset: rise, duration: 20, distance: 90 } }
-      - text: "GLOBAL OIL SUPPLY"
-        as: numlabel
+        args: { z: 10, size: 300, weight: 800, color: "#ff4438", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ff4438", radius: 24, intensity: 1.0 } ], anim: { preset: rise, duration: 18, distance: 60 } }
+      - text: "दाम आसमान पर"
+        as: big
         at: bottom
-        args: { z: 20, size: 50, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", tracking: 4, effects: [ { kind: drop_shadow, dx: 0, dy: 3, blur: 10, color: "#000000", opacity: 0.8 } ], anim: { preset: fade, duration: 18 } }
+        args: { z: 20, size: 84, weight: 800, color: "#ff6b4d", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ff4438", radius: 10, intensity: 0.6 }, { kind: drop_shadow, dx: 0, dy: 5, blur: 16, color: "#000000", opacity: 0.8 } ], anim: { preset: rise, duration: 20, distance: 70 } }
     camera: slow_push_in
-    duration: { seconds: 4.5 }
+    duration: { seconds: 6 }
     transition: { kind: fade, duration: 16 }
 
-  # ============================================================ B3 — THE PROBLEM ======================
-  - id: china
-    say: "उधर China का ज़्यादातर तेल Malacca Strait से आता है, उसकी सबसे बड़ी weakness।"
+  # ==================================================== B4 — TURN (to China) =========================
+  - id: turn
+    say: "लेकिन इस खेल में सबसे बड़ा डर किसी और को है। China को।"
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - generator: world-in
+        as: world
+        args:
+          projection: mercator
+          fit: false
+          center: [104, 20]
+          scale: 560
+          fill: "#141c28"
+          no_data_fill: "#141c28"
+          stroke: "#243040"
+          stroke_width: 0.8
+          ocean: "#0a1420"
+          graticule: { step: 8, color: "#1a2636", opacity: 0.4, width: 0.6 }
+          choropleth:
+            China: "#ff4438"
+          draw_on: { duration: 20, easing: easeOut }
+          draw_on_fill: true
+          effects:
+            - { kind: glow, color: "#ff4438", radius: 8, intensity: 0.5 }
+      - text: "सबसे बड़ा डर: China"
+        as: title
+        at: top
+        args: { z: 20, size: 78, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 20, distance: 70 } }
+    camera: slow_push_in
+    duration: { seconds: 5.5 }
+    transition: { kind: fade, duration: 16 }
+
+  # ==================================================== B5 — ESCALATION (Malacca) ====================
+  - id: malacca
+    say: "China का करीब अस्सी परसेंट imported तेल Malacca Strait से आता है। एक पतली सी गली, जिसे कभी भी रोका जा सकता है। नाम है, Malacca Dilemma।"
     show:
       - shape: rect
         as: bg
@@ -121,7 +170,6 @@ beats:
           fit: false
           center: [90, 14]
           scale: 300
-          key_field: name
           fill: "#141c28"
           no_data_fill: "#141c28"
           stroke: "#243040"
@@ -130,7 +178,6 @@ beats:
           graticule: { step: 10, color: "#1a2636", opacity: 0.4, width: 0.6 }
           choropleth:
             China: "#ff4438"
-          # China's vulnerable oil lane: Gulf → around India → through Malacca → up to China
           routes:
             - coords: [[57, 26], [64, 21], [74, 9], [85, 5], [96, 3.5], [100.4, 2.8], [106, 8], [114, 18], [121, 31]]
               color: "#ff6b4d"
@@ -138,27 +185,76 @@ beats:
               arc: true
               arrow: true
               glow: 6
-              draw_on: { delay: 12, duration: 48, easing: easeInOut }
+              draw_on: { delay: 20, duration: 60, easing: easeInOut }
           markers:
             - { coord: [100.4, 2.8], label: "Malacca", color: "#ff4438", radius: 12, label_size: 40 }
-          markers_pop: { delay: 44, duration: 18 }
+          markers_pop: { delay: 60, duration: 18 }
           effects:
             - { kind: glow, color: "#ff4438", radius: 7, intensity: 0.45 }
-      - text: "China की Weakness"
+      - text: "Malacca Dilemma"
         as: title
         at: top
-        args: { z: 20, size: 82, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 20, distance: 70 } }
-      - text: "Malacca Strait"
+        args: { z: 20, size: 74, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 20, distance: 60 } }
+      - text: "80% चीनी तेल"
         as: sub
         at: bottom
         args: { z: 20, size: 54, weight: 800, color: "#ff6b4d", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ff4438", radius: 8, intensity: 0.6 } ], anim: { preset: fade, duration: 18 } }
-    camera: slow_push_in
+    camera: hold
+    duration: { seconds: 11 }
+    transition: { kind: fade, duration: 16 }
+
+  # ==================================================== B6 — THE MOVE (China → Gwadar) ===============
+  - id: gwadar
+    say: "इससे बचने के लिए China, Pakistan के Gwadar port तक एक नया रास्ता बना रहा है।"
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - generator: world-in
+        as: world
+        args:
+          projection: mercator
+          fit: false
+          center: [76, 30]
+          scale: 360
+          fill: "#141c28"
+          no_data_fill: "#141c28"
+          stroke: "#243040"
+          stroke_width: 0.8
+          ocean: "#0a1420"
+          graticule: { step: 8, color: "#1a2636", opacity: 0.4, width: 0.6 }
+          choropleth:
+            China: "#ff4438"
+            Pakistan: "#3a2630"
+          # China's overland corridor down through Pakistan to Gwadar (bypasses Malacca)
+          routes:
+            - coords: [[79, 37], [74, 34], [71, 30], [66, 27], [62.3, 25.1]]
+              color: "#ff9f43"
+              width: 5
+              arc: true
+              arrow: true
+              glow: 6
+              draw_on: { delay: 16, duration: 42, easing: easeInOut }
+          markers:
+            - { coord: [62.3, 25.1], label: "Gwadar", color: "#ff9f43", radius: 12, label_size: 38 }
+          markers_pop: { delay: 42, duration: 18 }
+          effects:
+            - { kind: glow, color: "#ff9f43", radius: 6, intensity: 0.4 }
+      - text: "China का दांव"
+        as: title
+        at: top
+        args: { z: 20, size: 78, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 20, distance: 70 } }
+      - text: "Gwadar Port"
+        as: sub
+        at: bottom
+        args: { z: 20, size: 54, weight: 800, color: "#ff9f43", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ff9f43", radius: 8, intensity: 0.6 } ], anim: { preset: fade, duration: 18 } }
+    camera: hold
     duration: { seconds: 5.5 }
     transition: { kind: fade, duration: 16 }
 
-  # ============================================================ B4 — INDIA'S MOVE =====================
-  - id: india
-    say: "अब India, Chabahar port से एक नया रास्ता बना रहा है।"
+  # ==================================================== B7 — THE COUNTER (India → Chabahar) ==========
+  - id: chabahar
+    say: "और भारत? भारत ने ठीक बगल में, Iran के Chabahar port से जवाब दे दिया।"
     show:
       - shape: rect
         as: bg
@@ -170,7 +266,6 @@ beats:
           fit: false
           center: [66, 24]
           scale: 700
-          key_field: name
           fill: "#141c28"
           no_data_fill: "#141c28"
           stroke: "#243040"
@@ -180,7 +275,6 @@ beats:
           choropleth:
             India: "#ffb020"
             Iran: "#2ee6a6"
-          # India's new corridor: Mumbai → Chabahar port (bypassing the Hormuz chokepoint)
           routes:
             - coords: [[72.8, 18.9], [67, 22], [60.6, 25.3]]
               color: "#2ee6a6"
@@ -195,36 +289,81 @@ beats:
           markers_pop: { delay: 28, duration: 18, stagger: 8 }
           effects:
             - { kind: glow, color: "#2ee6a6", radius: 7, intensity: 0.45 }
-      - text: "India का Move"
+      - text: "भारत का जवाब"
         as: title
         at: top
-        args: { z: 20, size: 82, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 20, distance: 70 } }
+        args: { z: 20, size: 78, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 20, distance: 70 } }
       - text: "Chabahar Port"
         as: sub
         at: bottom
         args: { z: 20, size: 54, weight: 800, color: "#2ee6a6", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#2ee6a6", radius: 8, intensity: 0.6 } ], anim: { preset: fade, duration: 18 } }
-    camera: slow_push_in
-    duration: { seconds: 4.5 }
+    camera: hold
+    duration: { seconds: 5.5 }
     transition: { kind: fade, duration: 16 }
 
-  # ============================================================ B5 — THE PAYOFF =======================
-  - id: payoff
-    say: "एक chokepoint, जो पूरा game पलट सकता है।"
+  # ==================================================== B8 — INSIGHT (face-off) =======================
+  - id: faceoff
+    say: "Gwadar और Chabahar, सिर्फ़ एक सौ सत्तर किलोमीटर दूर। दो देश, दो बंदरगाह, एक जंग।"
     show:
       - shape: rect
         as: bg
         args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
-      - text: "GAME पलट सकता है"
-        as: big
-        at: center
-        args: { z: 10, size: 108, weight: 800, color: "#ffb020", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 18, intensity: 0.9 }, { kind: drop_shadow, dx: 0, dy: 6, blur: 20, color: "#000000", opacity: 0.7 } ], anim: { preset: rise, duration: 22, distance: 90 } }
+      # zoom into the Makran coast — the two rival ports side by side
+      - generator: world-in
+        as: world
+        args:
+          projection: mercator
+          fit: false
+          center: [61.4, 25.6]
+          scale: 2600
+          fill: "#141c28"
+          no_data_fill: "#141c28"
+          stroke: "#2a3648"
+          stroke_width: 1.0
+          ocean: "#0a1420"
+          graticule: { step: 3, color: "#1a2636", opacity: 0.45, width: 0.6 }
+          choropleth:
+            Iran: "#123a30"
+            Pakistan: "#2e2028"
+          # a short "rivalry" link between the two ports
+          routes:
+            - coords: [[60.6, 25.3], [62.3, 25.1]]
+              color: "#f5f7fa"
+              width: 3
+              arc: false
+              dash: 14
+              glow: 3
+              draw_on: { delay: 18, duration: 24 }
+          markers:
+            - { coord: [60.6, 25.3], label: "Chabahar", color: "#2ee6a6", radius: 13, label_size: 42, label_dy: -30 }
+            - { coord: [62.3, 25.1], label: "Gwadar", color: "#ff9f43", radius: 13, label_size: 42, label_dy: 46 }
+          markers_pop: { delay: 8, duration: 20, stagger: 10 }
+      - text: "170 KM की जंग"
+        as: title
+        at: top
+        args: { z: 20, size: 76, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 20, distance: 60 } }
     camera: slow_push_in
-    duration: { seconds: 4.2 }
+    duration: { seconds: 6.5 }
     transition: { kind: fade, duration: 16 }
 
-  # ============================================================ B6 — CTA ==============================
+  # ==================================================== B9 — PAYOFF ===================================
+  - id: payoff
+    say: "अगली बड़ी जंग शायद ज़मीन पर नहीं, इन्हीं समंदर के रास्तों पर लड़ी जाएगी।"
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - text: "समंदर पर जंग"
+        as: big
+        at: center
+        args: { z: 10, size: 118, weight: 800, color: "#ffb020", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 20, intensity: 0.9 }, { kind: drop_shadow, dx: 0, dy: 6, blur: 20, color: "#000000", opacity: 0.7 } ], anim: { preset: rise, duration: 22, distance: 90 } }
+    camera: slow_push_in
+    duration: { seconds: 6.5 }
+    transition: { kind: fade, duration: 16 }
+
+  # ==================================================== B10 — CTA =====================================
   - id: cta
-    say: "ऐसी और news के लिए follow करो!"
+    say: "ऐसी ही geopolitics के लिए, follow करना मत भूलना!"
     show:
       - shape: rect
         as: bg
@@ -234,5 +373,5 @@ beats:
         at: center
         args: { z: 10, size: 120, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 16, intensity: 0.8 }, { kind: drop_shadow, dx: 0, dy: 6, blur: 20, color: "#000000", opacity: 0.7 } ], anim: { preset: rise, duration: 20, distance: 80 } }
     camera: hold
-    duration: { seconds: 3.2 }
+    duration: { seconds: 4 }
     transition: { kind: fade, duration: 16 }
