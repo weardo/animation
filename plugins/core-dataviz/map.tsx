@@ -28,6 +28,8 @@ import {
   geoEquirectangular,
   geoOrthographic,
   geoAzimuthalEqualArea,
+  geoInterpolate,
+  geoGraticule,
   type GeoProjection,
   type GeoPermissibleObjects,
 } from 'd3-geo';
@@ -147,7 +149,26 @@ export function renderMap(props: {
   // scale/center/rotate) is used. Either way geoPath turns each feature into an SVG path string.
   const projection = makeProjection(p.projection);
   if (p.rotate) projection.rotate(p.rotate as [number, number, number]);
-  if (p.center) projection.center(p.center as [number, number]);
+
+  // FLY-TO: interpolate center/scale from (center,scale) → (center_to,scale_to) over the fly window,
+  // as a pure function of frame. Only active with fit:false + a `fly` config + a start center/scale.
+  let center = p.center as [number, number] | undefined;
+  let scale = p.scale;
+  if (p.fly && p.center) {
+    const f = Math.max(0, ctx.frame - p.fly.delay);
+    const t = ease(p.fly.easing, Math.max(0, Math.min(1, f / p.fly.duration)));
+    if (p.center_to) {
+      center = [
+        p.center[0] + (p.center_to[0] - p.center[0]) * t,
+        p.center[1] + (p.center_to[1] - p.center[1]) * t,
+      ];
+    }
+    if (p.scale_to !== undefined && p.scale !== undefined) {
+      // Interpolate scale in LOG space so zoom feels even (geometric, not linear).
+      scale = Math.exp(Math.log(p.scale) + (Math.log(p.scale_to) - Math.log(p.scale)) * t);
+    }
+  }
+  if (center) projection.center(center);
 
   if (p.fit) {
     const m = p.inset;
@@ -159,7 +180,7 @@ export function renderMap(props: {
       fc as unknown as GeoPermissibleObjects,
     );
   } else {
-    if (typeof p.scale === 'number') projection.scale(p.scale);
+    if (typeof scale === 'number') projection.scale(scale);
     projection.translate([ctx.width / 2, ctx.height / 2]);
   }
 
@@ -206,6 +227,95 @@ export function renderMap(props: {
     );
   });
 
+  // --- OCEAN: a flat sea fill behind the land (optional; else transparent) ---
+  const ocean = p.ocean ? (
+    <rect key="ocean" x={0} y={0} width={ctx.width} height={ctx.height} fill={ctx.resolveColor(p.ocean, '#0a1420')} />
+  ) : null;
+
+  // --- GRATICULE: a subtle lat/lon grid for texture (behind the land) ---
+  let graticule: React.JSX.Element | null = null;
+  if (p.graticule) {
+    const g = p.graticule;
+    const d = path(geoGraticule().step([g.step, g.step])() as unknown as GeoPermissibleObjects) ?? '';
+    graticule = d ? (
+      <path key="graticule" d={d} fill="none" stroke={ctx.resolveColor(g.color, '#243040')} strokeWidth={g.width} opacity={g.opacity} />
+    ) : null;
+  }
+
+  // --- ROUTES: projected geographic pathways (shipping lanes), drawn on + optional flow/arrow/glow ---
+  const routes = p.routes.flatMap((r, i) => {
+    // Build the line: optionally densify each leg along the great circle for a curved arc.
+    const pts: Array<[number, number]> = [];
+    for (let k = 0; k < r.coords.length - 1; k++) {
+      const a = r.coords[k]!;
+      const b = r.coords[k + 1]!;
+      if (r.arc) {
+        const interp = geoInterpolate(a, b);
+        const steps = 48;
+        for (let s = 0; s <= steps; s++) pts.push(interp(s / steps) as [number, number]);
+      } else {
+        pts.push(a);
+        if (k === r.coords.length - 2) pts.push(b);
+      }
+    }
+    const line = { type: 'LineString' as const, coordinates: pts };
+    const d = path(line as unknown as GeoPermissibleObjects) ?? '';
+    if (!d) return [];
+    const color = ctx.resolveColor(r.color, '#ffd34d');
+    const prog = r.draw_on ? drawProgress(r.draw_on, ctx.frame, i) : 1;
+    const len = ctx.width + ctx.height + 4000;
+    // draw-on: dashoffset len→0. flow: a moving dash pattern (offset shifts with frame).
+    const dashProps = r.dash > 0
+      ? { strokeDasharray: `${r.dash} ${r.dash}`, strokeDashoffset: r.flow ? -(((ctx.frame * r.flow) % (r.dash * 2))) : 0 }
+      : r.draw_on
+        ? { strokeDasharray: len, strokeDashoffset: len * (1 - prog) }
+        : {};
+    const els: React.JSX.Element[] = [];
+    if (r.glow > 0) {
+      els.push(<path key={`rg${i}`} d={d} fill="none" stroke={color} strokeWidth={r.width + r.glow * 2} strokeLinecap="round" strokeLinejoin="round" opacity={r.opacity * 0.35} style={{ filter: `blur(${r.glow}px)` }} {...dashProps} />);
+    }
+    els.push(<path key={`r${i}`} d={d} fill="none" stroke={color} strokeWidth={r.width} strokeLinecap="round" strokeLinejoin="round" opacity={r.opacity} {...dashProps} />);
+    // arrowhead at the end (oriented along the last segment), revealed with the route
+    if (r.arrow && pts.length >= 2 && prog > 0.98) {
+      const p1 = projection(pts[pts.length - 1]!);
+      const p0 = projection(pts[pts.length - 2]!);
+      if (p1 && p0) {
+        const ang = (Math.atan2(p1[1] - p0[1], p1[0] - p0[0]) * 180) / Math.PI;
+        const sz = r.width * 2.4;
+        els.push(
+          <polygon key={`ra${i}`} points={`0,${-sz} ${sz * 1.6},0 0,${sz}`} fill={color} opacity={r.opacity}
+            transform={`translate(${p1[0]},${p1[1]}) rotate(${ang})`} />,
+        );
+      }
+    }
+    return els;
+  });
+
+  // --- MARKERS: projected ports/cities — dot + optional ring + label, with a staggered pop-in ---
+  const markers = p.markers.flatMap((m, i) => {
+    const xy = projection(m.coord as [number, number]);
+    if (!xy) return [];
+    const [x, y] = xy;
+    const pop = p.markers_pop ? ease('spring', drawProgress(p.markers_pop, ctx.frame, i)) : 1;
+    if (pop <= 0) return [];
+    const color = ctx.resolveColor(m.color, '#ffffff');
+    const labelColor = ctx.resolveColor(m.label_color ?? m.color, color);
+    const els: React.JSX.Element[] = [];
+    els.push(
+      <g key={`m${i}`} transform={`translate(${x},${y}) scale(${pop})`} opacity={pop}>
+        {m.ring ? <circle r={m.radius * 2.1} fill="none" stroke={color} strokeWidth={2} opacity={0.5} /> : null}
+        <circle r={m.radius} fill={color} style={m.glow > 0 ? { filter: `drop-shadow(0 0 ${m.glow}px ${color})` } : undefined} />
+        {m.label ? (
+          <text x={0} y={m.label_dy} textAnchor="middle" fontSize={m.label_size} fontWeight={800} fill={labelColor}
+            style={{ paintOrder: 'stroke', stroke: '#000000', strokeWidth: 4, strokeLinejoin: 'round' }}>
+            {m.label}
+          </text>
+        ) : null}
+      </g>,
+    );
+    return els;
+  });
+
   return (
     <svg
       width={props.width}
@@ -214,7 +324,11 @@ export function renderMap(props: {
       style={{ position: 'absolute', left: 0, top: 0, overflow: 'visible' }}
       opacity={p.opacity}
     >
+      {ocean}
+      {graticule}
       {paths}
+      {routes}
+      {markers}
     </svg>
   );
 }

@@ -230,6 +230,88 @@ export const MapParamsSchema = z
 
     /** Layer opacity 0..1. */
     opacity: z.number().min(0).max(1).default(1),
+
+    // ---- Map v2: routes, markers, fly-to (animated projection), texture (all pure fns of frame) ----
+
+    /**
+     * ROUTES — animated geographic pathways (shipping lanes, trade corridors). Each is a list of
+     * [lon,lat] waypoints projected through the SAME projection as the land, so they align exactly.
+     * `arc` densifies each leg along the great-circle for a curved path; `draw_on` reveals the stroke
+     * (dashoffset) over a frame ramp; `dash`/`flow` add a moving dashed "flow"; `arrow` caps the end.
+     */
+    routes: z
+      .array(
+        z
+          .object({
+            coords: z.array(z.tuple([z.number(), z.number()])).min(2),
+            color: z.string().default('#ffd34d'),
+            width: z.number().positive().default(4),
+            opacity: z.number().min(0).max(1).default(1),
+            arc: z.boolean().default(true),
+            dash: z.number().min(0).default(0),
+            flow: z.number().default(0),
+            arrow: z.boolean().default(false),
+            glow: z.number().min(0).default(0),
+            draw_on: DrawOnSchema.optional(),
+          })
+          .strip(),
+      )
+      .max(64)
+      .default([]),
+
+    /**
+     * MARKERS — labeled points at [lon,lat] (ports, cities, chokepoints). Projected to pixels; a dot +
+     * optional pulse ring + optional text label. `pop` gives a per-marker scale/fade-in over a frame
+     * ramp (staggered). Domain-clean: coordinates + labels are DATA supplied by the story.
+     */
+    markers: z
+      .array(
+        z
+          .object({
+            coord: z.tuple([z.number(), z.number()]),
+            label: z.string().optional(),
+            color: z.string().default('#ffffff'),
+            radius: z.number().min(0).default(8),
+            ring: z.boolean().default(true),
+            label_color: z.string().optional(),
+            label_size: z.number().positive().default(34),
+            label_dy: z.number().default(-24),
+            glow: z.number().min(0).default(6),
+          })
+          .strip(),
+      )
+      .max(64)
+      .default([]),
+    /** Per-marker pop-in ramp (scale + fade), staggered. Absent → markers appear immediately. */
+    markers_pop: DrawOnSchema.optional(),
+
+    /**
+     * FLY-TO — animate the projection from (center,scale) → (center_to,scale_to) over `fly` frames, so
+     * the map pans/zooms across the globe within a beat (the "fly to location" move). Requires fit:false.
+     * Pure: the animated center/scale are a function of `frame` only.
+     */
+    center_to: z.tuple([z.number(), z.number()]).optional(),
+    scale_to: z.number().positive().optional(),
+    fly: z
+      .object({
+        delay: z.number().min(0).default(0),
+        duration: z.number().min(1).default(45),
+        easing: z.enum(['linear', 'easeOut', 'easeInOut', 'spring']).default('easeInOut'),
+      })
+      .optional(),
+
+    /** GRATICULE — a subtle lat/lon grid for texture. Off by default. */
+    graticule: z
+      .object({
+        color: z.string().default('#243040'),
+        width: z.number().min(0).default(0.5),
+        opacity: z.number().min(0).max(1).default(0.5),
+        step: z.number().positive().default(15),
+      })
+      .optional(),
+
+    /** OCEAN — a flat background fill behind the land (the "sea"), for a filled map instead of transparent. */
+    ocean: z.string().optional(),
   })
   .strip();
 

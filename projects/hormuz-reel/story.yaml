@@ -56,6 +56,22 @@ beats:
             Oman: "#ffb020"
             Qatar: "#ffb020"
             Kuwait: "#ffb020"
+          ocean: "#0a1420"
+          graticule: { step: 8, color: "#1a2636", opacity: 0.45, width: 0.6 }
+          # shipping route: out of the Strait of Hormuz into the Arabian Sea (glowing, draws on, arrow)
+          routes:
+            - coords: [[56.4, 26.6], [58.5, 24.5], [62, 22], [66, 20]]
+              color: "#ffd34d"
+              width: 6
+              arc: true
+              arrow: true
+              glow: 7
+              draw_on: { delay: 20, duration: 34, easing: easeInOut }
+          # port / chokepoint markers
+          markers:
+            - { coord: [56.4, 26.6], label: "Hormuz", color: "#ffd34d", radius: 11, label_size: 40 }
+            - { coord: [54.4, 24.5], label: "Dubai", color: "#f5f7fa", radius: 8, label_size: 30 }
+          markers_pop: { delay: 10, duration: 20, stagger: 10 }
           effects:
             - { kind: glow, color: "#ffb020", radius: 6, intensity: 0.4 }
       - text: "STRAIT OF HORMUZ"
