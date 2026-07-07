@@ -47,36 +47,66 @@ interface SfxRecipe {
  */
 const SFX_RECIPES: Record<string, SfxRecipe> = {
   tick: {
-    dur: 0.18,
-    graph: 'sine=frequency=880:duration=0.18,afade=t=out:st=0.04:d=0.14:curve=exp,volume=0.6[out]',
+    dur: 0.12,
+    // A crisp high click + a tiny body — a clean "text appears" tick.
+    graph:
+      'sine=frequency=2200:duration=0.12[a];sine=frequency=1100:duration=0.12[b];[a][b]amix=inputs=2:normalize=0,afade=t=out:st=0.01:d=0.11:curve=exp,volume=0.5[out]',
   },
   pop: {
-    dur: 0.16,
-    // A short pitch-rising chirp: aevalsrc with a time-varying frequency, fast decay.
+    dur: 0.18,
+    // A satisfying UI pop: a pitch-rising body chirp + a bright click transient at the attack, tight
+    // envelope. Two layers mixed → a fuller "element pops in" than a bare sine.
     graph:
-      "aevalsrc='0.7*sin(2*PI*(420+1600*t)*t)':d=0.16:s=44100,afade=t=out:st=0.02:d=0.14:curve=exp[out]",
+      "aevalsrc='0.8*sin(2*PI*(360+1500*t)*t)':d=0.18:s=44100[body];" +
+      'sine=frequency=2600:duration=0.05[click];' +
+      '[body][click]amix=inputs=2:normalize=0,afade=t=out:st=0.03:d=0.15:curve=exp,volume=0.85[out]',
   },
   whoosh: {
-    dur: 0.45,
-    // White-ish noise (deterministic sine-sum approximation) swept by a falling lowpass → an airy
-    // whoosh. Uses anoisesrc with a FIXED seed so the bytes are stable across runs (determinism).
+    dur: 0.55,
+    // A cinematic transition swoosh: warm PINK noise (airier than white) with a swelling tri envelope +
+    // a descending body tone underneath → a real "move/reveal" whoosh, not a hiss. Fixed seed = stable.
     graph:
-      'anoisesrc=color=white:duration=0.45:seed=1:amplitude=0.5,highpass=f=300,lowpass=f=2500,afade=t=in:st=0:d=0.12,afade=t=out:st=0.2:d=0.25,volume=0.7[out]',
+      'anoisesrc=color=pink:duration=0.55:seed=1:amplitude=0.7,highpass=f=180,lowpass=f=3200[n];' +
+      "aevalsrc='0.25*sin(2*PI*(600*exp(-3*t))*t)':d=0.55:s=44100[tone];" +
+      '[n][tone]amix=inputs=2:normalize=0,afade=t=in:st=0:d=0.22:curve=tri,afade=t=out:st=0.3:d=0.25,volume=0.85[out]',
   },
   ding: {
-    dur: 0.6,
-    // Two stacked partials (a perfect fifth) with a long exponential decay → a bright bell/reveal.
+    dur: 0.75,
+    // A rich bell/reveal: three (slightly inharmonic) partials + a long exponential decay → a bright,
+    // shimmering "highlight" chime, warmer than a bare fifth.
     graph:
-      'sine=frequency=1320:duration=0.6[a];sine=frequency=1980:duration=0.6[b];[a][b]amix=inputs=2:normalize=0,afade=t=out:st=0.05:d=0.55:curve=exp,volume=0.5[out]',
+      'sine=frequency=1200:duration=0.75[a];sine=frequency=1800:duration=0.75[b];sine=frequency=2680:duration=0.75[c];' +
+      '[a][b][c]amix=inputs=3:normalize=0,afade=t=out:st=0.06:d=0.69:curve=exp,volume=0.4[out]',
   },
   thud: {
-    dur: 0.35,
-    // A low body sine with a snappy decay → an impact/landing.
-    graph: 'sine=frequency=110:duration=0.35,afade=t=out:st=0.02:d=0.33:curve=exp,volume=0.9[out]',
+    dur: 0.45,
+    // A cinematic IMPACT: a sub-bass sine that DROPS in pitch (an exponentially falling frequency,
+    // ~150→40 Hz) for the "boom", plus a short noise transient for the attack "hit". The classic
+    // trailer-hit synthesis. Snappy exp decay.
+    graph:
+      "aevalsrc='0.95*sin(2*PI*(150*exp(-7*t))*t)':d=0.45:s=44100[sub];" +
+      'anoisesrc=color=white:duration=0.06:seed=2:amplitude=0.5,highpass=f=800[hit];' +
+      '[sub][hit]amix=inputs=2:normalize=0,afade=t=out:st=0.04:d=0.41:curve=exp,volume=0.95[out]',
   },
   click: {
-    dur: 0.06,
-    graph: 'sine=frequency=1600:duration=0.06,afade=t=out:st=0.005:d=0.055:curve=exp,volume=0.5[out]',
+    dur: 0.05,
+    graph: 'sine=frequency=1800:duration=0.05,afade=t=out:st=0.004:d=0.046:curve=exp,volume=0.45[out]',
+  },
+  riser: {
+    dur: 1.2,
+    // A TENSION BUILD: rising filtered noise + a rising pitch, crescendo to the end → tension before a
+    // reveal/turn (the geopolitics "something is coming" build). Fixed seed = deterministic.
+    graph:
+      'anoisesrc=color=white:duration=1.2:seed=3:amplitude=0.5,highpass=f=500[n];' +
+      "aevalsrc='0.35*sin(2*PI*(180+700*t)*t)':d=1.2:s=44100[t];" +
+      '[n][t]amix=inputs=2:normalize=0,afade=t=in:st=0:d=1.05:curve=exp,afade=t=out:st=1.1:d=0.1,volume=0.6[out]',
+  },
+  boom: {
+    dur: 0.85,
+    // A BIG cinematic sub-impact: a deeper, longer pitch drop (~110→30 Hz) with a longer tail than
+    // `thud` → the payoff/climax hit. Sub-bass — feel it more than hear it.
+    graph:
+      "aevalsrc='0.98*sin(2*PI*(110*exp(-4.5*t))*t)':d=0.85:s=44100,afade=t=out:st=0.12:d=0.7:curve=exp,volume=1.0[out]",
   },
 };
 

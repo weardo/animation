@@ -15,7 +15,7 @@ post:
   - { kind: grain, amount: 0.055, size: 0.9, seed: 7 }
 
 # Dark, tense music bed (built-in `drone`) — auto-ducked low while the narration speaks.
-music: { ref: drone, gain: 0.32, duck: 0.11, fade: 14 }
+music: { ref: "audio/tension.mp3", gain: 0.6, duck: 0.32, fade: 16 }
 
 cast: {}
 
@@ -23,6 +23,9 @@ beats:
   # ==================================================== B1 — HOOK ====================================
   - id: hook
     say: "समंदर का एक छोटा सा रास्ता, जो पूरी दुनिया की economy हिला सकता है।"
+    sfx:
+      - { name: whoosh, at: 2 }
+      - { name: pop, at: 8 }
     show:
       - shape: rect
         as: bg
@@ -53,6 +56,11 @@ beats:
   # ==================================================== B2 — SETUP (Hormuz) ==========================
   - id: setup
     say: "ये है Strait of Hormuz। सिर्फ़ चालीस किलोमीटर चौड़ा, लेकिन दुनिया का बीस परसेंट तेल यहीं से गुज़रता है।"
+    sfx:
+      - { name: whoosh, at: 2 }
+      - { name: pop, at: 4 }
+      - { name: tick, at: 14 }
+      - { name: whoosh, at: 24 }
     show:
       - shape: rect
         as: bg
@@ -106,6 +114,10 @@ beats:
   # ==================================================== B3 — STAKES ==================================
   - id: stakes
     say: "अगर ये एक रास्ता बंद हो जाए, तो पूरी दुनिया में पेट्रोल के दाम आसमान छू लें।"
+    sfx:
+      - { name: whoosh, at: 2 }
+      - { name: boom, at: 6 }
+      - { name: pop, at: 18 }
     show:
       - shape: rect
         as: bg
@@ -125,6 +137,9 @@ beats:
   # ==================================================== B4 — TURN (to China) =========================
   - id: turn
     say: "लेकिन इस खेल में सबसे बड़ा डर किसी और को है। China को।"
+    sfx:
+      - { name: whoosh, at: 2 }
+      - { name: thud, at: 6 }
     show:
       - shape: rect
         as: bg
@@ -159,6 +174,11 @@ beats:
   # ==================================================== B5 — ESCALATION (Malacca) ====================
   - id: malacca
     say: "China का करीब अस्सी परसेंट imported तेल Malacca Strait से आता है। एक पतली सी गली, जिसे कभी भी रोका जा सकता है। नाम है, Malacca Dilemma।"
+    sfx:
+      - { name: whoosh, at: 2 }
+      - { name: pop, at: 4 }
+      - { name: whoosh, at: 20 }
+      - { name: ding, at: 60 }
     show:
       - shape: rect
         as: bg
@@ -206,6 +226,11 @@ beats:
   # ==================================================== B6 — THE MOVE (China → Gwadar) ===============
   - id: gwadar
     say: "इससे बचने के लिए China, Pakistan के Gwadar port तक एक नया रास्ता बना रहा है।"
+    sfx:
+      - { name: whoosh, at: 2 }
+      - { name: pop, at: 4 }
+      - { name: whoosh, at: 16 }
+      - { name: pop, at: 42 }
     show:
       - shape: rect
         as: bg
@@ -255,6 +280,11 @@ beats:
   # ==================================================== B7 — THE COUNTER (India → Chabahar) ==========
   - id: chabahar
     say: "और भारत? भारत ने ठीक बगल में, Iran के Chabahar port से जवाब दे दिया।"
+    sfx:
+      - { name: whoosh, at: 2 }
+      - { name: pop, at: 4 }
+      - { name: whoosh, at: 14 }
+      - { name: pop, at: 28 }
     show:
       - shape: rect
         as: bg
@@ -304,6 +334,11 @@ beats:
   # ==================================================== B8 — INSIGHT (face-off) =======================
   - id: faceoff
     say: "Gwadar और Chabahar, सिर्फ़ एक सौ सत्तर किलोमीटर दूर। दो देश, दो बंदरगाह, एक जंग।"
+    sfx:
+      - { name: whoosh, at: 2 }
+      - { name: pop, at: 8 }
+      - { name: pop, at: 12 }
+      - { name: ding, at: 20 }
     show:
       - shape: rect
         as: bg
@@ -349,6 +384,9 @@ beats:
   # ==================================================== B9 — PAYOFF ===================================
   - id: payoff
     say: "अगली बड़ी जंग शायद ज़मीन पर नहीं, इन्हीं समंदर के रास्तों पर लड़ी जाएगी।"
+    sfx:
+      - { name: whoosh, at: 2 }
+      - { name: boom, at: 8 }
     show:
       - shape: rect
         as: bg
@@ -364,6 +402,9 @@ beats:
   # ==================================================== B10 — CTA =====================================
   - id: cta
     say: "ऐसी ही geopolitics के लिए, follow करना मत भूलना!"
+    sfx:
+      - { name: whoosh, at: 2 }
+      - { name: ding, at: 6 }
     show:
       - shape: rect
         as: bg
