@@ -40,7 +40,10 @@ beats:
           projection: mercator
           fit: false
           center: [50, 27]
-          scale: 900
+          scale: 780
+          center_to: [55, 26]
+          scale_to: 1050
+          fly: { delay: 24, duration: 70, easing: easeInOut }
           key_field: name
           fill: "#141c28"
           no_data_fill: "#141c28"
@@ -116,15 +119,29 @@ beats:
         args:
           projection: mercator
           fit: false
-          center: [108, 16]
-          scale: 720
+          center: [90, 14]
+          scale: 300
           key_field: name
           fill: "#141c28"
           no_data_fill: "#141c28"
           stroke: "#243040"
-          stroke_width: 0.8
+          stroke_width: 0.7
+          ocean: "#0a1420"
+          graticule: { step: 10, color: "#1a2636", opacity: 0.4, width: 0.6 }
           choropleth:
             China: "#ff4438"
+          # China's vulnerable oil lane: Gulf → around India → through Malacca → up to China
+          routes:
+            - coords: [[57, 26], [64, 21], [74, 9], [85, 5], [96, 3.5], [100.4, 2.8], [106, 8], [114, 18], [121, 31]]
+              color: "#ff6b4d"
+              width: 5
+              arc: true
+              arrow: true
+              glow: 6
+              draw_on: { delay: 12, duration: 48, easing: easeInOut }
+          markers:
+            - { coord: [100.4, 2.8], label: "Malacca", color: "#ff4438", radius: 12, label_size: 40 }
+          markers_pop: { delay: 44, duration: 18 }
           effects:
             - { kind: glow, color: "#ff4438", radius: 7, intensity: 0.45 }
       - text: "China की Weakness"
@@ -151,16 +168,31 @@ beats:
         args:
           projection: mercator
           fit: false
-          center: [64, 27]
-          scale: 780
+          center: [66, 24]
+          scale: 700
           key_field: name
           fill: "#141c28"
           no_data_fill: "#141c28"
           stroke: "#243040"
           stroke_width: 0.8
+          ocean: "#0a1420"
+          graticule: { step: 8, color: "#1a2636", opacity: 0.4, width: 0.6 }
           choropleth:
             India: "#ffb020"
             Iran: "#2ee6a6"
+          # India's new corridor: Mumbai → Chabahar port (bypassing the Hormuz chokepoint)
+          routes:
+            - coords: [[72.8, 18.9], [67, 22], [60.6, 25.3]]
+              color: "#2ee6a6"
+              width: 5
+              arc: true
+              arrow: true
+              glow: 6
+              draw_on: { delay: 14, duration: 36, easing: easeInOut }
+          markers:
+            - { coord: [60.6, 25.3], label: "Chabahar", color: "#2ee6a6", radius: 12, label_size: 38 }
+            - { coord: [72.8, 18.9], label: "Mumbai", color: "#f5f7fa", radius: 8, label_size: 28 }
+          markers_pop: { delay: 28, duration: 18, stagger: 8 }
           effects:
             - { kind: glow, color: "#2ee6a6", radius: 7, intensity: 0.45 }
       - text: "India का Move"
