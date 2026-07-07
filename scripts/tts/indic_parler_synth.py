@@ -28,11 +28,13 @@ os.environ.setdefault("HF_HOME", "/mnt/data/astra/.cache/hf")
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")
 
-# A neutral, clear default voice. "Aditi" is an Indic Parler recommended speaker; the description
-# controls timbre/pace/quality. The spoken language is inferred from the SCRIPT of --text.
+# A clear default voice. The SPEAKER NAME picks the voice+accent; the language is inferred from the
+# SCRIPT of --text. "Rohit" is a recommended HINDI speaker — must match the text language or Hindi gets
+# another accent (e.g. "Aditi" is BENGALI). Hindi recommended speakers: Rohit, Divya.
 DEFAULT_DESC = (
-    "Aditi speaks in a clear, expressive and measured voice, at a moderate pace, "
-    "with very clear high-quality audio and no background noise."
+    "Aman speaks in a youthful, energetic and lively young man's voice, at a fast and continuous pace "
+    "with almost no pauses, full of excitement and punchy emphasis like a young reel storyteller, in "
+    "very clear high-quality audio with no background noise."
 )
 
 

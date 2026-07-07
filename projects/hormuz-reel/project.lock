@@ -1,0 +1,27 @@
+{
+  "lockfile_version": "1",
+  "algorithm": "object-hash@sha1/v1",
+  "refs": {
+    "bg_gradient@1.0.0": {
+      "namespace": "backgrounds",
+      "id": "bg_gradient",
+      "version": "1.0.0",
+      "hash": "84e83292f11d2fa767ca742a60d548a44653c621",
+      "deps": []
+    },
+    "plain@1.0.0": {
+      "namespace": "stylekits",
+      "id": "plain",
+      "version": "1.0.0",
+      "hash": "fb56c23a60d8cef3e43f7f126ecbd4a3ec2d6622",
+      "deps": []
+    },
+    "world-map@1.0.0": {
+      "namespace": "generators",
+      "id": "world-map",
+      "version": "1.0.0",
+      "hash": "b6260892b69cb9f545f4ab94dd3b64a5e52b5097",
+      "deps": []
+    }
+  }
+}

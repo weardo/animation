@@ -1,0 +1,29 @@
+{
+  "project_version": "1.0",
+  "id": "hormuz-reel",
+  "name": "Hormuz Reel",
+  "created": "2026-07-07T17:27:18.149Z",
+  "updated": "2026-07-07T17:27:18.149Z",
+  "config": {
+    "w": 1080,
+    "h": 1920,
+    "fps": 30,
+    "duration_frames": 580
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "153918bfbb043b50cdf8cf67211384c4767ce09c",
+  "engine": "remotion@4.0.481",
+  "deps": [
+    "bg_gradient@1.0.0"
+  ],
+  "assets": [
+    "assets/bg_gradient.svg",
+    "assets/fonts/NotoSansDevanagari.ttf"
+  ],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  }
+}

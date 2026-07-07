@@ -22,19 +22,28 @@
 import React from 'react';
 import { AbsoluteFill, Sequence, useCurrentFrame, useVideoConfig } from 'remotion';
 import type { CaptionCue } from '../ir/index.js';
+import { resolveFontUrl, useVendoredFont } from './TextLayer.js';
 
 /**
- * The caption font family. Reuses the SAME vendored local DejaVu Sans face the TextLayer registers via
- * @font-face (offline + deterministic); we don't re-inject it here — captions tolerate the system
- * sans-serif fallback for the brief window before the shared face resolves, and the byte-exact still
- * verification runs after fonts settle. Kept as a plain CSS family so no extra font gate is needed.
+ * The caption font STACK. A vendored Noto Sans Devanagari face (loaded below) is preferred so Indic
+ * scripts (Hindi/Marathi/…) render real glyphs instead of tofu boxes; Latin/digits fall back to the
+ * DejaVu Sans face the TextLayer registers, then the system sans-serif. Multilingual by construction:
+ * the browser picks each glyph from the first family in the stack that has it. (Other Indic scripts —
+ * Tamil/Telugu/… — want their own Noto face; generalizing the caption font to DATA is future work.)
  */
-const CAPTION_FONT = '"DejaVu Sans", sans-serif';
+const CAPTION_FONT = '"Noto Sans Devanagari", "DejaVu Sans", sans-serif';
+
+/** The vendored Devanagari face registered for captions (offline, deterministic — same pattern as text). */
+const CAPTION_DEVANAGARI_FAMILY = 'Noto Sans Devanagari';
+const CAPTION_DEVANAGARI_URI = 'asset://fonts/NotoSansDevanagari.ttf';
 
 /** One caption cue, rendered for its window. The `words` mode reveals tokens cumulatively even-split. */
 const CaptionCueView: React.FC<{ cue: CaptionCue }> = ({ cue }) => {
   const frame = useCurrentFrame(); // LOCAL frame within the <Sequence> (0 at cue.at)
   const { width, height } = useVideoConfig();
+  // Register + await the vendored Devanagari face (deterministic offline gate) so Indic captions paint
+  // with real glyphs, not tofu. The @font-face injection is deduped; Latin still falls back to DejaVu.
+  useVendoredFont(CAPTION_DEVANAGARI_FAMILY, resolveFontUrl(CAPTION_DEVANAGARI_URI));
 
   let text = cue.text;
   if (cue.mode === 'words') {

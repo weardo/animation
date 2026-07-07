@@ -63,7 +63,7 @@ function animNum(anim: Record<string, unknown> | undefined, key: string, fallbac
  * Resolve an `asset://…` (or bare) font URI to a Remotion `staticFile` URL under the render publicDir.
  * Mirrors AssetLayer's `resolveAssetUrl`: a `scheme://` prefix is stripped; the rest is a public path.
  */
-function resolveFontUrl(uri: string): string {
+export function resolveFontUrl(uri: string): string {
   const path = uri.includes('://') ? uri.slice(uri.indexOf('://') + 3) : uri;
   return staticFile(path);
 }
@@ -98,7 +98,7 @@ function ensureFontFace(family: string, url: string): void {
  * caches the underlying fetch per document, so this is safe under high render concurrency. Returns
  * once the font is ready; surfaces a genuine load failure via cancelRender (never a silent fallback).
  */
-function useVendoredFont(family: string, url: string): boolean {
+export function useVendoredFont(family: string, url: string): boolean {
   const [ready, setReady] = useState(false);
   const [handle] = useState(() => delayRender(`TextLayer:font:${family}`));
   React.useEffect(() => {

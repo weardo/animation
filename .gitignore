@@ -49,3 +49,4 @@ style-ref/
 .m4-*.sh
 *.log
 public/generated/
+projects/*/media/

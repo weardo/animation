@@ -320,6 +320,26 @@
           "spec_hash": "f5f865530a4189dc38c65a9314b5905f55fac86d",
           "license": "CC0"
         }
+      },
+      "world-map": {
+        "id": "world-map",
+        "version": "1.0.0",
+        "kind": "generator-preset",
+        "format": "generator-preset",
+        "uri": "preset://world-map",
+        "tags": [
+          "generator-preset",
+          "map",
+          "world",
+          "geo"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "World map (110m TopoJSON) for the d3-geo map generator.",
+          "generator": "map",
+          "spec_hash": "37fdeb76629ca0a9af15f154cd5347b84e1017f1",
+          "license": "ODC-PDDL (Natural Earth)"
+        }
       }
     },
     "kits": {},

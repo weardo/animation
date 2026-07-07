@@ -1,0 +1,155 @@
+# hormuz-reel — PROTOTYPE news-explainer reel (HINGLISH).
+# 9:16 vertical explainer on the Strait of Hormuz / chokepoint geopolitics, built on VERIFIABLE facts
+# (Hormuz carries ~20% of the world's oil; China's "Malacca dilemma"; Chabahar port). Narration is
+# HINGLISH (natural Hindi-English mix, how reels actually talk); on-screen text mixes Devanagari + Latin.
+# The channel TEMPLATE: map generator + a data/number beat + Devanagari/Latin text + Hinglish VO + captions.
+#
+# Verify visuals fast:   render projects/hormuz-reel/story.yaml --project hormuz-reel --frames auto --no-audio
+# Full reel (Hindi VO):  render projects/hormuz-reel/story.yaml --project hormuz-reel --engine indic-parler
+title: "Hormuz का खेल — Hormuz Reel"
+style: plain
+format:
+  aspect: "9:16"
+  fps: 30
+
+cast: {}
+
+beats:
+  # B1 — HOOK. Gulf oil states light up; the big title lands.
+  - id: hook
+    say: "ये है Strait of Hormuz, दुनिया का सबसे important तेल रास्ता।"
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - generator: world-map
+        as: world
+        args:
+          projection: natural-earth
+          fit: true
+          key_field: name
+          no_data_fill: bg2
+          stroke: bg
+          stroke_width: 0.6
+          draw_on: { duration: 22, stagger: 0, easing: easeOut }
+          draw_on_stroke: true
+          draw_on_fill: true
+          choropleth:
+            Iran: accent
+            "Saudi Arabia": accent
+            "United Arab Emirates": accent
+            Oman: accent
+      - text: "Strait of Hormuz"
+        as: title
+        at: top
+        args: { z: 20, size: 92, weight: 700, color: "#ffffff", font: "Noto Sans Devanagari", fontUri: "asset://fonts/NotoSansDevanagari.ttf", anim: { preset: rise, duration: 20, distance: 60 } }
+      - text: "दुनिया का तेल रास्ता"
+        as: sub
+        at: bottom
+        args: { z: 20, size: 52, weight: 400, color: "#ffd34d", font: "Noto Sans Devanagari", fontUri: "asset://fonts/NotoSansDevanagari.ttf", anim: { preset: fade, duration: 18 } }
+    camera: establishing
+    duration: { seconds: 4 }
+
+  # B2 — THE STAT. Big number carries the fact (≈20% of the world's oil).
+  - id: stat
+    say: "दुनिया का करीब twenty percent oil इसी रास्ते से गुज़रता है।"
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - text: "≈ 20%"
+        as: bignum
+        at: center
+        args: { z: 10, size: 300, weight: 700, color: "#ffd34d", font: "Noto Sans Devanagari", fontUri: "asset://fonts/NotoSansDevanagari.ttf", anim: { preset: rise, duration: 20, distance: 80 } }
+      - text: "Global Oil Supply"
+        as: numlabel
+        at: bottom
+        args: { z: 20, size: 56, weight: 400, color: "#ffffff", font: "Noto Sans Devanagari", fontUri: "asset://fonts/NotoSansDevanagari.ttf", anim: { preset: fade, duration: 18 } }
+    camera: slow_push_in
+    duration: { seconds: 4 }
+    transition: { kind: fade, duration: 16 }
+
+  # B3 — THE PROBLEM. China's oil mostly comes via the Malacca Strait — its chokepoint weakness.
+  - id: china
+    say: "उधर China का ज़्यादातर तेल Malacca Strait से आता है, उसकी सबसे बड़ी weakness।"
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - generator: world-map
+        as: world
+        args:
+          projection: natural-earth
+          fit: true
+          key_field: name
+          no_data_fill: bg2
+          stroke: bg
+          stroke_width: 0.6
+          choropleth:
+            China: "#ff6b6b"
+      - text: "China की Weakness"
+        as: title
+        at: top
+        args: { z: 20, size: 82, weight: 700, color: "#ffffff", font: "Noto Sans Devanagari", fontUri: "asset://fonts/NotoSansDevanagari.ttf", anim: { preset: rise, duration: 20, distance: 60 } }
+      - text: "Malacca Strait"
+        as: sub
+        at: bottom
+        args: { z: 20, size: 52, weight: 400, color: "#ff9f43", font: "Noto Sans Devanagari", fontUri: "asset://fonts/NotoSansDevanagari.ttf", anim: { preset: fade, duration: 18 } }
+    camera: slow_push_in
+    duration: { seconds: 4 }
+    transition: { kind: fade, duration: 16 }
+
+  # B4 — INDIA'S MOVE. India develops an alternative route via Chabahar port (Iran).
+  - id: india
+    say: "अब India, Chabahar port से एक नया रास्ता बना रहा है।"
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - generator: world-map
+        as: world
+        args:
+          projection: natural-earth
+          fit: true
+          key_field: name
+          no_data_fill: bg2
+          stroke: bg
+          stroke_width: 0.6
+          choropleth:
+            India: accent
+            Iran: light
+      - text: "India का Move"
+        as: title
+        at: top
+        args: { z: 20, size: 82, weight: 700, color: "#ffffff", font: "Noto Sans Devanagari", fontUri: "asset://fonts/NotoSansDevanagari.ttf", anim: { preset: rise, duration: 20, distance: 60 } }
+      - text: "Chabahar Port"
+        as: sub
+        at: bottom
+        args: { z: 20, size: 52, weight: 400, color: "#5ee6a8", font: "Noto Sans Devanagari", fontUri: "asset://fonts/NotoSansDevanagari.ttf", anim: { preset: fade, duration: 18 } }
+    camera: slow_push_in
+    duration: { seconds: 4 }
+    transition: { kind: fade, duration: 16 }
+
+  # B5 — THE PAYOFF. One chokepoint can flip the whole game.
+  - id: payoff
+    say: "एक chokepoint, जो पूरा game पलट सकता है।"
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - text: "Game पलट सकता है"
+        as: big
+        at: center
+        args: { z: 10, size: 104, weight: 700, color: "#ffd34d", font: "Noto Sans Devanagari", fontUri: "asset://fonts/NotoSansDevanagari.ttf", anim: { preset: rise, duration: 22, distance: 80 } }
+    camera: slow_push_in
+    duration: { seconds: 3 }
+    transition: { kind: fade, duration: 16 }
+
+  # B6 — CTA. Channel outro.
+  - id: cta
+    say: "ऐसी और news के लिए follow करो!"
+    show:
+      - asset: bg_gradient
+        args: { z: 0, parallax: 0 }
+      - text: "Follow करो!"
+        as: cta
+        at: center
+        args: { z: 10, size: 120, weight: 700, color: "#ffffff", font: "Noto Sans Devanagari", fontUri: "asset://fonts/NotoSansDevanagari.ttf", anim: { preset: rise, duration: 20, distance: 70 } }
+    camera: hold
+    duration: { seconds: 3 }
+    transition: { kind: fade, duration: 16 }

@@ -32,7 +32,7 @@ import objectHash from 'object-hash';
  * NEVER fails the build — we fall back to espeak-ng (golden rule 1: the cached wav is the deterministic
  * record, not the engine).
  */
-export type NarrateEngine = 'espeak-ng' | 'coqui' | 'kokoro' | 'chatterbox' | 'parler' | 'indic-parler' | 'indicf5';
+export type NarrateEngine = 'espeak-ng' | 'coqui' | 'kokoro' | 'chatterbox' | 'parler' | 'indic-parler' | 'indicf5' | 'sarvam';
 
 /** Inputs that fully determine a synthesized clip → its content-address (cache key). */
 export interface NarrateRequest {
@@ -88,6 +88,8 @@ export const DEFAULT_VOICE: Record<NarrateEngine, string> = {
   'indic-parler': 'default',
   // indicf5: the voice IS the reference audio (voice cloning). "default" = the vendored reference clip.
   indicf5: 'default',
+  // sarvam: Bulbul v3 speaker name (young Hindi voices: shubh/aditya/dev/aayan/sunny/advait).
+  sarvam: 'shubh',
 };
 export const DEFAULT_WPM = 165;
 
@@ -99,9 +101,11 @@ export const DEFAULT_STYLE: Partial<Record<NarrateEngine, Record<string, number>
 /** Per-engine default tone description (parler / indic-parler conditioning prompt). */
 export const DEFAULT_TONE: Partial<Record<NarrateEngine, string>> = {
   parler: 'A speaker delivers in a calm, somber and reverent tone, at a measured pace, with very clear high-quality audio and no background noise.',
-  // Indic Parler steers the voice by description; "Aditi" is a recommended Indic speaker, the
-  // language is inferred from the SCRIPT of the text (Devanagari → Hindi, Tamil script → Tamil, …).
-  'indic-parler': 'Aditi speaks in a clear, expressive and measured voice, at a moderate pace, with very clear high-quality audio and no background noise.',
+  // Indic Parler steers the voice by the SPEAKER NAME in the description; the language is inferred from
+  // the SCRIPT of the text (Devanagari → Hindi, …). "Rohit" is a recommended HINDI speaker — use a
+  // language-matched speaker or the model renders Hindi in another language's accent (e.g. "Aditi" is
+  // BENGALI, which made Hindi text sound Bengali). Hindi recommended: Rohit, Divya.
+  'indic-parler': 'Divya speaks in a youthful, bright and highly energetic voice, at a very fast and continuous pace with almost no pauses, full of excitement and punchy emphasis like a captivating young reel storyteller, in very clear high-quality audio with no background noise.',
 };
 
 /** The HF model cache shared by every venv engine; pinned so models never re-download per-process. */
@@ -255,6 +259,28 @@ function synthIndicParler(req: NarrateRequest, wavPath: string, rootDir: string)
  * a project may override via req.voice = an absolute wav path with a `<path>.txt` transcript sidecar.
  * A missing reference / venv / synth error falls back to espeak-ng (never fails the build).
  */
+/**
+ * Sarvam Bulbul v3 (native Hinglish, cloud API) — NOT a venv/local model: a stdlib HTTP call via
+ * system python3 (scripts/tts/sarvam_synth.py), keyed by SARVAM_API_KEY in the env. The speaker id is
+ * req.voice (default "shubh"). Runs ONCE offline into the content-addressed cache like every engine, so
+ * the render replays the fixed wav. A missing key / network error → false → espeak-ng fallback.
+ */
+function synthSarvam(req: NarrateRequest, wavPath: string, rootDir: string): boolean {
+  if (!process.env['SARVAM_API_KEY']) return false;
+  const script = resolvePath(rootDir, 'scripts/tts/sarvam_synth.py');
+  if (!existsSync(script)) return false;
+  const speaker = req.voice && req.voice !== 'default' ? req.voice : DEFAULT_VOICE.sarvam;
+  try {
+    execFileSync('python3', [script, '--text', req.text, '--out', wavPath, '--speaker', speaker], {
+      stdio: 'pipe',
+      env: { ...process.env },
+    });
+    return existsSync(wavPath);
+  } catch {
+    return false;
+  }
+}
+
 function synthIndicF5(req: NarrateRequest, wavPath: string, rootDir: string): boolean {
   // Resolve the reference voice: a project-supplied absolute wav (voice id) or the vendored default.
   const custom = req.voice && req.voice !== 'default' && req.voice.endsWith('.wav') ? req.voice : undefined;
@@ -327,6 +353,9 @@ export function synthNarration(
         break;
       case 'indicf5':
         ok = synthIndicF5(req, wavPath, rootDir);
+        break;
+      case 'sarvam':
+        ok = synthSarvam(req, wavPath, rootDir);
         break;
     }
     if (!ok) {
