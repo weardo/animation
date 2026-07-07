@@ -30,7 +30,7 @@ import {
 
 /** The TTS engine ids the narrate pass accepts; an authored `voice.engine` outside this set is ignored. */
 const KNOWN_ENGINES: ReadonlySet<NarrateEngine> = new Set<NarrateEngine>([
-  'espeak-ng', 'coqui', 'kokoro', 'chatterbox', 'parler',
+  'espeak-ng', 'coqui', 'kokoro', 'chatterbox', 'parler', 'indic-parler', 'indicf5',
 ]);
 
 /**

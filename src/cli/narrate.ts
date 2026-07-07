@@ -32,7 +32,7 @@ import objectHash from 'object-hash';
  * NEVER fails the build — we fall back to espeak-ng (golden rule 1: the cached wav is the deterministic
  * record, not the engine).
  */
-export type NarrateEngine = 'espeak-ng' | 'coqui' | 'kokoro' | 'chatterbox' | 'parler';
+export type NarrateEngine = 'espeak-ng' | 'coqui' | 'kokoro' | 'chatterbox' | 'parler' | 'indic-parler' | 'indicf5';
 
 /** Inputs that fully determine a synthesized clip → its content-address (cache key). */
 export interface NarrateRequest {
@@ -84,6 +84,10 @@ export const DEFAULT_VOICE: Record<NarrateEngine, string> = {
   // but the field is required by NarrateRequest and folds into the cache key, so use a stable label.
   chatterbox: 'default',
   parler: 'default',
+  // indic-parler: the voice is steered by the tone DESCRIPTION (like parler), not a discrete id.
+  'indic-parler': 'default',
+  // indicf5: the voice IS the reference audio (voice cloning). "default" = the vendored reference clip.
+  indicf5: 'default',
 };
 export const DEFAULT_WPM = 165;
 
@@ -92,9 +96,12 @@ export const DEFAULT_STYLE: Partial<Record<NarrateEngine, Record<string, number>
   chatterbox: { exaggeration: 0.5, cfg: 0.5 },
 };
 
-/** Per-engine default tone description (parler conditioning prompt). */
+/** Per-engine default tone description (parler / indic-parler conditioning prompt). */
 export const DEFAULT_TONE: Partial<Record<NarrateEngine, string>> = {
   parler: 'A speaker delivers in a calm, somber and reverent tone, at a measured pace, with very clear high-quality audio and no background noise.',
+  // Indic Parler steers the voice by description; "Aditi" is a recommended Indic speaker, the
+  // language is inferred from the SCRIPT of the text (Devanagari → Hindi, Tamil script → Tamil, …).
+  'indic-parler': 'Aditi speaks in a clear, expressive and measured voice, at a moderate pace, with very clear high-quality audio and no background noise.',
 };
 
 /** The HF model cache shared by every venv engine; pinned so models never re-download per-process. */
@@ -109,12 +116,21 @@ const VENV_PYTHON: Partial<Record<NarrateEngine, string>> = {
   kokoro: '.venv-kokoro/bin/python',
   chatterbox: '.venv-chatterbox/bin/python',
   parler: '.venv-parler/bin/python',
+  // indic-parler reuses the parler venv (same parler_tts package, different checkpoint).
+  'indic-parler': '.venv-parler/bin/python',
+  indicf5: '.venv-indicf5/bin/python',
 };
 const SYNTH_SCRIPT: Partial<Record<NarrateEngine, string>> = {
   kokoro: 'scripts/tts/kokoro_synth.py',
   chatterbox: 'scripts/tts/chatterbox_synth.py',
   parler: 'scripts/tts/parler_synth.py',
+  'indic-parler': 'scripts/tts/indic_parler_synth.py',
+  indicf5: 'scripts/tts/indicf5_synth.py',
 };
+
+/** The vendored default IndicF5 reference voice (wav + its transcript sidecar), relative to rootDir. */
+const INDICF5_REF_AUDIO = 'scripts/tts/refs/indicf5_default.wav';
+const INDICF5_REF_TEXT_FILE = 'scripts/tts/refs/indicf5_default.txt';
 
 /**
  * Content-address a request: hash(text + engine + voice + wpm + tone + style). Stable + collision-
@@ -222,6 +238,39 @@ function synthParler(req: NarrateRequest, wavPath: string, rootDir: string): boo
 }
 
 /**
+ * Indic Parler-TTS (21 Indian languages) via .venv-parler: `--desc "<voice/tone>"`. The spoken
+ * language is inferred from the SCRIPT of `req.text` (Devanagari → Hindi, etc.), so no lang flag is
+ * needed. Uses the ai4bharat/indic-parler-tts checkpoint (gated: auto — needs a cached, license-
+ * accepted download; a missing/failed engine falls back to espeak-ng, never fails the build).
+ */
+function synthIndicParler(req: NarrateRequest, wavPath: string, rootDir: string): boolean {
+  const desc = req.tone ?? DEFAULT_TONE['indic-parler'];
+  const extra = desc ? ['--desc', desc] : [];
+  return runVenvSynth('indic-parler', req.text, wavPath, rootDir, extra);
+}
+
+/**
+ * IndicF5 (11 Indian languages, near-human) via .venv-indicf5. Voice CLONING: it needs a reference
+ * wav + that wav's transcript. Defaults to the vendored reference (scripts/tts/refs/indicf5_default.*);
+ * a project may override via req.voice = an absolute wav path with a `<path>.txt` transcript sidecar.
+ * A missing reference / venv / synth error falls back to espeak-ng (never fails the build).
+ */
+function synthIndicF5(req: NarrateRequest, wavPath: string, rootDir: string): boolean {
+  // Resolve the reference voice: a project-supplied absolute wav (voice id) or the vendored default.
+  const custom = req.voice && req.voice !== 'default' && req.voice.endsWith('.wav') ? req.voice : undefined;
+  const refAudio = custom ? resolvePath(rootDir, custom) : resolvePath(rootDir, INDICF5_REF_AUDIO);
+  const refTextFile = custom ? `${custom.slice(0, -4)}.txt` : INDICF5_REF_TEXT_FILE;
+  const refTextPath = resolvePath(rootDir, refTextFile);
+  if (!existsSync(refAudio) || !existsSync(refTextPath)) return false;
+  const refText = readFileSync(refTextPath, 'utf8').trim();
+  if (!refText) return false;
+  return runVenvSynth('indicf5', req.text, wavPath, rootDir, [
+    '--ref-audio', refAudio,
+    '--ref-text', refText,
+  ]);
+}
+
+/**
  * Synthesize (or reuse) one narration clip into the project's audio cache. CONTENT-ADDRESSED +
  * skip-if-exists: if `<audioDir>/<hash>.wav` already exists we reuse it (no re-synth), which is what
  * makes a re-render byte-identical regardless of engine stochasticity. `audioDir` is the project's
@@ -272,6 +321,12 @@ export function synthNarration(
         break;
       case 'parler':
         ok = synthParler(req, wavPath, rootDir);
+        break;
+      case 'indic-parler':
+        ok = synthIndicParler(req, wavPath, rootDir);
+        break;
+      case 'indicf5':
+        ok = synthIndicF5(req, wavPath, rootDir);
         break;
     }
     if (!ok) {

@@ -321,3 +321,40 @@ RAM free. ~14 Chrome renderers × ~1 GB each ⇒ OOM ⇒ Chrome crashes mid-rend
 `--frames auto` stills are single-frame (`renderStill`) and were never the crash path. `/dev/shm` is 7.7 G
 here, so `--disable-dev-shm-usage` was NOT the issue. Lower concurrency also reduces RAM thrashing, so
 renders are faster + more reliable on a constrained box.
+
+## 2026-07-07 — Two AI4Bharat Indic TTS engines (`indic-parler` 21 langs + `indicf5` near-human)
+
+**What:** added two new `NarrateEngine`s for Indian languages, wired into the existing swappable-engine
+seam (`src/cli/narrate.ts` + the `narrate-pass.ts` allow-list) exactly like coqui/kokoro/chatterbox/parler
+— each an isolated venv + a `scripts/tts/<engine>_synth.py` CLI, with espeak-ng fallback so a missing
+engine never fails the build.
+- **`indic-parler`** (`ai4bharat/indic-parler-tts`, 21 languages) — the DEFAULT "all Indian languages"
+  engine. Reuses `.venv-parler` (same `parler_tts` pkg, different checkpoint). NO reference audio: the
+  voice is steered by a text DESCRIPTION (`--desc`), language inferred from the SCRIPT of the text. Uses a
+  SEPARATE description tokenizer (the text encoder) from the prompt tokenizer — the key difference from the
+  English `parler_synth.py`. Verified: 5.0 s Hindi wav, audible (−37.5 dB), ~4.9 min/line on this CPU box.
+- **`indicf5`** (`ai4bharat/IndicF5`, 11 languages, near-human) — the slow QUALITY tier. New `.venv-indicf5`
+  with the F5-TTS runtime stack. Voice CLONING: needs a reference wav + transcript (vendored default under
+  `scripts/tts/refs/`, project-swappable via `voice = <abs>.wav` + a `.txt` sidecar). Verified: 2.2 s Hindi
+  wav, audible (−27.8 dB), but **~26 min/line** (flow-matching, swap-bound) — cached-offline use only.
+
+**Gotchas hit (durable):**
+1. **Gated models need an HF token.** All three AI4Bharat repos are `gated: auto` (instant free approval)
+   but require an authenticated, license-accepted account. `hf auth login` with `HF_HOME` pinned to the
+   shared cache; then `snapshot_download` works.
+2. **Large-file downloads WEDGE at exactly 768 MB** with the plain HTTP downloader (twice, reproducibly).
+   Fix: `HF_HUB_ENABLE_HF_TRANSFER=1` (`uv pip install hf_transfer`) — the chunked Rust downloader blew
+   straight past it. `.venv-parler` has no `pip`; use `uv pip install --python <venv>/bin/python`.
+3. **IndicF5's published `model.py` is BROKEN on CPU.** `from_pretrained` hits transformers' meta-device
+   empty-weights init ("Tensor on device cpu is not on the expected device meta"); direct instantiation
+   then crashes because `__init__` calls `load_model()` WITHOUT the required `ckpt_path`, and the
+   `checkpoints/model_best.pt` it references doesn't exist — the trained weights live ONLY in the root
+   `model.safetensors` under an `ema_model._orig_mod.` prefix. Fix (`indicf5_synth.py`): bypass `model.py`
+   entirely — build the F5-TTS `CFM(DiT)` exactly as `load_model` does, then load the prefix-stripped
+   weights directly.
+4. **torchaudio 2.11 routes `torchaudio.load` through torchcodec**, whose native lib won't load on py3.14.
+   Fix: shim `torchaudio.load` to `soundfile` (the refs are plain PCM wavs); drop torchcodec.
+
+**Determinism:** unchanged — both engines run ONCE offline into the content-addressed wav cache
+(skip-if-exists), and the render replays the fixed wav (golden rule 1). Engine-level bit-identity is NOT
+required or claimed; the cached artifact is the record, same as every other TTS engine.
