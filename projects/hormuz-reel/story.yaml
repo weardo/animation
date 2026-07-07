@@ -1,155 +1,190 @@
-# hormuz-reel — PROTOTYPE news-explainer reel (HINGLISH).
-# 9:16 vertical explainer on the Strait of Hormuz / chokepoint geopolitics, built on VERIFIABLE facts
-# (Hormuz carries ~20% of the world's oil; China's "Malacca dilemma"; Chabahar port). Narration is
-# HINGLISH (natural Hindi-English mix, how reels actually talk); on-screen text mixes Devanagari + Latin.
-# The channel TEMPLATE: map generator + a data/number beat + Devanagari/Latin text + Hinglish VO + captions.
+# hormuz-reel — CINEMATIC DARK news-explainer reel (Johnny Harris style, Hinglish).
+# 9:16 vertical geopolitics explainer on the Strait of Hormuz chokepoint. Premium visual standard:
+# near-black background + focal radial glow, REGION-ZOOMED maps with glowing highlighted countries,
+# huge Mukta-ExtraBold dual-script (Devanagari+Latin) headlines with glow/shadow, a story-level
+# post-grade (contrast + vignette + grain) for cinematic depth. Voice: Sarvam Bulbul (shubh).
 #
-# Verify visuals fast:   render projects/hormuz-reel/story.yaml --project hormuz-reel --frames auto --no-audio
-# Full reel (Hindi VO):  render projects/hormuz-reel/story.yaml --project hormuz-reel --engine indic-parler
-title: "Hormuz का खेल — Hormuz Reel"
+# Verify visuals FAST on stills:  render projects/hormuz-reel/story.yaml --project hormuz-reel --frames auto --no-audio
+# Full reel (Sarvam VO):          SARVAM_API_KEY=... render projects/hormuz-reel/story.yaml --project hormuz-reel --engine sarvam --voice shubh
+title: "Hormuz — Cinematic Reel"
 style: plain
+
 format:
   aspect: "9:16"
   fps: 30
 
+# CINEMATIC POST GRADE (whole-frame): punch contrast, heavy vignette, subtle film grain → depth.
+post:
+  - { kind: color_grade, brightness: 1.0, contrast: 1.18, saturate: 1.15 }
+  - { kind: vignette, amount: 0.6, softness: 0.5 }
+  - { kind: grain, amount: 0.055, size: 0.9, seed: 7 }
+
 cast: {}
 
+# Reusable font URIs (Mukta ExtraBold = dual-script heavy display; one font for all Hinglish).
+# (repeated per text layer below; a story-level text default is a later ergonomic win)
+
 beats:
-  # B1 — HOOK. Gulf oil states light up; the big title lands.
+  # ============================================================ B1 — HOOK ============================
   - id: hook
     say: "ये है Strait of Hormuz, दुनिया का सबसे important तेल रास्ता।"
     show:
-      - asset: bg_gradient
-        args: { z: 0, parallax: 0 }
-      - generator: world-map
+      # near-black base
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      # warm focal glow (blurred amber orb, low opacity) — cinematic spotlight
+      - generator: world-in
         as: world
         args:
-          projection: natural-earth
-          fit: true
+          projection: mercator
+          fit: false
+          center: [50, 27]
+          scale: 900
           key_field: name
-          no_data_fill: bg2
-          stroke: bg
-          stroke_width: 0.6
-          draw_on: { duration: 22, stagger: 0, easing: easeOut }
+          fill: "#141c28"
+          no_data_fill: "#141c28"
+          stroke: "#243040"
+          stroke_width: 0.8
+          draw_on: { duration: 24, stagger: 0, easing: easeOut }
           draw_on_stroke: true
           draw_on_fill: true
           choropleth:
-            Iran: accent
-            "Saudi Arabia": accent
-            "United Arab Emirates": accent
-            Oman: accent
-      - text: "Strait of Hormuz"
+            Iran: "#ffb020"
+            "Saudi Arabia": "#ffb020"
+            "United Arab Emirates": "#ffb020"
+            Oman: "#ffb020"
+            Qatar: "#ffb020"
+            Kuwait: "#ffb020"
+          effects:
+            - { kind: glow, color: "#ffb020", radius: 6, intensity: 0.4 }
+      - text: "STRAIT OF HORMUZ"
         as: title
         at: top
-        args: { z: 20, size: 92, weight: 700, color: "#ffffff", font: "Noto Sans Devanagari", fontUri: "asset://fonts/NotoSansDevanagari.ttf", anim: { preset: rise, duration: 20, distance: 60 } }
+        args: { z: 20, size: 78, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", tracking: 2, effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.8 } ], anim: { preset: rise, duration: 22, distance: 70 } }
       - text: "दुनिया का तेल रास्ता"
         as: sub
         at: bottom
-        args: { z: 20, size: 52, weight: 400, color: "#ffd34d", font: "Noto Sans Devanagari", fontUri: "asset://fonts/NotoSansDevanagari.ttf", anim: { preset: fade, duration: 18 } }
-    camera: establishing
-    duration: { seconds: 4 }
+        args: { z: 20, size: 54, weight: 800, color: "#ffb020", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 8, intensity: 0.6 } ], anim: { preset: fade, duration: 18 } }
+    camera: slow_push_in
+    duration: { seconds: 5.5 }
 
-  # B2 — THE STAT. Big number carries the fact (≈20% of the world's oil).
+  # ============================================================ B2 — THE STAT =========================
   - id: stat
     say: "दुनिया का करीब twenty percent oil इसी रास्ते से गुज़रता है।"
     show:
-      - asset: bg_gradient
-        args: { z: 0, parallax: 0 }
-      - text: "≈ 20%"
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - text: "20%"
         as: bignum
         at: center
-        args: { z: 10, size: 300, weight: 700, color: "#ffd34d", font: "Noto Sans Devanagari", fontUri: "asset://fonts/NotoSansDevanagari.ttf", anim: { preset: rise, duration: 20, distance: 80 } }
-      - text: "Global Oil Supply"
+        args: { z: 10, size: 400, weight: 800, color: "#ffb020", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 22, intensity: 1.0 }, { kind: drop_shadow, dx: 0, dy: 8, blur: 24, color: "#000000", opacity: 0.7 } ], anim: { preset: rise, duration: 20, distance: 90 } }
+      - text: "GLOBAL OIL SUPPLY"
         as: numlabel
         at: bottom
-        args: { z: 20, size: 56, weight: 400, color: "#ffffff", font: "Noto Sans Devanagari", fontUri: "asset://fonts/NotoSansDevanagari.ttf", anim: { preset: fade, duration: 18 } }
+        args: { z: 20, size: 50, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", tracking: 4, effects: [ { kind: drop_shadow, dx: 0, dy: 3, blur: 10, color: "#000000", opacity: 0.8 } ], anim: { preset: fade, duration: 18 } }
     camera: slow_push_in
-    duration: { seconds: 4 }
+    duration: { seconds: 4.5 }
     transition: { kind: fade, duration: 16 }
 
-  # B3 — THE PROBLEM. China's oil mostly comes via the Malacca Strait — its chokepoint weakness.
+  # ============================================================ B3 — THE PROBLEM ======================
   - id: china
     say: "उधर China का ज़्यादातर तेल Malacca Strait से आता है, उसकी सबसे बड़ी weakness।"
     show:
-      - asset: bg_gradient
-        args: { z: 0, parallax: 0 }
-      - generator: world-map
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - generator: world-in
         as: world
         args:
-          projection: natural-earth
-          fit: true
+          projection: mercator
+          fit: false
+          center: [108, 16]
+          scale: 720
           key_field: name
-          no_data_fill: bg2
-          stroke: bg
-          stroke_width: 0.6
+          fill: "#141c28"
+          no_data_fill: "#141c28"
+          stroke: "#243040"
+          stroke_width: 0.8
           choropleth:
-            China: "#ff6b6b"
+            China: "#ff4438"
+          effects:
+            - { kind: glow, color: "#ff4438", radius: 7, intensity: 0.45 }
       - text: "China की Weakness"
         as: title
         at: top
-        args: { z: 20, size: 82, weight: 700, color: "#ffffff", font: "Noto Sans Devanagari", fontUri: "asset://fonts/NotoSansDevanagari.ttf", anim: { preset: rise, duration: 20, distance: 60 } }
+        args: { z: 20, size: 82, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 20, distance: 70 } }
       - text: "Malacca Strait"
         as: sub
         at: bottom
-        args: { z: 20, size: 52, weight: 400, color: "#ff9f43", font: "Noto Sans Devanagari", fontUri: "asset://fonts/NotoSansDevanagari.ttf", anim: { preset: fade, duration: 18 } }
+        args: { z: 20, size: 54, weight: 800, color: "#ff6b4d", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ff4438", radius: 8, intensity: 0.6 } ], anim: { preset: fade, duration: 18 } }
     camera: slow_push_in
-    duration: { seconds: 4 }
+    duration: { seconds: 5.5 }
     transition: { kind: fade, duration: 16 }
 
-  # B4 — INDIA'S MOVE. India develops an alternative route via Chabahar port (Iran).
+  # ============================================================ B4 — INDIA'S MOVE =====================
   - id: india
     say: "अब India, Chabahar port से एक नया रास्ता बना रहा है।"
     show:
-      - asset: bg_gradient
-        args: { z: 0, parallax: 0 }
-      - generator: world-map
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - generator: world-in
         as: world
         args:
-          projection: natural-earth
-          fit: true
+          projection: mercator
+          fit: false
+          center: [64, 27]
+          scale: 780
           key_field: name
-          no_data_fill: bg2
-          stroke: bg
-          stroke_width: 0.6
+          fill: "#141c28"
+          no_data_fill: "#141c28"
+          stroke: "#243040"
+          stroke_width: 0.8
           choropleth:
-            India: accent
-            Iran: light
+            India: "#ffb020"
+            Iran: "#2ee6a6"
+          effects:
+            - { kind: glow, color: "#2ee6a6", radius: 7, intensity: 0.45 }
       - text: "India का Move"
         as: title
         at: top
-        args: { z: 20, size: 82, weight: 700, color: "#ffffff", font: "Noto Sans Devanagari", fontUri: "asset://fonts/NotoSansDevanagari.ttf", anim: { preset: rise, duration: 20, distance: 60 } }
+        args: { z: 20, size: 82, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 20, distance: 70 } }
       - text: "Chabahar Port"
         as: sub
         at: bottom
-        args: { z: 20, size: 52, weight: 400, color: "#5ee6a8", font: "Noto Sans Devanagari", fontUri: "asset://fonts/NotoSansDevanagari.ttf", anim: { preset: fade, duration: 18 } }
+        args: { z: 20, size: 54, weight: 800, color: "#2ee6a6", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#2ee6a6", radius: 8, intensity: 0.6 } ], anim: { preset: fade, duration: 18 } }
     camera: slow_push_in
-    duration: { seconds: 4 }
+    duration: { seconds: 4.5 }
     transition: { kind: fade, duration: 16 }
 
-  # B5 — THE PAYOFF. One chokepoint can flip the whole game.
+  # ============================================================ B5 — THE PAYOFF =======================
   - id: payoff
     say: "एक chokepoint, जो पूरा game पलट सकता है।"
     show:
-      - asset: bg_gradient
-        args: { z: 0, parallax: 0 }
-      - text: "Game पलट सकता है"
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - text: "GAME पलट सकता है"
         as: big
         at: center
-        args: { z: 10, size: 104, weight: 700, color: "#ffd34d", font: "Noto Sans Devanagari", fontUri: "asset://fonts/NotoSansDevanagari.ttf", anim: { preset: rise, duration: 22, distance: 80 } }
+        args: { z: 10, size: 108, weight: 800, color: "#ffb020", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 18, intensity: 0.9 }, { kind: drop_shadow, dx: 0, dy: 6, blur: 20, color: "#000000", opacity: 0.7 } ], anim: { preset: rise, duration: 22, distance: 90 } }
     camera: slow_push_in
-    duration: { seconds: 3 }
+    duration: { seconds: 4.2 }
     transition: { kind: fade, duration: 16 }
 
-  # B6 — CTA. Channel outro.
+  # ============================================================ B6 — CTA ==============================
   - id: cta
     say: "ऐसी और news के लिए follow करो!"
     show:
-      - asset: bg_gradient
-        args: { z: 0, parallax: 0 }
-      - text: "Follow करो!"
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - text: "FOLLOW करो!"
         as: cta
         at: center
-        args: { z: 10, size: 120, weight: 700, color: "#ffffff", font: "Noto Sans Devanagari", fontUri: "asset://fonts/NotoSansDevanagari.ttf", anim: { preset: rise, duration: 20, distance: 70 } }
+        args: { z: 10, size: 120, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 16, intensity: 0.8 }, { kind: drop_shadow, dx: 0, dy: 6, blur: 20, color: "#000000", opacity: 0.7 } ], anim: { preset: rise, duration: 20, distance: 80 } }
     camera: hold
-    duration: { seconds: 3 }
+    duration: { seconds: 3.2 }
     transition: { kind: fade, duration: 16 }

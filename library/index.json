@@ -340,6 +340,25 @@
           "spec_hash": "37fdeb76629ca0a9af15f154cd5347b84e1017f1",
           "license": "ODC-PDDL (Natural Earth)"
         }
+      },
+      "world-in": {
+        "id": "world-in",
+        "version": "1.0.0",
+        "kind": "generator-preset",
+        "format": "generator-preset",
+        "uri": "preset://world-in",
+        "tags": [
+          "generator-preset",
+          "map",
+          "india-official"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "World map, India official boundary (CW).",
+          "generator": "map",
+          "spec_hash": "efb5e99bd0f67f1bcc864f557915f86d3fb45ae0",
+          "license": "ODbL/LGD"
+        }
       }
     },
     "kits": {},
