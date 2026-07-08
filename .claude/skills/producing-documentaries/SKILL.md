@@ -133,8 +133,12 @@ The first doc "held attention"; these notes make the next one sharper:
   stand-in (the low-res off-center drone was weak). Source per-entity: `factory:photo "Archer NG UAV"`,
   `"MAPSS solar drone"`, etc.; verify it's the actual subject, high-res, well-framed. For EVENTS, get the
   EXACT imagery (real Galwan/LAC photos), not generic. Reject low-res (<800px) for a full-frame KB shot.
-- **TEXT-EFFECT VARIETY.** Beyond fade/rise: a **typewriter** reveal for a headline/quote, count-up for a
-  stat, a stamp/impact for a hard fact. Variety keeps the on-screen text alive across 30+ beats.
+- **TEXT-EFFECT VARIETY (all BUILT — use them).** Text `anim.preset` supports: `fade`, `rise`,
+  `stagger` (per word/char), **`typewriter`** (`{ preset: typewriter, cps: 14 }` — types the string out),
+  **`count_up`** (`{ preset: count_up, from: 12, to: 140, duration: 40 }` — animates a stat number). Use
+  typewriter for a headline/quote reveal, count_up for a "12 → 140 drones" stat pop, rise/stagger for
+  titles. Variety keeps on-screen text alive across 30+ beats. Montage per-cut SFX (also BUILT): **`shutter`**
+  (camera snap) or **`glitch`** (digital stutter) — one per montage cut, tightening as the montage accelerates.
 - **VERTICAL-FIRST, but frame for it.** 9:16 is the target (a horizontal 16:9 cut is a future option). In
   vertical: center subjects, crop stills/footage to keep the subject in the 9:16 safe area, bigger type,
   the montage screenshots cropped to the headline (use `--selector`).

@@ -92,6 +92,24 @@ const SFX_RECIPES: Record<string, SfxRecipe> = {
     dur: 0.05,
     graph: 'sine=frequency=1800:duration=0.05,afade=t=out:st=0.004:d=0.046:curve=exp,volume=0.45[out]',
   },
+  shutter: {
+    dur: 0.08,
+    // A crisp camera-SHUTTER snap: a tight band-limited noise transient + a high click → the per-cut
+    // sound for a rapid NEWS/photo MONTAGE. Short + percussive so it reads at accelerating cut speeds.
+    graph:
+      'anoisesrc=color=white:duration=0.08:seed=5:amplitude=0.6,highpass=f=1200,lowpass=f=7000[snap];' +
+      'sine=frequency=2100:duration=0.02[k];' +
+      '[snap][k]amix=inputs=2:normalize=0,afade=t=out:st=0.008:d=0.07:curve=exp,volume=0.8[out]',
+  },
+  glitch: {
+    dur: 0.14,
+    // A DIGITAL glitch stutter: harsh high noise + a fast descending zap → a "data/tech" accent (a screen
+    // flash, a system cut). Alternative per-cut montage sound; also good on a tech reveal.
+    graph:
+      'anoisesrc=color=white:duration=0.14:seed=6:amplitude=0.5,highpass=f=900[n];' +
+      "aevalsrc='0.4*sin(2*PI*(1300*exp(-6*t))*t)':d=0.14:s=44100[z];" +
+      '[n][z]amix=inputs=2:normalize=0,afade=t=out:st=0.02:d=0.11:curve=exp,volume=0.6[out]',
+  },
   riser: {
     dur: 1.2,
     // A TENSION BUILD: rising filtered noise + a rising pitch, crescendo to the end → tension before a
