@@ -170,9 +170,11 @@ function registerCatalog(
     tags: ['footage', 'video', 'pexels', 'stock'],
     deps: [],
     provenance: {
-      source: video ? `Pexels ${video.url} by ${video.user.name} (${video.user.url})` : (prev.provenance?.source ?? 'Pexels (cached)'),
-      query: req.query,
-      orientation: req.orientation,
+      // Only the strict Provenance keys (catalog.ts): source/license/prompt/size/cache_hash.
+      source: video
+        ? `Pexels ${video.url} by ${video.user.name} (${video.user.url}) [${req.orientation}]`
+        : (prev.provenance?.source ?? 'Pexels (cached)'),
+      prompt: req.query,
       size: req.size,
       cache_hash: hash,
       // Pexels License: free for commercial use, no attribution required on media; credit "Pexels" per API guidelines.

@@ -30,31 +30,28 @@ beats:
       - shape: rect
         as: bg
         args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
-      # wide Indian-Ocean view, textured, no highlight — sets the "sea routes" theme
-      - generator: world-in
-        as: world
+      # CINEMATIC OPENING: real oil-tanker B-roll (Pexels, factory:footage), GRADED dark to match the
+      # palette (darken + desaturate + warm) + softened + vignetted so it reads as one system with the maps.
+      - footage: tanker
+        as: broll
         args:
-          projection: mercator
-          fit: false
-          center: [82, 13]
-          scale: 330
-          fill: "#223249"
-          no_data_fill: "#223249"
-          stroke: "#3a516c"
-          stroke_width: 0.6
-          ocean: "#0a1420"
-          graticule: { step: 12, color: "#1a2636", opacity: 0.4, width: 0.6 }
-          labels:
-            India: India
-            China: China
-            Iran: Iran
-            "Saudi Arabia": Saudi Arabia
-          draw_on: { duration: 22, easing: easeOut }
-          draw_on_fill: true
+          z: 1
+          loop: true
+          muted: true
+          fit: cover
+          effects:
+            - { kind: color_grade, brightness: 0.46, contrast: 1.14, saturate: 0.6, hue: 18 }
+            - { kind: blur, radius: 2 }
+            - { kind: vignette, amount: 0.45, softness: 0.6 }
+      # dark scrim for text legibility over the footage
+      - shape: rect
+        as: scrim
+        args: { z: 2, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" }, opacity: 0.45 }
+      # first-frame text hook (fast, near-instant) — 92% watch on mute, so the on-screen line is the hook
       - text: "एक रास्ता। पूरी दुनिया।"
         as: hooktext
         at: center
-        args: { z: 20, size: 92, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 12, intensity: 0.6 }, { kind: drop_shadow, dx: 0, dy: 5, blur: 18, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 22, distance: 80 } }
+        args: { z: 20, size: 92, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 12, intensity: 0.6 }, { kind: drop_shadow, dx: 0, dy: 5, blur: 18, color: "#000000", opacity: 0.85 } ], anim: { preset: fade, duration: 5 } }
     camera: slow_push_in
     duration: { seconds: 4.9 }
 
@@ -413,38 +410,36 @@ beats:
     duration: { seconds: 6.2 }
     transition: { kind: fade, duration: 16 }
 
-  # ==================================================== B9 — PAYOFF ===================================
+  # ============================== B9 — PAYOFF + LOOP (callbacks the hook) ==============================
+  # Viral-structure close: RETURN to the tanker footage + the EXACT hook text ("एक रास्ता। पूरी दुनिया।") →
+  # a visual + verbal LOOP that drives rewatches. The thesis lands in the narration; NO in-video "follow"
+  # CTA (it breaks the loop — the CTA lives in the video DESCRIPTION instead).
   - id: payoff
-    say: "अगली बड़ी जंग शायद ज़मीन पर नहीं, इन्हीं समंदर के रास्तों पर लड़ी जाएगी।"
+    say: "अगली जंग शायद ज़मीन पर नहीं, इन्हीं समंदर के रास्तों पर होगी। एक रास्ता, और पूरी दुनिया की किस्मत।"
     sfx:
       - { name: whoosh, at: 2 }
-      - { name: boom, at: 8 }
+      - { name: boom, at: 10 }
     show:
       - shape: rect
         as: bg
         args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
-      - text: "समंदर पर जंग"
-        as: big
+      - footage: tanker
+        as: broll
+        args:
+          z: 1
+          loop: true
+          muted: true
+          fit: cover
+          effects:
+            - { kind: color_grade, brightness: 0.44, contrast: 1.14, saturate: 0.6, hue: 18 }
+            - { kind: blur, radius: 2 }
+            - { kind: vignette, amount: 0.5, softness: 0.6 }
+      - shape: rect
+        as: scrim
+        args: { z: 2, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" }, opacity: 0.5 }
+      - text: "एक रास्ता। पूरी दुनिया।"
+        as: loop
         at: center
-        args: { z: 10, size: 118, weight: 800, color: "#ffb020", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 20, intensity: 0.9 }, { kind: drop_shadow, dx: 0, dy: 6, blur: 20, color: "#000000", opacity: 0.7 } ], anim: { preset: rise, duration: 22, distance: 90 } }
+        args: { z: 20, size: 92, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 14, intensity: 0.7 }, { kind: drop_shadow, dx: 0, dy: 5, blur: 18, color: "#000000", opacity: 0.85 } ], anim: { preset: fade, duration: 10 } }
     camera: slow_push_in
-    duration: { seconds: 4.8 }
-    transition: { kind: fade, duration: 16 }
-
-  # ==================================================== B10 — CTA =====================================
-  - id: cta
-    say: "ऐसी ही geopolitics के लिए, follow करना मत भूलना!"
-    sfx:
-      - { name: whoosh, at: 2 }
-      - { name: ding, at: 6 }
-    show:
-      - shape: rect
-        as: bg
-        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
-      - text: "FOLLOW करो!"
-        as: cta
-        at: center
-        args: { z: 10, size: 120, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 16, intensity: 0.8 }, { kind: drop_shadow, dx: 0, dy: 6, blur: 20, color: "#000000", opacity: 0.7 } ], anim: { preset: rise, duration: 20, distance: 80 } }
-    camera: hold
-    duration: { seconds: 3.6 }
-    transition: { kind: fade, duration: 16 }
+    duration: { seconds: 6 }

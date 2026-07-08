@@ -85,15 +85,35 @@ The `map` generator (core-dataviz) has a full toolkit, all authored as DATA, all
   misbehaved — a green-filled glow rendered amber and washed the frame). Vignette + map glow effects
   are enough.
 - **Type:** huge Mukta ExtraBold, `drop_shadow` for legibility over maps, subtle `glow` on accent text.
+- **Footage B-roll (optional):** `factory:footage` fetches free stock clips from Pexels (`PEXELS_API_KEY`,
+  free, commercial-safe) → content-addressed cache → `footage: <id>` in a story. Great for a cinematic
+  opening (a tanker/ocean shot under the hook) or the loop close. **MUST be graded** to match the dark
+  palette (footage-layer `effects`: `color_grade` darken+desaturate+warm + `blur` + `vignette` + a dark
+  scrim rect for text) or it clashes. Keep it SPARSE (opening + close) so the maps stay the star.
 
-## 6. NARRATIVE — a STORY, not stitched facts
+## 6. NARRATIVE — a STORY with a VIRAL structure (biggest quality + growth lever)
 
-The single biggest quality lever. A reel of disconnected fact-sentences feels cheap. Use **storytelling
-STAGES with connective tissue**: HOOK → SETUP → STAKES → TURN → ESCALATION → THE MOVE → THE COUNTER →
-INSIGHT → PAYOFF → CTA (~10 beats, ~50s). Pick ONE clear thesis. Bridge beats: "लेकिन असली डर China को…"
-(*but the real fear is China's*) TURNS the viewer forward; "और भारत? भारत ने जवाब दे दिया…" sets up the
-rivalry. Make the emotional climax an India-vs-China angle for this audience. **Keep every fact
-verifiable** (e.g. Malacca Dilemma is a real term; ~80% of China's oil imports transit Malacca).
+A reel of disconnected fact-sentences feels cheap. Use **storytelling STAGES with connective tissue**:
+HOOK → SETUP → STAKES → TURN → ESCALATION → THE MOVE → THE COUNTER → INSIGHT → PAYOFF+LOOP. Pick ONE
+clear thesis; bridge beats ("लेकिन असली डर China को…" TURNS the viewer forward; "और भारत? …" sets up the
+India-vs-China rivalry — the emotional climax for this audience). **Keep every fact verifiable.**
+
+**The proven YouTube-Shorts patterns (India, 2026) — bake these in:**
+- **HOOK (0-3s) is make-or-break.** 70% retention at 3s ≈ 5× more viral. And **92% watch on MUTE** → the
+  ON-SCREEN TEXT hook must hit in the FIRST FRAME (fast `anim: { preset: fade, duration: 5 }`, not a slow
+  rise). Hook types: curiosity-gap / bold claim ("एक रास्ता, जो पूरी दुनिया हिला सकता है"), "No/Stop"
+  ("ये मत समझना…"), stat-shock ("20% तेल एक 40km गली से"), identity-call ("अगर तुम geopolitics समझते हो…").
+  Start Hindi, end on an English keyword — natural AND helps the algorithm categorize.
+- **FLOW = escalation.** Each beat raises stakes; fast visual tempo (fly-tos, route draws, marker pops =
+  the "filmy" hero-zoom/whip-pan energy).
+- **CLOSE = a LOOP, not a CTA.** CUT the in-video "Follow करो!" — a 3s CTA BREAKS the loop and tanks
+  completion. Instead end on a LOOP: the last beat RETURNS to the hook's visual + repeats the hook TEXT
+  verbatim (recontextualized by the narration) → visual + verbal loop → rewatches (which the algorithm
+  rewards). Put the "follow / subscribe" CTA in the video DESCRIPTION. End mid-momentum, never on a hard
+  period + black frame.
+- **LENGTH.** 20-25s peaks completion for simple content — but a value-dense GEOPOLITICS EXPLAINER
+  legitimately runs ~40-50s (depth is the draw); don't gut the content to chase 25s. Offer a separate
+  tight "viral cut" (~30s) only if max reach is the goal.
 
 ## 7. AUDIO DESIGN — music + SFX + ducking, and beat-durations that FIT
 
