@@ -435,7 +435,9 @@ function startRenderLog(mediaDir: string): () => void {
 async function renderScene(sceneIR: SceneIR, videoOut: string, publicDir: string, gpu: boolean, out: OutSpec): Promise<{ frames: number }> {
   const { serveUrl, composition, inputProps } = await prepare(sceneIR, publicDir, out.alpha, gpu);
   const isH264 = out.codec === 'h264' || out.codec === 'h265';
-  let progressPct = -1; // throttle terminal progress to 5% steps (render.log stays fine-grained)
+  let progressPct = -1; // terminal progress: 5% steps
+  let logPct = -1; // render.log progress: 1% steps (not per-frame — avoids thousands of near-dup lines)
+  let lastStage = ''; // ...but always log a stage change (encoding→muxing→…)
   try {
     console.log(`[render] video ${composition.width}x${composition.height}@${composition.fps} (${composition.durationInFrames}f) [${gpu ? 'GPU/perceptual' : 'CPU/byte-exact'}] codec=${out.codec}${out.alpha ? ' +alpha' : ''} → ${videoOut}`);
     await renderMedia({
@@ -450,12 +452,17 @@ async function renderScene(sceneIR: SceneIR, videoOut: string, publicDir: string
       ...(out.proResProfile ? { proResProfile: out.proResProfile } : {}),
       concurrency: CONCURRENCY,
       chromiumOptions: chromiumOpts(gpu),
-      // PROGRESS: fine-grained → render.log (live tailing + stall detection), throttled → terminal.
-      // A frame count that stops advancing while the process lives = a HANG at that exact frame → beat.
+      // PROGRESS: render.log gets one line per 1% (+ every stage change) — monitorable + stall-detectable
+      // (a % that stops advancing while the process lives = a HANG) WITHOUT a line per frame; terminal
+      // gets 5% steps.
       onProgress: ({ renderedFrames, encodedFrames, stitchStage }) => {
         const total = composition.durationInFrames || 1;
         const pct = Math.floor((renderedFrames / total) * 100);
-        renderLog?.write(`${stamp()}   ${pct}% frame ${renderedFrames}/${total} encoded=${encodedFrames} ${stitchStage}\n`);
+        if (pct > logPct || stitchStage !== lastStage) {
+          logPct = pct;
+          lastStage = stitchStage;
+          renderLog?.write(`${stamp()}   ${pct}% frame ${renderedFrames}/${total} encoded=${encodedFrames} ${stitchStage}\n`);
+        }
         if (pct >= progressPct + 5) {
           progressPct = pct;
           process.stdout.write(`[render]   ${pct}%  (${renderedFrames}/${total} frames, ${encodedFrames} encoded, ${stitchStage})\n`);
