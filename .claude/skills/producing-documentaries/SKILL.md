@@ -134,9 +134,12 @@ The first doc "held attention"; these notes make the next one sharper:
 - **OPENERS — warm + natural, not formulaic.** "एक second रुकिए…" read as CRINGE. The Guyana "दोस्तों…" opener
   felt natural. Open like a person talking to friends: "दोस्तों…", "ज़रा एक बात सोचिए…", a bold stat, or a
   direct image — NOT a canned "रुकिए/wait" gimmick. Still आप-respectful, still a curiosity hook.
-- **RISER SFX DISCIPLINE — a riser marks a REAL buildup, not every beat.** Overusing `riser` deadens it.
-  Reserve it for genuine escalations (into the turn, a reveal, an act climax); most beats just need a soft
-  `whoosh` on the cut. One well-placed riser > five reflexive ones.
+- **RISER SFX DISCIPLINE — a `riser` is a ~1.2s CLIP, NOT a buildup.** It works ONLY as a 1-second LEAD-IN
+  to an IMMEDIATE impact: place `riser at N` with a `boom` / hard-cut / reveal at **~N+25-35 frames (≈1s
+  later)** so it resolves ON the hit. If NOTHING lands within ~1s after it, DON'T use it — a lone riser
+  fires and FIZZLES into noise (a common overuse). A real multi-SECOND buildup is the MUSIC's job (a
+  swelling bed / a rising layered `audio[]`), never a 1s SFX. Rule of thumb: a riser must ALWAYS be paired
+  with the thing it builds into, ~1s apart; most cuts just want a soft `whoosh`. One paired riser > five loose ones.
 - **MUSIC — more variety + dynamics that follow the PHASE.** One bed per act isn't enough; the score should
   BUILD and RELEASE with the story (tension rising into the turn, a release/resolve after). Source a wider
   bed library (Incompetech CC-BY: e.g. "Ghost Story", "Long Note Two", "Echoes of Time", "Anguish", "The

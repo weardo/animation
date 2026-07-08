@@ -39,11 +39,15 @@ interface SfxRecipe {
  * The built-in SFX palette. Each is a short, recognizable UI/motion cue synthesized from math:
  *   • tick   — a quick high sine pulse (an item/text appears).
  *   • pop    — a fast rising sine burst with a snappy decay (an element pops in).
- *   • whoosh — filtered noise swept down (a fast move / camera push / slide).
- *   • ding   — a bright two-partial bell (a positive beat / reveal).
- *   • thud   — a low sine thump (an impact / landing).
- *   • click  — a very short tick (a small UI step).
+ *   • whoosh — filtered noise swept down (a fast move / camera push / slide).  whoosh_up — the rising counterpart (reveal / title in).
+ *   • ding   — a bright two-partial bell (a positive beat / reveal).           sparkle — a high shimmer (positive/tech reveal on a stat).
+ *   • thud   — a low sine thump (an impact / landing).                          boom — a bigger sub-impact; sub_drop — deepest cinematic drop.
+ *   • click  — a very short tick (a small UI step).                             beep — a clean tech/data HUD tick.
+ *   • riser  — a ~1.2s LEAD-IN (pair with an impact ~1s later).                 swell — a REAL 2.2s multi-second buildup (under a whole beat).
+ *   • shutter/glitch — per-cut sounds for a rapid news MONTAGE (camera snap / digital stutter).
+ *   • stinger — a sharp dramatic stab (the TURN).                               page — a paper page-turn swish (a document / screenshot).
  * All deterministic (no random seed); `afade` shapes the envelope so each is percussive, not droning.
+ * (To add a REAL sourced SFX: drop a wav at `library/sfx/<name>.wav` — skip-if-exists overrides the synth.)
  */
 const SFX_RECIPES: Record<string, SfxRecipe> = {
   tick: {
@@ -113,11 +117,65 @@ const SFX_RECIPES: Record<string, SfxRecipe> = {
   riser: {
     dur: 1.2,
     // A TENSION BUILD: rising filtered noise + a rising pitch, crescendo to the end → tension before a
-    // reveal/turn (the geopolitics "something is coming" build). Fixed seed = deterministic.
+    // reveal/turn. Fixed seed = deterministic. NOTE: this is a ~1.2s LEAD-IN (pair it with an impact ~1s
+    // later); for a longer multi-second buildup use `swell` (below), not a lone riser.
     graph:
       'anoisesrc=color=white:duration=1.2:seed=3:amplitude=0.5,highpass=f=500[n];' +
       "aevalsrc='0.35*sin(2*PI*(180+700*t)*t)':d=1.2:s=44100[t];" +
       '[n][t]amix=inputs=2:normalize=0,afade=t=in:st=0:d=1.05:curve=exp,afade=t=out:st=1.1:d=0.1,volume=0.6[out]',
+  },
+  swell: {
+    dur: 2.2,
+    // A REAL multi-second BUILDUP (what a 1s riser can't be): a slow 2.2s crescendo of pink noise + a
+    // rising low tone → place UNDER a whole beat that builds into a turn/reveal, resolving ON the hit.
+    graph:
+      'anoisesrc=color=pink:duration=2.2:seed=9:amplitude=0.5,highpass=f=300[n];' +
+      "aevalsrc='0.3*sin(2*PI*(110+380*t)*t)':d=2.2:s=44100[t];" +
+      '[n][t]amix=inputs=2:normalize=0,afade=t=in:st=0:d=2.05:curve=exp,afade=t=out:st=2.08:d=0.12,volume=0.55[out]',
+  },
+  whoosh_up: {
+    dur: 0.55,
+    // RISING whoosh (the ascending counterpart to `whoosh`): a reveal / a title rising in / an upward move.
+    graph:
+      'anoisesrc=color=pink:duration=0.55:seed=7:amplitude=0.7,highpass=f=220,lowpass=f=3600[n];' +
+      "aevalsrc='0.25*sin(2*PI*(280+900*t)*t)':d=0.55:s=44100[tone];" +
+      '[n][tone]amix=inputs=2:normalize=0,afade=t=in:st=0:d=0.42:curve=exp,afade=t=out:st=0.46:d=0.09,volume=0.82[out]',
+  },
+  sub_drop: {
+    dur: 1.1,
+    // A DEEP cinematic sub-bass DROP (deeper + longer than `boom`): the big beat / a heavy reveal — felt
+    // more than heard. Pairs well after a `swell`/`riser`.
+    graph:
+      "aevalsrc='0.98*sin(2*PI*(92*exp(-4*t))*t)':d=1.1:s=44100[sub];" +
+      'anoisesrc=color=brown:duration=0.08:seed=8:amplitude=0.4,lowpass=f=220[thmp];' +
+      '[sub][thmp]amix=inputs=2:normalize=0,afade=t=out:st=0.12:d=0.96:curve=exp,volume=0.95[out]',
+  },
+  stinger: {
+    dur: 0.45,
+    // A sharp dramatic HIT (a stab): the TURN / a shock reveal — brighter + more tonal than a `boom`.
+    graph:
+      'sine=frequency=175:duration=0.45[low];sine=frequency=523:duration=0.45[mid];' +
+      'anoisesrc=color=white:duration=0.05:seed=10:amplitude=0.6,highpass=f=1000[hit];' +
+      '[low][mid][hit]amix=inputs=3:normalize=0,afade=t=out:st=0.03:d=0.41:curve=exp,volume=0.8[out]',
+  },
+  sparkle: {
+    dur: 0.55,
+    // A bright shimmer (a positive/tech reveal on a stat or title): three high detuned partials, fast decay.
+    graph:
+      'sine=frequency=2350:duration=0.55[a];sine=frequency=3140:duration=0.55[b];sine=frequency=4230:duration=0.55[c];' +
+      '[a][b][c]amix=inputs=3:normalize=0,afade=t=out:st=0.04:d=0.5:curve=exp,volume=0.32[out]',
+  },
+  page: {
+    dur: 0.26,
+    // A paper page-TURN swish (a document / a screenshot appearing): a short band-limited noise sweep.
+    graph:
+      'anoisesrc=color=white:duration=0.26:seed=11:amplitude=0.45,highpass=f=2000,lowpass=f=8500,' +
+      'afade=t=in:st=0:d=0.08:curve=tri,afade=t=out:st=0.13:d=0.13:curve=exp,volume=0.5[out]',
+  },
+  beep: {
+    dur: 0.1,
+    // A clean tech/data BEEP (a HUD tick / a number lands): a single mid sine with a tight envelope.
+    graph: 'sine=frequency=1320:duration=0.1,afade=t=out:st=0.05:d=0.05:curve=exp,volume=0.4[out]',
   },
   boom: {
     dur: 0.85,
