@@ -50,3 +50,4 @@ style-ref/
 *.log
 public/generated/
 projects/*/media/
+public/video/*.mp4
