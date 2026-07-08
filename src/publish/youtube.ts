@@ -165,6 +165,10 @@ async function runAuthFlow(): Promise<void> {
   console.log(`[publish:youtube] ✅ authorized — refresh token saved to ${TOKEN_FILE}`);
 }
 
+// YouTube rejects `<` and `>` anywhere in the title/description (reason: invalidDescription).
+// Swap them for the valid unicode angle look-alikes so an author's "<12"/"a>b" can't fail an upload.
+const ytText = (s: string): string => s.replace(/</g, '‹').replace(/>/g, '›');
+
 /** Build the YouTube video-resource metadata from the generic PublishMeta. */
 function buildVideoResource(ctx: PublishContext): Record<string, unknown> {
   const { meta, visibility } = ctx;
@@ -172,8 +176,8 @@ function buildVideoResource(ctx: PublishContext): Record<string, unknown> {
   const hashtagLine = meta.hashtags.length ? '\n\n' + meta.hashtags.map((h) => `#${h.replace(/^#/, '')}`).join(' ') : '';
   return {
     snippet: {
-      title: meta.title.slice(0, 100),
-      description: (meta.description + hashtagLine).slice(0, 5000),
+      title: ytText(meta.title).slice(0, 100),
+      description: ytText(meta.description + hashtagLine).slice(0, 5000),
       tags: meta.tags,
       categoryId: CATEGORY_IDS[meta.category] ?? '25', // default News & Politics
       ...(meta.language ? { defaultLanguage: meta.language, defaultAudioLanguage: meta.language } : {}),

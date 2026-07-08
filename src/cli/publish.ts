@@ -14,6 +14,7 @@
 //   factory:publish <project> --yes --visibility public    # upload public (see verification caveat)
 //   factory:publish <project> --platform youtube[,tiktok]  # choose platform(s); default youtube
 
+import '../publish/ipv4.js'; // side-effect: force IPv4 (see module) — MUST precede any fetch
 import { existsSync } from 'node:fs';
 import { resolve as resolvePath, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
