@@ -62,8 +62,8 @@ cast: {}
 beats:
   # ============================== ACT I — THE DEATH ZONE ==============================================
   - id: hook
-    say: "एक second रुकिए… अठारह हज़ार फीट की ऊँचाई पर, जहाँ साँस लेना भी मुश्किल है — वहाँ India एक ऐसी जंग लड़ रहा है, जो आपने पहले कभी नहीं देखी।"
-    sfx: [ { name: riser, at: 6 }, { name: boom, at: 30 } ]
+    say: "दोस्तों… अठारह हज़ार फीट की ऊँचाई पर, जहाँ साँस लेना भी मुश्किल है — वहाँ India एक ऐसी जंग लड़ रहा है, जो शायद आपने पहले कभी नहीं देखी।"
+    sfx: [ { name: boom, at: 30 } ]
     show:
       - shape: rect
         as: bg
@@ -83,7 +83,7 @@ beats:
 
   - id: deathzone
     say: "ज़रा सोचिए — तापमान माइनस चालीस, और हवा इतनी पतली कि इंसान का शरीर धीरे-धीरे जवाब देने लगता है। इसे कहते हैं — the death zone।"
-    sfx: [ { name: whoosh, at: 2 }, { name: riser, at: 34 } ]
+    sfx: [ { name: whoosh, at: 2 } ]
     show:
       - shape: rect
         as: bg
@@ -94,7 +94,7 @@ beats:
       - text: "The Death Zone"
         as: t
         at: center
-        args: { z: 20, size: 78, weight: 800, color: "#dbe6f5", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 5, blur: 20, color: "#000000", opacity: 0.9 } ], anim: { preset: fade, duration: 8 } }
+        args: { z: 20, size: 78, weight: 800, color: "#dbe6f5", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 5, blur: 20, color: "#000000", opacity: 0.9 } ], anim: { preset: typewriter, cps: 11 } }
     camera: slow_push_in
     duration: { seconds: 8.6 }
     transition: { kind: fade, duration: 16 }
@@ -158,17 +158,29 @@ beats:
 
   - id: shock
     say: "ये सिर्फ़ एक झड़प नहीं थी — ये था एक wake-up call। India और चाइना के रिश्ते, छह दशकों के सबसे निचले स्तर पर पहुँच गए।"
-    sfx: [ { name: whoosh, at: 2 }, { name: riser, at: 30 } ]
+    sfx: [ { name: whoosh, at: 2 } ]
     show:
       - shape: rect
         as: bg
         args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
-      - asset: leh
-        as: still
-        args: { z: 1, kenburns: "out", effects: [ { kind: color_grade, brightness: 0.78, contrast: 1.12, saturate: 0.92 }, { kind: vignette, amount: 0.4, softness: 0.6 } ] }
-      - shape: rect
-        as: band
-        args: { z: 10, position: [540, 980], params: { width: 1080, height: 340 }, fill: { a: 0, k: "#0a0608" }, opacity: 0.44, effects: [ { kind: blur, radius: 30 } ] }
+      # SYNC: "relations at their lowest" → the two giants at odds (India + China both hot), NOT a photo.
+      - generator: world-in
+        as: world
+        args:
+          projection: mercator
+          fit: false
+          center: [90, 30]
+          scale: 480
+          key_field: name
+          fill: "#223249"
+          no_data_fill: "#223249"
+          stroke: "#3a516c"
+          stroke_width: 0.8
+          ocean: "#0a1420"
+          graticule: { step: 6, color: "#1a2636", opacity: 0.4, width: 0.6 }
+          choropleth: { India: "#ff6b4d", China: "#ff4438" }
+          labels: { India: India, China: China }
+          effects: [ { kind: glow, color: "#ff4438", radius: 8, intensity: 0.5 } ]
       - text: "The Wake-Up Call"
         as: t
         at: center
@@ -179,7 +191,7 @@ beats:
 
   - id: watch
     say: "और फिर, पूरी दुनिया की नज़रें Ladakh पर टिक गईं। हर अख़बार, हर बुलेटिन में — बस एक ही सवाल।"
-    sfx: [ { name: whoosh, at: 2 }, { name: riser, at: 24 } ]
+    sfx: [ { name: whoosh, at: 2 } ]
     show:
       - shape: rect
         as: bg
@@ -191,9 +203,9 @@ beats:
     duration: { seconds: 6.4 }
     transition: { kind: fade, duration: 14 }
 
-  # --- UBIQUITY MONTAGE: rapid hard-cut newsshots (no say, whip per cut) ---
+  # --- UBIQUITY MONTAGE: HARD CUTS, EXPONENTIALLY ACCELERATING, a SHUTTER per cut (no fades) ---
   - id: m1
-    sfx: [ { name: whoosh, at: 0 } ]
+    sfx: [ { name: shutter, at: 0 } ]
     show:
       - shape: rect
         as: bg
@@ -202,32 +214,67 @@ beats:
         as: shot
         args: { z: 5, kenburns: "in" }
     camera: hold
-    duration: { seconds: 0.8 }
+    duration: { seconds: 0.9 }
 
   - id: m2
-    sfx: [ { name: whoosh, at: 0 } ]
-    show:
-      - shape: rect
-        as: bg
-        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#05070c" } }
-      - asset: news-swarm
-        as: shot
-        args: { z: 5, kenburns: "out" }
-    camera: hold
-    duration: { seconds: 0.8 }
-
-  - id: m3
-    sfx: [ { name: whoosh, at: 0 }, { name: boom, at: 18 } ]
+    sfx: [ { name: shutter, at: 0 } ]
     show:
       - shape: rect
         as: bg
         args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#05070c" } }
       - asset: news-galwan
         as: shot
+        args: { z: 5, kenburns: "out" }
+    camera: hold
+    duration: { seconds: 0.7 }
+
+  - id: m3
+    sfx: [ { name: shutter, at: 0 } ]
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#05070c" } }
+      - asset: news-swarm
+        as: shot
         args: { z: 5, kenburns: "in" }
     camera: hold
-    duration: { seconds: 0.9 }
-    transition: { kind: fade, duration: 10 }
+    duration: { seconds: 0.55 }
+
+  - id: m4
+    sfx: [ { name: shutter, at: 0 } ]
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#05070c" } }
+      - asset: news-tribune
+        as: shot
+        args: { z: 5, kenburns: "out" }
+    camera: hold
+    duration: { seconds: 0.45 }
+
+  - id: m5
+    sfx: [ { name: shutter, at: 0 } ]
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#05070c" } }
+      - asset: news-orf
+        as: shot
+        args: { z: 5, kenburns: "in" }
+    camera: hold
+    duration: { seconds: 0.35 }
+
+  - id: m6
+    sfx: [ { name: shutter, at: 0 }, { name: boom, at: 5 } ]
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#05070c" } }
+      - asset: news-galwan
+        as: shot
+        args: { z: 5, kenburns: "out" }
+    camera: hold
+    duration: { seconds: 0.28 }
 
   - id: friction
     say: "गलवान, Pangong, Depsang — Ladakh में सात friction points, जहाँ दोनों देशों की फ़ौजें आमने-सामने खड़ी थीं।"
@@ -264,11 +311,10 @@ beats:
         args: { z: 20, size: 60, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 16, distance: 40 } }
     camera: slow_push_in
     duration: { seconds: 5.9 }
-    transition: { kind: fade, duration: 16 }
 
   - id: problem
     say: "पर यहाँ एक बड़ी दिक्कत थी। इस death zone में, सिर्फ़ जवानों के दम पर सरहद को हमेशा के लिए नहीं थामा जा सकता। तो India ने क्या किया?"
-    sfx: [ { name: whoosh, at: 2 }, { name: riser, at: 34 } ]
+    sfx: [ { name: whoosh, at: 2 } ]
     show:
       - shape: rect
         as: bg
@@ -290,7 +336,7 @@ beats:
   # ============================== ACT III — THE TECH SHIELD ===========================================
   - id: pivot
     say: "India ने अपनी पूरी सोच ही बदल दी। ज़्यादा जवानों की जगह — ज़्यादा technology। नतीजा? 2020 में जहाँ बारह से भी कम drone platforms थे, आज उनकी गिनती है, एक सौ चालीस से ऊपर।"
-    sfx: [ { name: whoosh, at: 2 }, { name: riser, at: 24 }, { name: ding, at: 52 } ]
+    sfx: [ { name: whoosh, at: 2 }, { name: ding, at: 52 } ]
     show:
       - shape: rect
         as: bg
@@ -301,30 +347,35 @@ beats:
       - shape: rect
         as: band
         args: { z: 10, position: [540, 300], params: { width: 1080, height: 260 }, fill: { a: 0, k: "#060b14" }, opacity: 0.42, effects: [ { kind: blur, radius: 30 } ] }
-      - text: "12 → 140+ drones"
+      - text: "140"
         as: t
         at: top
-        args: { z: 20, size: 66, weight: 800, color: "#ffd34d", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 12, intensity: 0.6 }, { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 16, distance: 40 } }
+        args: { z: 20, size: 120, weight: 800, color: "#ffd34d", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 14, intensity: 0.7 }, { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: count_up, from: 12, to: 140, duration: 60 } }
+      - text: "drone platforms"
+        as: t2
+        at: center
+        args: { z: 20, size: 44, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 12, color: "#000000", opacity: 0.85 } ], anim: { preset: fade, duration: 20, delay: 40 } }
     camera: slow_push_in
     duration: { seconds: 10.0 }
     transition: { kind: fade, duration: 16 }
 
   - id: swarm
     say: "और सबसे बड़ा हथियार? Swarm drones — सैकड़ों छोटे drones, जो एक झुंड की तरह, एक साथ हमला करते हैं। India उन चंद देशों में है जिसने इन्हें असल में मैदान में उतारा।"
-    sfx: [ { name: whoosh, at: 2 }, { name: riser, at: 20 }, { name: boom, at: 44 } ]
+    sfx: [ { name: whoosh, at: 2 }, { name: boom, at: 44 } ]
     show:
       - shape: rect
         as: bg
         args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
-      - footage: drone
+      # night drone light-show (bright LED drones on dark sky) — keep it BRIGHT so the SWARM reads.
+      - footage: swarm
         as: broll
-        args: { z: 1, loop: true, muted: true, fit: cover, effects: [ { kind: color_grade, brightness: 0.66, contrast: 1.16, saturate: 0.8, hue: 6 }, { kind: vignette, amount: 0.4, softness: 0.6 } ] }
+        args: { z: 1, loop: true, muted: true, fit: cover, effects: [ { kind: color_grade, brightness: 0.98, contrast: 1.12, saturate: 1.15 } ] }
       - shape: rect
         as: band
-        args: { z: 10, position: [540, 960], params: { width: 1080, height: 300 }, fill: { a: 0, k: "#060b14" }, opacity: 0.4, effects: [ { kind: blur, radius: 30 } ] }
+        args: { z: 10, position: [540, 300], params: { width: 1080, height: 240 }, fill: { a: 0, k: "#060b14" }, opacity: 0.4, effects: [ { kind: blur, radius: 30 } ] }
       - text: "Swarm Drones"
         as: t
-        at: center
+        at: top
         args: { z: 20, size: 78, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 12, intensity: 0.6 }, { kind: drop_shadow, dx: 0, dy: 5, blur: 18, color: "#000000", opacity: 0.9 } ], anim: { preset: fade, duration: 10 } }
     camera: slow_push_in
     duration: { seconds: 10.3 }
@@ -395,7 +446,7 @@ beats:
 
   - id: deterrence
     say: "2024 में सरहद पर disengagement हुआ, तनाव कुछ कम हुआ। पर India ने ये shield बनाना नहीं रोका। क्योंकि असली deterrent बंदूक नहीं — बढ़त है।"
-    sfx: [ { name: whoosh, at: 2 }, { name: riser, at: 28 }, { name: boom, at: 40 } ]
+    sfx: [ { name: whoosh, at: 2 }, { name: boom, at: 40 } ]
     show:
       - shape: rect
         as: bg

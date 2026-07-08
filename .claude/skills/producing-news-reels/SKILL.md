@@ -99,10 +99,13 @@ The `map` generator (core-dataviz) has a full toolkit, all authored as DATA, all
   chokepoints, pop in. Coords are geographic → align exactly with the country geometry.
 - **fly-to** — `center_to`, `scale_to`, `fly: { duration, easing }` — pan/zoom across the map in a beat.
   UNDERUSED — a map should almost never sit still; a slow push or a pan to the subject adds life for free.
-- **⭐ ANIMATED BORDERS (draw the outline ON during narration) — BUILT, use it.** On the map, set
-  `draw_on: { delay, duration }` + `draw_on_stroke: true` + `draw_on_fill: true` → the highlighted
-  country's OUTLINE strokes on (dashoffset reveal) and then the fill fades in behind it, timed to the VO.
-  This is the single biggest "maps feel alive" upgrade and needs no code — just author it on the map beat.
+- **⚠️ ANIMATED BORDERS (`draw_on`) — DO NOT use on a CHOROPLETH map (it BREAKS the coloring).** Tested
+  2026-07-08: adding `draw_on`/`draw_on_stroke`/`draw_on_fill` to a `world-in` choropleth made the whole map
+  go DARK — the country highlight FILLS vanish (the draw-on ramp + per-feature stagger suppresses every
+  polygon's fill for 100+ frames). Keep choropleth maps as INSTANT clean fills (they already look great).
+  `draw_on` is for non-choropleth feature maps only. To make a choropleth "feel alive" use MOTION that
+  DOESN'T touch the fills: `markers_pop`, a `routes` arrow with its own `draw_on` (a separate path — that
+  works), `fly-to` (a slow push/pan), and `glow`.
 - **⭐ PROJECTION — go beyond flat.** `projection:` accepts **`orthographic`** (a dramatic 3D **GLOBE** — the
   Johnny-Harris "spin to the region" establishing shot), `naturalEarth1`, `equalEarth`, `azimuthalEqualArea`,
   and `mercator` (the flat default). Open a doc/reel on an orthographic globe, then cut to a tight mercator

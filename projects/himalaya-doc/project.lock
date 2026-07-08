@@ -78,6 +78,13 @@
       "version": "1.0.0",
       "hash": "4362705d633daea692ff6491e98c7d3a1c033442",
       "deps": []
+    },
+    "swarm@1.0.0": {
+      "namespace": "newsclips",
+      "id": "swarm",
+      "version": "1.0.0",
+      "hash": "9e047b385197aab30598a7f59856158ea1ed2361",
+      "deps": []
     }
   }
 }

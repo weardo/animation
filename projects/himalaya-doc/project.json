@@ -2,18 +2,18 @@
   "project_version": "1.0",
   "id": "himalaya-doc",
   "name": "Himalaya Doc",
-  "created": "2026-07-08T05:54:16.773Z",
-  "updated": "2026-07-08T05:54:16.773Z",
+  "created": "2026-07-08T08:00:57.760Z",
+  "updated": "2026-07-08T08:00:57.760Z",
   "config": {
     "w": 1080,
     "h": 1920,
     "fps": 30,
-    "duration_frames": 3663
+    "duration_frames": 3712
   },
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "8a25f42e108b148c95bd3e21c142982b515b7c7a",
+  "scene_ir_hash": "5bff722d4c4bae291f9c0aa483091cdfbf3f37d3",
   "engine": "remotion@4.0.481",
   "deps": [
     "blizzard@1.0.0",
@@ -26,20 +26,22 @@
     "news-tribune@1.0.0",
     "radar@1.0.0",
     "rustomuav@1.0.0",
-    "soldiers@1.0.0"
+    "soldiers@1.0.0",
+    "swarm@1.0.0"
   ],
   "assets": [
     "assets/video/himalaya.mp4",
     "assets/video/blizzard.mp4",
     "assets/img/soldiers.jpg",
-    "assets/img/leh.jpg",
     "assets/img/news-tribune.png",
     "assets/img/news-orf.png",
-    "assets/img/news-swarm.png",
     "assets/img/news-galwan.png",
+    "assets/img/news-swarm.png",
     "assets/video/drone.mp4",
+    "assets/video/swarm.mp4",
     "assets/img/rustomuav.jpg",
     "assets/video/radar.mp4",
+    "assets/img/leh.jpg",
     "assets/fonts/Mukta-ExtraBold.ttf",
     "assets/fonts/NotoSansDevanagari.ttf",
     "assets/fonts/DejaVuSans.ttf"

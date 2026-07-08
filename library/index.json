@@ -1317,6 +1317,25 @@
         }
       }
     },
-    "newsclips": {}
+    "newsclips": {
+      "swarm": {
+        "id": "swarm",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/swarm.mp4",
+        "tags": [
+          "newsclip",
+          "evidence",
+          "footage"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Cybersurg — \"Indian Army Drone Swarm action - 5 minute edit\" — https://www.youtube.com/watch?v=wZ3SWbbhu34 (captured 2026-07-08)",
+          "license": "editorial / fair-use — brief attributed commentary; publicly-accessible source",
+          "cache_hash": "26f2ab729d83"
+        }
+      }
+    }
   }
 }
