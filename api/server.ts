@@ -7,7 +7,7 @@ import express, { type Request, type Response } from 'express';
 
 import { PROJECT_ROOT } from '../agents/claude.js';
 import { loadDotenv } from './env.js';
-import { createJob, getJob, listJobs, renderLogTail, type Job } from './jobs.js';
+import { createJob, getJob, listJobs, publishProject, renderLogTail, type Job } from './jobs.js';
 
 loadDotenv(); // pull .env (SARVAM_API_KEY, …) into process.env before any job spawns a render
 
@@ -59,6 +59,31 @@ app.get('/api/jobs/:id/video', (req: Request, res: Response) => {
     return;
   }
   res.sendFile(abs);
+});
+
+// Settings / first-run setup: which integrations are configured (keys present)?
+app.get('/api/config', (_req: Request, res: Response) => {
+  res.json({
+    keys: {
+      sarvam: Boolean(process.env['SARVAM_API_KEY']),
+      pexels: Boolean(process.env['PEXELS_API_KEY']),
+    },
+    narrationEngine: process.env['SARVAM_API_KEY'] ? 'sarvam' : 'espeak-ng (fallback)',
+    visuals: process.env['PEXELS_API_KEY'] ? 'footage on' : 'footage off (no PEXELS_API_KEY)',
+  });
+});
+
+// Publish a finished video to YouTube (dry-run unless { confirm: true }).
+app.post('/api/jobs/:id/publish', (req: Request, res: Response) => {
+  const job = getJob(String(req.params['id']));
+  if (!job?.projectId || !job.outputRel) {
+    res.status(400).json({ error: 'no rendered video to publish' });
+    return;
+  }
+  const confirm = ((req.body ?? {}) as { confirm?: unknown }).confirm === true;
+  publishProject(job.projectId, confirm)
+    .then((r) => res.json(r))
+    .catch((e: Error) => res.status(500).json({ status: 'failed', output: e.message }));
 });
 
 const PORT = Number(process.env['PORT'] ?? 5055);

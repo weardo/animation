@@ -143,6 +143,30 @@ async function runJob(id: string): Promise<void> {
   }
 }
 
+/**
+ * Publish a rendered project to YouTube via the existing publisher. DRY-RUN by default (validates +
+ * previews, no upload); pass confirm=true to actually upload (unlisted). Returns the CLI output + any
+ * resulting URL.
+ */
+export async function publishProject(
+  projectId: string,
+  confirm: boolean,
+): Promise<{ status: string; output: string; url?: string }> {
+  const args = ['tsx', 'src/cli/publish.ts', projectId, '--visibility', 'unlisted'];
+  if (confirm) args.push('--yes');
+  return new Promise((done) => {
+    let out = '';
+    const p = spawn('npx', args, { cwd: PROJECT_ROOT, stdio: ['ignore', 'pipe', 'pipe'] });
+    p.stdout.on('data', (d: Buffer) => (out += d.toString()));
+    p.stderr.on('data', (d: Buffer) => (out += d.toString()));
+    p.on('close', (code) => {
+      const m = out.match(/https?:\/\/(?:youtu\.be|www\.youtube\.com)\/\S+/);
+      done({ status: code === 0 ? 'ok' : 'failed', output: out.slice(-2000), ...(m ? { url: m[0] } : {}) });
+    });
+    p.on('error', (e) => done({ status: 'failed', output: String(e) }));
+  });
+}
+
 /** Last N non-empty lines of a job's render log (for live progress in the UI). */
 export function renderLogTail(job: Job, n = 10): string {
   if (!job.projectId) return '';

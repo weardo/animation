@@ -89,13 +89,20 @@
     <video id="video" class="hidden" controls></video>
     <div class="actions" id="doneActions" style="display:none">
       <a id="download" class="hidden" download><button>Download video</button></a>
+      <button id="publish" class="ghost">Publish to YouTube</button>
       <button class="ghost" onclick="reset()">Make another</button>
     </div>
+    <pre class="log hidden" id="pubout"></pre>
   </section>
 
   <section class="card" id="recent">
     <h2>Recent</h2>
     <ul class="jobs" id="jobs"><li class="hint" style="cursor:default">Nothing yet — create your first video above.</li></ul>
+  </section>
+
+  <section class="card" id="setup">
+    <h2>Setup</h2>
+    <ul class="jobs" id="config"><li class="hint" style="cursor:default">Checking integrations…</li></ul>
   </section>
 </main>
 
@@ -122,8 +129,11 @@ async function go() {
   watch(id);
 }
 
+let currentId = null;
 function watch(id) {
+  currentId = id;
   try { localStorage.setItem('watchId', id); } catch (e) {}
+  $('pubout').classList.add('hidden');
   $('job').classList.remove('hidden');
   $('video').classList.add('hidden'); $('video').removeAttribute('src');
   $('doneActions').style.display = 'none';
@@ -188,8 +198,36 @@ async function init() {
   if (resume) watch(resume.id);
 }
 
+async function loadConfig() {
+  try {
+    const c = await (await fetch('/api/config')).json();
+    const ok = (b) => b ? '<span class="pill done">configured</span>' : '<span class="pill error">missing</span>';
+    $('config').innerHTML = [
+      `<li style="cursor:default"><span class="t">Sarvam AI (narration voice)</span>${ok(c.keys.sarvam)}</li>`,
+      `<li style="cursor:default"><span class="t">Pexels (footage visuals)</span>${ok(c.keys.pexels)}</li>`,
+      `<li style="cursor:default"><span class="t">Narration engine</span><span class="hint">${esc(c.narrationEngine)}</span></li>`,
+    ].join('');
+  } catch (e) {}
+}
+
+async function publish(confirm) {
+  if (!currentId) return;
+  const btn = $('publish'); btn.disabled = true; btn.textContent = confirm ? 'Uploading…' : 'Checking…';
+  const out = $('pubout'); out.classList.remove('hidden'); out.textContent = 'Working…';
+  try {
+    const r = await (await fetch('/api/jobs/' + currentId + '/publish', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ confirm }),
+    })).json();
+    out.textContent = (r.url ? '✅ ' + r.url + '\n\n' : '') + (r.output || r.error || '');
+    if (!confirm && r.status === 'ok') { btn.textContent = 'Confirm upload (unlisted)'; btn.disabled = false; btn.dataset.confirm = '1'; return; }
+  } catch (e) { out.textContent = 'Publish failed: ' + e; }
+  btn.textContent = 'Publish to YouTube'; btn.disabled = false; delete btn.dataset.confirm;
+}
+
+$('publish').addEventListener('click', () => publish($('publish').dataset.confirm === '1'));
 $('go').addEventListener('click', go);
 init();
+loadConfig();
 </script>
 </body>
 </html>
