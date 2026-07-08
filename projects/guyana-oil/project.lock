@@ -1,0 +1,34 @@
+{
+  "lockfile_version": "1",
+  "algorithm": "object-hash@sha1/v1",
+  "refs": {
+    "military@1.0.0": {
+      "namespace": "footage",
+      "id": "military",
+      "version": "1.0.0",
+      "hash": "711031e98c4df334d76cc61548f2150cc8585406",
+      "deps": []
+    },
+    "oilrig@1.0.0": {
+      "namespace": "footage",
+      "id": "oilrig",
+      "version": "1.0.0",
+      "hash": "9c9c0852818fa70e766837e5cfd48b6517605223",
+      "deps": []
+    },
+    "plain@1.0.0": {
+      "namespace": "stylekits",
+      "id": "plain",
+      "version": "1.0.0",
+      "hash": "fb56c23a60d8cef3e43f7f126ecbd4a3ec2d6622",
+      "deps": []
+    },
+    "world-in@1.0.0": {
+      "namespace": "generators",
+      "id": "world-in",
+      "version": "1.0.0",
+      "hash": "722997be6264c229005e1c2680db115977f6b761",
+      "deps": []
+    }
+  }
+}

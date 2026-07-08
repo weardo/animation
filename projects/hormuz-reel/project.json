@@ -2,21 +2,26 @@
   "project_version": "1.0",
   "id": "hormuz-reel",
   "name": "Hormuz Reel",
-  "created": "2026-07-07T18:05:27.366Z",
-  "updated": "2026-07-07T18:05:27.366Z",
+  "created": "2026-07-08T01:14:50.139Z",
+  "updated": "2026-07-08T01:14:50.139Z",
   "config": {
     "w": 1080,
     "h": 1920,
     "fps": 30,
-    "duration_frames": 742
+    "duration_frames": 1451
   },
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "9bdeaee6c67af859f7032a442bec26ebf1730c2c",
+  "scene_ir_hash": "652b6264ce46dfc1442f02d07acbd0c477b207c0",
   "engine": "remotion@4.0.481",
-  "deps": [],
+  "deps": [
+    "fuel@1.0.0",
+    "tanker@1.0.0"
+  ],
   "assets": [
+    "assets/video/tanker.mp4",
+    "assets/video/fuel.mp4",
     "assets/fonts/Mukta-ExtraBold.ttf"
   ],
   "outputs": {

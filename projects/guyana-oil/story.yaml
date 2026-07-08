@@ -1,0 +1,243 @@
+# guyana-oil — geopolitics reel: How Guyana's 11-billion-barrel oil discovery is reshaping South
+# American power. (2026-07) Verifiable core: ExxonMobil's Stabroek block holds ~11 billion recoverable
+# barrels; Guyana is the world's fastest-growing economy; Venezuela claims the oil-rich Essequibo (~2/3
+# of Guyana) and has mobilized militarily; the US/major powers are recalibrating. WHO is "right" in the
+# territorial claim is ATTRIBUTED, never asserted — we state Venezuela's CLAIM + mobilization as its
+# actions, and the oil/economy facts plainly.
+#
+# STORYTELLING: Bulbul v3's prosody layer reads punctuation — lines are SHORT + PUNCHY with … for
+# suspense and ? for the hook. Voice = channel default (shubh, temp 0.9, 48kHz). Maps are the star;
+# footage (verified: offshore rig / tropical delta / modern armored vehicle) is sparse (open, escalation,
+# loop-close). Durations are narration-fitted after a synth pass.
+title: "Guyana Oil — Geopolitics Reel"
+style: plain
+format:
+  aspect: "9:16"
+  fps: 30
+
+post:
+  - { kind: color_grade, brightness: 1.0, contrast: 1.18, saturate: 1.12 }
+  - { kind: vignette, amount: 0.6, softness: 0.5 }
+  - { kind: grain, amount: 0.05, size: 0.9, seed: 11 }
+
+music: { ref: "audio/tension.mp3", gain: 0.58, duck: 0.3, fade: 16 }
+
+# UPLOAD-READY metadata → compiled into project.json (pure metadata, never touches the render).
+publish:
+  title: "Guyana का तेल: कैसे 11 अरब बैरल ने South America को हिला दिया 🌍"
+  description: |
+    एक छोटे से देश Guyana के पास मिला 11 अरब बैरल तेल… और South America की पूरी geopolitics बदल गई।
+    Venezuela का Essequibo पर दावा, army की हलचल, और superpowers का side चुनना — पूरी कहानी।
+
+    Follow for daily geopolitics, explained in Hinglish. 🌍
+
+    Sources: ExxonMobil Stabroek block (~11B barrels) · Guyana = world's fastest-growing economy (IMF) ·
+    Venezuela's Essequibo claim + 2023 referendum & military moves · US/major-power realignment.
+
+    Credits: Footage — Pexels (free commercial) · Music — royalty-free · Maps — Govt-of-India official boundary.
+    Disclaimer: The Essequibo claim is disputed; Venezuela's claim/mobilization is shown as its stated
+    position, not settled fact. Reserve/economic figures are from public reporting.
+  tags: [Guyana, Venezuela, Essequibo, Geopolitics, Oil, South America, World Affairs, Hindi, Shorts, UPSC, Current Affairs, Exxon]
+  hashtags: [Guyana, Venezuela, Essequibo, Geopolitics, Shorts]
+  category: "News & Politics"
+  language: hi-IN
+  caption_language: hi-IN
+  privacy: private
+  made_for_kids: false
+  credits: "Footage: Pexels · Music: royalty-free · Map: Govt-of-India official boundary"
+
+cast: {}
+
+beats:
+  # ==================================================== B1 — HOOK ====================================
+  - id: hook
+    say: "सोचो… एक छोटा सा देश, जिसका नाम भी किसी ने नहीं सुना था। और वहीं मिल गया — ग्यारह अरब बैरल तेल।"
+    sfx:
+      - { name: boom, at: 4 }
+      - { name: whoosh, at: 12 }
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - footage: oilrig
+        as: broll
+        args:
+          z: 1
+          loop: true
+          muted: true
+          fit: cover
+          effects:
+            - { kind: color_grade, brightness: 0.46, contrast: 1.16, saturate: 0.6, hue: 6 }
+            - { kind: blur, radius: 1 }
+            - { kind: vignette, amount: 0.5, softness: 0.6 }
+      - shape: rect
+        as: scrim
+        args: { z: 2, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0f18" }, opacity: 0.45 }
+      # first-frame text hook (fast fade — 92% watch muted). "?" / … = curiosity + suspense.
+      - text: "एक तट… जो दुनिया हिला देगा"
+        as: hooktext
+        at: center
+        args: { z: 20, size: 76, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#2ee6a6", radius: 14, intensity: 0.7 }, { kind: drop_shadow, dx: 0, dy: 6, blur: 20, color: "#000000", opacity: 0.85 } ], anim: { preset: fade, duration: 5 } }
+    camera: slow_push_in
+    duration: { seconds: 6.4 }
+
+  # ==================================================== B2 — STAT SHOCK (map: Guyana rising) =========
+  - id: rise
+    say: "रातों-रात यही Guyana बन गया धरती की सबसे तेज़ी से बढ़ती economy। पैसा, जैसे आसमान से बरस रहा हो।"
+    sfx:
+      - { name: whoosh, at: 2 }
+      - { name: ding, at: 30 }
+      - { name: pop, at: 40 }
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - generator: world-in
+        as: world
+        args:
+          projection: mercator
+          fit: false
+          center: [-61, 5.5]
+          scale: 1150
+          key_field: name
+          fill: "#223249"
+          no_data_fill: "#223249"
+          stroke: "#3a516c"
+          stroke_width: 0.9
+          ocean: "#0a1420"
+          graticule: { step: 5, color: "#1a2636", opacity: 0.4, width: 0.6 }
+          choropleth:
+            Guyana: "#2ee6a6"
+          labels:
+            Guyana: Guyana
+            Venezuela: Venezuela
+            Brazil: Brazil
+            Suriname: Suriname
+          markers:
+            - { coord: [-58.16, 6.80], label: "Georgetown", color: "#2ee6a6", radius: 11, label_size: 34, label_dy: -24 }
+          markers_pop: { delay: 26, duration: 18 }
+          effects:
+            - { kind: glow, color: "#2ee6a6", radius: 6, intensity: 0.4 }
+      - text: "सबसे तेज़ economy"
+        as: title
+        at: top
+        args: { z: 20, size: 66, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", tracking: 1, effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 18, distance: 50 } }
+    camera: slow_push_in
+    duration: { seconds: 7.3 }
+    transition: { kind: fade, duration: 16 }
+
+  # ==================================================== B3 — THE DISPUTE (core map: Essequibo) =======
+  - id: dispute
+    say: "लेकिन इतनी दौलत ने एक दुश्मन भी खड़ा कर दिया। बगल में बैठा Venezuela बोला — ये Essequibo, Guyana का दो-तिहाई हिस्सा, है तो मेरा। और देखते ही देखते, उसकी army सरहद पर आ गई।"
+    sfx:
+      - { name: whoosh, at: 2 }
+      - { name: riser, at: 24 }
+      - { name: boom, at: 60 }
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      # tight Guyana–Venezuela zoom: Venezuela red (claimant), Guyana teal (the prize), an ARROW from
+      # Venezuela reaching toward the disputed Essequibo, the region + capitals marked.
+      - generator: world-in
+        as: world
+        args:
+          projection: mercator
+          fit: false
+          center: [-62.5, 6.4]
+          scale: 2000
+          key_field: name
+          fill: "#223249"
+          no_data_fill: "#223249"
+          stroke: "#3a516c"
+          stroke_width: 1.0
+          ocean: "#0a1420"
+          graticule: { step: 2, color: "#1a2636", opacity: 0.45, width: 0.6 }
+          choropleth:
+            Venezuela: "#ff4438"
+            Guyana: "#2ee6a6"
+          labels:
+            Venezuela: Venezuela
+            Guyana: Guyana
+            Brazil: Brazil
+          routes:
+            - { coords: [[-65.5, 8.5], [-59.9, 5.9]], arc: true, arrow: true, color: "#ff6b4d", width: 4, glow: 6, draw_on: { delay: 28, duration: 26 } }
+          markers:
+            - { coord: [-59.9, 5.9], label: "Essequibo (disputed)", color: "#ffd34d", radius: 12, label_size: 32, label_dy: -26 }
+            - { coord: [-58.16, 6.80], label: "Georgetown", color: "#2ee6a6", radius: 9, label_size: 28, label_dy: 34 }
+            - { coord: [-66.9, 10.5], label: "Caracas", color: "#ff4438", radius: 9, label_size: 28, label_dy: -22 }
+          markers_pop: { delay: 34, duration: 22, stagger: 10 }
+          effects:
+            - { kind: glow, color: "#ff4438", radius: 7, intensity: 0.45 }
+      - text: "Essequibo पर दावा"
+        as: title
+        at: top
+        args: { z: 20, size: 68, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 18, distance: 50 } }
+    camera: slow_push_in
+    duration: { seconds: 10.6 }
+    transition: { kind: fade, duration: 16 }
+
+  # ==================================================== B4 — ESCALATION (superpowers pick sides) =====
+  - id: escalation
+    say: "अब ये लड़ाई सिर्फ दो देशों की नहीं थी। South America का पूरा नक्शा दांव पर था — और अमेरिका से लेकर हर बड़ी ताक़त, चुपके से अपना side चुनने लगी।"
+    sfx:
+      - { name: whoosh, at: 2 }
+      - { name: riser, at: 18 }
+      - { name: boom, at: 44 }
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - footage: military
+        as: broll
+        args:
+          z: 1
+          loop: true
+          muted: true
+          fit: cover
+          effects:
+            - { kind: color_grade, brightness: 0.44, contrast: 1.18, saturate: 0.5, hue: 2 }
+            - { kind: blur, radius: 1 }
+            - { kind: vignette, amount: 0.5, softness: 0.6 }
+      - shape: rect
+        as: scrim
+        args: { z: 2, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#180606" }, opacity: 0.48 }
+      - text: "Superpowers pick sides"
+        as: big
+        at: center
+        args: { z: 20, size: 74, weight: 800, color: "#ff6b4d", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ff4438", radius: 14, intensity: 0.8 }, { kind: drop_shadow, dx: 0, dy: 5, blur: 18, color: "#000000", opacity: 0.85 } ], anim: { preset: fade, duration: 12 } }
+    camera: slow_push_in
+    duration: { seconds: 7.4 }
+    transition: { kind: fade, duration: 16 }
+
+  # ==================================================== B5 — PAYOFF + LOOP ===========================
+  - id: payoff
+    say: "और आज? दुनिया का सबसे नया oil superpower खड़ा है… ठीक बारूद के ढेर पर।"
+    sfx:
+      - { name: whoosh, at: 2 }
+      - { name: boom, at: 8 }
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - footage: oilrig
+        as: broll
+        args:
+          z: 1
+          loop: true
+          muted: true
+          fit: cover
+          effects:
+            - { kind: color_grade, brightness: 0.46, contrast: 1.16, saturate: 0.6, hue: 6 }
+            - { kind: blur, radius: 1 }
+            - { kind: vignette, amount: 0.5, softness: 0.6 }
+      - shape: rect
+        as: scrim
+        args: { z: 2, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0f18" }, opacity: 0.45 }
+      # LOOP: same visual + same text as the hook → the reel feels like it's about to start over.
+      - text: "एक तट… जो दुनिया हिला देगा"
+        as: loop
+        at: center
+        args: { z: 20, size: 76, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#2ee6a6", radius: 14, intensity: 0.7 }, { kind: drop_shadow, dx: 0, dy: 6, blur: 20, color: "#000000", opacity: 0.85 } ], anim: { preset: fade, duration: 10 } }
+    camera: slow_push_in
+    duration: { seconds: 4.7 }

@@ -2,11 +2,25 @@
   "lockfile_version": "1",
   "algorithm": "object-hash@sha1/v1",
   "refs": {
+    "fuel@1.0.0": {
+      "namespace": "footage",
+      "id": "fuel",
+      "version": "1.0.0",
+      "hash": "d2d589a81c999ebf8332c2acb2f5eb5c58c02bca",
+      "deps": []
+    },
     "plain@1.0.0": {
       "namespace": "stylekits",
       "id": "plain",
       "version": "1.0.0",
       "hash": "fb56c23a60d8cef3e43f7f126ecbd4a3ec2d6622",
+      "deps": []
+    },
+    "tanker@1.0.0": {
+      "namespace": "footage",
+      "id": "tanker",
+      "version": "1.0.0",
+      "hash": "9cb17222deb4957f8987c76355fed707afeb5fcf",
       "deps": []
     },
     "world-in@1.0.0": {

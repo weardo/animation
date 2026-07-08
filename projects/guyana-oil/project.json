@@ -1,0 +1,65 @@
+{
+  "project_version": "1.0",
+  "id": "guyana-oil",
+  "name": "Guyana Oil",
+  "created": "2026-07-08T02:53:42.606Z",
+  "updated": "2026-07-08T02:53:42.606Z",
+  "config": {
+    "w": 1080,
+    "h": 1920,
+    "fps": 30,
+    "duration_frames": 1044
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "b8f9d81e77fe4da828ce4ce106af3d621c0eed6d",
+  "engine": "remotion@4.0.481",
+  "deps": [
+    "military@1.0.0",
+    "oilrig@1.0.0"
+  ],
+  "assets": [
+    "assets/video/oilrig.mp4",
+    "assets/video/military.mp4",
+    "assets/fonts/Mukta-ExtraBold.ttf",
+    "assets/fonts/NotoSansDevanagari.ttf",
+    "assets/fonts/DejaVuSans.ttf"
+  ],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  },
+  "publish": {
+    "title": "Guyana का तेल: कैसे 11 अरब बैरल ने South America को हिला दिया 🌍",
+    "description": "एक छोटे से देश Guyana के पास मिला 11 अरब बैरल तेल… और South America की पूरी geopolitics बदल गई।\nVenezuela का Essequibo पर दावा, army की हलचल, और superpowers का side चुनना — पूरी कहानी।\n\nFollow for daily geopolitics, explained in Hinglish. 🌍\n\nSources: ExxonMobil Stabroek block (~11B barrels) · Guyana = world's fastest-growing economy (IMF) ·\nVenezuela's Essequibo claim + 2023 referendum & military moves · US/major-power realignment.\n\nCredits: Footage — Pexels (free commercial) · Music — royalty-free · Maps — Govt-of-India official boundary.\nDisclaimer: The Essequibo claim is disputed; Venezuela's claim/mobilization is shown as its stated\nposition, not settled fact. Reserve/economic figures are from public reporting.\n",
+    "tags": [
+      "Guyana",
+      "Venezuela",
+      "Essequibo",
+      "Geopolitics",
+      "Oil",
+      "South America",
+      "World Affairs",
+      "Hindi",
+      "Shorts",
+      "UPSC",
+      "Current Affairs",
+      "Exxon"
+    ],
+    "hashtags": [
+      "Guyana",
+      "Venezuela",
+      "Essequibo",
+      "Geopolitics",
+      "Shorts"
+    ],
+    "category": "News & Politics",
+    "language": "hi-IN",
+    "caption_language": "hi-IN",
+    "privacy": "private",
+    "made_for_kids": false,
+    "license": "standard",
+    "credits": "Footage: Pexels · Music: royalty-free · Map: Govt-of-India official boundary"
+  }
+}
