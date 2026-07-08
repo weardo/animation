@@ -27,7 +27,7 @@ import objectHash from 'object-hash';
 
 const PEXELS_SEARCH = 'https://api.pexels.com/videos/search';
 
-interface FootageRequest {
+export interface FootageRequest {
   query: string;
   orientation: 'portrait' | 'landscape' | 'square';
   /** Pexels `size` bucket: large(4K) / medium(FullHD) / small(HD). */
@@ -80,8 +80,9 @@ function bestFile(video: PexelsVideo): PexelsVideoFile | undefined {
 async function rankedCandidates(
   req: FootageRequest,
   apiKey: string,
+  perPage = 20,
 ): Promise<{ video: PexelsVideo; file: PexelsVideoFile }[]> {
-  const url = `${PEXELS_SEARCH}?query=${encodeURIComponent(req.query)}&orientation=${req.orientation}&size=${req.size}&per_page=20`;
+  const url = `${PEXELS_SEARCH}?query=${encodeURIComponent(req.query)}&orientation=${req.orientation}&size=${req.size}&per_page=${perPage}`;
   const resp = await fetch(url, { headers: { Authorization: apiKey } });
   if (!resp.ok) throw new Error(`Pexels API ${resp.status}: ${(await resp.text()).slice(0, 200)}`);
   const data = (await resp.json()) as { videos?: PexelsVideo[] };
@@ -130,6 +131,195 @@ function transcodeToProxy(mp4Path: string, originalBytes: number): void {
   console.log(`[footage]   → light proxy ${(originalBytes / 1e6).toFixed(1)} MB → ${(proxyBytes / 1e6).toFixed(1)} MB (OffthreadVideo-safe)`);
 }
 
+/** One browsable candidate summary (id, dims, duration, poster/preview thumbs, page URL). */
+export interface FootageCandidate {
+  /** The Pexels video id (pass as `videoId` to `pickFootage` to fetch this exact clip). */
+  id: number;
+  width: number;
+  height: number;
+  duration: number;
+  author: string;
+  authorUrl: string;
+  /** The Pexels video page (for a human to eyeball). */
+  page: string;
+  /** A single representative poster frame, if Pexels supplied one. */
+  poster?: string;
+  /** A preview thumbnail sampled from the MIDDLE of the clip (catches a late-reveal subject). */
+  preview?: string;
+}
+
+export interface SearchFootageOptions {
+  query: string;
+  orientation?: FootageRequest['orientation'];
+  size?: FootageRequest['size'];
+  minDuration?: number;
+  /** Pexels page size (how many candidates to fetch/rank). Defaults to 20. */
+  perPage?: number;
+}
+
+export interface SearchFootageResult {
+  query: string;
+  orientation: FootageRequest['orientation'];
+  size: FootageRequest['size'];
+  minDuration: number;
+  /** RANKED as Pexels returns them (index 0 = top relevance) — not always the best clip; browse the list. */
+  candidates: FootageCandidate[];
+}
+
+/**
+ * Query Pexels for footage candidates matching a request — the same ranking `--list` browses, exposed
+ * as a pure (network-only, no filesystem writes) callable. Requires `PEXELS_API_KEY`.
+ */
+export async function searchFootage(opts: SearchFootageOptions): Promise<SearchFootageResult> {
+  const apiKey = process.env['PEXELS_API_KEY'];
+  if (!apiKey) throw new Error('PEXELS_API_KEY not set (get a free key at pexels.com/api).');
+  const req: FootageRequest = {
+    query: opts.query,
+    orientation: opts.orientation ?? 'portrait',
+    size: opts.size ?? 'medium',
+    minDuration: opts.minDuration ?? 3,
+  };
+  const candidates = await rankedCandidates(req, apiKey, opts.perPage ?? 20);
+  return {
+    query: req.query,
+    orientation: req.orientation,
+    size: req.size,
+    minDuration: req.minDuration,
+    candidates: candidates.map(({ video }) => {
+      const pics = video.video_pictures ?? [];
+      const mid = pics[Math.floor(pics.length / 2)]?.picture;
+      return {
+        id: video.id,
+        width: video.width,
+        height: video.height,
+        duration: video.duration,
+        author: video.user.name,
+        authorUrl: video.user.url,
+        page: video.url,
+        ...(video.image ? { poster: video.image } : {}),
+        ...(mid ? { preview: mid } : {}),
+      };
+    }),
+  };
+}
+
+/** The catalog `provenance` block written for a footage asset (the strict `Provenance` keys only). */
+export interface FootageProvenance {
+  source: string;
+  prompt: string;
+  size: string;
+  cache_hash: string;
+  license: string;
+}
+
+export interface PickFootageOptions {
+  query: string;
+  /** Asset id (catalog key + filename stem). Defaults to a content-hash-derived `pexels-<hash>`. */
+  id?: string;
+  orientation?: FootageRequest['orientation'];
+  size?: FootageRequest['size'];
+  minDuration?: number;
+  /** Fetch this EXACT Pexels video id (from a prior `searchFootage`), not just the top pick. */
+  videoId?: number;
+  /** Fetch the candidate at this rank (0 = Pexels's top pick, the default). */
+  index?: number;
+  /** Where `public/video/` + `library/index.json` live. Defaults to `process.cwd()` (the CLI default). */
+  rootDir?: string;
+}
+
+export interface PickFootageResult {
+  /** The resolved, filesystem-safe asset id. */
+  id: string;
+  /** The registered `asset://` catalog uri. */
+  assetRef: string;
+  /** Absolute path to the downloaded (and proxy-transcoded) mp4. */
+  localPath: string;
+  /** True when an existing cached file was reused (no network fetch). */
+  cached: boolean;
+  /** The content-address of the search request (query+orientation+size+minDuration). */
+  hash: string;
+  /** The Pexels video id actually downloaded (absent when replaying a cache hit). */
+  pexelsId?: number;
+  width?: number;
+  height?: number;
+  /** Downloaded byte size BEFORE proxy transcoding (absent when replaying a cache hit). */
+  bytes?: number;
+  provenance: FootageProvenance;
+}
+
+/**
+ * Fetch (or reuse the cached) footage clip, proxy-transcode it, and register/update its `asset`
+ * catalog entry — the same pipeline `main()`'s pick path runs, wrapped as a pure callable. Mirrors the
+ * CLI EXACTLY: a plain re-run (no `videoId`/`index`) short-circuits on an existing cached file; an
+ * explicit `videoId`/`index` always re-queries Pexels and (re)downloads the chosen candidate.
+ */
+export async function pickFootage(opts: PickFootageOptions): Promise<PickFootageResult> {
+  const rootDir = opts.rootDir ?? process.cwd();
+  const req: FootageRequest = {
+    query: opts.query,
+    orientation: opts.orientation ?? 'portrait',
+    size: opts.size ?? 'medium',
+    minDuration: opts.minDuration ?? 3,
+  };
+  const hash = footageHash(req);
+  const id = (opts.id ?? `pexels-${hash}`).replace(/[^a-z0-9_-]/gi, '-');
+  const videoDir = resolvePath(rootDir, 'public', 'video');
+  mkdirSync(videoDir, { recursive: true });
+  const mp4Path = resolvePath(videoDir, `${id}.mp4`);
+  const uri = `asset://video/${id}.mp4`;
+
+  // Cache short-circuit ONLY for a plain fetch (no explicit re-pick) — mirrors main()'s CLI behavior:
+  // an --index/--video-id request must always re-query Pexels so you can re-choose a different clip.
+  if (existsSync(mp4Path) && opts.videoId === undefined && opts.index === undefined) {
+    const provenance = registerCatalog(rootDir, id, uri, req, hash, undefined);
+    return { id, assetRef: uri, localPath: mp4Path, cached: true, hash, provenance };
+  }
+
+  const apiKey = process.env['PEXELS_API_KEY'];
+  if (!apiKey) throw new Error('PEXELS_API_KEY not set (get a free key at pexels.com/api).');
+
+  const candidates = await rankedCandidates(req, apiKey);
+  if (candidates.length === 0) {
+    throw new Error(`no Pexels video found for "${req.query}" (${req.orientation}, ≥${req.minDuration}s).`);
+  }
+
+  // Selection: an explicit videoId, else index, else 0 (Pexels's top pick) — same order as the CLI.
+  let pick: { video: PexelsVideo; file: PexelsVideoFile } | undefined;
+  if (opts.videoId !== undefined) {
+    pick = candidates.find((c) => c.video.id === opts.videoId);
+    if (!pick) throw new Error(`video-id ${opts.videoId} not among candidates for "${req.query}" (try searchFootage/--list).`);
+  } else {
+    const idx = opts.index ?? 0;
+    pick = candidates[idx];
+    if (!pick) throw new Error(`index ${idx} out of range (0..${candidates.length - 1}); try searchFootage/--list.`);
+  }
+  // Re-fetching a chosen clip for an id that already has a file: replace it.
+  if (existsSync(mp4Path)) rmSync(mp4Path, { force: true });
+
+  // Download the clip ONCE into the content-addressed cache.
+  const resp = await fetch(pick.file.link);
+  if (!resp.ok) throw new Error(`download failed ${resp.status}`);
+  const buf = Buffer.from(await resp.arrayBuffer());
+  writeFileSync(mp4Path, buf);
+
+  // TRANSCODE to a LIGHT PROXY — see transcodeToProxy() doc comment (the render-hang root-cause fix).
+  transcodeToProxy(mp4Path, buf.length);
+
+  const provenance = registerCatalog(rootDir, id, uri, req, hash, pick.video);
+  return {
+    id,
+    assetRef: uri,
+    localPath: mp4Path,
+    cached: false,
+    hash,
+    pexelsId: pick.video.id,
+    width: pick.file.width,
+    height: pick.file.height,
+    bytes: buf.length,
+    provenance,
+  };
+}
+
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
   const query = argv.find((a) => !a.startsWith('-'));
@@ -145,92 +335,56 @@ async function main(): Promise<void> {
     process.exit(1);
   }
   const rootDir = flag('--root') ?? process.cwd();
-  const id = (flag('--id') ?? `pexels-${footageHash({ query, orientation: 'portrait', size: 'medium', minDuration: 3 })}`).replace(/[^a-z0-9_-]/gi, '-');
-  const req: FootageRequest = {
-    query,
-    orientation: (flag('--orientation') as FootageRequest['orientation']) ?? 'portrait',
-    size: (flag('--size') as FootageRequest['size']) ?? 'medium',
-    minDuration: Number(flag('--min-duration') ?? '3'),
-  };
+  const id = flag('--id');
+  const orientation = (flag('--orientation') as FootageRequest['orientation']) ?? 'portrait';
+  const size = (flag('--size') as FootageRequest['size']) ?? 'medium';
+  const minDuration = Number(flag('--min-duration') ?? '3');
 
   const wantList = argv.includes('--list');
   const listN = Number(flag('--list') ?? '10') || 10;
   const pickIndex = flag('--index') !== undefined ? Number(flag('--index')) : undefined;
   const pickVideoId = flag('--video-id') !== undefined ? Number(flag('--video-id')) : undefined;
 
-  const hash = footageHash(req);
-  const videoDir = resolvePath(rootDir, 'public', 'video');
-  mkdirSync(videoDir, { recursive: true });
-  const mp4Path = resolvePath(videoDir, `${id}.mp4`);
-  const uri = `asset://video/${id}.mp4`;
+  try {
+    // --list: browse candidates (id, dims, duration, poster + mid preview URL) WITHOUT downloading, so
+    // you can eyeball options and pick a specific one. Preview URLs across the clip catch late-reveal
+    // subjects.
+    if (wantList) {
+      const result = await searchFootage({ query, orientation, size, minDuration });
+      console.log(`[footage] ${result.candidates.length} candidates for "${query}" (${orientation}, ≥${minDuration}s) — pick with --index <n> or --video-id <id>:`);
+      result.candidates.slice(0, listN).forEach((c, i) => {
+        console.log(`  [${i}] id=${c.id}  ${c.width}x${c.height}  ${c.duration}s  by ${c.author}`);
+        console.log(`        poster: ${c.poster ?? '(none)'}`);
+        if (c.preview) console.log(`        mid:    ${c.preview}`);
+        console.log(`        page:   ${c.page}`);
+      });
+      return;
+    }
 
-  // Cache short-circuit ONLY for a plain fetch (no browse/pick — those must always hit the API so you
-  // can re-choose a different clip for the same id).
-  if (existsSync(mp4Path) && !wantList && pickIndex === undefined && pickVideoId === undefined) {
-    console.log(`[footage] cached "${id}" (hash ${hash}) — reusing ${mp4Path}`);
-    registerCatalog(rootDir, id, uri, req, hash, undefined);
-    printUse(id);
-    return;
-  }
-
-  const apiKey = process.env['PEXELS_API_KEY'];
-  if (!apiKey) {
-    console.error('[footage] PEXELS_API_KEY not set (get a free key at pexels.com/api).');
-    process.exit(1);
-  }
-
-  const candidates = await rankedCandidates(req, apiKey);
-  if (candidates.length === 0) {
-    console.error(`[footage] no Pexels video found for "${query}" (${req.orientation}, ≥${req.minDuration}s).`);
-    process.exit(1);
-  }
-
-  // --list: browse candidates (id, dims, duration, poster + mid preview URL) WITHOUT downloading, so you
-  // can eyeball options and pick a specific one. Preview URLs across the clip catch late-reveal subjects.
-  if (wantList) {
-    console.log(`[footage] ${candidates.length} candidates for "${query}" (${req.orientation}, ≥${req.minDuration}s) — pick with --index <n> or --video-id <id>:`);
-    candidates.slice(0, listN).forEach(({ video }, i) => {
-      const pics = video.video_pictures ?? [];
-      const mid = pics[Math.floor(pics.length / 2)]?.picture;
-      console.log(`  [${i}] id=${video.id}  ${video.width}x${video.height}  ${video.duration}s  by ${video.user.name}`);
-      console.log(`        poster: ${video.image ?? '(none)'}`);
-      if (mid) console.log(`        mid:    ${mid}`);
-      console.log(`        page:   ${video.url}`);
+    const result = await pickFootage({
+      query,
+      ...(id ? { id } : {}),
+      orientation,
+      size,
+      minDuration,
+      ...(pickVideoId !== undefined ? { videoId: pickVideoId } : {}),
+      ...(pickIndex !== undefined ? { index: pickIndex } : {}),
+      rootDir,
     });
-    return;
+
+    if (result.cached) {
+      console.log(`[footage] cached "${result.id}" (hash ${result.hash}) — reusing ${result.localPath}`);
+    } else {
+      const dims = result.width !== undefined && result.height !== undefined ? `${result.width}x${result.height} ` : '';
+      const mb = result.bytes !== undefined ? `(${(result.bytes / 1e6).toFixed(1)} MB) ` : '';
+      console.log(`[footage] downloaded "${result.id}" ${dims}${mb}← Pexels #${result.pexelsId ?? '?'}`);
+    }
+    console.log(`[footage]   catalog → library/index.json  (${result.assetRef})`);
+    printUse(result.id);
+  } catch (err) {
+    console.error(`[footage] failed: ${err instanceof Error ? err.message : String(err)}`);
+    process.exit(1);
   }
-
-  // Selection: an explicit --video-id, else --index, else 0 (Pexels's top pick).
-  let pick: { video: PexelsVideo; file: PexelsVideoFile } | undefined;
-  if (pickVideoId !== undefined) {
-    pick = candidates.find((c) => c.video.id === pickVideoId);
-    if (!pick) { console.error(`[footage] video-id ${pickVideoId} not among candidates for "${query}" (try --list).`); process.exit(1); }
-  } else {
-    const idx = pickIndex ?? 0;
-    pick = candidates[idx];
-    if (!pick) { console.error(`[footage] --index ${idx} out of range (0..${candidates.length - 1}); try --list).`); process.exit(1); }
-  }
-  // Re-fetching a chosen clip for an id that already has a file: replace it.
-  if (existsSync(mp4Path)) rmSync(mp4Path, { force: true });
-
-  // 3. download the clip ONCE into the content-addressed cache.
-  const resp = await fetch(pick.file.link);
-  if (!resp.ok) throw new Error(`download failed ${resp.status}`);
-  const buf = Buffer.from(await resp.arrayBuffer());
-  writeFileSync(mp4Path, buf);
-  console.log(`[footage] downloaded "${id}" ${pick.file.width}x${pick.file.height} (${(buf.length / 1e6).toFixed(1)} MB) ← Pexels #${pick.video.id}`);
-
-  // 3b. TRANSCODE to a LIGHT PROXY (ROOT-CAUSE FIX for the render hang). Remotion's <OffthreadVideo>
-  // decodes footage frames on demand; a heavy source (a 39 MB high-bitrate clip) balloons the Rust
-  // compositor's RAM and, on a swap-pressured box, the decode BLOCKS at 0% CPU → the whole render hangs.
-  // A downscaled, modest-bitrate h264/yuv420p proxy (≈1-2 MB) decodes cheaply and renders reliably. The
-  // proxy REPLACES the served file in the content-addressed cache, so it's the deterministic record that
-  // the render replays. ffmpeg-absent → keep the original (never fail), just warn it may be heavy.
-  transcodeToProxy(mp4Path, buf.length);
-
-  // 4. register the catalog entry.
-  registerCatalog(rootDir, id, uri, req, hash, pick.video);
-  printUse(id);
 }
 
 /** Register/update the `asset` catalog entry (kind='asset', format='video') — mirrors imagegen. */
@@ -241,12 +395,23 @@ function registerCatalog(
   req: FootageRequest,
   hash: string,
   video: PexelsVideo | undefined,
-): void {
+): FootageProvenance {
   const idxPath = resolvePath(rootDir, 'library', 'index.json');
   const idx = JSON.parse(readFileSync(idxPath, 'utf8'));
   idx.entries ??= {};
   idx.entries.footage ??= {};
   const prev = idx.entries.footage[id] ?? {};
+  // Only the strict Provenance keys (catalog.ts): source/license/prompt/size/cache_hash.
+  const provenance: FootageProvenance = {
+    source: video
+      ? `Pexels ${video.url} by ${video.user.name} (${video.user.url}) [${req.orientation}]`
+      : ((prev.provenance?.source as string | undefined) ?? 'Pexels (cached)'),
+    prompt: req.query,
+    size: req.size,
+    cache_hash: hash,
+    // Pexels License: free for commercial use, no attribution required on media; credit "Pexels" per API guidelines.
+    license: 'Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)',
+  };
   idx.entries.footage[id] = {
     id,
     version: (prev.version as string | undefined) ?? '1.0.0',
@@ -255,20 +420,10 @@ function registerCatalog(
     uri,
     tags: ['footage', 'video', 'pexels', 'stock'],
     deps: [],
-    provenance: {
-      // Only the strict Provenance keys (catalog.ts): source/license/prompt/size/cache_hash.
-      source: video
-        ? `Pexels ${video.url} by ${video.user.name} (${video.user.url}) [${req.orientation}]`
-        : (prev.provenance?.source ?? 'Pexels (cached)'),
-      prompt: req.query,
-      size: req.size,
-      cache_hash: hash,
-      // Pexels License: free for commercial use, no attribution required on media; credit "Pexels" per API guidelines.
-      license: 'Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)',
-    },
+    provenance,
   };
   writeFileSync(idxPath, JSON.stringify(idx, null, 2) + '\n', 'utf8');
-  console.log(`[footage]   catalog → library/index.json  (${uri})`);
+  return provenance;
 }
 
 function printUse(id: string): void {
@@ -276,7 +431,4 @@ function printUse(id: string): void {
   console.log('[footage]   tip  → grade it to the dark palette with args.effects (blur/color_grade/vignette) so it matches the cinematic look.');
 }
 
-main().catch((err) => {
-  console.error(`[footage] failed: ${err instanceof Error ? err.message : String(err)}`);
-  process.exit(1);
-});
+if (import.meta.url === `file://${process.argv[1]}`) { void main(); }

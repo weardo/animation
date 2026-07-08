@@ -14,6 +14,9 @@
 // USAGE:
 //   factory:newsclip "<url>" --id <asset-id> [--section 12-20] [--max-seconds 20] [--date 2026-07-08]
 // Then in a story:  { footage: <id>, as: broll, args: { z: 1, loop: true, muted: true, fit: cover } }
+//
+// fetchNewsclip(...) is the reusable core (also called by the MCP `newsclip_fetch` tool); main() is a thin
+// CLI wrapper around it.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, rmSync } from 'node:fs';
 import { resolve as resolvePath } from 'node:path';
@@ -24,6 +27,32 @@ interface ClipRequest {
   url: string;
   section?: string; // "start-end" seconds, e.g. "12-20"
   maxSeconds: number;
+}
+
+export interface NewsclipOptions {
+  url: string;
+  id?: string;
+  /** Clip start, in seconds. Combine with `duration` to pull a `--download-sections` slice. */
+  start?: number;
+  /** Clip length, in seconds. With `start` set, bounds the downloaded section; alone, caps the transcode. */
+  duration?: number;
+  date?: string;
+  rootDir?: string;
+}
+
+export interface NewsclipProvenance {
+  source: string;
+  license: string;
+  cache_hash: string;
+}
+
+export interface NewsclipResult {
+  clipPath: string;
+  uri: string;
+  id: string;
+  publisher: string;
+  cached: boolean;
+  provenance: NewsclipProvenance;
 }
 
 function clipHash(req: ClipRequest): string {
@@ -70,30 +99,28 @@ function toProxy(src: string, out: string, maxSeconds: number): void {
   ]);
 }
 
-async function main(): Promise<void> {
-  const argv = process.argv.slice(2);
-  const url = argv.find((a) => !a.startsWith('-'));
-  const flag = (n: string): string | undefined => (argv.indexOf(n) >= 0 ? argv[argv.indexOf(n) + 1] : undefined);
-  if (!url || !/^https?:\/\//.test(url)) {
-    console.error('usage: factory:newsclip "<https url>" --id <asset-id> [--section 12-20] [--max-seconds 20] [--date YYYY-MM-DD]');
-    process.exit(1);
-  }
+/**
+ * Pull (or reuse the cached) a publicly-available news video clip and register it in the library
+ * catalog as a light footage proxy. Content-addressed by {url, section, maxSeconds} — skip-if-exists.
+ */
+export async function fetchNewsclip(opts: NewsclipOptions): Promise<NewsclipResult> {
   try {
     execFileSync('yt-dlp', ['--version'], { stdio: 'ignore' });
   } catch {
-    console.error('[newsclip] yt-dlp not on PATH — install it (pipx install yt-dlp) to pull news video.');
-    process.exit(1);
+    throw new Error('yt-dlp not on PATH — install it (pipx install yt-dlp) to pull news video.');
   }
 
-  const rootDir = flag('--root') ?? process.cwd();
-  const section = flag('--section');
+  const rootDir = opts.rootDir ?? process.cwd();
+  const section = opts.start !== undefined && opts.duration !== undefined
+    ? `${opts.start}-${opts.start + opts.duration}`
+    : undefined;
   const req: ClipRequest = {
-    url,
+    url: opts.url,
     ...(section ? { section } : {}),
-    maxSeconds: Number(flag('--max-seconds') ?? (section ? '0' : '20')),
+    maxSeconds: section ? 0 : (opts.duration ?? 20),
   };
-  const id = (flag('--id') ?? `newsclip-${clipHash(req)}`).replace(/[^a-z0-9_-]/gi, '-');
-  const date = flag('--date') ?? '';
+  const id = (opts.id ?? `newsclip-${clipHash(req)}`).replace(/[^a-z0-9_-]/gi, '-');
+  const date = opts.date ?? '';
 
   const videoDir = resolvePath(rootDir, 'public', 'video');
   mkdirSync(videoDir, { recursive: true });
@@ -101,14 +128,16 @@ async function main(): Promise<void> {
   const uri = `asset://video/${id}.mp4`;
   const hash = clipHash(req);
 
-  const { publisher, title } = probeMeta(url);
+  const { publisher, title } = probeMeta(opts.url);
+  let cached = false;
   if (existsSync(outPath)) {
+    cached = true;
     console.log(`[newsclip] cached "${id}" (hash ${hash}) — reusing ${outPath}`);
   } else {
     const tmpDir = resolvePath(videoDir, `.tmp-${id}`);
     mkdirSync(tmpDir, { recursive: true });
     try {
-      console.log(`[newsclip] pulling ${url}${req.section ? ` [section ${req.section}]` : ''} …`);
+      console.log(`[newsclip] pulling ${opts.url}${req.section ? ` [section ${req.section}]` : ''} …`);
       const raw = download(req, tmpDir);
       toProxy(raw, outPath, req.maxSeconds);
       console.log(`[newsclip] → ${uri}  (publisher: ${publisher}${title ? `, "${title.slice(0, 60)}"` : ''})`);
@@ -117,17 +146,33 @@ async function main(): Promise<void> {
     }
   }
 
-  registerCatalog(rootDir, id, uri, url, publisher, title, date, hash);
+  const provenance = registerCatalog(rootDir, id, uri, opts.url, publisher, title, date, hash);
   console.log(`[newsclip]   use  → { footage: ${id}, as: broll, args: { z: 1, loop: true, muted: true, fit: cover } }`);
   console.log(`[newsclip]   ⚖  editorial/fair-use — keep it BRIEF + attribute "${publisher}" on-screen + in the description.`);
+
+  return { clipPath: outPath, uri, id, publisher, cached, provenance };
 }
 
-function registerCatalog(rootDir: string, id: string, uri: string, url: string, publisher: string, title: string, date: string, hash: string): void {
+function registerCatalog(
+  rootDir: string,
+  id: string,
+  uri: string,
+  url: string,
+  publisher: string,
+  title: string,
+  date: string,
+  hash: string,
+): NewsclipProvenance {
   const idxPath = resolvePath(rootDir, 'library', 'index.json');
   const idx = JSON.parse(readFileSync(idxPath, 'utf8'));
   idx.entries ??= {};
   idx.entries.newsclips ??= {};
   const prev = idx.entries.newsclips[id] ?? {};
+  const provenance: NewsclipProvenance = {
+    source: `${publisher}${title ? ` — "${title}"` : ''} — ${url}${date ? ` (captured ${date})` : ''}`,
+    license: 'editorial / fair-use — brief attributed commentary; publicly-accessible source',
+    cache_hash: hash,
+  };
   idx.entries.newsclips[id] = {
     id,
     version: (prev.version as string | undefined) ?? '1.0.0',
@@ -136,17 +181,51 @@ function registerCatalog(rootDir: string, id: string, uri: string, url: string, 
     uri,
     tags: ['newsclip', 'evidence', 'footage'],
     deps: [],
-    provenance: {
-      source: `${publisher}${title ? ` — "${title}"` : ''} — ${url}${date ? ` (captured ${date})` : ''}`,
-      license: 'editorial / fair-use — brief attributed commentary; publicly-accessible source',
-      cache_hash: hash,
-    },
+    provenance,
   };
   writeFileSync(idxPath, JSON.stringify(idx, null, 2) + '\n', 'utf8');
   console.log(`[newsclip]   catalog → library/index.json  (${uri})`);
+  return provenance;
 }
 
-main().catch((err) => {
-  console.error(`[newsclip] failed: ${err instanceof Error ? err.message : String(err)}`);
-  process.exit(1);
-});
+async function main(): Promise<void> {
+  const argv = process.argv.slice(2);
+  const url = argv.find((a) => !a.startsWith('-'));
+  const flag = (n: string): string | undefined => (argv.indexOf(n) >= 0 ? argv[argv.indexOf(n) + 1] : undefined);
+  if (!url || !/^https?:\/\//.test(url)) {
+    console.error('usage: factory:newsclip "<https url>" --id <asset-id> [--section 12-20] [--max-seconds 20] [--date YYYY-MM-DD]');
+    process.exit(1);
+    return;
+  }
+
+  const rootDir = flag('--root') ?? process.cwd();
+  const section = flag('--section');
+  let start: number | undefined;
+  let duration: number | undefined;
+  if (section) {
+    const [a, b] = section.split('-');
+    start = Number(a);
+    duration = Number(b) - Number(a);
+  } else {
+    const maxSeconds = flag('--max-seconds');
+    if (maxSeconds !== undefined) duration = Number(maxSeconds);
+  }
+  const id = flag('--id');
+  const date = flag('--date');
+
+  await fetchNewsclip({
+    url,
+    rootDir,
+    ...(start !== undefined ? { start } : {}),
+    ...(duration !== undefined ? { duration } : {}),
+    ...(id ? { id } : {}),
+    ...(date ? { date } : {}),
+  });
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  void main().catch((err) => {
+    console.error(`[newsclip] failed: ${err instanceof Error ? err.message : String(err)}`);
+    process.exit(1);
+  });
+}

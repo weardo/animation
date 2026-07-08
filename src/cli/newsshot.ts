@@ -14,6 +14,9 @@
 //   factory:newsshot "<url>" --id <asset-id> [--selector "<css>"] [--full-page]
 //                    [--width 1200] [--height 1600] [--wait 1500] [--date 2026-07-08]
 // Then in a story:  { asset: <id>, as: clip1, args: { z: 5, kenburns: "in" } }   (montage: many short beats)
+//
+// captureNewsshot(...) is the reusable core (also called by the MCP `newsshot_capture` tool); main() is a
+// thin CLI wrapper around it.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve as resolvePath } from 'node:path';
@@ -29,6 +32,33 @@ interface ShotRequest {
   width: number;
   height: number;
   wait: number;
+}
+
+export interface NewsshotOptions {
+  url: string;
+  id?: string;
+  selector?: string;
+  fullPage?: boolean;
+  width?: number;
+  height?: number;
+  wait?: number;
+  date?: string;
+  rootDir?: string;
+}
+
+export interface NewsshotProvenance {
+  source: string;
+  license: string;
+  cache_hash: string;
+}
+
+export interface NewsshotResult {
+  imagePath: string;
+  uri: string;
+  id: string;
+  publisher: string;
+  cached: boolean;
+  provenance: NewsshotProvenance;
 }
 
 function shotHash(req: ShotRequest): string {
@@ -71,26 +101,22 @@ async function capture(req: ShotRequest, outPath: string): Promise<{ publisher: 
   }
 }
 
-async function main(): Promise<void> {
-  const argv = process.argv.slice(2);
-  const url = argv.find((a) => !a.startsWith('-'));
-  const flag = (n: string): string | undefined => (argv.indexOf(n) >= 0 ? argv[argv.indexOf(n) + 1] : undefined);
-  if (!url || !/^https?:\/\//.test(url)) {
-    console.error('usage: factory:newsshot "<https url>" --id <asset-id> [--selector "<css>"] [--full-page] [--width 1200] [--height 1600] [--wait 1500] [--date YYYY-MM-DD]');
-    process.exit(1);
-  }
-  const rootDir = flag('--root') ?? process.cwd();
-  const sel = flag('--selector');
+/**
+ * Capture (or reuse the cached) screenshot of a public news article and register it in the library
+ * catalog. Content-addressed by {url, selector, fullPage, width, height} — skip-if-exists.
+ */
+export async function captureNewsshot(opts: NewsshotOptions): Promise<NewsshotResult> {
+  const rootDir = opts.rootDir ?? process.cwd();
   const req: ShotRequest = {
-    url,
-    ...(sel ? { selector: sel } : {}),
-    fullPage: argv.includes('--full-page'),
-    width: Number(flag('--width') ?? '1200'),
-    height: Number(flag('--height') ?? '1600'),
-    wait: Number(flag('--wait') ?? '1200'),
+    url: opts.url,
+    ...(opts.selector ? { selector: opts.selector } : {}),
+    fullPage: opts.fullPage ?? false,
+    width: opts.width ?? 1200,
+    height: opts.height ?? 1600,
+    wait: opts.wait ?? 1200,
   };
-  const id = (flag('--id') ?? `news-${shotHash(req)}`).replace(/[^a-z0-9_-]/gi, '-');
-  const date = flag('--date') ?? '';
+  const id = (opts.id ?? `news-${shotHash(req)}`).replace(/[^a-z0-9_-]/gi, '-');
+  const date = opts.date ?? '';
 
   const imgDir = resolvePath(rootDir, 'public', 'img');
   mkdirSync(imgDir, { recursive: true });
@@ -98,26 +124,43 @@ async function main(): Promise<void> {
   const uri = `asset://img/${id}.png`;
   const hash = shotHash(req);
 
-  let publisher = new URL(url).hostname.replace(/^www\./, '');
+  let publisher = new URL(opts.url).hostname.replace(/^www\./, '');
+  let cached = false;
   if (existsSync(outPath)) {
+    cached = true;
     console.log(`[newsshot] cached "${id}" (hash ${hash}) — reusing ${outPath}`);
   } else {
-    console.log(`[newsshot] capturing ${url} …`);
+    console.log(`[newsshot] capturing ${opts.url} …`);
     ({ publisher } = await capture(req, outPath));
     console.log(`[newsshot] → ${uri}  (publisher: ${publisher})`);
   }
 
-  registerCatalog(rootDir, id, uri, url, publisher, date, hash);
+  const provenance = registerCatalog(rootDir, id, uri, opts.url, publisher, date, hash);
   console.log(`[newsshot]   use  → a montage beat: { asset: ${id}, as: shot, args: { z: 5, kenburns: "in" } }`);
   console.log(`[newsshot]   ⚖  editorial/fair-use — keep it BRIEF + attribute "${publisher}" on-screen + in the description.`);
+
+  return { imagePath: outPath, uri, id, publisher, cached, provenance };
 }
 
-function registerCatalog(rootDir: string, id: string, uri: string, url: string, publisher: string, date: string, hash: string): void {
+function registerCatalog(
+  rootDir: string,
+  id: string,
+  uri: string,
+  url: string,
+  publisher: string,
+  date: string,
+  hash: string,
+): NewsshotProvenance {
   const idxPath = resolvePath(rootDir, 'library', 'index.json');
   const idx = JSON.parse(readFileSync(idxPath, 'utf8'));
   idx.entries ??= {};
   idx.entries.newsshots ??= {};
   const prev = idx.entries.newsshots[id] ?? {};
+  const provenance: NewsshotProvenance = {
+    source: `${publisher} — ${url}${date ? ` (captured ${date})` : ''}`,
+    license: 'editorial / fair-use — brief attributed commentary; publicly-accessible source',
+    cache_hash: hash,
+  };
   idx.entries.newsshots[id] = {
     id,
     version: (prev.version as string | undefined) ?? '1.0.0',
@@ -126,17 +169,43 @@ function registerCatalog(rootDir: string, id: string, uri: string, url: string, 
     uri,
     tags: ['newsshot', 'evidence', 'screenshot'],
     deps: [],
-    provenance: {
-      source: `${publisher} — ${url}${date ? ` (captured ${date})` : ''}`,
-      license: 'editorial / fair-use — brief attributed commentary; publicly-accessible source',
-      cache_hash: hash,
-    },
+    provenance,
   };
   writeFileSync(idxPath, JSON.stringify(idx, null, 2) + '\n', 'utf8');
   console.log(`[newsshot]   catalog → library/index.json  (${uri})`);
+  return provenance;
 }
 
-main().catch((err) => {
-  console.error(`[newsshot] failed: ${err instanceof Error ? err.message : String(err)}`);
-  process.exit(1);
-});
+async function main(): Promise<void> {
+  const argv = process.argv.slice(2);
+  const url = argv.find((a) => !a.startsWith('-'));
+  const flag = (n: string): string | undefined => (argv.indexOf(n) >= 0 ? argv[argv.indexOf(n) + 1] : undefined);
+  if (!url || !/^https?:\/\//.test(url)) {
+    console.error('usage: factory:newsshot "<https url>" --id <asset-id> [--selector "<css>"] [--full-page] [--width 1200] [--height 1600] [--wait 1500] [--date YYYY-MM-DD]');
+    process.exit(1);
+    return;
+  }
+  const rootDir = flag('--root') ?? process.cwd();
+  const sel = flag('--selector');
+  const id = flag('--id');
+  const date = flag('--date');
+
+  await captureNewsshot({
+    url,
+    rootDir,
+    ...(sel ? { selector: sel } : {}),
+    fullPage: argv.includes('--full-page'),
+    width: Number(flag('--width') ?? '1200'),
+    height: Number(flag('--height') ?? '1600'),
+    wait: Number(flag('--wait') ?? '1200'),
+    ...(id ? { id } : {}),
+    ...(date ? { date } : {}),
+  });
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  void main().catch((err) => {
+    console.error(`[newsshot] failed: ${err instanceof Error ? err.message : String(err)}`);
+    process.exit(1);
+  });
+}
