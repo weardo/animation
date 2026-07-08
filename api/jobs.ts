@@ -7,7 +7,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { PROJECT_ROOT } from '../agents/claude.js';
-import { orchestrateBrief } from '../agents/orchestrate.js';
+import type { OrchestrateResult } from '../agents/orchestrate.js';
 import type { StoryBrief } from '../agents/story-architect.js';
 
 // Map a human language name (from the brief) to a Sarvam Bulbul target_language_code. English is the
@@ -99,13 +99,40 @@ export function listJobs(): Job[] {
   return [...jobs.values()].sort((a, b) => b.createdAt - a.createdAt);
 }
 
+/** Run the orchestration (Story Architect + Asset Scout) in its own process (keeps the server free). */
+function runOrchestrateSubprocess(brief: StoryBrief): Promise<OrchestrateResult> {
+  return new Promise((done, reject) => {
+    const p = spawn('npx', ['tsx', 'api/orchestrate-cli.ts'], { cwd: PROJECT_ROOT, stdio: ['pipe', 'pipe', 'pipe'] });
+    let out = '';
+    let err = '';
+    p.stdout.on('data', (d: Buffer) => (out += d.toString()));
+    p.stderr.on('data', (d: Buffer) => (err += d.toString()));
+    p.on('error', reject);
+    p.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error(err || `orchestrate exited ${code}`));
+        return;
+      }
+      try {
+        done(JSON.parse(out) as OrchestrateResult);
+      } catch (e) {
+        reject(e as Error);
+      }
+    });
+    p.stdin.write(JSON.stringify(brief));
+    p.stdin.end();
+  });
+}
+
 async function runJob(id: string): Promise<void> {
   const job = jobs.get(id);
   if (!job) return;
   try {
-    // 1. Story Architect (brief → Story IR) + Asset Scout (fetch a background clip per beat)
+    // 1. Story Architect (brief → Story IR) + Asset Scout (fetch a background clip per beat).
+    //    Run in a SUBPROCESS: the footage proxy-transcode (ffmpeg, synchronous) would otherwise block
+    //    the server's event loop for a minute+ and freeze the UI mid-job.
     stage(job, 'Writing story + fetching visuals', 'writing_story');
-    const res = await orchestrateBrief(job.brief);
+    const res = await runOrchestrateSubprocess(job.brief);
     job.projectId = res.projectId;
     job.storyPath = res.storyPath;
     job.title = res.title;
