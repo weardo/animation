@@ -1,0 +1,83 @@
+{
+  "lockfile_version": "1",
+  "algorithm": "object-hash@sha1/v1",
+  "refs": {
+    "blizzard@1.0.0": {
+      "namespace": "footage",
+      "id": "blizzard",
+      "version": "1.0.0",
+      "hash": "ad8403c544f6a35984dd1f62758702cfdd8ee933",
+      "deps": []
+    },
+    "drone@1.0.0": {
+      "namespace": "footage",
+      "id": "drone",
+      "version": "1.0.0",
+      "hash": "096d0847d23f9a978b058f0948892a1d52f99a9b",
+      "deps": []
+    },
+    "himalaya@1.0.0": {
+      "namespace": "footage",
+      "id": "himalaya",
+      "version": "1.0.0",
+      "hash": "0b11e425224626e1543cfa7db6b7c73215bc61bb",
+      "deps": []
+    },
+    "leh@1.0.0": {
+      "namespace": "photos",
+      "id": "leh",
+      "version": "1.0.0",
+      "hash": "e2503e0af1a9a4c7681d2f27d19c498200b39f06",
+      "deps": []
+    },
+    "news-galwan@1.0.0": {
+      "namespace": "newsshots",
+      "id": "news-galwan",
+      "version": "1.0.0",
+      "hash": "411424a53f214244027d709784e599d1fdbf0833",
+      "deps": []
+    },
+    "news-orf@1.0.0": {
+      "namespace": "newsshots",
+      "id": "news-orf",
+      "version": "1.0.0",
+      "hash": "9220d539273dffe0af103669926dd014a48f60a3",
+      "deps": []
+    },
+    "news-swarm@1.0.0": {
+      "namespace": "newsshots",
+      "id": "news-swarm",
+      "version": "1.0.0",
+      "hash": "49fd0a1737ad41943d578e7f76a4a9d920f0d790",
+      "deps": []
+    },
+    "news-tribune@1.0.0": {
+      "namespace": "newsshots",
+      "id": "news-tribune",
+      "version": "1.0.0",
+      "hash": "8d63b870bf1c41d81542fe110fa06c9e9bed60d5",
+      "deps": []
+    },
+    "radar@1.0.0": {
+      "namespace": "footage",
+      "id": "radar",
+      "version": "1.0.0",
+      "hash": "01abb4bafa95a3aa4c4c64179a4679c1a2c59162",
+      "deps": []
+    },
+    "rustomuav@1.0.0": {
+      "namespace": "photos",
+      "id": "rustomuav",
+      "version": "1.0.0",
+      "hash": "91666653967735d5feb1510c62d4043cca50dbfa",
+      "deps": []
+    },
+    "soldiers@1.0.0": {
+      "namespace": "photos",
+      "id": "soldiers",
+      "version": "1.0.0",
+      "hash": "4362705d633daea692ff6491e98c7d3a1c033442",
+      "deps": []
+    }
+  }
+}

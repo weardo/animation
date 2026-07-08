@@ -1,0 +1,446 @@
+# himalaya-doc — SHORT DOCUMENTARY (~4.5 min): India's high-altitude Himalayan defense tech.
+# DETERRENCE framing (accurate): Galwan 2020 was the wake-up call → the death zone can't be held by men
+# alone → India's answer is an indigenous tech shield (swarm drones, high-altitude UAVs, anti-drone grids,
+# DRDO lasers) → technological self-reliance is the real deterrent, even after the 2024 disengagement.
+# Facts verified (see spec/research): Galwan Jun-2020 (20 soldiers); <12 UAV platforms 2020 → 140+ by
+# Mar-2026; 100 swarm drones 2023; Archer-NG (high-alt LAC UAV); MAPSS solar UAV (₹168cr, Jan-2026);
+# D4/SAKSHAM anti-drone; DRDO laser (~2km); Oct/Dec-2024 Eastern-Ladakh disengagement. Contested specifics
+# framed as India's stated programs, not asserted battlefield fact. Evidence = fair-use WITH attribution.
+#
+# Built per the producing-documentaries skill: 3 ACTS, ubiquity montage (rapid newsshots), Ken Burns on
+# stills, आप-respectful DIRECT-ADDRESS narration + opinion prompt, tailored per-clip effects, official
+# world-in map. Music: per-act beds added after the synth pass (durations first). Durations synth-fitted.
+title: "The Himalayan Frontier — India's High-Altitude Defense"
+style: plain
+format:
+  aspect: "9:16"
+  fps: 30
+
+post:
+  - { kind: color_grade, brightness: 1.0, contrast: 1.14, saturate: 1.08 }
+  - { kind: vignette, amount: 0.4, softness: 0.6 }
+  - { kind: grain, amount: 0.045, size: 0.9, seed: 34 }
+
+# STAGE-AWARE per-act music: ghost-story (Act I, death zone) → tension (Act II, conflict) →
+# long-note-two (Act III, the tech shield), crossfaded at act boundaries via the layered audio[] tracks.
+# Conservative volume so the VO always wins (verified by loudness after render).
+audio:
+  - { src: "audio/ghost-story.mp3",  at: 0,    duration: 800,  volume: 0.36, fade_in: 24, fade_out: 80, loop: true }
+  - { src: "audio/tension.mp3",      at: 680,  duration: 1240, volume: 0.40, fade_in: 80, fade_out: 80, loop: true }
+  - { src: "audio/long-note-two.mp3", at: 1800, duration: 1950, volume: 0.40, fade_in: 90, fade_out: 120, loop: true }
+
+publish:
+  title: "18,000 फीट पर जंग: India का Himalayan Defense Tech Shield 🏔️"
+  description: |
+    अठारह हज़ार फीट की ऊँचाई पर, जहाँ साँस लेना मुश्किल है — India एक tech shield बना रहा है: swarm
+    drones, high-altitude UAVs, anti-drone grids और DRDO के laser weapons। गलवान 2020 के बाद, India का
+    जवाब जवानों की तादाद नहीं — technology है। पूरी कहानी।
+
+    Follow for daily geopolitics + defense, explained in Hinglish. 🇮🇳
+
+    Sources: Galwan 2020 (20 soldiers) · <12 UAV platforms 2020 → 140+ by Mar 2026 · 100 swarm drones
+    (2023) · Archer-NG high-altitude UAV · MAPSS solar UAV (₹168cr, Jan 2026) · D4/SAKSHAM anti-drone ·
+    DRDO laser DEW (~2km) · Oct/Dec 2024 Eastern-Ladakh disengagement (Business Standard, The Tribune, ORF,
+    Organiser, Wikipedia).
+
+    Credits: News screenshots — The Tribune, ORF, Organiser, Wikipedia (editorial/fair-use, attributed) ·
+    Archival stills — Wikimedia Commons (Public Domain / GODL-India / CC) · Footage — Pexels · Music —
+    Kevin MacLeod, incompetech.com (CC-BY) · Map — Govt-of-India official boundary.
+    Disclaimer: A defense explainer; specific system capabilities are India's stated programs per public
+    reporting, not asserted battlefield fact. The 2024 disengagement eased the immediate standoff.
+  tags: [India, China, LAC, Ladakh, Galwan, Defense, Drones, DRDO, Himalaya, Swarm Drones, Geopolitics, Hindi, Documentary, Atmanirbhar, UPSC]
+  hashtags: [India, LAC, Defense, Drones, Himalaya]
+  category: "News & Politics"
+  language: hi-IN
+  caption_language: hi-IN
+  privacy: private
+  made_for_kids: false
+  credits: "News: Tribune/ORF/Organiser/Wikipedia (fair-use) · Stills: Wikimedia · Footage: Pexels · Music: Kevin MacLeod CC-BY · Map: Govt-of-India"
+
+cast: {}
+
+beats:
+  # ============================== ACT I — THE DEATH ZONE ==============================================
+  - id: hook
+    say: "एक second रुकिए… अठारह हज़ार फीट की ऊँचाई पर, जहाँ साँस लेना भी मुश्किल है — वहाँ India एक ऐसी जंग लड़ रहा है, जो आपने पहले कभी नहीं देखी।"
+    sfx: [ { name: riser, at: 6 }, { name: boom, at: 30 } ]
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - footage: himalaya
+        as: broll
+        args: { z: 1, loop: true, muted: true, fit: cover, effects: [ { kind: color_grade, brightness: 0.88, contrast: 1.1, saturate: 1.05 } ] }
+      - shape: rect
+        as: band
+        args: { z: 10, position: [540, 980], params: { width: 1080, height: 380 }, fill: { a: 0, k: "#060b14" }, opacity: 0.42, effects: [ { kind: blur, radius: 32 } ] }
+      - text: "18,000 फीट पर जंग"
+        as: hooktext
+        at: center
+        args: { z: 20, size: 82, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#7fb2ff", radius: 14, intensity: 0.6 }, { kind: drop_shadow, dx: 0, dy: 6, blur: 22, color: "#000000", opacity: 0.9 } ], anim: { preset: fade, duration: 5 } }
+    camera: slow_push_in
+    duration: { seconds: 9.2 }
+
+  - id: deathzone
+    say: "ज़रा सोचिए — तापमान माइनस चालीस, और हवा इतनी पतली कि इंसान का शरीर धीरे-धीरे जवाब देने लगता है। इसे कहते हैं — the death zone।"
+    sfx: [ { name: whoosh, at: 2 }, { name: riser, at: 34 } ]
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - footage: blizzard
+        as: broll
+        args: { z: 1, loop: true, muted: true, fit: cover, effects: [ { kind: color_grade, brightness: 0.62, contrast: 1.16, saturate: 0.7, hue: 6 }, { kind: vignette, amount: 0.4, softness: 0.6 } ] }
+      - text: "The Death Zone"
+        as: t
+        at: center
+        args: { z: 20, size: 78, weight: 800, color: "#dbe6f5", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 5, blur: 20, color: "#000000", opacity: 0.9 } ], anim: { preset: fade, duration: 8 } }
+    camera: slow_push_in
+    duration: { seconds: 8.6 }
+    transition: { kind: fade, duration: 16 }
+
+  - id: frontier
+    say: "और यही जमी हुई चोटियाँ, आज दुनिया का सबसे खतरनाक flashpoint बन चुकी हैं। पर India इसे संभालेगा कैसे? समझने के लिए, ज़रा पीछे चलते हैं।"
+    sfx: [ { name: whoosh, at: 2 }, { name: ding, at: 20 } ]
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - asset: soldiers
+        as: still
+        args: { z: 1, kenburns: "in", effects: [ { kind: color_grade, brightness: 0.8, contrast: 1.12, saturate: 0.9 }, { kind: vignette, amount: 0.35, softness: 0.6 } ] }
+      - shape: rect
+        as: band
+        args: { z: 10, position: [540, 300], params: { width: 1080, height: 260 }, fill: { a: 0, k: "#060b14" }, opacity: 0.4, effects: [ { kind: blur, radius: 30 } ] }
+      - text: "सबसे ऊँचा रणभूमि"
+        as: t
+        at: top
+        args: { z: 20, size: 62, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 16, distance: 40 } }
+    camera: slow_push_in
+    duration: { seconds: 8.0 }
+    transition: { kind: fade, duration: 20 }
+
+  # ============================== ACT II — THE WAKE-UP CALL ===========================================
+  - id: galwan
+    say: "साल 2020, गलवान घाटी। एक रात, एक खूनी झड़प — और देखते ही देखते, बीस Indian जवान शहीद हो गए।"
+    sfx: [ { name: whoosh, at: 2 }, { name: boom, at: 40 } ]
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - generator: world-in
+        as: world
+        args:
+          projection: mercator
+          fit: false
+          center: [80, 33.5]
+          scale: 1500
+          key_field: name
+          fill: "#223249"
+          no_data_fill: "#223249"
+          stroke: "#3a516c"
+          stroke_width: 0.9
+          ocean: "#0a1420"
+          graticule: { step: 3, color: "#1a2636", opacity: 0.4, width: 0.6 }
+          choropleth: { India: "#2ee6a6", China: "#ff4438" }
+          labels: { India: India, China: China }
+          markers:
+            - { coord: [78.2, 34.8], label: "Galwan", color: "#ff4438", radius: 12, label_size: 34, label_dy: -24 }
+          markers_pop: { delay: 30, duration: 18 }
+          effects: [ { kind: glow, color: "#ff4438", radius: 7, intensity: 0.5 } ]
+      - text: "गलवान, 2020"
+        as: t
+        at: top
+        args: { z: 20, size: 70, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 16, distance: 40 } }
+    camera: slow_push_in
+    duration: { seconds: 7.6 }
+    transition: { kind: fade, duration: 16 }
+
+  - id: shock
+    say: "ये सिर्फ़ एक झड़प नहीं थी — ये था एक wake-up call। India और चाइना के रिश्ते, छह दशकों के सबसे निचले स्तर पर पहुँच गए।"
+    sfx: [ { name: whoosh, at: 2 }, { name: riser, at: 30 } ]
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - asset: leh
+        as: still
+        args: { z: 1, kenburns: "out", effects: [ { kind: color_grade, brightness: 0.78, contrast: 1.12, saturate: 0.92 }, { kind: vignette, amount: 0.4, softness: 0.6 } ] }
+      - shape: rect
+        as: band
+        args: { z: 10, position: [540, 980], params: { width: 1080, height: 340 }, fill: { a: 0, k: "#0a0608" }, opacity: 0.44, effects: [ { kind: blur, radius: 30 } ] }
+      - text: "The Wake-Up Call"
+        as: t
+        at: center
+        args: { z: 20, size: 66, weight: 800, color: "#ff8a6d", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ff4438", radius: 12, intensity: 0.6 }, { kind: drop_shadow, dx: 0, dy: 5, blur: 18, color: "#000000", opacity: 0.9 } ], anim: { preset: fade, duration: 10 } }
+    camera: slow_push_in
+    duration: { seconds: 7.4 }
+    transition: { kind: fade, duration: 16 }
+
+  - id: watch
+    say: "और फिर, पूरी दुनिया की नज़रें Ladakh पर टिक गईं। हर अख़बार, हर बुलेटिन में — बस एक ही सवाल।"
+    sfx: [ { name: whoosh, at: 2 }, { name: riser, at: 24 } ]
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#05070c" } }
+      - asset: news-tribune
+        as: shot
+        args: { z: 5, kenburns: "in", effects: [ { kind: drop_shadow, dx: 0, dy: 8, blur: 24, color: "#000000", opacity: 0.7 } ] }
+    camera: hold
+    duration: { seconds: 6.4 }
+    transition: { kind: fade, duration: 14 }
+
+  # --- UBIQUITY MONTAGE: rapid hard-cut newsshots (no say, whip per cut) ---
+  - id: m1
+    sfx: [ { name: whoosh, at: 0 } ]
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#05070c" } }
+      - asset: news-orf
+        as: shot
+        args: { z: 5, kenburns: "in" }
+    camera: hold
+    duration: { seconds: 0.8 }
+
+  - id: m2
+    sfx: [ { name: whoosh, at: 0 } ]
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#05070c" } }
+      - asset: news-swarm
+        as: shot
+        args: { z: 5, kenburns: "out" }
+    camera: hold
+    duration: { seconds: 0.8 }
+
+  - id: m3
+    sfx: [ { name: whoosh, at: 0 }, { name: boom, at: 18 } ]
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#05070c" } }
+      - asset: news-galwan
+        as: shot
+        args: { z: 5, kenburns: "in" }
+    camera: hold
+    duration: { seconds: 0.9 }
+    transition: { kind: fade, duration: 10 }
+
+  - id: friction
+    say: "गलवान, Pangong, Depsang — Ladakh में सात friction points, जहाँ दोनों देशों की फ़ौजें आमने-सामने खड़ी थीं।"
+    sfx: [ { name: whoosh, at: 2 }, { name: pop, at: 26 }, { name: pop, at: 34 }, { name: pop, at: 42 } ]
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - generator: world-in
+        as: world
+        args:
+          projection: mercator
+          fit: false
+          center: [79, 33.8]
+          scale: 1900
+          key_field: name
+          fill: "#223249"
+          no_data_fill: "#223249"
+          stroke: "#3a516c"
+          stroke_width: 1.0
+          ocean: "#0a1420"
+          graticule: { step: 2, color: "#1a2636", opacity: 0.45, width: 0.6 }
+          choropleth: { India: "#2ee6a6", China: "#ff4438" }
+          labels: { India: India, China: China }
+          markers:
+            - { coord: [78.2, 34.8], label: "Galwan", color: "#ffd34d", radius: 10, label_size: 28, label_dy: -20 }
+            - { coord: [78.9, 33.7], label: "Pangong", color: "#ffd34d", radius: 10, label_size: 28, label_dy: 30 }
+            - { coord: [77.6, 35.3], label: "Depsang", color: "#ffd34d", radius: 10, label_size: 28, label_dy: -20 }
+          markers_pop: { delay: 24, duration: 22, stagger: 8 }
+          effects: [ { kind: glow, color: "#ffd34d", radius: 6, intensity: 0.4 } ]
+      - text: "7 Friction Points"
+        as: t
+        at: top
+        args: { z: 20, size: 60, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 16, distance: 40 } }
+    camera: slow_push_in
+    duration: { seconds: 5.9 }
+    transition: { kind: fade, duration: 16 }
+
+  - id: problem
+    say: "पर यहाँ एक बड़ी दिक्कत थी। इस death zone में, सिर्फ़ जवानों के दम पर सरहद को हमेशा के लिए नहीं थामा जा सकता। तो India ने क्या किया?"
+    sfx: [ { name: whoosh, at: 2 }, { name: riser, at: 34 } ]
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - asset: soldiers
+        as: still
+        args: { z: 1, kenburns: "in-slow", effects: [ { kind: color_grade, brightness: 0.72, contrast: 1.14, saturate: 0.85 }, { kind: vignette, amount: 0.45, softness: 0.6 } ] }
+      - shape: rect
+        as: band
+        args: { z: 10, position: [540, 980], params: { width: 1080, height: 340 }, fill: { a: 0, k: "#060b14" }, opacity: 0.44, effects: [ { kind: blur, radius: 30 } ] }
+      - text: "इंसानों की हद"
+        as: t
+        at: center
+        args: { z: 20, size: 70, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 5, blur: 18, color: "#000000", opacity: 0.9 } ], anim: { preset: fade, duration: 10 } }
+    camera: slow_push_in
+    duration: { seconds: 7.1 }
+    transition: { kind: fade, duration: 20 }
+
+  # ============================== ACT III — THE TECH SHIELD ===========================================
+  - id: pivot
+    say: "India ने अपनी पूरी सोच ही बदल दी। ज़्यादा जवानों की जगह — ज़्यादा technology। नतीजा? 2020 में जहाँ बारह से भी कम drone platforms थे, आज उनकी गिनती है, एक सौ चालीस से ऊपर।"
+    sfx: [ { name: whoosh, at: 2 }, { name: riser, at: 24 }, { name: ding, at: 52 } ]
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - footage: drone
+        as: broll
+        args: { z: 1, loop: true, muted: true, fit: cover, effects: [ { kind: color_grade, brightness: 0.7, contrast: 1.14, saturate: 0.85, hue: 4 }, { kind: vignette, amount: 0.35, softness: 0.6 } ] }
+      - shape: rect
+        as: band
+        args: { z: 10, position: [540, 300], params: { width: 1080, height: 260 }, fill: { a: 0, k: "#060b14" }, opacity: 0.42, effects: [ { kind: blur, radius: 30 } ] }
+      - text: "12 → 140+ drones"
+        as: t
+        at: top
+        args: { z: 20, size: 66, weight: 800, color: "#ffd34d", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 12, intensity: 0.6 }, { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 16, distance: 40 } }
+    camera: slow_push_in
+    duration: { seconds: 10.0 }
+    transition: { kind: fade, duration: 16 }
+
+  - id: swarm
+    say: "और सबसे बड़ा हथियार? Swarm drones — सैकड़ों छोटे drones, जो एक झुंड की तरह, एक साथ हमला करते हैं। India उन चंद देशों में है जिसने इन्हें असल में मैदान में उतारा।"
+    sfx: [ { name: whoosh, at: 2 }, { name: riser, at: 20 }, { name: boom, at: 44 } ]
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - footage: drone
+        as: broll
+        args: { z: 1, loop: true, muted: true, fit: cover, effects: [ { kind: color_grade, brightness: 0.66, contrast: 1.16, saturate: 0.8, hue: 6 }, { kind: vignette, amount: 0.4, softness: 0.6 } ] }
+      - shape: rect
+        as: band
+        args: { z: 10, position: [540, 960], params: { width: 1080, height: 300 }, fill: { a: 0, k: "#060b14" }, opacity: 0.4, effects: [ { kind: blur, radius: 30 } ] }
+      - text: "Swarm Drones"
+        as: t
+        at: center
+        args: { z: 20, size: 78, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 12, intensity: 0.6 }, { kind: drop_shadow, dx: 0, dy: 5, blur: 18, color: "#000000", opacity: 0.9 } ], anim: { preset: fade, duration: 10 } }
+    camera: slow_push_in
+    duration: { seconds: 10.3 }
+    transition: { kind: fade, duration: 16 }
+
+  - id: highalt
+    say: "ये तो बस शुरुआत है। Archer-NG, जो ऊँचाई पर LAC की निगरानी करता है। और MAPSS — एक solar drone, जो सूरज से चलता है, और चौबीसों घंटे नज़र रखता है।"
+    sfx: [ { name: whoosh, at: 2 }, { name: ding, at: 28 }, { name: ding, at: 44 } ]
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - asset: rustomuav
+        as: still
+        args: { z: 1, kenburns: "in", effects: [ { kind: color_grade, brightness: 0.82, contrast: 1.1, saturate: 0.95 }, { kind: blur, radius: 0.5 }, { kind: vignette, amount: 0.4, softness: 0.6 } ] }
+      - shape: rect
+        as: band
+        args: { z: 10, position: [540, 300], params: { width: 1080, height: 260 }, fill: { a: 0, k: "#060b14" }, opacity: 0.42, effects: [ { kind: blur, radius: 30 } ] }
+      - text: "Archer-NG · MAPSS"
+        as: t
+        at: top
+        args: { z: 20, size: 58, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 16, distance: 40 } }
+    camera: slow_push_in
+    duration: { seconds: 10.9 }
+    transition: { kind: fade, duration: 16 }
+
+  - id: grid
+    say: "दुश्मन के drones को रोकने के लिए — D4 और SAKSHAM anti-drone grid। और DRDO के laser weapons, जो दो किलोमीटर दूर से target को जला सकते हैं।"
+    sfx: [ { name: whoosh, at: 2 }, { name: riser, at: 22 }, { name: boom, at: 42 } ]
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - footage: radar
+        as: broll
+        args: { z: 1, loop: true, muted: true, fit: cover, effects: [ { kind: color_grade, brightness: 0.64, contrast: 1.16, saturate: 0.72, hue: 8 }, { kind: vignette, amount: 0.42, softness: 0.6 } ] }
+      - shape: rect
+        as: band
+        args: { z: 10, position: [540, 960], params: { width: 1080, height: 300 }, fill: { a: 0, k: "#060b14" }, opacity: 0.42, effects: [ { kind: blur, radius: 30 } ] }
+      - text: "Anti-drone + Laser"
+        as: t
+        at: center
+        args: { z: 20, size: 66, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ff4438", radius: 10, intensity: 0.5 }, { kind: drop_shadow, dx: 0, dy: 5, blur: 18, color: "#000000", opacity: 0.9 } ], anim: { preset: fade, duration: 10 } }
+    camera: slow_push_in
+    duration: { seconds: 9.2 }
+    transition: { kind: fade, duration: 16 }
+
+  - id: atmanirbhar
+    say: "और सबसे अहम बात? ये सब indigenous है — India में बना, India का अपना। इसी को कहते हैं — technological sovereignty।"
+    sfx: [ { name: whoosh, at: 2 }, { name: ding, at: 30 } ]
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - asset: leh
+        as: still
+        args: { z: 1, kenburns: "in", effects: [ { kind: color_grade, brightness: 0.84, contrast: 1.1, saturate: 1.0 }, { kind: vignette, amount: 0.35, softness: 0.6 } ] }
+      - shape: rect
+        as: band
+        args: { z: 10, position: [540, 980], params: { width: 1080, height: 320 }, fill: { a: 0, k: "#060b14" }, opacity: 0.42, effects: [ { kind: blur, radius: 30 } ] }
+      - text: "Atmanirbhar Defence"
+        as: t
+        at: center
+        args: { z: 20, size: 62, weight: 800, color: "#2ee6a6", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#2ee6a6", radius: 12, intensity: 0.6 }, { kind: drop_shadow, dx: 0, dy: 5, blur: 18, color: "#000000", opacity: 0.9 } ], anim: { preset: fade, duration: 10 } }
+    camera: slow_push_in
+    duration: { seconds: 7.2 }
+    transition: { kind: fade, duration: 16 }
+
+  - id: deterrence
+    say: "2024 में सरहद पर disengagement हुआ, तनाव कुछ कम हुआ। पर India ने ये shield बनाना नहीं रोका। क्योंकि असली deterrent बंदूक नहीं — बढ़त है।"
+    sfx: [ { name: whoosh, at: 2 }, { name: riser, at: 28 }, { name: boom, at: 40 } ]
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - generator: world-in
+        as: world
+        args:
+          projection: mercator
+          fit: false
+          center: [80, 28]
+          scale: 620
+          key_field: name
+          fill: "#223249"
+          no_data_fill: "#223249"
+          stroke: "#3a516c"
+          stroke_width: 0.8
+          ocean: "#0a1420"
+          graticule: { step: 5, color: "#1a2636", opacity: 0.4, width: 0.6 }
+          choropleth: { India: "#2ee6a6" }
+          labels: { India: India, China: China }
+          effects: [ { kind: glow, color: "#2ee6a6", radius: 8, intensity: 0.5 } ]
+      - text: "Deterrence"
+        as: t
+        at: top
+        args: { z: 20, size: 68, weight: 800, color: "#2ee6a6", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 16, distance: 40 } }
+    camera: slow_push_in
+    duration: { seconds: 9.2 }
+    transition: { kind: fade, duration: 20 }
+
+  - id: payoff
+    say: "तो आपको क्या लगता है — क्या technology ही इस बर्फ़ीली सरहद की असली रक्षक है? नीचे comment में ज़रूर बताइए। पर याद रखिए — अठारह हज़ार फीट पर, अब जंग सिर्फ़ जवानों की नहीं… machines की भी है।"
+    sfx: [ { name: whoosh, at: 2 }, { name: riser, at: 40 }, { name: boom, at: 68 } ]
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - footage: himalaya
+        as: broll
+        args: { z: 1, loop: true, muted: true, fit: cover, effects: [ { kind: color_grade, brightness: 0.86, contrast: 1.1, saturate: 1.0 } ] }
+      - shape: rect
+        as: band
+        args: { z: 10, position: [540, 980], params: { width: 1080, height: 380 }, fill: { a: 0, k: "#060b14" }, opacity: 0.42, effects: [ { kind: blur, radius: 32 } ] }
+      - text: "18,000 फीट पर जंग"
+        as: loop
+        at: center
+        args: { z: 20, size: 82, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#7fb2ff", radius: 14, intensity: 0.6 }, { kind: drop_shadow, dx: 0, dy: 6, blur: 22, color: "#000000", opacity: 0.9 } ], anim: { preset: fade, duration: 12 } }
+    camera: slow_push_in
+    duration: { seconds: 10.2 }

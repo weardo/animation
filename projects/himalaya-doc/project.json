@@ -1,0 +1,86 @@
+{
+  "project_version": "1.0",
+  "id": "himalaya-doc",
+  "name": "Himalaya Doc",
+  "created": "2026-07-08T05:54:16.773Z",
+  "updated": "2026-07-08T05:54:16.773Z",
+  "config": {
+    "w": 1080,
+    "h": 1920,
+    "fps": 30,
+    "duration_frames": 3663
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "8a25f42e108b148c95bd3e21c142982b515b7c7a",
+  "engine": "remotion@4.0.481",
+  "deps": [
+    "blizzard@1.0.0",
+    "drone@1.0.0",
+    "himalaya@1.0.0",
+    "leh@1.0.0",
+    "news-galwan@1.0.0",
+    "news-orf@1.0.0",
+    "news-swarm@1.0.0",
+    "news-tribune@1.0.0",
+    "radar@1.0.0",
+    "rustomuav@1.0.0",
+    "soldiers@1.0.0"
+  ],
+  "assets": [
+    "assets/video/himalaya.mp4",
+    "assets/video/blizzard.mp4",
+    "assets/img/soldiers.jpg",
+    "assets/img/leh.jpg",
+    "assets/img/news-tribune.png",
+    "assets/img/news-orf.png",
+    "assets/img/news-swarm.png",
+    "assets/img/news-galwan.png",
+    "assets/video/drone.mp4",
+    "assets/img/rustomuav.jpg",
+    "assets/video/radar.mp4",
+    "assets/fonts/Mukta-ExtraBold.ttf",
+    "assets/fonts/NotoSansDevanagari.ttf",
+    "assets/fonts/DejaVuSans.ttf"
+  ],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  },
+  "publish": {
+    "title": "18,000 फीट पर जंग: India का Himalayan Defense Tech Shield 🏔️",
+    "description": "अठारह हज़ार फीट की ऊँचाई पर, जहाँ साँस लेना मुश्किल है — India एक tech shield बना रहा है: swarm\ndrones, high-altitude UAVs, anti-drone grids और DRDO के laser weapons। गलवान 2020 के बाद, India का\nजवाब जवानों की तादाद नहीं — technology है। पूरी कहानी।\n\nFollow for daily geopolitics + defense, explained in Hinglish. 🇮🇳\n\nSources: Galwan 2020 (20 soldiers) · <12 UAV platforms 2020 → 140+ by Mar 2026 · 100 swarm drones\n(2023) · Archer-NG high-altitude UAV · MAPSS solar UAV (₹168cr, Jan 2026) · D4/SAKSHAM anti-drone ·\nDRDO laser DEW (~2km) · Oct/Dec 2024 Eastern-Ladakh disengagement (Business Standard, The Tribune, ORF,\nOrganiser, Wikipedia).\n\nCredits: News screenshots — The Tribune, ORF, Organiser, Wikipedia (editorial/fair-use, attributed) ·\nArchival stills — Wikimedia Commons (Public Domain / GODL-India / CC) · Footage — Pexels · Music —\nKevin MacLeod, incompetech.com (CC-BY) · Map — Govt-of-India official boundary.\nDisclaimer: A defense explainer; specific system capabilities are India's stated programs per public\nreporting, not asserted battlefield fact. The 2024 disengagement eased the immediate standoff.\n",
+    "tags": [
+      "India",
+      "China",
+      "LAC",
+      "Ladakh",
+      "Galwan",
+      "Defense",
+      "Drones",
+      "DRDO",
+      "Himalaya",
+      "Swarm Drones",
+      "Geopolitics",
+      "Hindi",
+      "Documentary",
+      "Atmanirbhar",
+      "UPSC"
+    ],
+    "hashtags": [
+      "India",
+      "LAC",
+      "Defense",
+      "Drones",
+      "Himalaya"
+    ],
+    "category": "News & Politics",
+    "language": "hi-IN",
+    "caption_language": "hi-IN",
+    "privacy": "private",
+    "made_for_kids": false,
+    "license": "standard",
+    "credits": "News: Tribune/ORF/Organiser/Wikipedia (fair-use) · Stills: Wikimedia · Footage: Pexels · Music: Kevin MacLeod CC-BY · Map: Govt-of-India"
+  }
+}

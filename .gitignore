@@ -58,3 +58,4 @@ youtube_token.json
 voice-audition/
 public/img/*.jpg
 public/img/*.png
+projects/*/assets/audio/*.mp3

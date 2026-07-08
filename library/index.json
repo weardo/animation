@@ -1060,6 +1060,90 @@
           "cache_hash": "c07446a035bd",
           "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
         }
+      },
+      "himalaya": {
+        "id": "himalaya",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/himalaya.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/scenic-snow-capped-mountain-range-view-35560833/ by Shital Khadgi (https://www.pexels.com/@shital-khadgi-495854046) [portrait]",
+          "prompt": "himalaya snow mountain peaks aerial",
+          "size": "medium",
+          "cache_hash": "5dbc4a248476",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "blizzard": {
+        "id": "blizzard",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/blizzard.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/snow-blowing-across-winter-highway-in-ontario-35843229/ by Kim Dodge (https://www.pexels.com/@driver2) [portrait]",
+          "prompt": "snow blizzard storm mountain wind",
+          "size": "medium",
+          "cache_hash": "ba01549deb95",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "drone": {
+        "id": "drone",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/drone.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/phantom-4-drone-comming-back-19005328/ by UAVDrone youngman (https://www.pexels.com/@uavdrone-youngman-133608178) [portrait]",
+          "prompt": "military drone uav flying sky",
+          "size": "medium",
+          "cache_hash": "b4b31714c318",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "radar": {
+        "id": "radar",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/radar.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/a-large-metal-antenna-in-the-middle-of-a-field-18308551/ by Matthias Groeneveld (https://www.pexels.com/@matthiasgroeneveld) [portrait]",
+          "prompt": "radar antenna satellite dish technology",
+          "size": "medium",
+          "cache_hash": "2832f61bbab0",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
       }
     },
     "photos": {
@@ -1100,9 +1184,139 @@
           "size": "6203x4135",
           "cache_hash": "14d01885fceb"
         }
+      },
+      "soldiers": {
+        "id": "soldiers",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "image",
+        "uri": "asset://img/soldiers.jpg",
+        "tags": [
+          "photo",
+          "still",
+          "wikimedia"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Wikimedia Commons — \"U.S. Army Capt. Mathew Hickey and Indian Army Maj. Sanat Kumar, pause for a photo after reaching the summit of Machoi Peak.jpg\" by U.S. Army (Public domain), https://commons.wikimedia.org/wiki/File:U.S._Army_Capt._Mathew_Hickey_and_Indian_Army_Maj._Sanat_Kumar,_pause_for_a_photo_after_reaching_the_summit_of_Machoi_Peak.jpg",
+          "license": "Public domain",
+          "size": "1600x1235",
+          "cache_hash": "0d7984ad6d38"
+        }
+      },
+      "leh": {
+        "id": "leh",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "image",
+        "uri": "asset://img/leh.jpg",
+        "tags": [
+          "photo",
+          "still",
+          "wikimedia"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Wikimedia Commons — \"PM Modi with officers and soldiers of the Indian Army and Indian Air Force at Leh.jpg\" by Prime Minister's Office, Government of India (GODL-India), https://commons.wikimedia.org/wiki/File:PM_Modi_with_officers_and_soldiers_of_the_Indian_Army_and_Indian_Air_Force_at_Leh.jpg",
+          "license": "GODL-India",
+          "size": "1600x1209",
+          "cache_hash": "fb342c8cac20"
+        }
+      },
+      "rustomuav": {
+        "id": "rustomuav",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "image",
+        "uri": "asset://img/rustomuav.jpg",
+        "tags": [
+          "photo",
+          "still",
+          "wikimedia"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Wikimedia Commons — \"Rustom - 1 UAV.jpg\" by DRDO (GODL-India), https://commons.wikimedia.org/wiki/File:Rustom_-_1_UAV.jpg",
+          "license": "GODL-India",
+          "size": "350x234",
+          "cache_hash": "4e33c467d818"
+        }
       }
     },
-    "newsshots": {},
+    "newsshots": {
+      "news-tribune": {
+        "id": "news-tribune",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "image",
+        "uri": "asset://img/news-tribune.png",
+        "tags": [
+          "newsshot",
+          "evidence",
+          "screenshot"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "The Tribune — https://www.tribuneindia.com/news/india/explainer-india-and-china-troops-disengage-at-disputed-ladakh-border-easing-decades-long-tensions/ (captured 2026-07-08)",
+          "license": "editorial / fair-use — brief attributed commentary; publicly-accessible source",
+          "cache_hash": "fc71c8ecfbf6"
+        }
+      },
+      "news-orf": {
+        "id": "news-orf",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "image",
+        "uri": "asset://img/news-orf.png",
+        "tags": [
+          "newsshot",
+          "evidence",
+          "screenshot"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "orfonline.org — https://www.orfonline.org/expert-speak/india-china-disengagement-progress-on-the-ground-doubts-in-the-air (captured 2026-07-08)",
+          "license": "editorial / fair-use — brief attributed commentary; publicly-accessible source",
+          "cache_hash": "f707cf659846"
+        }
+      },
+      "news-swarm": {
+        "id": "news-swarm",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "image",
+        "uri": "asset://img/news-swarm.png",
+        "tags": [
+          "newsshot",
+          "evidence",
+          "screenshot"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Organiser — https://organiser.org/2026/05/15/353580/bharat/from-operation-sindoor-to-ai-warfare-how-india-is-building-a-drone-swarm-shield-across-two-fronts/ (captured 2026-07-08)",
+          "license": "editorial / fair-use — brief attributed commentary; publicly-accessible source",
+          "cache_hash": "33f100a2e712"
+        }
+      },
+      "news-galwan": {
+        "id": "news-galwan",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "image",
+        "uri": "asset://img/news-galwan.png",
+        "tags": [
+          "newsshot",
+          "evidence",
+          "screenshot"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "en.wikipedia.org — https://en.wikipedia.org/wiki/2020%E2%80%932021_China%E2%80%93India_skirmishes (captured 2026-07-08)",
+          "license": "editorial / fair-use — brief attributed commentary; publicly-accessible source",
+          "cache_hash": "dd9b3e9698ae"
+        }
+      }
+    },
     "newsclips": {}
   }
 }

@@ -5,6 +5,15 @@ description: Use when producing a ~5-minute Indian-language (Hinglish) geopoliti
 
 # Producing a short documentary (5-min Hinglish geopolitics)
 
+**⭐ NORTH STAR — MAXIMUM VALUE DENSITY WITHOUT LOSING COMPREHENSION (user's core goal).** Every second must
+deliver something worth knowing; nothing is padding. This is NOT "make it longer" — it's "pack more VALUE
+per second while staying clear." Consequences that drive every other rule: tight narration (cut filler
+words, one idea per breath), FAST visual tempo (no still static > ~1.5s, accelerating montages, quick
+cuts), a new fact/insight/turn on nearly every beat, and pacing that's brisk but never confusing (let a
+genuinely hard idea breathe for one beat, then move). A DENSE 2.5-min doc beats a padded 4.5-min one; a
+GREAT 4.5-min doc is 4.5 min of packed value, not stretched. When in doubt: cut a word, speed a cut, add a
+fact.
+
 A documentary is the **SAME factory pipeline as a reel, scaled up**: one `projects/<id>/story.yaml` with
 **~30-60 beats grouped into ACTS**, compiled → rendered → published exactly as a reel. **Everything in
 `producing-news-reels` applies unchanged** — read it first. This skill adds only what's DIFFERENT for
@@ -96,6 +105,39 @@ A 5-min doc must not ride one loop. Use the EXISTING capability, staged:
 7. **Full render** — a 5-min doc ≈ 9,000 frames ≈ **25-35 min** (monitor via render.log). Verify the
    artifact (duration, audio audible, montage reads, attributions present).
 8. **Review with the user, then publish** (evidence-based, outward-facing → confirm before public).
+
+## 5b. CRAFT REFINEMENTS (from the first doc's review, 2026-07-08 — bake these in)
+
+The first doc "held attention"; these notes make the next one sharper:
+- **OPENERS — warm + natural, not formulaic.** "एक second रुकिए…" read as CRINGE. The Guyana "दोस्तों…" opener
+  felt natural. Open like a person talking to friends: "दोस्तों…", "ज़रा एक बात सोचिए…", a bold stat, or a
+  direct image — NOT a canned "रुकिए/wait" gimmick. Still आप-respectful, still a curiosity hook.
+- **RISER SFX DISCIPLINE — a riser marks a REAL buildup, not every beat.** Overusing `riser` deadens it.
+  Reserve it for genuine escalations (into the turn, a reveal, an act climax); most beats just need a soft
+  `whoosh` on the cut. One well-placed riser > five reflexive ones.
+- **MUSIC — more variety + dynamics that follow the PHASE.** One bed per act isn't enough; the score should
+  BUILD and RELEASE with the story (tension rising into the turn, a release/resolve after). Source a wider
+  bed library (Incompetech CC-BY: e.g. "Ghost Story", "Long Note Two", "Echoes of Time", "Anguish", "The
+  Descent", "Impact Prelude", "Heavy Interlude") and pick beds whose OWN arc matches the beat; layer a low
+  drone under tension, swell at the turn, drop to sparse at the reveal.
+- **NEWS MONTAGE — hard cuts, accelerating, with a per-cut SFX (NOT a fade).** The fade-in did not suit the
+  montage. Rules: (1) HARD CUTS only (no `transition` between montage beats). (2) A punchy SFX PER CUT — a
+  camera **shutter**/click or a short glitch/whoosh, not silence. (3) **ACCELERATE EXPONENTIALLY** — the
+  classic montage speeds up: e.g. 1.2s → 0.9s → 0.7s → 0.5s → 0.35s → 0.25s, each shot faster than the last,
+  SFX tightening with it, resolving into the next beat. (4) DON'T hold the first shot long — get moving.
+- **STILLS — never static > ~1.5s.** A motionless image reads as "delayed/dead". Every still needs motion:
+  a stronger Ken Burns (bigger scale delta or a pan), OR a faster beat, OR quicker cuts between stills. If a
+  still must sit, push the KB harder.
+- **ONE PROPER, CLEAR, CENTERED VISUAL PER NAMED ENTITY/EVENT.** When the VO names 2-3 things (drones,
+  systems, people, places), show a SPECIFIC, sharp, centered image/clip for EACH — not one blurry generic
+  stand-in (the low-res off-center drone was weak). Source per-entity: `factory:photo "Archer NG UAV"`,
+  `"MAPSS solar drone"`, etc.; verify it's the actual subject, high-res, well-framed. For EVENTS, get the
+  EXACT imagery (real Galwan/LAC photos), not generic. Reject low-res (<800px) for a full-frame KB shot.
+- **TEXT-EFFECT VARIETY.** Beyond fade/rise: a **typewriter** reveal for a headline/quote, count-up for a
+  stat, a stamp/impact for a hard fact. Variety keeps the on-screen text alive across 30+ beats.
+- **VERTICAL-FIRST, but frame for it.** 9:16 is the target (a horizontal 16:9 cut is a future option). In
+  vertical: center subjects, crop stills/footage to keep the subject in the 9:16 safe area, bigger type,
+  the montage screenshots cropped to the headline (use `--selector`).
 
 ## 6. Scope (v1) — what's built vs deferred
 
