@@ -123,6 +123,7 @@ async function go() {
 }
 
 function watch(id) {
+  try { localStorage.setItem('watchId', id); } catch (e) {}
   $('job').classList.remove('hidden');
   $('video').classList.add('hidden'); $('video').removeAttribute('src');
   $('doneActions').style.display = 'none';
@@ -168,14 +169,27 @@ function reset() {
 async function loadJobs() {
   const jobs = await (await fetch('/api/jobs')).json();
   const ul = $('jobs');
-  if (!jobs.length) return;
-  ul.innerHTML = jobs.map((j) =>
-    `<li onclick="watch('${esc(j.id)}')"><span class="pill ${esc(j.status)}">${esc(j.status.replace('_',' '))}</span><span class="t">${esc(j.title || j.id)}</span></li>`
-  ).join('');
+  if (jobs.length) {
+    ul.innerHTML = jobs.map((j) =>
+      `<li onclick="watch('${esc(j.id)}')"><span class="pill ${esc(j.status)}">${esc(j.status.replace('_',' '))}</span><span class="t">${esc(j.title || j.id)}</span></li>`
+    ).join('');
+  }
+  return jobs;
+}
+
+// On load, restore the live view: prefer the last-watched job, else the newest still-running one.
+async function init() {
+  const jobs = await loadJobs();
+  const running = (j) => j && j.status !== 'done' && j.status !== 'error';
+  let last = null;
+  try { last = localStorage.getItem('watchId'); } catch (e) {}
+  const lastJob = jobs.find((j) => j.id === last);
+  const resume = lastJob || jobs.find(running);
+  if (resume) watch(resume.id);
 }
 
 $('go').addEventListener('click', go);
-loadJobs();
+init();
 </script>
 </body>
 </html>
