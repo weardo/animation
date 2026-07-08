@@ -24,9 +24,12 @@
     "factory:publish": "tsx src/cli/publish.ts",
     "factory:photo": "tsx src/cli/photo.ts",
     "factory:newsshot": "tsx src/cli/newsshot.ts",
-    "factory:newsclip": "tsx src/cli/newsclip.ts"
+    "factory:newsclip": "tsx src/cli/newsclip.ts",
+    "mcp": "tsx mcp-server/index.ts",
+    "mcp:smoke": "tsx mcp-server/_smoke.mts"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@remotion/cli": "4.0.481",
     "@remotion/layout-utils": "^4.0.481",
     "@remotion/lottie": "^4.0.481",
@@ -50,7 +53,7 @@
     "simplex-noise": "4.0.3",
     "topojson-client": "^3.1.0",
     "yaml": "2.7.0",
-    "zod": "3.24.1",
+    "zod": "^3.25.76",
     "zod-to-json-schema": "3.24.1"
   },
   "devDependencies": {
