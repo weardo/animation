@@ -997,7 +997,112 @@
           "cache_hash": "7736cd4f180b",
           "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
         }
+      },
+      "duqmport": {
+        "id": "duqmport",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/duqmport.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/dynamic-video-of-coastal-shipping-port-and-cranes-34892608/ by Rec Everywhere (https://www.pexels.com/@receverywhere) [portrait]",
+          "prompt": "aerial cargo port container terminal cranes",
+          "size": "medium",
+          "cache_hash": "36f95b5ecacc",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "cargoship": {
+        "id": "cargoship",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/cargoship.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/vibrant-port-with-shipping-cranes-at-sunset-34508126/ by Davidsaurik (https://www.pexels.com/@davidsaurik-296473682) [portrait]",
+          "prompt": "container ship loaded with cargo containers sea",
+          "size": "medium",
+          "cache_hash": "2a0f5de08c1c",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "warship": {
+        "id": "warship",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/warship.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/indian-coast-guard-vessel-in-sea-patrol-32186197/ by Jomin Thach (https://www.pexels.com/@jomin-thach-428077712) [portrait]",
+          "prompt": "navy warship destroyer sea",
+          "size": "medium",
+          "cache_hash": "c07446a035bd",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
       }
-    }
+    },
+    "photos": {
+      "vikrant": {
+        "id": "vikrant",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "image",
+        "uri": "asset://img/vikrant.jpg",
+        "tags": [
+          "photo",
+          "still",
+          "wikimedia"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Wikimedia Commons — \"INS Vikrant being undocked at the Cochin Shipyard Limited in 2015 (04).jpg\" by Indian Navy (GODL-India), https://commons.wikimedia.org/wiki/File:INS_Vikrant_being_undocked_at_the_Cochin_Shipyard_Limited_in_2015_(04).jpg",
+          "license": "GODL-India",
+          "size": "1000x632",
+          "cache_hash": "ce4ade06af70"
+        }
+      },
+      "shipmood": {
+        "id": "shipmood",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "image",
+        "uri": "asset://img/shipmood.jpg",
+        "tags": [
+          "photo",
+          "still",
+          "pexels"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels — photo by Regan Dsouza (https://www.pexels.com/photo/commercial-cargo-ships-on-the-open-sea-36112907/)",
+          "license": "Pexels License (free commercial, no-attribution)",
+          "size": "6203x4135",
+          "cache_hash": "14d01885fceb"
+        }
+      }
+    },
+    "newsshots": {},
+    "newsclips": {}
   }
 }

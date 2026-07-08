@@ -1,0 +1,66 @@
+{
+  "project_version": "1.0",
+  "id": "duqm-port",
+  "name": "Duqm Port",
+  "created": "2026-07-08T04:21:08.307Z",
+  "updated": "2026-07-08T04:21:08.307Z",
+  "config": {
+    "w": 1080,
+    "h": 1920,
+    "fps": 30,
+    "duration_frames": 1245
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "16e915f881284239c1a9510677dd11a7572888e2",
+  "engine": "remotion@4.0.481",
+  "deps": [
+    "duqmport@1.0.0",
+    "warship@1.0.0"
+  ],
+  "assets": [
+    "assets/video/duqmport.mp4",
+    "assets/video/warship.mp4",
+    "assets/fonts/Mukta-ExtraBold.ttf",
+    "assets/fonts/NotoSansDevanagari.ttf",
+    "assets/fonts/DejaVuSans.ttf"
+  ],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  },
+  "publish": {
+    "title": "India का समुंदरी किला: Duqm Port और Malacca Trap का जवाब 🌊",
+    "description": "हज़ारों मील दूर, India Oman के Duqm Port में एक deep-water किला बना रहा है — जो Indian Ocean के\nchokepoint-trap का जवाब है और China की naval expansion के सामने India की ताक़त। पूरी कहानी।\n\nFollow for daily geopolitics, explained in Hinglish. 🌊\n\nSources: India-Oman Duqm access agreement (2018) + deepening investment · Duqm = deep-water port on\nOman's open Arabian-Sea coast (outside Hormuz) · India countering China's Indian-Ocean naval presence\n(String of Pearls / Gwadar) · \"unsinkable aircraft carrier\" strategic metaphor.\n\nCredits: Footage — Pexels (free commercial) · Music — royalty-free · Maps — Govt-of-India official boundary.\nDisclaimer: A geopolitics explainer; strategic framing from public reporting, figures may be revised.\n",
+    "tags": [
+      "India",
+      "Duqm",
+      "Oman",
+      "Malacca",
+      "Indian Ocean",
+      "Geopolitics",
+      "Navy",
+      "China",
+      "String of Pearls",
+      "Hindi",
+      "Shorts",
+      "UPSC",
+      "Current Affairs"
+    ],
+    "hashtags": [
+      "India",
+      "Duqm",
+      "Geopolitics",
+      "IndianOcean",
+      "Shorts"
+    ],
+    "category": "News & Politics",
+    "language": "hi-IN",
+    "caption_language": "hi-IN",
+    "privacy": "private",
+    "made_for_kids": false,
+    "license": "standard",
+    "credits": "Footage: Pexels · Music: royalty-free · Map: Govt-of-India official boundary"
+  }
+}

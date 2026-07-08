@@ -1,0 +1,34 @@
+{
+  "lockfile_version": "1",
+  "algorithm": "object-hash@sha1/v1",
+  "refs": {
+    "duqmport@1.0.0": {
+      "namespace": "footage",
+      "id": "duqmport",
+      "version": "1.0.0",
+      "hash": "04eb505855a1786984297d8e0b94b86344f86aaf",
+      "deps": []
+    },
+    "plain@1.0.0": {
+      "namespace": "stylekits",
+      "id": "plain",
+      "version": "1.0.0",
+      "hash": "fb56c23a60d8cef3e43f7f126ecbd4a3ec2d6622",
+      "deps": []
+    },
+    "warship@1.0.0": {
+      "namespace": "footage",
+      "id": "warship",
+      "version": "1.0.0",
+      "hash": "e3bcee28799dc79265a611a466f5546853ad6f3b",
+      "deps": []
+    },
+    "world-in@1.0.0": {
+      "namespace": "generators",
+      "id": "world-in",
+      "version": "1.0.0",
+      "hash": "722997be6264c229005e1c2680db115977f6b761",
+      "deps": []
+    }
+  }
+}

@@ -1,0 +1,257 @@
+# duqm-port — geopolitics reel: why India is investing in Oman's deep-water Duqm Port.
+# Verifiable core: India has strategic ACCESS to Duqm (2018 Oman agreement) for logistics/naval use +
+# is deepening its footprint there; Duqm is a deep-water port on Oman's open Arabian-Sea coast — OUTSIDE
+# the Hormuz chokepoint — giving India a western-Indian-Ocean foothold to secure sea lanes and counter
+# China's growing naval presence (String of Pearls; Gwadar in Pakistan). FRAMING kept accurate: India's
+# vulnerability is dependence on NARROW CHOKEPOINTS generally (not a false "India's oil goes via Malacca");
+# Duqm's value = a base beyond those chokepoints + power projection. "Unsinkable aircraft carrier" is the
+# common strategic metaphor.
+#
+# NARRATION = ONE flowing monologue split at visual changes (read the say: lines top-to-bottom → one story).
+# EFFECTS ARE TAILORED PER CLIP (not a blanket dark vignette): the bright blue-sky port stays BRIGHT with a
+# light grade + a localized scrim band behind the text only; the moodier container-port close is graded a
+# touch darker. Story-level vignette kept light (0.4) so footage isn't crushed.
+title: "Duqm Port — India's Maritime Fortress"
+style: plain
+format:
+  aspect: "9:16"
+  fps: 30
+
+post:
+  - { kind: color_grade, brightness: 1.0, contrast: 1.12, saturate: 1.12 }
+  - { kind: vignette, amount: 0.4, softness: 0.6 }
+  - { kind: grain, amount: 0.04, size: 0.9, seed: 19 }
+
+music: { ref: "audio/tension.mp3", gain: 0.55, duck: 0.3, fade: 16 }
+
+publish:
+  title: "India का समुंदरी किला: Duqm Port और Malacca Trap का जवाब 🌊"
+  description: |
+    हज़ारों मील दूर, India Oman के Duqm Port में एक deep-water किला बना रहा है — जो Indian Ocean के
+    chokepoint-trap का जवाब है और China की naval expansion के सामने India की ताक़त। पूरी कहानी।
+
+    Follow for daily geopolitics, explained in Hinglish. 🌊
+
+    Sources: India-Oman Duqm access agreement (2018) + deepening investment · Duqm = deep-water port on
+    Oman's open Arabian-Sea coast (outside Hormuz) · India countering China's Indian-Ocean naval presence
+    (String of Pearls / Gwadar) · "unsinkable aircraft carrier" strategic metaphor.
+
+    Credits: Footage — Pexels (free commercial) · Music — royalty-free · Maps — Govt-of-India official boundary.
+    Disclaimer: A geopolitics explainer; strategic framing from public reporting, figures may be revised.
+  tags: [India, Duqm, Oman, Malacca, Indian Ocean, Geopolitics, Navy, China, String of Pearls, Hindi, Shorts, UPSC, Current Affairs]
+  hashtags: [India, Duqm, Geopolitics, IndianOcean, Shorts]
+  category: "News & Politics"
+  language: hi-IN
+  caption_language: hi-IN
+  privacy: private
+  made_for_kids: false
+  credits: "Footage: Pexels · Music: royalty-free · Map: Govt-of-India official boundary"
+
+cast: {}
+
+beats:
+  # ==================================================== B1 — HOOK (bright port, LIGHT grade) =========
+  - id: hook
+    say: "एक second रुकिए… ज़रा सोचिए — India हज़ारों मील दूर, समंदर के बीचों-बीच एक किला क्यों बना रहा है?"
+    sfx:
+      - { name: whoosh, at: 4 }
+      - { name: ding, at: 14 }
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      # BRIGHT blue-sky port — keep it bright: gentle grade, NO heavy vignette (tailored to the clip).
+      - footage: duqmport
+        as: broll
+        args:
+          z: 1
+          loop: true
+          muted: true
+          fit: cover
+          effects:
+            - { kind: color_grade, brightness: 0.92, contrast: 1.08, saturate: 1.06 }
+      # LOCALIZED scrim — a soft band behind the text only (not a full-frame dark overlay), so the bright
+      # port stays visible above/below. Blurred edges soften it.
+      - shape: rect
+        as: textband
+        args: { z: 10, position: [540, 980], params: { width: 1080, height: 360 }, fill: { a: 0, k: "#08111c" }, opacity: 0.4, effects: [ { kind: blur, radius: 30 } ] }
+      - text: "India का समुंदरी किला"
+        as: hooktext
+        at: center
+        args: { z: 20, size: 82, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#2ee6a6", radius: 14, intensity: 0.7 }, { kind: drop_shadow, dx: 0, dy: 6, blur: 22, color: "#000000", opacity: 0.9 } ], anim: { preset: fade, duration: 5 } }
+    camera: slow_push_in
+    duration: { seconds: 7.1 }
+
+  # ==================================================== B2 — THE CHOKEPOINT TRAP (map) ===============
+  - id: trap
+    say: "देखिए — India का ज़्यादातर trade और energy गुज़रता है कुछ पतली समंदरी गलियों से। अब सोचिए, अगर किसी दुश्मन ने इन्हें बंद कर दिया, तो? पूरी सप्लाई ठप। इसी को कहते हैं — chokepoint trap।"
+    sfx:
+      - { name: whoosh, at: 2 }
+      - { name: riser, at: 22 }
+      - { name: boom, at: 58 }
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      # wide Indian Ocean — India ringed by the key chokepoints (red), the emblem of the vulnerability.
+      - generator: world-in
+        as: world
+        args:
+          projection: mercator
+          fit: false
+          center: [72, 12]
+          scale: 360
+          key_field: name
+          fill: "#223249"
+          no_data_fill: "#223249"
+          stroke: "#3a516c"
+          stroke_width: 0.7
+          ocean: "#0a1420"
+          graticule: { step: 10, color: "#1a2636", opacity: 0.4, width: 0.6 }
+          choropleth:
+            India: "#2ee6a6"
+          labels:
+            India: India
+            Oman: Oman
+            Indonesia: Indonesia
+          markers:
+            - { coord: [56.3, 26.6], label: "Hormuz", color: "#ff4438", radius: 11, label_size: 30, label_dy: -22 }
+            - { coord: [43.4, 12.6], label: "Bab-el-Mandeb", color: "#ff4438", radius: 10, label_size: 26, label_dy: 34 }
+            - { coord: [100.5, 3.0], label: "Malacca", color: "#ff4438", radius: 11, label_size: 30, label_dy: -22 }
+          markers_pop: { delay: 26, duration: 22, stagger: 12 }
+          effects:
+            - { kind: glow, color: "#ff4438", radius: 7, intensity: 0.45 }
+      - text: "Chokepoint Trap"
+        as: title
+        at: top
+        args: { z: 20, size: 70, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 18, distance: 50 } }
+    camera: slow_push_in
+    duration: { seconds: 10.4 }
+    transition: { kind: fade, duration: 16 }
+
+  # ==================================================== B3 — THE MOVE: Duqm (fly to Oman) ============
+  - id: move
+    say: "तो India ने किया क्या? चल दिया एक ज़बरदस्त दांव — Oman का Duqm Port। एक deep-water base, ठीक इन chokepoints से बाहर।"
+    sfx:
+      - { name: whoosh, at: 2 }
+      - { name: pop, at: 30 }
+      - { name: ding, at: 44 }
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      # zoom to Oman's Arabian-Sea coast — Duqm marked (teal, the prize).
+      - generator: world-in
+        as: world
+        args:
+          projection: mercator
+          fit: false
+          center: [58, 21]
+          scale: 1050
+          key_field: name
+          fill: "#223249"
+          no_data_fill: "#223249"
+          stroke: "#3a516c"
+          stroke_width: 1.0
+          ocean: "#0a1420"
+          graticule: { step: 4, color: "#1a2636", opacity: 0.45, width: 0.6 }
+          choropleth:
+            Oman: "#1c3a2f"
+            India: "#2ee6a6"
+          labels:
+            Oman: Oman
+            India: India
+            Iran: Iran
+          markers:
+            - { coord: [57.7, 19.65], label: "Duqm Port", color: "#2ee6a6", radius: 13, label_size: 34, label_dy: -26 }
+          markers_pop: { delay: 24, duration: 20 }
+          effects:
+            - { kind: glow, color: "#2ee6a6", radius: 8, intensity: 0.55 }
+      - text: "Duqm Port, Oman"
+        as: title
+        at: top
+        args: { z: 20, size: 66, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 18, distance: 50 } }
+    camera: slow_push_in
+    duration: { seconds: 7.6 }
+    transition: { kind: fade, duration: 16 }
+
+  # ==================================================== B4 — THE BYPASS + naval reach (route map) ====
+  - id: bypass
+    say: "अब समझिए इसका असली फ़ायदा — India इन hostile गलियों को bypass कर सकता है, और अपनी नौसेना पूरे Indian Ocean में तैनात, ठीक चाइना के सामने।"
+    sfx:
+      - { name: whoosh, at: 2 }
+      - { name: riser, at: 20 }
+      - { name: boom, at: 52 }
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      # India → Duqm supply line (teal, draws on), and the rival Gwadar (China-Pakistan, red) alongside.
+      - generator: world-in
+        as: world
+        args:
+          projection: mercator
+          fit: false
+          center: [64, 21]
+          scale: 640
+          key_field: name
+          fill: "#223249"
+          no_data_fill: "#223249"
+          stroke: "#3a516c"
+          stroke_width: 0.9
+          ocean: "#0a1420"
+          graticule: { step: 5, color: "#1a2636", opacity: 0.45, width: 0.6 }
+          choropleth:
+            India: "#2ee6a6"
+            Oman: "#1c3a2f"
+          labels:
+            India: India
+            Oman: Oman
+            Pakistan: Pakistan
+          routes:
+            - { coords: [[72.8, 18.9], [57.7, 19.65]], arc: true, arrow: true, color: "#2ee6a6", width: 4, glow: 6, draw_on: { delay: 26, duration: 26 } }
+          markers:
+            - { coord: [57.7, 19.65], label: "Duqm · India", color: "#2ee6a6", radius: 12, label_size: 30, label_dy: -24 }
+            - { coord: [62.3, 25.1], label: "Gwadar · China-Pak", color: "#ff4438", radius: 11, label_size: 28, label_dy: -22 }
+          markers_pop: { delay: 34, duration: 22, stagger: 12 }
+          effects:
+            - { kind: glow, color: "#2ee6a6", radius: 7, intensity: 0.5 }
+      - text: "Chokepoints bypassed"
+        as: title
+        at: top
+        args: { z: 20, size: 62, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 18, distance: 50 } }
+    camera: slow_push_in
+    duration: { seconds: 8.2 }
+    transition: { kind: fade, duration: 16 }
+
+  # ==================================================== B5 — LOOP (container port, moodier grade) ====
+  - id: payoff
+    say: "अच्छा बताइए — आपको क्या लगता है, क्या ये दांव चाइना को रोक पाएगा? नीचे comment में ज़रूर बताइएगा। पर याद रखिए — ये सिर्फ़ एक port नहीं, ये है India का unsinkable aircraft carrier।"
+    sfx:
+      - { name: whoosh, at: 2 }
+      - { name: boom, at: 8 }
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      # CLOSE on a real Indian Coast Guard vessel at sea — the "unsinkable aircraft carrier" payoff lands
+      # literally. Bright daylight clip → LIGHT grade + minimal vignette (tailored to the footage).
+      - footage: warship
+        as: broll
+        args:
+          z: 1
+          loop: true
+          muted: true
+          fit: cover
+          effects:
+            - { kind: color_grade, brightness: 0.9, contrast: 1.1, saturate: 1.03 }
+            - { kind: vignette, amount: 0.25, softness: 0.6 }
+      - shape: rect
+        as: textband
+        args: { z: 10, position: [540, 980], params: { width: 1080, height: 360 }, fill: { a: 0, k: "#08111c" }, opacity: 0.42, effects: [ { kind: blur, radius: 30 } ] }
+      - text: "India का समुंदरी किला"
+        as: loop
+        at: center
+        args: { z: 20, size: 82, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#2ee6a6", radius: 14, intensity: 0.7 }, { kind: drop_shadow, dx: 0, dy: 6, blur: 22, color: "#000000", opacity: 0.9 } ], anim: { preset: fade, duration: 10 } }
+    camera: slow_push_in
+    duration: { seconds: 9.8 }

@@ -34,6 +34,14 @@ env `SARVAM_API_KEY`. Beat `say:` lines are natural Hinglish — **Sarvam reads 
 correctly** ("Strait of Hormuz", "important"), so DON'T transliterate for Sarvam. (Transliterate to
 Devanagari ONLY for the local engines, which mangle Latin script.)
 
+**⚠️ PRONUNCIATION EXCEPTIONS — proper nouns with a common HINDI name.** The "reads Latin correctly"
+rule breaks for words that ALSO have a native Hindi reading: the Latin **"China"** gets read as Hindi
+**चीन/चीना ("cheena")**, not English "chai-na" — and it VARIES run-to-run (temperature 0.9 is stochastic),
+so a re-synth can flip it. FIX: spell such words PHONETICALLY in Devanagari to lock the English sound
+deterministically — **"China" → "चाइना"** (chai-na). (Keep the Latin spelling in the `publish` description/
+tags — that's text, not TTS.) When a name sounds wrong, audition 3-4 Devanagari spellings on one line +
+montage them (like the voice audition) and pick. Likely culprits: country/city names with Hindi exonyms.
+
 **Speaker names carry the accent/age** — a WRONG speaker sounds like the wrong language/age:
 `indic-parler` Hindi speakers are **Rohit/Divya/Aman/Rani** — "Aditi" is BENGALI (made Hindi sound
 Bengali). Sarvam young voices: shubh/aditya/dev/aayan/sunny.
@@ -109,16 +117,25 @@ The `map` generator (core-dataviz) has a full toolkit, all authored as DATA, all
   as "template", footage reads as "production". `factory:footage` fetches free stock clips from Pexels
   (`PEXELS_API_KEY`, free, commercial-safe) → content-addressed cache → `footage: <id>` in a story. Great
   for a cinematic opening (a tanker/ocean shot under the hook), a fuel-station "prices" beat, or the loop
-  close. **MUST be graded** to match the dark
-  palette (footage-layer `effects`: `color_grade` darken+desaturate+warm + `blur` + `vignette` + a dark
-  scrim rect for text) or it clashes. Keep it SPARSE (opening + close) so the maps stay the star.
-- **VERIFY EVERY FETCHED CLIP VISUALLY — extract a frame and LOOK before trusting it.** Pexels ranks by
-  loose relevance, so a query returns confidently-wrong footage: "fire"→fireworks, "military soldiers"→
-  NAPOLEONIC REENACTORS (white uniforms, muskets — absurd for a 2026 mobilization), "smoke"→flag footage.
-  Always `ffmpeg -i clip.mp4 -vf select=eq(n\,60) -frames:v 1 f.png` and read it. Use PRECISE, era/subject-
-  specific queries ("military tank armored vehicle convoy" not "military"; "offshore oil drilling rig
-  platform" not "oil"). For verified NEWS, honest illustrative b-roll (a real rig, a real coastline, real
-  hardware) beats a dramatic-but-wrong or fake-war clip — credibility is the channel.
+  close. Keep it SPARSE (opening + close) so the maps stay the star.
+- **⚠️ TAILOR THE EFFECTS TO EACH CLIP — there is NO one-size grade (user: "dark circle shadow doesn't
+  always suit").** A blanket `darken + heavy vignette + full-frame dark scrim` CRUSHES a bright hero shot
+  (a blue-sky port, a sunny sea). Match the treatment to the footage + mood: a BRIGHT clip keeps a LIGHT
+  grade (`brightness ~0.9, contrast ~1.1`), little/no per-clip `vignette` (≤0.25), and — for text
+  legibility — a **LOCALIZED scrim BAND behind the text only** (a `rect` ~1080×360 at the text's y,
+  `opacity ~0.4` + a `blur` to soften its edges), NOT a full-frame dark overlay; rely on the text's own
+  `drop_shadow`+`glow`. A MOODY clip (stormy sky, night) can take a darker grade + light vignette. Keep
+  the story-level `post` vignette modest (~0.4) on footage-heavy reels so bright clips aren't crushed.
+- **VERIFY EVERY CLIP — and BROWSE, don't take the first (user: "not always the first clip is best").**
+  Pexels ranks by loose relevance → the top hit is often wrong: "fire"→fireworks, "military soldiers"→
+  NAPOLEONIC REENACTORS, "warship"→a marina/just-water pan. Workflow: (1) `factory:footage "<q>" --list 8`
+  prints candidates with **id, dims, duration, poster + mid-preview URLs, and the PAGE URL** — the page
+  title/slug is the STRONGEST content signal (e.g. `.../indian-coast-guard-vessel-in-sea-patrol-...` = an
+  actual Indian navy ship). (2) Pick a specific one: `--video-id <id>` (or `--index <n>`), not index 0.
+  (3) VERIFY with a MULTI-FRAME CONTACT SHEET, never one frame — a subject is often revealed LATE (a clip
+  that looks like "just water" pans to the ship): `ffmpeg -i c.mp4 -vf "fps=6/$DUR,scale=200:355,tile=6x1"
+  -frames:v 1 sheet.png` then read it. Prefer honest, on-subject b-roll (a real Indian vessel, a real
+  port) — credibility is the channel; never fake war footage.
 
 ## 6. NARRATIVE — a STORY with a VIRAL structure (biggest quality + growth lever)
 
@@ -145,6 +162,32 @@ where the VISUAL changes, not where the SENTENCE resets.** Then every beat MUST 
 - The on-screen TEXT stays punchy headlines (scannable on mute); the VO is the flowing STORY — different jobs.
 - **TEST before rendering:** read all `say` lines top-to-bottom as ONE paragraph. If it doesn't sound like
   one continuous story a person is telling, it's still headlines — rewrite the connectors, not the facts.
+
+**⚠️ TALK TO THE VIEWER — DIRECT ADDRESS, not a monologue (the #2 narration lever, research-backed).** A
+coherent monologue still NARRATES PAST the viewer. The engagement jump is making them feel *spoken to* —
+a parasocial "a friend is explaining this to me" feeling that lifts watch-through. Convert third-person
+statements into second-person conversation:
+- **⚠️ REGISTER: address them with RESPECTFUL आप/आपको/आपका — NEVER तू/तुम/तुझे** (informal = disrespectful to an
+  audience; user rule). Imperatives take the आप-form: सोचो→सोचिए, देखो→देखिए, समझो→समझिए, रुको→रुकिए, बताओ→बताइए,
+  याद रखना→याद रखिए। Inclusive "we" (चलिए/आइए समझते हैं) makes it a shared journey. "India ने ये किया" → "अब समझिए
+  India ने क्या किया"; "ये खतरनाक है" → "सोचिए, ये आपके लिए क्या मायने रखता है".
+- **Ask the viewer questions** (rhetorical, then answer): "क्यों? क्योंकि…", "अगर ये बंद हो जाए, तो? …", "फिर क्या हुआ?".
+- **PRE-COMMITMENT hook** (top ~7s): make them guess/answer along → psychological investment → they stay for
+  the reveal. "एक second रुकिए — आपको क्या लगता है India ने क्या किया?" then pay it off later.
+- **Conversational imperatives / narrator POV**: "देखिए", "ज़रा सोचिए", "ध्यान से सुनिए", "समझिए", "मान लीजिए आप India हैं…".
+- **Takeaway close the viewer can carry** (more shareable than a flat fact): "तो अगली बार जब कोई कहे '…', याद
+  रखिए — …" — this also closes the hook loop.
+- **ASK FOR THEIR OPINION → drives COMMENTS (the strongest engagement signal for reach).** Weave a GENUINE
+  opinion question that invites a reply: "आपको क्या लगता है — क्या ये दांव काम करेगा? नीचे comment में बताइए।",
+  "आप India की जगह होते तो क्या करते?", "किसका पलड़ा भारी — India या China? बताइए।" This is the ONE in-video
+  CTA that's ENCOURAGED (unlike "subscribe करो", which breaks the loop and tanks completion — keep that in
+  the DESCRIPTION). Best placement: a beat BEFORE the final loop line, or fold the opinion question INTO the
+  close so it doubles as the loop. Make it a real, debatable question tied to the story — not a generic
+  "comment below". A reel that sparks an argument in the comments gets pushed harder.
+- **Pattern-break at drop-off zones** (~30/50/70%): shift rhythm/energy or drop a "लेकिन रुको, यहाँ twist है…".
+- Keep facts verifiable + the flow coherent — direct address is HOW you say it, on top of the one-story rule,
+  not instead of it. TEST: does it sound like someone TALKING TO ME, or reading AT me? If the latter, add
+  a "you"/a question/an imperative.
 
 **The proven YouTube-Shorts patterns (India, 2026) — bake these in:**
 - **HOOK (0-3s) is make-or-break.** 70% retention at 3s ≈ 5× more viral. And **92% watch on MUTE** → the
@@ -243,6 +286,38 @@ default** (no upload) — pass `--yes` to upload; visibility defaults to **unlis
 YouTube needs a one-time OAuth setup + `--auth` (see `docs/factory/PUBLISHING.md`). ⚠️ Google force-locks
 API uploads to private/unlisted until the OAuth app is verified — so the practical flow is upload-unlisted
 → glance in Studio → click Publish. Quota ≈ 6 uploads/day free.
+
+## 10. DOCUMENTARIES (5-min upgrade — v1, 2026-07-08)
+
+A short documentary is the SAME pipeline scaled to ~40-60 beats in ACTS, plus new journalism content
+sources. Spec: `docs/superpowers/specs/2026-07-08-documentary-v1-design.md`. **Operating principle:
+journalism FAIR USE *with attribution*** — publicly-accessible media as brief, attributed, transformative
+evidence (attribution = licensing cover AND authenticity). New content-source CLIs (all cache-once-offline
+→ deterministic replay, all record provenance/attribution):
+- **`factory:photo "<q>" --source wikimedia|pexels [--list N] [--index n]`** — still images. Wikimedia
+  Commons = REAL archival subjects (leaders/warships/ports; records CC/PD + author attribution); Pexels =
+  generic mood b-roll. Auto-downscaled. Browse+verify like footage. → `{ asset: <id>, as: still }`.
+- **`factory:newsshot "<url>" --id <id> [--selector "<css>"] [--full-page]`** — screenshot a public news
+  article (headless Chromium via Remotion's browser + puppeteer-core). Powers the RAPID UBIQUITY MONTAGE.
+  Use `--selector` to crop to the headline/article node. → `{ asset: <id>, as: shot }`.
+- **`factory:newsclip "<url>" --id <id> [--section 12-20]`** — pull a BRIEF public news video clip via
+  yt-dlp → light footage proxy. Real event evidence. `--section` keeps it short (fair use). No paywall/DRM
+  bypass. → `{ footage: <id>, as: broll }`.
+- **Ken Burns** — `kenburns: "in"|"out"|"in-slow"|"out-slow"` (or `{from,to}` scale %) on any image/asset
+  show-item → a slow scale zoom over the beat (lowering sugar over the existing transform anim; `smooth`
+  easing). Gives stills cinematic motion.
+
+**Authoring a doc (convention, no extra code):** ACT structure (Act I hook/context → II escalation → III
+turn+resolution) as comment-grouped beats; **news montage = 5-8 rapid ~0.6-1.0 s beats**, hard cuts, a
+whip/click per cut → ubiquity; **stage-aware audio** — different music bed per act via the layered
+story-level `audio[]` tracks (crossfade at act boundaries: fade_out overlapping fade_in), SFX mapped to
+STORY functions (riser into a reveal, boom on the turn, drone under tension), transitions matched to plot
+(hard cuts in montages, dissolves within an act, a longer fade+whoosh at ACT breaks). Needs a few
+royalty-free beds (calm-intro/tension/climax/resolution) in the project `assets/audio/`. ALL reel
+principles carry over (official map, आप-respectful direct address + opinion prompt, coherent one-story
+script, tailored per-clip effects, चाइना-style phonetic TTS spellings, beat-duration-fits-narration,
+publish block). NOTE: a 5-min render ≈ 9,000 frames ≈ 25-35 min — verify look on `--frames` stills first.
+**v2 (not built):** kinetic typography (pull-quotes/lower-thirds/stat callouts), automated pacing tooling.
 
 ## The channel is production-DONE; the leap not yet built
 

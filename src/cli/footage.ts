@@ -54,39 +54,47 @@ interface PexelsVideo {
   duration: number;
   width: number;
   height: number;
+  /** Poster frame (one representative jpg). */
+  image?: string;
+  /** ~15 preview thumbnails sampled ACROSS the clip — catches a subject that only appears later. */
+  video_pictures?: { picture: string; nr: number }[];
   user: { name: string; url: string };
   video_files: PexelsVideoFile[];
 }
 
-/** Query Pexels + pick the best video FILE for the request (orientation + a sane resolution). */
-async function pickPexelsClip(
+/** Choose the best downloadable .mp4 FILE within one video (≤1920 tall, highest under that). */
+function bestFile(video: PexelsVideo): PexelsVideoFile | undefined {
+  const mp4s = video.video_files
+    .filter((f) => (f.file_type ?? '').includes('mp4') || f.link.includes('.mp4'))
+    .filter((f) => f.height <= 1920)
+    .sort((a, b) => b.height - a.height);
+  return mp4s[0] ?? video.video_files.sort((a, b) => b.height - a.height)[0];
+}
+
+/**
+ * Query Pexels → the RANKED list of orientation-matching candidates (each with its best file). The
+ * FIRST result is Pexels's top relevance pick, but it is NOT always the best clip (a subject may be
+ * off-frame, or only revealed late) — so we expose the whole list for `--list` browsing + `--index`/
+ * `--video-id` selection, not just index 0.
+ */
+async function rankedCandidates(
   req: FootageRequest,
   apiKey: string,
-): Promise<{ video: PexelsVideo; file: PexelsVideoFile } | null> {
-  const url = `${PEXELS_SEARCH}?query=${encodeURIComponent(req.query)}&orientation=${req.orientation}&size=${req.size}&per_page=15`;
+): Promise<{ video: PexelsVideo; file: PexelsVideoFile }[]> {
+  const url = `${PEXELS_SEARCH}?query=${encodeURIComponent(req.query)}&orientation=${req.orientation}&size=${req.size}&per_page=20`;
   const resp = await fetch(url, { headers: { Authorization: apiKey } });
   if (!resp.ok) throw new Error(`Pexels API ${resp.status}: ${(await resp.text()).slice(0, 200)}`);
   const data = (await resp.json()) as { videos?: PexelsVideo[] };
-  const videos = (data.videos ?? []).filter((v) => v.duration >= req.minDuration);
-  if (videos.length === 0) return null;
-
-  // Prefer the FIRST result (Pexels ranks by relevance) whose orientation matches; within it pick an
-  // .mp4 file at a reasonable height (≤1920, highest under that) to keep the download light + reel-fit.
   const wantPortrait = req.orientation === 'portrait';
-  for (const video of videos) {
+  const out: { video: PexelsVideo; file: PexelsVideoFile }[] = [];
+  for (const video of data.videos ?? []) {
+    if (video.duration < req.minDuration) continue;
     const isPortrait = video.height >= video.width;
-    if (wantPortrait !== isPortrait && req.orientation !== 'square') continue;
-    const mp4s = video.video_files
-      .filter((f) => (f.file_type ?? '').includes('mp4') || f.link.includes('.mp4'))
-      .filter((f) => f.height <= 1920)
-      .sort((a, b) => b.height - a.height);
-    const file = mp4s[0] ?? video.video_files.sort((a, b) => b.height - a.height)[0];
-    if (file) return { video, file };
+    if (req.orientation !== 'square' && wantPortrait !== isPortrait) continue;
+    const file = bestFile(video);
+    if (file) out.push({ video, file });
   }
-  // Fallback: the top video regardless of orientation.
-  const video = videos[0]!;
-  const file = video.video_files.sort((a, b) => b.height - a.height)[0];
-  return file ? { video, file } : null;
+  return out;
 }
 
 /**
@@ -130,7 +138,10 @@ async function main(): Promise<void> {
     return i >= 0 ? argv[i + 1] : undefined;
   };
   if (!query) {
-    console.error('usage: PEXELS_API_KEY=… npx tsx src/cli/footage.ts "<search query>" --id <asset-id> [--orientation portrait|landscape|square] [--size large|medium|small] [--min-duration 4]');
+    console.error('usage: PEXELS_API_KEY=… npx tsx src/cli/footage.ts "<search query>" --id <asset-id>');
+    console.error('  browse:  --list [N]                 list top candidates (id, dims, dur, poster + preview URLs)');
+    console.error('  pick:    --index <n> | --video-id <id>   fetch a SPECIFIC candidate (not just the first)');
+    console.error('  opts:    [--orientation portrait|landscape|square] [--size large|medium|small] [--min-duration 4]');
     process.exit(1);
   }
   const rootDir = flag('--root') ?? process.cwd();
@@ -142,14 +153,20 @@ async function main(): Promise<void> {
     minDuration: Number(flag('--min-duration') ?? '3'),
   };
 
+  const wantList = argv.includes('--list');
+  const listN = Number(flag('--list') ?? '10') || 10;
+  const pickIndex = flag('--index') !== undefined ? Number(flag('--index')) : undefined;
+  const pickVideoId = flag('--video-id') !== undefined ? Number(flag('--video-id')) : undefined;
+
   const hash = footageHash(req);
   const videoDir = resolvePath(rootDir, 'public', 'video');
   mkdirSync(videoDir, { recursive: true });
   const mp4Path = resolvePath(videoDir, `${id}.mp4`);
   const uri = `asset://video/${id}.mp4`;
 
-  // 1. content-addressed cache (skip-if-exists → deterministic replay).
-  if (existsSync(mp4Path)) {
+  // Cache short-circuit ONLY for a plain fetch (no browse/pick — those must always hit the API so you
+  // can re-choose a different clip for the same id).
+  if (existsSync(mp4Path) && !wantList && pickIndex === undefined && pickVideoId === undefined) {
     console.log(`[footage] cached "${id}" (hash ${hash}) — reusing ${mp4Path}`);
     registerCatalog(rootDir, id, uri, req, hash, undefined);
     printUse(id);
@@ -162,12 +179,39 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  // 2. query Pexels + pick a clip.
-  const pick = await pickPexelsClip(req, apiKey);
-  if (!pick) {
+  const candidates = await rankedCandidates(req, apiKey);
+  if (candidates.length === 0) {
     console.error(`[footage] no Pexels video found for "${query}" (${req.orientation}, ≥${req.minDuration}s).`);
     process.exit(1);
   }
+
+  // --list: browse candidates (id, dims, duration, poster + mid preview URL) WITHOUT downloading, so you
+  // can eyeball options and pick a specific one. Preview URLs across the clip catch late-reveal subjects.
+  if (wantList) {
+    console.log(`[footage] ${candidates.length} candidates for "${query}" (${req.orientation}, ≥${req.minDuration}s) — pick with --index <n> or --video-id <id>:`);
+    candidates.slice(0, listN).forEach(({ video }, i) => {
+      const pics = video.video_pictures ?? [];
+      const mid = pics[Math.floor(pics.length / 2)]?.picture;
+      console.log(`  [${i}] id=${video.id}  ${video.width}x${video.height}  ${video.duration}s  by ${video.user.name}`);
+      console.log(`        poster: ${video.image ?? '(none)'}`);
+      if (mid) console.log(`        mid:    ${mid}`);
+      console.log(`        page:   ${video.url}`);
+    });
+    return;
+  }
+
+  // Selection: an explicit --video-id, else --index, else 0 (Pexels's top pick).
+  let pick: { video: PexelsVideo; file: PexelsVideoFile } | undefined;
+  if (pickVideoId !== undefined) {
+    pick = candidates.find((c) => c.video.id === pickVideoId);
+    if (!pick) { console.error(`[footage] video-id ${pickVideoId} not among candidates for "${query}" (try --list).`); process.exit(1); }
+  } else {
+    const idx = pickIndex ?? 0;
+    pick = candidates[idx];
+    if (!pick) { console.error(`[footage] --index ${idx} out of range (0..${candidates.length - 1}); try --list).`); process.exit(1); }
+  }
+  // Re-fetching a chosen clip for an id that already has a file: replace it.
+  if (existsSync(mp4Path)) rmSync(mp4Path, { force: true });
 
   // 3. download the clip ONCE into the content-addressed cache.
   const resp = await fetch(pick.file.link);
