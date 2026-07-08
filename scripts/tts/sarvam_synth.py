@@ -68,12 +68,14 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Sarvam Bulbul v3 TTS -> wav")
     ap.add_argument("--text", required=True)
     ap.add_argument("--out", required=True)
-    ap.add_argument("--speaker", default="aditya", help="young Hindi voices: aditya, dev, aayan, sunny, advait")
+    ap.add_argument("--speaker", default="shubh", help="v3 voices; young male: shubh, aditya, dev, aayan, sunny, advait")
     ap.add_argument("--lang", default="hi-IN")
     ap.add_argument("--model", default="bulbul:v3")
-    ap.add_argument("--pace", type=float, default=1.0)
-    ap.add_argument("--temperature", type=float, default=0.6)
-    ap.add_argument("--sample-rate", type=int, default=24000)
+    ap.add_argument("--pace", type=float, default=1.15)
+    # temperature 0.9 = expressive storytelling delivery (audition-picked over the flat 0.6 default).
+    ap.add_argument("--temperature", type=float, default=0.9)
+    # 48kHz full-band = richer/clearer than the 24kHz default (v3 supports up to 48000).
+    ap.add_argument("--sample-rate", type=int, default=48000)
     args = ap.parse_args()
 
     key = os.environ.get("SARVAM_API_KEY")

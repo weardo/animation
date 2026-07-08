@@ -272,9 +272,13 @@ function synthSarvam(req: NarrateRequest, wavPath: string, rootDir: string): boo
   const speaker = req.voice && req.voice !== 'default' ? req.voice : DEFAULT_VOICE.sarvam;
   // Bulbul v3 `pace` (0.5–2.0; >1 = FASTER). Read from the request (folded into the cache key by
   // synthNarration) so it stays in sync with the hash; falls back to the env / a slightly-fast default.
+  // v3 delivery params (folded into the cache key by synthNarration so a change re-synthesizes).
   const pace = String(req.style?.['pace'] ?? process.env['SARVAM_PACE'] ?? '1.15');
+  const temperature = String(req.style?.['temperature'] ?? process.env['SARVAM_TEMPERATURE'] ?? '0.9');
+  const sampleRate = String(req.style?.['sample_rate'] ?? process.env['SARVAM_SAMPLE_RATE'] ?? '48000');
   try {
-    execFileSync('python3', [script, '--text', req.text, '--out', wavPath, '--speaker', speaker, '--pace', pace], {
+    execFileSync('python3', [script, '--text', req.text, '--out', wavPath, '--speaker', speaker,
+      '--pace', pace, '--temperature', temperature, '--sample-rate', sampleRate], {
       stdio: 'pipe',
       env: { ...process.env },
     });
@@ -316,11 +320,16 @@ export function synthNarration(
   publicRelPrefix = 'audio',
 ): NarrateResult {
   mkdirSync(audioDir, { recursive: true });
-  // Fold the Sarvam pace into the request BEFORE hashing so a pace change re-synthesizes (it was an env
-  // var read after the hash → stale wavs). Now `style.pace` is part of the content address.
-  if (req.engine === 'sarvam' && (!req.style || req.style['pace'] === undefined)) {
-    const pace = Number(process.env['SARVAM_PACE'] ?? '1.15');
-    req = { ...req, style: { ...(req.style ?? {}), pace } };
+  // Fold the Sarvam v3 DELIVERY params into the request BEFORE hashing so any change re-synthesizes
+  // (they were read AFTER the hash → stale wavs; the pace bug taught this). pace/temperature/sample_rate
+  // are all part of the content address now. Channel defaults: pace 1.15 (slightly fast), temperature
+  // 0.9 (expressive storytelling — audition-picked over the flat 0.6), sample_rate 48000 (full-band).
+  if (req.engine === 'sarvam') {
+    const style = { ...(req.style ?? {}) };
+    if (style['pace'] === undefined) style['pace'] = Number(process.env['SARVAM_PACE'] ?? '1.15');
+    if (style['temperature'] === undefined) style['temperature'] = Number(process.env['SARVAM_TEMPERATURE'] ?? '0.9');
+    if (style['sample_rate'] === undefined) style['sample_rate'] = Number(process.env['SARVAM_SAMPLE_RATE'] ?? '48000');
+    req = { ...req, style };
   }
   const hash = narrateHash(req);
   const wavPath = resolvePath(audioDir, `${hash}.wav`);

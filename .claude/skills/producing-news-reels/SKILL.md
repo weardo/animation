@@ -38,9 +38,20 @@ Devanagari ONLY for the local engines, which mangle Latin script.)
 `indic-parler` Hindi speakers are **Rohit/Divya/Aman/Rani** — "Aditi" is BENGALI (made Hindi sound
 Bengali). Sarvam young voices: shubh/aditya/dev/aayan/sunny.
 
-**Pace:** Sarvam `pace` >1 = FASTER (1.15 is a good reel default). It's read via `SARVAM_PACE` env and
-folded into the narration cache key (`style.pace`) so a change re-synthesizes. **If you change pace and
-wavs don't re-synth, delete `assets/audio/*.wav`** (a cache-key omission bit this once).
+**v3 DELIVERY TUNING (the storytelling lever — set 2026-07-08 after an audition).** Bulbul v3 has NO
+emotion field; the expressiveness knobs are **speaker + `temperature` + `pace` + 48 kHz + punctuation**.
+Channel defaults are now `speaker=shubh, temperature=0.9, pace=1.15, sample_rate=48000` — the flat
+`temperature 0.6` / `24000` v3-defaults sounded lifeless; **0.9 + 48 kHz is a real, free delivery jump**
+on the SAME voice (verified by A/B audition, `voice-audition/`). All three (pace/temperature/sample_rate)
+are folded into the narration cache key (`style.*`) so a change auto-re-synthesizes; override per-render
+via `SARVAM_TEMPERATURE` / `SARVAM_PACE` / `SARVAM_SAMPLE_RATE` env. Temperature is capped in practice
+(~1.2 errors); 0.7 = steadier, 1.0 = more dramatic. **Bulbul v3 beats ElevenLabs/Cartesia for Indic in
+Sarvam's blind study — it IS the best Hinglish storyteller; don't switch engines, tune this one.**
+**PROSODY IS DRIVEN BY THE TEXT:** v3 runs an LLM text-analysis layer that infers emphasis/pauses/pacing
+from punctuation → write SHORT PUNCHY lines, `…` for suspense, `?` for the hook, not long flat sentences.
+To audition voices: loop `scripts/tts/sarvam_synth.py --speaker <name> --temperature <t> --sample-rate 48000`
+over the 43 v3 speakers (young male: shubh/aditya/dev/aayan/sunny/advait) on one line + montage them.
+**If you change pace/temp and wavs don't re-synth, delete `assets/audio/*.wav`** (cache-key omission bit this once).
 
 ## 2. TYPOGRAPHY — Devanagari needs a DUAL-SCRIPT heavy font
 
@@ -101,6 +112,13 @@ The `map` generator (core-dataviz) has a full toolkit, all authored as DATA, all
   close. **MUST be graded** to match the dark
   palette (footage-layer `effects`: `color_grade` darken+desaturate+warm + `blur` + `vignette` + a dark
   scrim rect for text) or it clashes. Keep it SPARSE (opening + close) so the maps stay the star.
+- **VERIFY EVERY FETCHED CLIP VISUALLY — extract a frame and LOOK before trusting it.** Pexels ranks by
+  loose relevance, so a query returns confidently-wrong footage: "fire"→fireworks, "military soldiers"→
+  NAPOLEONIC REENACTORS (white uniforms, muskets — absurd for a 2026 mobilization), "smoke"→flag footage.
+  Always `ffmpeg -i clip.mp4 -vf select=eq(n\,60) -frames:v 1 f.png` and read it. Use PRECISE, era/subject-
+  specific queries ("military tank armored vehicle convoy" not "military"; "offshore oil drilling rig
+  platform" not "oil"). For verified NEWS, honest illustrative b-roll (a real rig, a real coastline, real
+  hardware) beats a dramatic-but-wrong or fake-war clip — credibility is the channel.
 
 ## 6. NARRATIVE — a STORY with a VIRAL structure (biggest quality + growth lever)
 
@@ -108,6 +126,25 @@ A reel of disconnected fact-sentences feels cheap. Use **storytelling STAGES wit
 HOOK → SETUP → STAKES → TURN → ESCALATION → THE MOVE → THE COUNTER → INSIGHT → PAYOFF+LOOP. Pick ONE
 clear thesis; bridge beats ("लेकिन असली डर China को…" TURNS the viewer forward; "और भारत? …" sets up the
 India-vs-China rivalry — the emotional climax for this audience). **Keep every fact verifiable.**
+
+**⚠️ WRITE THE NARRATION AS ONE CONTINUOUS MONOLOGUE, THEN SPLIT IT INTO BEATS (the #1 narration bug).**
+The trap: authoring each beat's `say` line IN ISOLATION → you get 5 self-contained HEADLINES stitched
+together, not one person telling one story. It sounds incoherent even when each line is individually
+dramatic (user caught this: "they sound like individual headlines stitched together"). THE FIX — write
+the WHOLE script first as if speaking it in one breath, THEN cut it at the visual changes. **Beats are
+where the VISUAL changes, not where the SENTENCE resets.** Then every beat MUST connect to the previous:
+- **Pronoun/callback carry-over:** name a thing once, then refer back — "एक छोटा सा देश…" → next beat
+  "रातों-रात *यही* Guyana…" (not re-introducing "Guyana" cold). Don't restate; advance.
+- **Cause→effect chain:** "…11 अरब बैरल तेल।" → "*लेकिन इतनी दौलत ने* एक दुश्मन खड़ा कर दिया…" → each
+  beat is the CONSEQUENCE of the last, joined by लेकिन / क्योंकि / तो / देखते ही देखते / नतीजा.
+- **Zoom-out / stakes-raise connective:** "*अब ये लड़ाई सिर्फ दो देशों की नहीं थी* — पूरा नक्शा दांव पर था…".
+- **Quote the antagonist** for drama instead of narrating it flatly: "Venezuela बोला — ये हिस्सा है तो मेरा।"
+- **Closing device that lands on NOW + closes the hook loop:** "*और आज?* …ठीक बारूद के ढेर पर।" (echoes the
+  hook's flashpoint → the visual+verbal LOOP). Don't just stop on a fact.
+- **Conversational narrator POV**, like explaining to a friend ("सोचो…", "देखते ही देखते"), NOT a news ticker.
+- The on-screen TEXT stays punchy headlines (scannable on mute); the VO is the flowing STORY — different jobs.
+- **TEST before rendering:** read all `say` lines top-to-bottom as ONE paragraph. If it doesn't sound like
+  one continuous story a person is telling, it's still headlines — rewrite the connectors, not the facts.
 
 **The proven YouTube-Shorts patterns (India, 2026) — bake these in:**
 - **HOOK (0-3s) is make-or-break.** 70% retention at 3s ≈ 5× more viral. And **92% watch on MUTE** → the
@@ -150,6 +187,22 @@ India-vs-China rivalry — the emotional climax for this audience). **Keep every
 - **Verify the ARTIFACT, not the intent.** `out.mp4` is written ONLY on render *completion* — a hung or
   killed render silently leaves the OLD file. Always check `stat -c %y out.mp4` (mtime) + `ffprobe`
   duration on disk before claiming a change shipped.
+- **MONITOR via the render log — every render now writes `projects/<id>/media/render.log`** (truncated
+  per run): all stage lines (compile/narrate/sfx/music/vendor/done/errors) + fine-grained per-frame
+  video progress, wall-clock stamped. `tail -f projects/<id>/media/render.log` is the canonical way to
+  answer "is it rendering / where is it / did it stall?" — a frame count that stops advancing while the
+  process lives = a HANG at that exact frame (map it to the beat). The terminal shows throttled 5% steps;
+  the log is the full record. (This replaced ad-hoc scratchpad logging — it's always on, always there.)
+- **FOOTAGE HANG (root-caused 2026-07-08) — now auto-fixed at the source.** A HEAVY raw clip (a 33-39 MB
+  high-bitrate/4K Pexels download) makes Remotion's `<OffthreadVideo>` balloon the Rust compositor's RAM;
+  on a swap-pressured box the decode BLOCKS at **0% CPU** and the whole render hangs (looks identical to a
+  RAM thrash but isn't — 0% CPU = *blocked*, a thrash burns CPU). `factory:footage` now AUTO-TRANSCODES
+  every fetched clip to a light h264/yuv420p proxy (≤1920px bounding box, CRF 26, 2500k peak cap, muted,
+  ~2-6 MB) that replaces the served file — so a fresh fetch can never re-introduce the hang. Isolation
+  proof: footage-alone, GPU-alone, GPU+footage all render fine with light proxies; only the fat source
+  stalls. If you ever hand-place a video, downscale it the same way (`ffmpeg -vf "scale='min(iw,1920)'…"
+  -crf 26 -maxrate 2500k -pix_fmt yuv420p -an`). ffmpeg-missing → the proxy step warns + keeps the raw
+  file (never fails).
 - **Players cache previews.** VS Code's built-in player AND VLC show a stale cached copy after a
   re-render — close the tab/window and reopen, or use `mpv <file>` (reads fresh). This caused a whole
   false "audio is broken" investigation.
@@ -169,6 +222,27 @@ India-vs-China rivalry — the emotional climax for this audience). **Keep every
 - **Sourcing assets:** fonts → Google Fonts GitHub raw (OFL). Music → Incompetech direct (CC-BY). SFX →
   synthesize (deterministic) or have the user download a Pixabay/Mixkit pack. Gated HF models
   (AI4Bharat) need an HF token; large HF downloads WEDGE at ~768 MB → `HF_HUB_ENABLE_HF_TRANSFER=1`.
+
+## 9. UPLOAD-READY METADATA — author a `publish:` block in story.yaml
+
+Make each reel publish-ready from the story itself: a top-level **`publish:`** block compiles into
+`project.json` (the manifest) as pure metadata — it NEVER touches scene.json/frames, so it can't affect
+determinism. Fields (all optional, all default; `title` falls back to the story `title`):
+`title` (≤100) · `description` (full box text — hook + "Follow for…" + Sources + Credits + Disclaimer) ·
+`tags[]` · `hashtags[]` · `category` ("News & Politics") · `language`/`caption_language` ("hi-IN") ·
+`privacy` (private|unlisted|public) · `made_for_kids` · `playlist` · `license` · `thumbnail` · `credits`.
+So a finished reel ships with title/description/tags/language ready to paste into the YouTube upload
+form — no re-deriving. **Always fill the description with SOURCES + CREDITS (Pexels + music + map) + a
+DISCLAIMER** attributing any contested claim (e.g. a territorial dispute) as a stated position, not fact.
+(The `publish` block is validated by `PublishSchema` in `src/ir/story.ts`; it's carried to the manifest by
+`render.ts` on compile.)
+
+**AUTO-PUBLISH → `factory:publish <project>`** (extensible platform layer, `src/publish/`; YouTube today,
+Instagram/TikTok = future adapters). Reads the manifest's `publish` block + `out.mp4`. **DRY-RUN by
+default** (no upload) — pass `--yes` to upload; visibility defaults to **unlisted** (public is explicit).
+YouTube needs a one-time OAuth setup + `--auth` (see `docs/factory/PUBLISHING.md`). ⚠️ Google force-locks
+API uploads to private/unlisted until the OAuth app is verified — so the practical flow is upload-unlisted
+→ glance in Studio → click Publish. Quota ≈ 6 uploads/day free.
 
 ## The channel is production-DONE; the leap not yet built
 

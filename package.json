@@ -20,7 +20,8 @@
     "factory:fetch-library": "tsx src/cli/fetch-library.ts",
     "export:otio": "tsx src/cli/export-otio.ts",
     "compare": "node tools/perceptual-diff.mjs",
-    "studio": "remotion studio render-entry.tsx"
+    "studio": "remotion studio render-entry.tsx",
+    "factory:publish": "tsx src/cli/publish.ts"
   },
   "dependencies": {
     "@remotion/cli": "4.0.481",

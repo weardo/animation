@@ -850,6 +850,153 @@
           "cache_hash": "9262c6383f75",
           "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
         }
+      },
+      "jet": {
+        "id": "jet",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/jet.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/fighter-jets-in-blue-sky-12954782/ by Rachel Lustiva (https://www.pexels.com/@rachel-lustiva-264852677) [portrait]",
+          "prompt": "fighter jet military aircraft sky",
+          "size": "medium",
+          "cache_hash": "f2ba1edb138b",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "fire": {
+        "id": "fire",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/fire.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/vibrant-fireworks-display-exploding-at-night-34588518/ by Pavan Sai .D (https://www.pexels.com/@pavan0307) [portrait]",
+          "prompt": "explosion fire night dark",
+          "size": "medium",
+          "cache_hash": "8d3896613e7e",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "warjet": {
+        "id": "warjet",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/warjet.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/fighter-jets-in-blue-sky-12954782/ by Rachel Lustiva (https://www.pexels.com/@rachel-lustiva-264852677) [portrait]",
+          "prompt": "military fighter jet flying sky",
+          "size": "medium",
+          "cache_hash": "1816f2a07c66",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "smoke": {
+        "id": "smoke",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/smoke.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/urban-fire-and-smoke-over-city-skyline-37235369/ by Pixel Curator (https://www.pexels.com/@pixelcurator) [portrait]",
+          "prompt": "smoke rising war destruction city",
+          "size": "medium",
+          "cache_hash": "4fd69b68aff6",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "oilrig": {
+        "id": "oilrig",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/oilrig.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/industrial-platform-on-sea-11363492/ by Bahruz Z Gachayev (https://www.pexels.com/@bahruz-z-gachayev-163886632) [portrait]",
+          "prompt": "offshore oil drilling rig platform ocean",
+          "size": "medium",
+          "cache_hash": "c85beabaa740",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "military": {
+        "id": "military",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/military.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/a-military-vehicle-with-a-machine-gun-on-top-17502682/ by Matthias Groeneveld (https://www.pexels.com/@matthiasgroeneveld) [portrait]",
+          "prompt": "military tank armored vehicle convoy",
+          "size": "medium",
+          "cache_hash": "32a3657e105f",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "coastline": {
+        "id": "coastline",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/coastline.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/stunning-aerial-view-of-florida-s-natural-riverscape-34380687/ by Chris  The Island (https://www.pexels.com/@chris-the-island-3570397) [portrait]",
+          "prompt": "aerial view river delta tropical coast",
+          "size": "medium",
+          "cache_hash": "7736cd4f180b",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
       }
     }
   }

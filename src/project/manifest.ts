@@ -10,6 +10,7 @@
 // in scene.json, so renders stay deterministic.
 
 import { z } from 'zod';
+import { PublishSchema } from '../ir/story.js';
 
 export const ProjectManifestSchema = z
   .object({
@@ -39,6 +40,9 @@ export const ProjectManifestSchema = z
       .object({ video: z.string().optional(), thumbnail: z.string().optional() })
       .strict()
       .default({}),
+    /** UPLOAD-READY publish metadata (title/description/tags/language/…), resolved from the story's
+     *  `publish` block (+ defaults). Pure metadata; never a render input. See {@link PublishSchema}. */
+    publish: PublishSchema.optional(),
   })
   .strict();
 

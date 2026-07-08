@@ -51,3 +51,8 @@ style-ref/
 public/generated/
 projects/*/media/
 public/video/*.mp4
+client_secret*.json
+*oauth*client*.json
+youtube_client.json
+youtube_token.json
+voice-audition/

@@ -13,9 +13,11 @@
 // DETERMINISM: scene.json is the deterministic engine input; gl:'angle' (procedural scenes are SVG/
 // DOM-deterministic — NEVER software GL, which balloons Chromium CacheStorage and fills the disk).
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync, rmSync, createWriteStream } from 'node:fs';
+import type { WriteStream } from 'node:fs';
 import { resolve as resolvePath, dirname, basename } from 'node:path';
 import { cpus, freemem } from 'node:os';
+import { inspect } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
@@ -27,6 +29,7 @@ import objectHash from 'object-hash';
 import { runPipeline, lowerStory } from '../pipeline/index.js';
 import type { Frontend } from '../pipeline/index.js';
 import { parseStory } from '../pipeline/parse.js';
+import { PublishSchema } from '../ir/story.js';
 import { withLocalClips, isLocalClip } from '../pipeline/project-clips.js';
 import { Library } from '../library/index.js';
 import type { SceneIR, Format } from '../ir/index.js';
@@ -395,9 +398,44 @@ async function prepare(sceneIR: SceneIR, publicDir: string, alpha = false, gpu =
  * selects the codec/container/alpha (default h264 mp4). Remotion owns the encode (ADR-003: never
  * reimplement a primitive). x264-specific tuning (preset/crf) only applies to the h264 codecs.
  */
+// ── PERSISTENT RENDER LOG ─────────────────────────────────────────────────────────────────────────
+// Every render TEES its progress to `projects/<id>/media/render.log` (truncated per run), so a render
+// is ALWAYS monitorable/predictable — `tail -f projects/<id>/media/render.log` from anywhere, whether
+// the render runs in the foreground, background, or detached. All the CLI's stage lines (compile /
+// narrate / sfx / music / vendor / done / errors) are captured via a console tee; per-frame video
+// progress is written fine-grained (for live tailing + stall detection) directly to the stream. This
+// log is a SIDECAR diagnostic — NOT part of the deterministic output (golden rule 1 governs frame
+// content, a wall-clock-stamped text log alongside the mp4 is like console output, which already runs).
+let renderLog: WriteStream | undefined;
+const stamp = (): string => new Date().toISOString().slice(11, 19);
+
+/** Open (truncate) media/render.log + tee console.{log,warn,error} into it. Returns a restore/close fn. */
+function startRenderLog(mediaDir: string): () => void {
+  mkdirSync(mediaDir, { recursive: true });
+  renderLog = createWriteStream(resolvePath(mediaDir, 'render.log'), { flags: 'w' });
+  const orig = { log: console.log.bind(console), warn: console.warn.bind(console), error: console.error.bind(console) };
+  const fmt = (args: unknown[]): string => args.map((a) => (typeof a === 'string' ? a : inspect(a))).join(' ');
+  const tee = (level: string, base: (...a: unknown[]) => void) => (...a: unknown[]): void => {
+    renderLog?.write(`${stamp()} ${level}${fmt(a)}\n`);
+    base(...a);
+  };
+  console.log = tee('', orig.log);
+  console.warn = tee('WARN ', orig.warn);
+  console.error = tee('ERROR ', orig.error);
+  renderLog.write(`${stamp()} [render] === render started ===\n`);
+  return () => {
+    console.log = orig.log;
+    console.warn = orig.warn;
+    console.error = orig.error;
+    renderLog?.end();
+    renderLog = undefined;
+  };
+}
+
 async function renderScene(sceneIR: SceneIR, videoOut: string, publicDir: string, gpu: boolean, out: OutSpec): Promise<{ frames: number }> {
   const { serveUrl, composition, inputProps } = await prepare(sceneIR, publicDir, out.alpha, gpu);
   const isH264 = out.codec === 'h264' || out.codec === 'h265';
+  let progressPct = -1; // throttle terminal progress to 5% steps (render.log stays fine-grained)
   try {
     console.log(`[render] video ${composition.width}x${composition.height}@${composition.fps} (${composition.durationInFrames}f) [${gpu ? 'GPU/perceptual' : 'CPU/byte-exact'}] codec=${out.codec}${out.alpha ? ' +alpha' : ''} → ${videoOut}`);
     await renderMedia({
@@ -412,6 +450,17 @@ async function renderScene(sceneIR: SceneIR, videoOut: string, publicDir: string
       ...(out.proResProfile ? { proResProfile: out.proResProfile } : {}),
       concurrency: CONCURRENCY,
       chromiumOptions: chromiumOpts(gpu),
+      // PROGRESS: fine-grained → render.log (live tailing + stall detection), throttled → terminal.
+      // A frame count that stops advancing while the process lives = a HANG at that exact frame → beat.
+      onProgress: ({ renderedFrames, encodedFrames, stitchStage }) => {
+        const total = composition.durationInFrames || 1;
+        const pct = Math.floor((renderedFrames / total) * 100);
+        renderLog?.write(`${stamp()}   ${pct}% frame ${renderedFrames}/${total} encoded=${encodedFrames} ${stitchStage}\n`);
+        if (pct >= progressPct + 5) {
+          progressPct = pct;
+          process.stdout.write(`[render]   ${pct}%  (${renderedFrames}/${total} frames, ${encodedFrames} encoded, ${stitchStage})\n`);
+        }
+      },
       // CPU tier pins single-pass encode for byte-identical output; GPU tier is perceptual anyway, so
       // let the encoder parallelize for more speed. ALPHA MUST allow parallel encoding: Remotion's
       // pre-encode (disallowParallelEncoding) path drops the `-pix_fmt yuva420p`/`-auto-alt-ref 0`
@@ -472,6 +521,18 @@ function makeThumbnail(p: ProjectPaths, frame: number): void {
 async function main(): Promise<void> {
   const { target, id: idFlag, name, frames, gpu, format, out, audio, engine, voice, wpm, captions, captionMode, wordAlign, lipSync, music } = parseArgs(process.argv.slice(2));
 
+  // Start the persistent render log up front (before any stage runs) so EVERY line — compile through
+  // done, or a crash — is captured to projects/<id>/media/render.log. The id is resolved the same way
+  // the branches below do (existing project id, else --id, else the story basename).
+  const projId = projectExists(PROJECT_ROOT, target) ? target : (idFlag ?? basename(target).replace(/\.[^.]+$/, ''));
+  const closeRenderLog = startRenderLog(projectPaths(PROJECT_ROOT, projId).mediaDir);
+  try {
+    await runRender();
+  } finally {
+    closeRenderLog();
+  }
+
+  async function runRender(): Promise<void> {
   let paths: ProjectPaths;
   let sceneIR: SceneIR;
 
@@ -495,13 +556,15 @@ async function main(): Promise<void> {
     console.log(`[render] compiling '${target}' → project '${id}'`);
     sceneIR = runPipeline(storyPath, { rootDir: PROJECT_ROOT, frontend: libraryFrontend(library, format, dirname(storyPath)), cacheKeyExtra: format });
 
+    // Parse the story ONCE (pure) — reused by the audio passes below AND the manifest's publish block.
+    const story = parseStory(readFileSync(storyPath, 'utf8'));
+
     // M3 NARRATION (OFFLINE asset-gen; golden rule 2). When beats carry `say` and audio isn't disabled,
     // synthesize TTS into the project's self-contained assets/audio/ (content-addressed, cached) and
     // emit `audio[]` cues onto the timeline at each beat's scene start. The cached wav is the
     // deterministic artifact (golden rule 1), so the muxed video re-renders byte-identically. The wavs
     // are generated DIRECTLY into the render publicDir (assets/), so no extra vendor step is needed.
     if (audio) {
-      const story = parseStory(readFileSync(storyPath, 'utf8'));
       const assetsDir = resolvePath(paths.dir, 'assets');
       const hasSay = story.beats.some((b) => b.say?.trim());
       if (hasSay) {
@@ -561,6 +624,9 @@ async function main(): Promise<void> {
       deps: refs,
       assets,
       outputs: { video: `media/out.${out.kind === 'png-sequence' ? 'png-sequence' : out.ext}`, thumbnail: 'media/thumbnail.png' },
+      // UPLOAD-READY publish metadata: resolve the story's `publish` block (+ schema defaults) so
+      // project.json always carries fillable title/description/tags/language/… (title ← story title).
+      publish: PublishSchema.parse({ ...(story.publish ?? {}), title: story.publish?.title ?? story.title }),
     };
     writeManifest(paths, manifest);
     console.log(`[render] project written → projects/${id}/`);
@@ -594,6 +660,7 @@ async function main(): Promise<void> {
   // Thumbnail is extracted from the rendered file (ffmpeg reads any container).
   if (out.ext === 'mp4') makeThumbnail(paths, Math.min(30, Math.max(0, meta.frames - 1)));
   console.log(`[render] done → ${videoOut}`);
+  }
 }
 
 main().catch((err: unknown) => {

@@ -20,8 +20,9 @@
 //           [--orientation portrait] [--size medium] [--min-duration 4]
 // Then author it in a story:  { footage: tanker, as: broll, args: { z: 1, loop: true, muted: true, fit: cover } }
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, statSync, rmSync, renameSync } from 'node:fs';
 import { resolve as resolvePath } from 'node:path';
+import { execFileSync } from 'node:child_process';
 import objectHash from 'object-hash';
 
 const PEXELS_SEARCH = 'https://api.pexels.com/videos/search';
@@ -88,6 +89,39 @@ async function pickPexelsClip(
   return file ? { video, file } : null;
 }
 
+/**
+ * Downscale a downloaded clip in place to a LIGHT proxy so <OffthreadVideo> never RAM-balloons.
+ * Caps the bounding box at 1920px (keeps aspect; a 9:16 reel needs ≤1080x1920), re-encodes h264 at a
+ * modest CRF, forces yuv420p (broad decoder support), 30 fps, and strips audio (reel footage is muted).
+ * Deterministic single-shot ffmpeg on a fixed input → the cached proxy replays byte-identically. If the
+ * proxy would be LARGER than the source (already-light clip), keep the original. ffmpeg missing → skip.
+ */
+function transcodeToProxy(mp4Path: string, originalBytes: number): void {
+  const tmp = mp4Path.replace(/\.mp4$/, '.proxy.mp4');
+  try {
+    execFileSync('ffmpeg', [
+      '-y', '-loglevel', 'error', '-i', mp4Path,
+      // bounding-box cap 1920 (both orientations), even dims for yuv420p, no upscaling.
+      '-vf', "scale='min(iw,1920)':'min(ih,1920)':force_original_aspect_ratio=decrease:force_divisible_by=2,fps=30",
+      '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26',
+      '-maxrate', '2500k', '-bufsize', '5000k', // cap peak bitrate so motion-heavy clips stay light
+      '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', tmp,
+    ]);
+  } catch {
+    rmSync(tmp, { force: true });
+    console.warn('[footage]   proxy skipped (ffmpeg unavailable) — the raw clip may be heavy and can stall <OffthreadVideo> on a low-RAM box; install ffmpeg to auto-downscale.');
+    return;
+  }
+  const proxyBytes = statSync(tmp).size;
+  if (proxyBytes >= originalBytes) {
+    rmSync(tmp, { force: true }); // already light — the source is the better keep
+    console.log(`[footage]   proxy skipped — source already light (${(originalBytes / 1e6).toFixed(1)} MB)`);
+    return;
+  }
+  renameSync(tmp, mp4Path); // the proxy IS the served, content-addressed file now
+  console.log(`[footage]   → light proxy ${(originalBytes / 1e6).toFixed(1)} MB → ${(proxyBytes / 1e6).toFixed(1)} MB (OffthreadVideo-safe)`);
+}
+
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
   const query = argv.find((a) => !a.startsWith('-'));
@@ -141,6 +175,14 @@ async function main(): Promise<void> {
   const buf = Buffer.from(await resp.arrayBuffer());
   writeFileSync(mp4Path, buf);
   console.log(`[footage] downloaded "${id}" ${pick.file.width}x${pick.file.height} (${(buf.length / 1e6).toFixed(1)} MB) ← Pexels #${pick.video.id}`);
+
+  // 3b. TRANSCODE to a LIGHT PROXY (ROOT-CAUSE FIX for the render hang). Remotion's <OffthreadVideo>
+  // decodes footage frames on demand; a heavy source (a 39 MB high-bitrate clip) balloons the Rust
+  // compositor's RAM and, on a swap-pressured box, the decode BLOCKS at 0% CPU → the whole render hangs.
+  // A downscaled, modest-bitrate h264/yuv420p proxy (≈1-2 MB) decodes cheaply and renders reliably. The
+  // proxy REPLACES the served file in the content-addressed cache, so it's the deterministic record that
+  // the render replays. ffmpeg-absent → keep the original (never fail), just warn it may be heavy.
+  transcodeToProxy(mp4Path, buf.length);
 
   // 4. register the catalog entry.
   registerCatalog(rootDir, id, uri, req, hash, pick.video);

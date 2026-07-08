@@ -427,10 +427,54 @@ export const AudioTrackSchema = z
   .strict();
 export type AudioTrack = z.infer<typeof AudioTrackSchema>;
 
+/**
+ * Optional PUBLISH metadata — everything a platform (YouTube/Shorts) upload form asks for, authored
+ * ONCE in the story and carried into project.json so a reel is UPLOAD-READY. Pure metadata: it never
+ * enters scene.json / frames, so it cannot affect determinism (like the manifest timestamps). Every
+ * field defaults, so you override only what you want; `title` falls back to the story title at compile.
+ */
+export const PublishSchema = z
+  .object({
+    /** Video title (YouTube caps at 100 chars). Omitted → the story `title`. */
+    title: z.string().max(100).optional(),
+    /** Full description box text (links, sources, credits, CTA). */
+    description: z.string().default(''),
+    /** Keyword tags (YouTube "tags" field). */
+    tags: z.array(z.string()).default([]),
+    /** In-description/-title hashtags (without the leading #, e.g. "Geopolitics"). */
+    hashtags: z.array(z.string()).default([]),
+    /** YouTube category name, e.g. "News & Politics", "Education". */
+    category: z.string().default('News & Politics'),
+    /** Default spoken/audio language (BCP-47-ish: "hi", "hi-IN", "en"). */
+    language: z.string().default('hi'),
+    /** Caption/subtitle language if different from `language`. */
+    caption_language: z.string().optional(),
+    /** Upload visibility. */
+    privacy: z.enum(['private', 'unlisted', 'public']).default('private'),
+    /** COPPA "made for kids" flag. */
+    made_for_kids: z.boolean().default(false),
+    /** Target playlist name/id. */
+    playlist: z.string().optional(),
+    /** YouTube license. */
+    license: z.enum(['standard', 'creativeCommon']).default('standard'),
+    /** Relative path to a custom thumbnail; omitted → the auto-extracted frame. */
+    thumbnail: z.string().optional(),
+    /** Attribution line (music/footage/source credits). */
+    credits: z.string().optional(),
+  })
+  .strip();
+export type Publish = z.infer<typeof PublishSchema>;
+
 /** The Story IR root. */
 export const StoryIRSchema = z
   .object({
     title: z.string().min(1),
+    /**
+     * Optional PUBLISH metadata (upload-ready title/description/tags/language/…). Pure metadata carried
+     * into project.json; never a render input. See {@link PublishSchema}. Omitted → project.json still
+     * gets a defaulted publish block (title ← story title) so the fields are always present to fill in.
+     */
+    publish: PublishSchema.optional(),
     /**
      * Optional story-level MUSIC BED (A3): a looping track played under the whole video, auto-ducked
      * while narration speaks. A bare string (a built-in synth bed name / asset ref) or `{ ref, gain?,
