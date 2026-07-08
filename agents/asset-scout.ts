@@ -56,7 +56,14 @@ export async function resolveVisuals(story: StoryIR, aspect?: string): Promise<S
         }
         seen.set(query, id);
       }
-      if (id) kept.push({ ...item, footage: id });
+      if (id) {
+        // Overscan the background so camera pull-outs/pans never expose the frame edge (a full-frame
+        // clip at scale 1 reveals the atmosphere behind it when the camera zooms out or pans).
+        const a = { ...((item.args as Record<string, unknown>) ?? {}) };
+        if (typeof a['scale'] !== 'number') a['scale'] = 1.2;
+        if (a['fit'] === undefined) a['fit'] = 'cover';
+        kept.push({ ...item, footage: id, args: a });
+      }
       // else: drop the footage item → the beat renders text over the styled background
     }
     beat.show = kept;
