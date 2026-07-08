@@ -63,3 +63,5 @@ library/music/*.mp3
 .data/
 .playwright-mcp/
 studio-*.png
+final-*.png
+projects/gen-*/
