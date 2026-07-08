@@ -98,6 +98,34 @@ animates that transform, so there is ZERO new render logic and it stays determin
   contact-sheet footage/photo verification, चाइना-style phonetic spellings for TTS, beat-duration-fits-
   narration, the `publish:` block.
 
+## 5a. Stage-aware audio design (music + SFX + transitions follow the plot)
+
+A 5-min doc must NOT ride one flat music loop — the score, SFX, and transitions track the story arc. This
+is authored with EXISTING capability (no new engine code); v1 sources the beds + documents the model.
+
+- **Per-act music that evolves** — use the story-level layered **`audio[]` tracks** (each `{src, at,
+  duration, volume, fade_in, fade_out, loop}`) to place a DIFFERENT bed per act and **crossfade** at act
+  boundaries (fade_out of the outgoing overlapping fade_in of the incoming). Arc: **Act I** sparse/ambient
+  intro → **Act II** rising tension bed → **turn** a swell/impact → **Act III** climax bed → **resolution**
+  calmer outro. All auto-duck under narration (the music-duck path). Needs a handful of royalty-free beds
+  (calm-intro / tension-build / climax / resolution) vendored to the project `assets/audio/` (Incompetech
+  CC-BY direct-download, or user-supplied) — the built-in synth beds are too thin for a documentary.
+- **SFX mapped to STORY FUNCTIONS, not just events** — whoosh on scene changes; **riser** building into a
+  reveal or act-turn; **boom/impact** landing a key stat or the central turn; a low **drone/ticking** bed
+  under a tension passage; **ding/pop** on a marker/fact pop; a montage gets a rapid whip/click per cut.
+  "Every animation has a sound" scales to "every STORY BEAT has an audio gesture." Author via `beat.sfx[]`
+  / `show[].sfx` at frame offsets; extend the palette (`src/cli/sfx.ts`) with a `drone`/`tension` bed if
+  needed, or drop sourced wavs into `library/sfx/`.
+- **Transitions matched to the plot** — HARD CUTS inside a montage (urgency/ubiquity); short cross-dissolves
+  WITHIN an act (continuity); a longer **fade + a whoosh/impact** at ACT boundaries (a chapter break). Use
+  the existing `transition` per beat; reserve the biggest transition for the turn.
+- **Mix discipline** — music sits well under VO (duck ~0.3), SFX accent without masking narration; verify
+  the whole thing stays audible (mean ≫ −60 dB) and VO is never buried. A `post`-level loudness pass keeps
+  levels consistent across the 5 min.
+
+This section is a DESIGN/AUTHORING model + a small asset-sourcing task (the beds); the timeline mixing,
+ducking, layered `audio[]`, SFX, and transitions all already exist.
+
 ## 6. Data flow
 
 ```

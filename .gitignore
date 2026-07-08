@@ -56,3 +56,5 @@ client_secret*.json
 youtube_client.json
 youtube_token.json
 voice-audition/
+public/img/*.jpg
+public/img/*.png

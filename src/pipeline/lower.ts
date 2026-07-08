@@ -59,7 +59,7 @@ import { resolveScenePalette, paletteDiff, interpolatePalettes } from './color-s
 
 /** This pass's id + version — folded into cache keys / provenance (spec §5). */
 export const PASS_ID = 'lower';
-export const PASS_VERSION = '2.6';
+export const PASS_VERSION = '2.7'; // 2.7: Ken Burns sugar (kenburns → transform.scale keyframes)
 
 /**
  * The default render config: a 1920×1080, 30fps film. Generic — no domain assumptions. A scene's
@@ -369,13 +369,36 @@ function clipsForRig(handle: string, actions: ActionItem[], durationFrames: numb
 // --- generic per-show[] layer builders --------------------------------------------------------
 
 /**
+ * KEN BURNS → transform.scale keyframes. A slow zoom over the beat gives a still image documentary
+ * motion. String presets ("in"/"out"/"in-slow"/"out-slow") or an explicit `{ from, to }` (scale %).
+ * Non-linear `smooth` easing (never linear). Returns undefined when absent or the beat has no length.
+ */
+function buildKenBurns(kb: unknown, durationFrames: number): Transform['scale'] | undefined {
+  if (kb === undefined || kb === null || durationFrames <= 0) return undefined;
+  let from = 100;
+  let to = 112;
+  if (typeof kb === 'string') {
+    const p = kb.toLowerCase();
+    if (p === 'out' || p === 'zoom-out') { from = 112; to = 100; }
+    else if (p === 'in-slow') { from = 100; to = 107; }
+    else if (p === 'out-slow') { from = 107; to = 100; }
+    // "in"/"zoom-in"/anything else → the default 100→112
+  } else if (typeof kb === 'object') {
+    const o = kb as { from?: unknown; to?: unknown };
+    if (typeof o.from === 'number') from = o.from;
+    if (typeof o.to === 'number') to = o.to;
+  }
+  return { a: 1, k: [{ t: 0, s: from, e: 'smooth' }, { t: durationFrames, s: to, e: 'smooth' }] };
+}
+
+/**
  * A generic ASSET layer lowered from a `show[].asset` item. The item's `args` may set `z` (z-order),
  * `parallax` (2.5D depth factor; default 0 = static far), and a layout `at` anchor (placement). The
  * authored `asset` name becomes the layer `ref` (a `defs.assets` key); free-form `effects[]` pass
  * straight through. A background is just an asset declared with low z + a far parallax factor — no
  * special builder.
  */
-function buildAssetLayer(item: ShowItem, index: number): LoweredLayer {
+function buildAssetLayer(item: ShowItem, index: number, durationFrames = 0): LoweredLayer {
   const ref = item.asset!;
   const args = (item.args ?? {}) as Record<string, unknown>;
   const id = `L_asset_${item.as ?? `${refName(ref)}_${index}`}`;
@@ -394,6 +417,11 @@ function buildAssetLayer(item: ShowItem, index: number): LoweredLayer {
   if (scaleCh) transform.scale = scaleCh;
   if (rotationCh) transform.rotation = rotationCh;
   if (opacityCh) transform.opacity = opacityCh;
+  // KEN BURNS sugar (documentary): a slow scale ramp over the beat gives a STILL cinematic motion. Pure
+  // convenience → expands into the EXISTING transform.scale `{a,k}` keyframes (no new render code). An
+  // explicit `scale` always wins. See buildKenBurns.
+  const kb = buildKenBurns(args['kenburns'], durationFrames);
+  if (kb && !scaleCh) transform.scale = kb;
   const layer: AssetLayer = {
     type: 'asset',
     id,
@@ -876,7 +904,7 @@ function buildScene(
     } else if (item.footage !== undefined) {
       layer = buildFootageLayer(item, i);
     } else if (item.asset !== undefined) {
-      layer = buildAssetLayer(item, i);
+      layer = buildAssetLayer(item, i, durationFrames);
     }
     // Generic COMPOSITING (M2 §11): a per-layer blend mode + track matte/mask, authored on any item's
     // `args`, applied uniformly to whatever layer kind was built (composed in the compositor wrapper).
