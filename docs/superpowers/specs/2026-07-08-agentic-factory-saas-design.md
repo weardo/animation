@@ -173,7 +173,7 @@ docker compose up                    # → app on http://localhost:<port>
 
 ### 11.1 Web UI — the complete self-host front-end (`packages/web`)
 
-The UI is a **first-class, required deliverable**, not a thin form. A small SPA (Vite + React + Tailwind, framework TBD in §15) served by the local API; live progress over **SSE/WebSocket** from the job runner; the video plays in-browser via an `<video>` tag off the local outputs dir. Screens:
+The UI is a **first-class, required deliverable**, not a thin form. A small SPA (Vite + React + Tailwind — framework confirmed in §15) served by the local API; live progress over **SSE/WebSocket** from the job runner; the video plays in-browser via an `<video>` tag off the local outputs dir. Screens:
 
 1. **Create** — the entry point. A brief textarea + controls: **style** preset (kurzgesagt / plain), **aspect** (9:16 / 16:9 / 1:1), **target length**, **language**, **voice**, optional **reference/notes**. "Generate" enqueues a job. Sample briefs one-click to load.
 2. **Run / Progress** (the money screen) — a **live pipeline view**: the stages (Story → Assets → Map → Audio → Assemble → Render) as a progress rail, each showing the active **agent**, its tool calls, the **verify-gate** verdict (✓/✗) and **retries** (the self-correction made *visible*), streamed log lines, and — if the Langfuse profile is on — a deep-link to the full trace.
