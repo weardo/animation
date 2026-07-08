@@ -34,9 +34,14 @@ export async function resolveVisuals(story: StoryIR, aspect?: string): Promise<S
   let resolved = 0;
   let failed = 0;
 
+  // Camera moves that zoom out or pan expose the frame edge past a frame-filling clip → an ugly border.
+  // Push-in/hold never do (they only zoom IN). Downgrade the rest on any beat that has a footage bg.
+  const SAFE_ON_FOOTAGE = new Set(['slow_push_in', 'hold']);
+
   for (const beat of story.beats) {
     if (!beat.show) continue;
     const kept: NonNullable<typeof beat.show> = [];
+    let hasFootage = false;
     for (const item of beat.show) {
       const fv = typeof item.footage === 'string' ? item.footage : '';
       if (!fv.startsWith('q:')) {
@@ -57,16 +62,18 @@ export async function resolveVisuals(story: StoryIR, aspect?: string): Promise<S
         seen.set(query, id);
       }
       if (id) {
-        // Overscan the background so camera pull-outs/pans never expose the frame edge (a full-frame
-        // clip at scale 1 reveals the atmosphere behind it when the camera zooms out or pans).
         const a = { ...((item.args as Record<string, unknown>) ?? {}) };
-        if (typeof a['scale'] !== 'number') a['scale'] = 1.2;
         if (a['fit'] === undefined) a['fit'] = 'cover';
         kept.push({ ...item, footage: id, args: a });
+        hasFootage = true;
       }
       // else: drop the footage item → the beat renders text over the styled background
     }
     beat.show = kept;
+    // Force a safe camera on footage beats so the clip always covers the frame.
+    if (hasFootage && (typeof beat.camera !== 'string' || !SAFE_ON_FOOTAGE.has(beat.camera))) {
+      beat.camera = 'slow_push_in';
+    }
   }
   return { resolved, failed };
 }
