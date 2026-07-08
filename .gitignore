@@ -60,3 +60,6 @@ public/img/*.jpg
 public/img/*.png
 projects/*/assets/audio/*.mp3
 library/music/*.mp3
+.data/
+.playwright-mcp/
+studio-*.png

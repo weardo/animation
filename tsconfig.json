@@ -25,6 +25,8 @@
   },
   "include": [
     "src",
-    "mcp-server"
+    "mcp-server",
+    "agents",
+    "api"
   ]
 }

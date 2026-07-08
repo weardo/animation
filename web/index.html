@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Animation Factory — Studio</title>
+<style>
+  :root {
+    --bg: #0a0d14; --panel: #131824; --panel2: #1b2233; --line: #263149;
+    --text: #eef2fa; --muted: #8b97ad; --accent: #ffb020; --accent2: #2ee6a6; --danger: #ff5a52;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 20px 28px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 12px; }
+  header h1 { font-size: 18px; margin: 0; font-weight: 700; letter-spacing: .2px; }
+  header .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+  header .sub { color: var(--muted); font-size: 13px; margin-left: auto; }
+  main { max-width: 1080px; margin: 0 auto; padding: 28px; display: grid; grid-template-columns: 1fr; gap: 22px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+  .card h2 { margin: 0 0 16px; font-size: 15px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 0 0 6px; }
+  textarea, input, select { width: 100%; background: var(--panel2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 9px; padding: 11px 13px; font: inherit; }
+  textarea { min-height: 90px; resize: vertical; }
+  .row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 14px; }
+  .actions { margin-top: 18px; display: flex; gap: 12px; align-items: center; }
+  button { background: var(--accent); color: #1a1205; border: 0; border-radius: 10px; padding: 12px 22px;
+    font: inherit; font-weight: 700; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  button.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); font-weight: 500; }
+  .hint { color: var(--muted); font-size: 13px; }
+  .pill { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; padding: 4px 11px; border-radius: 999px; }
+  .pill.queued, .pill.writing_story { background: #2a2f1a; color: var(--accent); }
+  .pill.rendering { background: #10263a; color: #59b6ff; }
+  .pill.done { background: #102a20; color: var(--accent2); }
+  .pill.error { background: #2e1616; color: var(--danger); }
+  .stages { list-style: none; padding: 0; margin: 16px 0 0; }
+  .stages li { display: flex; gap: 10px; padding: 6px 0; color: var(--muted); font-size: 13.5px; }
+  .stages li b { color: var(--text); font-weight: 600; }
+  pre.log { background: #0c0f17; border: 1px solid var(--line); border-radius: 9px; padding: 12px; margin-top: 14px;
+    font: 12px/1.5 ui-monospace, Menlo, monospace; color: #9fb0cc; max-height: 160px; overflow: auto; white-space: pre-wrap; }
+  video { width: 100%; max-height: 70vh; border-radius: 12px; margin-top: 16px; background: #000; }
+  .jobs { list-style: none; padding: 0; margin: 0; }
+  .jobs li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); cursor: pointer; }
+  .jobs li:first-child { border-top: 0; }
+  .jobs li:hover { color: var(--accent); }
+  .jobs .t { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hidden { display: none; }
+  .spin { width: 14px; height: 14px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%;
+    display: inline-block; animation: s .8s linear infinite; }
+  @keyframes s { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<header>
+  <span class="dot"></span>
+  <h1>Animation Factory · Studio</h1>
+  <span class="sub">brief in → video out · self-hosted</span>
+</header>
+
+<main>
+  <section class="card" id="create">
+    <h2>Create a video</h2>
+    <label for="brief">What's the video about?</label>
+    <textarea id="brief" placeholder="e.g. Why the Strait of Hormuz matters to the world economy"></textarea>
+    <div class="row">
+      <div><label>Aspect</label>
+        <select id="aspect"><option value="9:16">9:16 vertical</option><option value="16:9">16:9 wide</option><option value="1:1">1:1 square</option></select></div>
+      <div><label>Style</label>
+        <select id="style"><option value="kurzgesagt">kurzgesagt</option><option value="plain">plain</option></select></div>
+      <div><label>Language</label><input id="language" value="English" /></div>
+      <div><label>Length (s)</label><input id="targetSeconds" type="number" value="40" min="15" max="120" /></div>
+    </div>
+    <div class="actions">
+      <button id="go">Generate video</button>
+      <span class="hint">An AI story architect writes it, then the factory renders it — a couple of minutes.</span>
+    </div>
+  </section>
+
+  <section class="card hidden" id="job">
+    <h2>Progress</h2>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="pill" id="status">queued</span>
+      <span id="title" style="font-weight:600"></span>
+    </div>
+    <ul class="stages" id="stages"></ul>
+    <pre class="log hidden" id="log"></pre>
+    <video id="video" class="hidden" controls></video>
+    <div class="actions" id="doneActions" style="display:none">
+      <button class="ghost" onclick="reset()">Make another</button>
+    </div>
+  </section>
+
+  <section class="card" id="recent">
+    <h2>Recent</h2>
+    <ul class="jobs" id="jobs"><li class="hint" style="cursor:default">Nothing yet — create your first video above.</li></ul>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let pollTimer = null;
+
+async function go() {
+  const brief = $('brief').value.trim();
+  if (!brief) { $('brief').focus(); return; }
+  $('go').disabled = true;
+  const res = await fetch('/api/jobs', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      brief, aspect: $('aspect').value, style: $('style').value,
+      language: $('language').value, targetSeconds: Number($('targetSeconds').value),
+    }),
+  });
+  const { id, error } = await res.json();
+  $('go').disabled = false;
+  if (error) { alert(error); return; }
+  watch(id);
+}
+
+function watch(id) {
+  $('job').classList.remove('hidden');
+  $('video').classList.add('hidden'); $('video').removeAttribute('src');
+  $('doneActions').style.display = 'none';
+  $('job').scrollIntoView({ behavior: 'smooth' });
+  clearInterval(pollTimer);
+  const tick = async () => {
+    const job = await (await fetch('/api/jobs/' + id)).json();
+    render(job, id);
+    if (job.status === 'done' || job.status === 'error') { clearInterval(pollTimer); loadJobs(); }
+  };
+  tick();
+  pollTimer = setInterval(tick, 2000);
+}
+
+function render(job, id) {
+  const s = $('status'); s.className = 'pill ' + job.status;
+  const spin = (job.status !== 'done' && job.status !== 'error') ? '<span class="spin"></span>' : '';
+  s.innerHTML = spin + job.status.replace('_', ' ');
+  $('title').textContent = job.title || '';
+  $('stages').innerHTML = (job.stages || []).map(
+    (st) => `<li><b>${new Date(st.at).toLocaleTimeString()}</b> ${st.name}${st.note ? ' — ' + st.note : ''}</li>`
+  ).join('');
+  const log = $('log');
+  if (job.log) { log.classList.remove('hidden'); log.textContent = job.log; log.scrollTop = log.scrollHeight; }
+  else log.classList.add('hidden');
+  if (job.status === 'done') {
+    const v = $('video'); v.src = '/api/jobs/' + id + '/video'; v.classList.remove('hidden');
+    $('doneActions').style.display = 'flex';
+  }
+  if (job.status === 'error') {
+    $('doneActions').style.display = 'flex';
+  }
+}
+
+function reset() {
+  $('job').classList.add('hidden'); $('brief').value = ''; $('brief').focus();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function loadJobs() {
+  const jobs = await (await fetch('/api/jobs')).json();
+  const ul = $('jobs');
+  if (!jobs.length) return;
+  ul.innerHTML = jobs.map((j) =>
+    `<li onclick="watch('${j.id}')"><span class="pill ${j.status}">${j.status.replace('_',' ')}</span><span class="t">${j.title || j.id}</span></li>`
+  ).join('');
+}
+
+$('go').addEventListener('click', go);
+loadJobs();
+</script>
+</body>
+</html>
