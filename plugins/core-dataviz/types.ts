@@ -300,6 +300,17 @@ export const MapParamsSchema = z
       })
       .optional(),
 
+    /**
+     * COUNTRY LABELS — name features on the map. A map of feature key (per `key_field`, e.g. the
+     * country `name`) → the label TEXT to show (lets you localize / pick which to name). Each label is
+     * placed at the feature's PROJECTED centroid. Domain-clean: which countries + what text are DATA.
+     */
+    labels: z.record(z.string()).optional(),
+    /** Label text color. */
+    label_color: z.string().default('#aebccf'),
+    /** Label font size (px). */
+    label_size: z.number().positive().default(26),
+
     /** GRATICULE — a subtle lat/lon grid for texture. Off by default. */
     graticule: z
       .object({

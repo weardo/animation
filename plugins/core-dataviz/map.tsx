@@ -291,6 +291,34 @@ export function renderMap(props: {
     return els;
   });
 
+  // --- COUNTRY LABELS: name features at their PROJECTED centroid (only those in `labels`) ---
+  const countryLabels = p.labels
+    ? fc.features.flatMap((f, i) => {
+        const key = featureKey(f, p.key_field);
+        const text = key !== undefined ? p.labels![key] : undefined;
+        if (!text) return [];
+        const c = path.centroid(f as unknown as GeoPermissibleObjects);
+        if (!c || !Number.isFinite(c[0]) || !Number.isFinite(c[1])) return [];
+        // skip labels whose centroid falls outside the frame (feature off-screen at this zoom)
+        if (c[0] < -40 || c[0] > ctx.width + 40 || c[1] < -40 || c[1] > ctx.height + 40) return [];
+        return [
+          <text
+            key={`lbl${i}`}
+            x={c[0]}
+            y={c[1]}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={p.label_size}
+            fontWeight={700}
+            fill={ctx.resolveColor(p.label_color, '#aebccf')}
+            style={{ paintOrder: 'stroke', stroke: '#0a0d14', strokeWidth: 3, strokeLinejoin: 'round', letterSpacing: '0.5px' }}
+          >
+            {text}
+          </text>,
+        ];
+      })
+    : [];
+
   // --- MARKERS: projected ports/cities — dot + optional ring + label, with a staggered pop-in ---
   const markers = p.markers.flatMap((m, i) => {
     const xy = projection(m.coord as [number, number]);
@@ -328,6 +356,7 @@ export function renderMap(props: {
       {graticule}
       {paths}
       {routes}
+      {countryLabels}
       {markers}
     </svg>
   );

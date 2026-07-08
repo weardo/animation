@@ -36,14 +36,19 @@ beats:
         args:
           projection: mercator
           fit: false
-          center: [72, 14]
-          scale: 250
-          fill: "#141c28"
-          no_data_fill: "#141c28"
-          stroke: "#243040"
+          center: [82, 13]
+          scale: 330
+          fill: "#223249"
+          no_data_fill: "#223249"
+          stroke: "#3a516c"
           stroke_width: 0.6
           ocean: "#0a1420"
           graticule: { step: 12, color: "#1a2636", opacity: 0.4, width: 0.6 }
+          labels:
+            India: India
+            China: China
+            Iran: Iran
+            "Saudi Arabia": Saudi Arabia
           draw_on: { duration: 22, easing: easeOut }
           draw_on_fill: true
       - text: "एक रास्ता। पूरी दुनिया।"
@@ -51,7 +56,7 @@ beats:
         at: center
         args: { z: 20, size: 92, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 12, intensity: 0.6 }, { kind: drop_shadow, dx: 0, dy: 5, blur: 18, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 22, distance: 80 } }
     camera: slow_push_in
-    duration: { seconds: 5.5 }
+    duration: { seconds: 4.9 }
 
   # ==================================================== B2 — SETUP (Hormuz) ==========================
   - id: setup
@@ -75,12 +80,17 @@ beats:
           center_to: [55, 26]
           scale_to: 1050
           fly: { delay: 30, duration: 80, easing: easeInOut }
-          fill: "#141c28"
-          no_data_fill: "#141c28"
-          stroke: "#243040"
+          fill: "#223249"
+          no_data_fill: "#223249"
+          stroke: "#3a516c"
           stroke_width: 0.8
           ocean: "#0a1420"
           graticule: { step: 8, color: "#1a2636", opacity: 0.4, width: 0.6 }
+          labels:
+            Iran: Iran
+            "Saudi Arabia": Saudi Arabia
+            "United Arab Emirates": UAE
+            Oman: Oman
           choropleth:
             Iran: "#ffb020"
             "Saudi Arabia": "#ffb020"
@@ -108,7 +118,7 @@ beats:
         at: bottom
         args: { z: 20, size: 56, weight: 800, color: "#ffb020", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 8, intensity: 0.6 } ], anim: { preset: fade, duration: 18 } }
     camera: hold
-    duration: { seconds: 8.5 }
+    duration: { seconds: 7.8 }
     transition: { kind: fade, duration: 16 }
 
   # ==================================================== B3 — STAKES ==================================
@@ -131,7 +141,7 @@ beats:
         at: bottom
         args: { z: 20, size: 84, weight: 800, color: "#ff6b4d", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ff4438", radius: 10, intensity: 0.6 }, { kind: drop_shadow, dx: 0, dy: 5, blur: 16, color: "#000000", opacity: 0.8 } ], anim: { preset: rise, duration: 20, distance: 70 } }
     camera: slow_push_in
-    duration: { seconds: 6 }
+    duration: { seconds: 4.4 }
     transition: { kind: fade, duration: 16 }
 
   # ==================================================== B4 — TURN (to China) =========================
@@ -149,14 +159,18 @@ beats:
         args:
           projection: mercator
           fit: false
-          center: [104, 20]
-          scale: 560
-          fill: "#141c28"
-          no_data_fill: "#141c28"
-          stroke: "#243040"
+          center: [107, 22]
+          scale: 740
+          fill: "#223249"
+          no_data_fill: "#223249"
+          stroke: "#3a516c"
           stroke_width: 0.8
           ocean: "#0a1420"
           graticule: { step: 8, color: "#1a2636", opacity: 0.4, width: 0.6 }
+          labels:
+            China: China
+            India: India
+            Japan: Japan
           choropleth:
             China: "#ff4438"
           draw_on: { duration: 20, easing: easeOut }
@@ -168,7 +182,7 @@ beats:
         at: top
         args: { z: 20, size: 78, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 20, distance: 70 } }
     camera: slow_push_in
-    duration: { seconds: 5.5 }
+    duration: { seconds: 3.6 }
     transition: { kind: fade, duration: 16 }
 
   # ==================================================== B5 — ESCALATION (Malacca) ====================
@@ -188,18 +202,23 @@ beats:
         args:
           projection: mercator
           fit: false
-          center: [90, 14]
-          scale: 300
-          fill: "#141c28"
-          no_data_fill: "#141c28"
-          stroke: "#243040"
+          center: [103, 10]
+          scale: 470
+          fill: "#223249"
+          no_data_fill: "#223249"
+          stroke: "#3a516c"
           stroke_width: 0.7
           ocean: "#0a1420"
           graticule: { step: 10, color: "#1a2636", opacity: 0.4, width: 0.6 }
+          labels:
+            China: China
+            India: India
+            Indonesia: Indonesia
+            Malaysia: Malaysia
           choropleth:
             China: "#ff4438"
           routes:
-            - coords: [[57, 26], [64, 21], [74, 9], [85, 5], [96, 3.5], [100.4, 2.8], [106, 8], [114, 18], [121, 31]]
+            - coords: [[80, 8], [90, 4.5], [97, 3.2], [100.4, 2.8], [106, 8], [114, 18], [121, 31]]
               color: "#ff6b4d"
               width: 5
               arc: true
@@ -220,7 +239,7 @@ beats:
         at: bottom
         args: { z: 20, size: 54, weight: 800, color: "#ff6b4d", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ff4438", radius: 8, intensity: 0.6 } ], anim: { preset: fade, duration: 18 } }
     camera: hold
-    duration: { seconds: 11 }
+    duration: { seconds: 9.4 }
     transition: { kind: fade, duration: 16 }
 
   # ==================================================== B6 — THE MOVE (China → Gwadar) ===============
@@ -240,14 +259,20 @@ beats:
         args:
           projection: mercator
           fit: false
-          center: [76, 30]
-          scale: 360
-          fill: "#141c28"
-          no_data_fill: "#141c28"
-          stroke: "#243040"
+          center: [72, 29]
+          scale: 500
+          fill: "#223249"
+          no_data_fill: "#223249"
+          stroke: "#3a516c"
           stroke_width: 0.8
           ocean: "#0a1420"
           graticule: { step: 8, color: "#1a2636", opacity: 0.4, width: 0.6 }
+          labels:
+            China: China
+            Pakistan: Pakistan
+            India: India
+            Iran: Iran
+            Afghanistan: Afghanistan
           choropleth:
             China: "#ff4438"
             Pakistan: "#3a2630"
@@ -274,7 +299,7 @@ beats:
         at: bottom
         args: { z: 20, size: 54, weight: 800, color: "#ff9f43", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ff9f43", radius: 8, intensity: 0.6 } ], anim: { preset: fade, duration: 18 } }
     camera: hold
-    duration: { seconds: 5.5 }
+    duration: { seconds: 4.7 }
     transition: { kind: fade, duration: 16 }
 
   # ==================================================== B7 — THE COUNTER (India → Chabahar) ==========
@@ -296,12 +321,16 @@ beats:
           fit: false
           center: [66, 24]
           scale: 700
-          fill: "#141c28"
-          no_data_fill: "#141c28"
-          stroke: "#243040"
+          fill: "#223249"
+          no_data_fill: "#223249"
+          stroke: "#3a516c"
           stroke_width: 0.8
           ocean: "#0a1420"
           graticule: { step: 8, color: "#1a2636", opacity: 0.4, width: 0.6 }
+          labels:
+            India: India
+            Iran: Iran
+            Pakistan: Pakistan
           choropleth:
             India: "#ffb020"
             Iran: "#2ee6a6"
@@ -328,7 +357,7 @@ beats:
         at: bottom
         args: { z: 20, size: 54, weight: 800, color: "#2ee6a6", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#2ee6a6", radius: 8, intensity: 0.6 } ], anim: { preset: fade, duration: 18 } }
     camera: hold
-    duration: { seconds: 5.5 }
+    duration: { seconds: 5.1 }
     transition: { kind: fade, duration: 16 }
 
   # ==================================================== B8 — INSIGHT (face-off) =======================
@@ -351,12 +380,15 @@ beats:
           fit: false
           center: [61.4, 25.6]
           scale: 2600
-          fill: "#141c28"
-          no_data_fill: "#141c28"
+          fill: "#223249"
+          no_data_fill: "#223249"
           stroke: "#2a3648"
           stroke_width: 1.0
           ocean: "#0a1420"
           graticule: { step: 3, color: "#1a2636", opacity: 0.45, width: 0.6 }
+          labels:
+            Iran: Iran
+            Pakistan: Pakistan
           choropleth:
             Iran: "#123a30"
             Pakistan: "#2e2028"
@@ -378,7 +410,7 @@ beats:
         at: top
         args: { z: 20, size: 76, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 20, distance: 60 } }
     camera: slow_push_in
-    duration: { seconds: 6.5 }
+    duration: { seconds: 6.2 }
     transition: { kind: fade, duration: 16 }
 
   # ==================================================== B9 — PAYOFF ===================================
@@ -396,7 +428,7 @@ beats:
         at: center
         args: { z: 10, size: 118, weight: 800, color: "#ffb020", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 20, intensity: 0.9 }, { kind: drop_shadow, dx: 0, dy: 6, blur: 20, color: "#000000", opacity: 0.7 } ], anim: { preset: rise, duration: 22, distance: 90 } }
     camera: slow_push_in
-    duration: { seconds: 6.5 }
+    duration: { seconds: 4.8 }
     transition: { kind: fade, duration: 16 }
 
   # ==================================================== B10 — CTA =====================================
@@ -414,5 +446,5 @@ beats:
         at: center
         args: { z: 10, size: 120, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ffb020", radius: 16, intensity: 0.8 }, { kind: drop_shadow, dx: 0, dy: 6, blur: 20, color: "#000000", opacity: 0.7 } ], anim: { preset: rise, duration: 20, distance: 80 } }
     camera: hold
-    duration: { seconds: 4 }
+    duration: { seconds: 3.6 }
     transition: { kind: fade, duration: 16 }
