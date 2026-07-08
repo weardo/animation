@@ -74,7 +74,15 @@ The `map` generator (core-dataviz) has a full toolkit, all authored as DATA, all
 - **fly-to** — `center_to`, `scale_to`, `fly: { duration, easing }` — pan/zoom across the map in a beat.
 - **texture** — `graticule: {step,color,opacity}` (lat/lon grid) + `ocean: "#..."` (filled sea).
 - **region zoom** — `fit: false` + `projection: mercator` + `center: [lon,lat]` + `scale: N` (higher =
-  tighter). NOTE: the preset defaults `fit: true` — you MUST set `fit: false` to use center/scale.
+  tighter). NOTE: the preset defaults `fit: true` — you MUST set `fit: false` to use center/scale. **Zoom
+  TIGHT to the relevant region** — a broad map (whole hemisphere) reads as unfocused; frame just the
+  countries the beat is about (e.g. SE Asia + China for a Malacca beat, not Africa-to-Australia).
+- **`labels`** — `{ "China": "China", "India": "India", … }` (feature name → text) names countries at
+  their projected centroid. **Name the relevant countries on every map beat** — an unlabeled map is
+  disorienting. English names read naturally in Hinglish and help the algorithm.
+- **Legible land:** non-highlighted land must be LIGHT enough to read against the dark ocean — use
+  `fill`/`no_data_fill` ≈ `#223249` + `stroke` ≈ `#3a516c` (NOT `#141c28`, which vanishes into the sea).
+  Highlighted countries still pop via their vivid choropleth fill.
 
 ## 5. CINEMATIC-DARK look (Johnny Harris)
 
@@ -85,9 +93,12 @@ The `map` generator (core-dataviz) has a full toolkit, all authored as DATA, all
   misbehaved — a green-filled glow rendered amber and washed the frame). Vignette + map glow effects
   are enough.
 - **Type:** huge Mukta ExtraBold, `drop_shadow` for legibility over maps, subtle `glow` on accent text.
-- **Footage B-roll (optional):** `factory:footage` fetches free stock clips from Pexels (`PEXELS_API_KEY`,
-  free, commercial-safe) → content-addressed cache → `footage: <id>` in a story. Great for a cinematic
-  opening (a tanker/ocean shot under the hook) or the loop close. **MUST be graded** to match the dark
+- **Footage over emojis/flat beats.** WHERE YOU'RE NOT ANIMATING (a "prices skyrocket" / "meanwhile" /
+  establishing beat), use REAL graded footage, NOT an emoji (⛔🔥) or a bare word on a color — emojis read
+  as "template", footage reads as "production". `factory:footage` fetches free stock clips from Pexels
+  (`PEXELS_API_KEY`, free, commercial-safe) → content-addressed cache → `footage: <id>` in a story. Great
+  for a cinematic opening (a tanker/ocean shot under the hook), a fuel-station "prices" beat, or the loop
+  close. **MUST be graded** to match the dark
   palette (footage-layer `effects`: `color_grade` darken+desaturate+warm + `blur` + `vignette` + a dark
   scrim rect for text) or it clashes. Keep it SPARSE (opening + close) so the maps stay the star.
 
@@ -144,9 +155,14 @@ India-vs-China rivalry — the emotional climax for this audience). **Keep every
   false "audio is broken" investigation.
 - **VLC "can't play any video" on this box** = VLC 3.0 hardware-decode (Intel VA-API) broken vs the
   bleeding-edge ffmpeg 8. Fix (already applied): `avcodec-hw=none` in `~/.config/vlc/vlcrc`.
-- **GPU render is fine for reels.** `--gpu` (Iris Xe / `gl:'angle'`, `[GPU/perceptual]`) renders the
-  blur-heavy scenes fast without crashing. Non-deterministic, but irrelevant for upload-once content.
-  CPU (`RENDER_CONCURRENCY=2`) is the reliable fallback; on this box free RAM gates concurrency.
+- **RENDER PERFORMANCE (a reel is ~3-5 min, not 10).** GPU (Iris Xe / `gl:'angle'`, `[GPU/perceptual]`)
+  is now the DEFAULT — no flag needed; `--no-gpu` forces the CPU byte-exact path (only the determinism/
+  golden gate needs it — the GPU tier is verified with VMAF, not cmp). The real speed lever is
+  WORKERS vs RAM: each headless-Chrome render worker balloons, and too many on a low-free-RAM box THRASH
+  swap (that was the ~7-min render — 14 workers on 1.7 GB free). Concurrency now auto-caps (reserve 4 GB
+  + 2 GB/worker + hard-cap 6); `RENDER_CONCURRENCY=N` overrides. **Don't `rm -rf .cache` for a story-ONLY
+  edit** — it forces a needless recompile; clear it only after a plugin/library/pass change. Narration/
+  SFX/music are cached (instant on re-render). A hung render leaves the OLD file — check mtime+duration.
 - **Clean stale audio assets.** `assets/audio/` accumulates a hashed wav per script version — after big
   rewrites, `find assets/audio -name '*.wav' -delete` (keep the vendored music) + `rm -rf .cache`, then
   re-render, so no orphaned/old audio lingers.
