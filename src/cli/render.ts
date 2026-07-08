@@ -284,6 +284,13 @@ function vendorAssets(sceneIR: SceneIR, paths: ProjectPaths): string[] {
     const rel = uri.replace(/^asset:\/\//, '').split('#')[0] ?? '';
     if (rel) copy(resolvePath(PROJECT_ROOT, 'public', rel), rel);
   }
+  // 1b. RUNTIME fonts the compositor references in CODE, not in the scene data — CaptionTrack.tsx loads
+  // the caption font stack ("Noto Sans Devanagari", "DejaVu Sans") directly, so it isn't caught by the
+  // scene-URI scan above. Vendor them UNCONDITIONALLY (captions are on by default) so a fresh project
+  // never 404s the caption font. Keep this list in sync with CaptionTrack's CAPTION_FONT stack.
+  for (const rel of ['fonts/NotoSansDevanagari.ttf', 'fonts/DejaVuSans.ttf']) {
+    copy(resolvePath(PROJECT_ROOT, 'public', rel), rel);
+  }
   // 2. Rig source material, vendored for a self-contained bundle. Keyed on the rig URI SCHEME (a
   // generic data convention), NOT on any provider plugin name — core names no provider (ADR-007):
   //   • proc://<id>      — an inlined-spec entry: vendor its co-located <id>.spec.json + preview.

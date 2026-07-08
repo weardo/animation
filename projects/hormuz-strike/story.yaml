@@ -1,0 +1,213 @@
+# hormuz-strike — BREAKING geopolitics reel: U.S. strikes Iran after Strait-of-Hormuz tanker attacks
+# (2026-07-07/08, corroborated: Washington Post, AP, Al Jazeera, TWZ, CBC, The Hindu, ToI). A direct
+# sequel to the hormuz-reel explainer — the chokepoint we explained is now a flashpoint. Reuses the
+# factory infra: Sarvam Hinglish VO, world-in (OFFICIAL India) map, Mukta font, Pexels footage, music/SFX.
+#
+# VERIFICATION / RESPONSIBILITY: only corroborated facts. WHO attacked the tankers / "violated the truce"
+# is the U.S.'s STATED reason → ATTRIBUTED ("अमेरिका का कहना है"), never asserted as established fact.
+# Facts stated plainly: U.S. "powerful strikes" on Iran; 3 tankers hit in the strait; targets Bandar
+# Abbas/Qeshm/Sirik; oil jumped; the June truce is at risk.
+title: "Hormuz Strike — Breaking Reel"
+style: plain
+format:
+  aspect: "9:16"
+  fps: 30
+
+post:
+  - { kind: color_grade, brightness: 1.0, contrast: 1.18, saturate: 1.15 }
+  - { kind: vignette, amount: 0.6, softness: 0.5 }
+  - { kind: grain, amount: 0.055, size: 0.9, seed: 7 }
+
+music: { ref: "audio/tension.mp3", gain: 0.6, duck: 0.32, fade: 16 }
+
+cast: {}
+
+beats:
+  # ==================================================== B1 — HOOK (breaking) =========================
+  - id: hook
+    say: "जिस Strait of Hormuz से दुनिया का तेल बहता है, वहाँ अमेरिका ने Iran पर बम गिरा दिए।"
+    sfx:
+      - { name: boom, at: 3 }
+      - { name: whoosh, at: 10 }
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - footage: tanker
+        as: broll
+        args:
+          z: 1
+          loop: true
+          muted: true
+          fit: cover
+          effects:
+            - { kind: color_grade, brightness: 0.42, contrast: 1.16, saturate: 0.55, hue: 4 }
+            - { kind: blur, radius: 1 }
+            - { kind: vignette, amount: 0.5, softness: 0.6 }
+      - shape: rect
+        as: scrim
+        args: { z: 2, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#180606" }, opacity: 0.5 }
+      # first-frame text hook (fast fade — 92% watch on mute). "?" hedges the claim + is a curiosity hook.
+      - text: "होर्मुज़ में जंग?"
+        as: hooktext
+        at: center
+        args: { z: 20, size: 108, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ff4438", radius: 16, intensity: 0.8 }, { kind: drop_shadow, dx: 0, dy: 6, blur: 20, color: "#000000", opacity: 0.85 } ], anim: { preset: fade, duration: 5 } }
+    camera: slow_push_in
+    duration: { seconds: 5.7 }
+
+  # ==================================================== B2 — SETUP (the trigger) =====================
+  - id: setup
+    say: "शुरुआत हुई तीन tankers पर हमले से, ठीक Strait of Hormuz के अंदर।"
+    sfx:
+      - { name: whoosh, at: 2 }
+      - { name: pop, at: 4 }
+      - { name: ding, at: 30 }
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - generator: world-in
+        as: world
+        args:
+          projection: mercator
+          fit: false
+          center: [54.5, 26]
+          scale: 1000
+          fill: "#223249"
+          no_data_fill: "#223249"
+          stroke: "#3a516c"
+          stroke_width: 0.8
+          ocean: "#0a1420"
+          graticule: { step: 5, color: "#1a2636", opacity: 0.4, width: 0.6 }
+          labels:
+            Iran: Iran
+            "Saudi Arabia": Saudi Arabia
+            "United Arab Emirates": UAE
+            Oman: Oman
+          markers:
+            - { coord: [56.4, 26.5], label: "3 tankers hit", color: "#ffd34d", radius: 12, label_size: 38 }
+          markers_pop: { delay: 24, duration: 18 }
+      - text: "Strait of Hormuz"
+        as: title
+        at: top
+        args: { z: 20, size: 72, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", tracking: 2, effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 18, distance: 50 } }
+    camera: slow_push_in
+    duration: { seconds: 4.5 }
+    transition: { kind: fade, duration: 16 }
+
+  # ==================================================== B3 — STRIKES (attributed + response) ==========
+  - id: strikes
+    say: "अमेरिका का कहना है, ये Iran ने किया और truce तोड़ी। जवाब में, Bandar Abbas, Qeshm और Sirik पर powerful strikes।"
+    sfx:
+      - { name: whoosh, at: 2 }
+      - { name: boom, at: 34 }
+      - { name: boom, at: 44 }
+      - { name: boom, at: 54 }
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      # tight Hormuz zoom — Iran highlighted (the target), the three strike sites marked
+      - generator: world-in
+        as: world
+        args:
+          projection: mercator
+          fit: false
+          center: [56.4, 27.1]
+          scale: 2100
+          key_field: name
+          fill: "#223249"
+          no_data_fill: "#223249"
+          stroke: "#3a516c"
+          stroke_width: 1.0
+          ocean: "#0a1420"
+          graticule: { step: 2, color: "#1a2636", opacity: 0.45, width: 0.6 }
+          choropleth:
+            Iran: "#ff4438"
+          labels:
+            Iran: Iran
+            Oman: Oman
+            "United Arab Emirates": UAE
+          markers:
+            - { coord: [56.28, 27.19], label: "Bandar Abbas", color: "#ff9f43", radius: 12, label_size: 34, label_dy: -26 }
+            - { coord: [55.9, 26.95], label: "Qeshm", color: "#ff9f43", radius: 10, label_size: 30, label_dy: -22 }
+            - { coord: [57.1, 26.5], label: "Sirik", color: "#ff9f43", radius: 10, label_size: 30, label_dy: 40 }
+          markers_pop: { delay: 30, duration: 22, stagger: 10 }
+          effects:
+            - { kind: glow, color: "#ff4438", radius: 8, intensity: 0.5 }
+      - text: "US का जवाबी हमला"
+        as: title
+        at: top
+        args: { z: 20, size: 74, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 18, distance: 50 } }
+    camera: slow_push_in
+    duration: { seconds: 6.8 }
+    transition: { kind: fade, duration: 16 }
+
+  # ==================================================== B4 — STAKES (oil + the world) ================
+  - id: stakes
+    say: "नतीजा? Oil के दाम उछल गए। और याद रखो, दुनिया का बीस परसेंट तेल इसी एक रास्ते से गुज़रता है।"
+    sfx:
+      - { name: whoosh, at: 2 }
+      - { name: riser, at: 20 }
+      - { name: pop, at: 44 }
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - footage: fuel
+        as: broll
+        args:
+          z: 1
+          loop: true
+          muted: true
+          fit: cover
+          effects:
+            - { kind: color_grade, brightness: 0.5, contrast: 1.16, saturate: 0.7, hue: -8 }
+            - { kind: blur, radius: 1 }
+            - { kind: vignette, amount: 0.5, softness: 0.6 }
+      - shape: rect
+        as: scrim
+        args: { z: 2, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#1a0808" }, opacity: 0.5 }
+      - text: "OIL ↑"
+        as: big
+        at: top
+        args: { z: 20, size: 120, weight: 800, color: "#ff6b4d", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ff4438", radius: 14, intensity: 0.8 }, { kind: drop_shadow, dx: 0, dy: 5, blur: 18, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 14, distance: 50 } }
+      - text: "20% वैश्विक तेल"
+        as: sub
+        at: bottom
+        args: { z: 20, size: 56, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 4, blur: 14, color: "#000000", opacity: 0.85 } ], anim: { preset: fade, duration: 14 } }
+    camera: slow_push_in
+    duration: { seconds: 6.2 }
+    transition: { kind: fade, duration: 16 }
+
+  # ============================== B5 — PAYOFF + LOOP (callbacks the hook) =============================
+  - id: payoff
+    say: "दुनिया की सबसे अहम समंदरी गली, अब बारूद के ढेर पर बैठी है।"
+    sfx:
+      - { name: whoosh, at: 2 }
+      - { name: boom, at: 9 }
+    show:
+      - shape: rect
+        as: bg
+        args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
+      - footage: tanker
+        as: broll
+        args:
+          z: 1
+          loop: true
+          muted: true
+          fit: cover
+          effects:
+            - { kind: color_grade, brightness: 0.42, contrast: 1.16, saturate: 0.55, hue: 4 }
+            - { kind: blur, radius: 1 }
+            - { kind: vignette, amount: 0.5, softness: 0.6 }
+      - shape: rect
+        as: scrim
+        args: { z: 2, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#180606" }, opacity: 0.5 }
+      # LOOP: same visual + same text as the hook → the reel feels like it's about to start over
+      - text: "होर्मुज़ में जंग?"
+        as: loop
+        at: center
+        args: { z: 20, size: 108, weight: 800, color: "#f5f7fa", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ff4438", radius: 16, intensity: 0.8 }, { kind: drop_shadow, dx: 0, dy: 6, blur: 20, color: "#000000", opacity: 0.85 } ], anim: { preset: fade, duration: 10 } }
+    camera: slow_push_in
+    duration: { seconds: 4.1 }
