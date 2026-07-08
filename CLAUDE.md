@@ -38,6 +38,7 @@ A code-driven, Kurzgesagt-style 2.5D animation pipeline: **a story script in →
 
 - **New capability** → `superpowers:brainstorming` → spec → `writing-plans` or a `Workflow`. Don't implement before design is approved.
 - **Build/author/organize a SCENE or project** (compose objects, place + animate them, the file roles, the two reuse levels, the four separated concerns, the flat-shape look) → `.claude/skills/building-scenes`. **Read this before creating or editing a project's content.**
+- **Produce a news / geopolitics EXPLAINER REEL** (Indian-language/Hinglish 9:16 short: native voiceover, animated maps with routes/markers/fly-to, cinematic-dark look, music + SFX, coherent narrative) → `.claude/skills/producing-news-reels`. Covers the voice engine (Sarvam Bulbul), Devanagari/Mukta typography, the OFFICIAL Government-of-India map (`world-in`, legally required), the map toolkit, story STRUCTURE, the audio-design layer, and the stale-artifact gotchas.
 - **Add a generator** → `.claude/skills/add-generator`.
 - **Publish/share a reusable unit to the library** (opt-in, cross-project) → `.claude/skills/new-library-entry`.
 - **Before claiming a render works** → `.claude/skills/verify-render`.

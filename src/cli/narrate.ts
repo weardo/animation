@@ -270,8 +270,11 @@ function synthSarvam(req: NarrateRequest, wavPath: string, rootDir: string): boo
   const script = resolvePath(rootDir, 'scripts/tts/sarvam_synth.py');
   if (!existsSync(script)) return false;
   const speaker = req.voice && req.voice !== 'default' ? req.voice : DEFAULT_VOICE.sarvam;
+  // Bulbul v3 `pace` (0.5–2.0; >1 = FASTER). Read from the request (folded into the cache key by
+  // synthNarration) so it stays in sync with the hash; falls back to the env / a slightly-fast default.
+  const pace = String(req.style?.['pace'] ?? process.env['SARVAM_PACE'] ?? '1.15');
   try {
-    execFileSync('python3', [script, '--text', req.text, '--out', wavPath, '--speaker', speaker], {
+    execFileSync('python3', [script, '--text', req.text, '--out', wavPath, '--speaker', speaker, '--pace', pace], {
       stdio: 'pipe',
       env: { ...process.env },
     });
@@ -313,6 +316,12 @@ export function synthNarration(
   publicRelPrefix = 'audio',
 ): NarrateResult {
   mkdirSync(audioDir, { recursive: true });
+  // Fold the Sarvam pace into the request BEFORE hashing so a pace change re-synthesizes (it was an env
+  // var read after the hash → stale wavs). Now `style.pace` is part of the content address.
+  if (req.engine === 'sarvam' && (!req.style || req.style['pace'] === undefined)) {
+    const pace = Number(process.env['SARVAM_PACE'] ?? '1.15');
+    req = { ...req, style: { ...(req.style ?? {}), pace } };
+  }
   const hash = narrateHash(req);
   const wavPath = resolvePath(audioDir, `${hash}.wav`);
   const publicRel = `${publicRelPrefix}/${hash}.wav`;
