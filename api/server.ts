@@ -6,7 +6,10 @@ import { resolve } from 'node:path';
 import express, { type Request, type Response } from 'express';
 
 import { PROJECT_ROOT } from '../agents/claude.js';
+import { loadDotenv } from './env.js';
 import { createJob, getJob, listJobs, renderLogTail, type Job } from './jobs.js';
+
+loadDotenv(); // pull .env (SARVAM_API_KEY, …) into process.env before any job spawns a render
 
 const app = express();
 app.use(express.json());
@@ -59,6 +62,7 @@ app.get('/api/jobs/:id/video', (req: Request, res: Response) => {
 });
 
 const PORT = Number(process.env['PORT'] ?? 5055);
-app.listen(PORT, () => {
+// Bind to loopback ONLY — this is a single-user local app with no auth; never expose it on 0.0.0.0.
+app.listen(PORT, '127.0.0.1', () => {
   process.stdout.write(`[studio] Animation Factory — http://localhost:${PORT}\n`);
 });

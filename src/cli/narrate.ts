@@ -52,6 +52,12 @@ export interface NarrateRequest {
    * so a param change re-synthesizes; engines that don't use a given key ignore it.
    */
   style?: Record<string, number>;
+  /**
+   * Optional BCP-47 language/locale for engines that take one (Sarvam Bulbul `target_language_code`,
+   * e.g. "en-IN" for English, "hi-IN" for Hindi/Hinglish). Folded into the cache key ONLY when set, so
+   * existing (lang-less) caches for other engines are unaffected. Omitted → the engine's own default.
+   */
+  lang?: string;
 }
 
 /** Where a synthesized clip lives + how the renderer references it. */
@@ -75,7 +81,7 @@ export interface NarrateResult {
  * is missing or it errors we fall back to espeak-ng (never fail the build). Each engine has a sensible
  * default voice and a calm narration pace.
  */
-export const DEFAULT_ENGINE: NarrateEngine = 'chatterbox';
+export const DEFAULT_ENGINE: NarrateEngine = 'sarvam';
 export const DEFAULT_VOICE: Record<NarrateEngine, string> = {
   'espeak-ng': 'en',
   coqui: 'Ana Florence',
@@ -149,6 +155,8 @@ export function narrateHash(req: NarrateRequest): string {
     wpm: req.wpm,
     tone: req.tone ?? null,
     style: req.style ?? null,
+    // Only fold lang in when set → lang-less caches (other engines) keep their existing hashes.
+    ...(req.lang ? { lang: req.lang } : {}),
   }).slice(0, 16);
 }
 
@@ -276,9 +284,11 @@ function synthSarvam(req: NarrateRequest, wavPath: string, rootDir: string): boo
   const pace = String(req.style?.['pace'] ?? process.env['SARVAM_PACE'] ?? '1.15');
   const temperature = String(req.style?.['temperature'] ?? process.env['SARVAM_TEMPERATURE'] ?? '0.9');
   const sampleRate = String(req.style?.['sample_rate'] ?? process.env['SARVAM_SAMPLE_RATE'] ?? '48000');
+  // Bulbul v3 target language: en-IN for English, hi-IN for Hindi/Hinglish (the channel default).
+  const lang = req.lang ?? process.env['SARVAM_LANG'] ?? 'hi-IN';
   try {
     execFileSync('python3', [script, '--text', req.text, '--out', wavPath, '--speaker', speaker,
-      '--pace', pace, '--temperature', temperature, '--sample-rate', sampleRate], {
+      '--lang', lang, '--pace', pace, '--temperature', temperature, '--sample-rate', sampleRate], {
       stdio: 'pipe',
       env: { ...process.env },
     });

@@ -204,6 +204,8 @@ export function applyNarration(sceneIR: SceneIR, story: StoryIR, opts: NarrateOp
       wpm,
       ...(tone !== undefined ? { tone } : {}),
       ...(style !== undefined ? { style } : {}),
+      // Sarvam Bulbul target language (en-IN/hi-IN); env-driven so the studio can set it per video.
+      ...(engine === 'sarvam' ? { lang: process.env['SARVAM_LANG'] ?? 'hi-IN' } : {}),
     };
     const res = synthNarration(req, audioDir, opts.rootDir);
     if (res.cached) cachedCount += 1;

@@ -10,7 +10,7 @@ import { StoryIRSchema, type StoryIR } from '../src/ir/story.js';
 import { PROJECT_ROOT, runClaudeText, extractJson } from './claude.js';
 
 /** Bump when the prompt changes → invalidates the cache (like a pass PASS_VERSION). */
-const PROMPT_VERSION = 'story-architect@2';
+const PROMPT_VERSION = 'story-architect@3';
 
 export interface StoryBrief {
   brief: string;
@@ -32,9 +32,11 @@ SHAPE (all keys shown are the ONLY allowed keys — extras are rejected):
       "id": "hook",
       "say": "One flowing sentence of narration for this beat.",
       "duration": { "seconds": 5 },
+      "camera": "slow_push_in",
       "show": [
         { "text": "SHORT HEADLINE", "as": "t", "at": "center",
-          "args": { "size": 68, "weight": 800, "color": "#f5f7fa" } }
+          "args": { "size": 68, "weight": 800, "color": "#f5f7fa",
+                    "anim": { "preset": "rise", "duration": 12, "distance": 40 } } }
       ]
     }
   ]
@@ -46,7 +48,10 @@ RULES:
 - "text" is a VERY SHORT scannable headline (2-4 words MAX), DIFFERENT from the narration. It MUST fit the frame width: for 9:16 (vertical) keep "size" 48-72 and 2-4 words; for 16:9 you may go 60-96. Never a full sentence — it will overflow and clip.
 - Bump the PROMPT_VERSION-worthy note: prefer punchy fragments ("THE LITTLE ENGINE", "25× A SECOND") over long phrases.
 - Keep every fact plausible/verifiable; do not invent statistics you are unsure of.
-- Use ONLY these beat keys: id, say, duration, show. Use ONLY these show keys: text, as, at, args. "at" is one of: center, top, bottom, left, right. Give each beat a unique id.
+- MOTION IS MANDATORY (a static frame reads as broken):
+  · EVERY text MUST have an "anim" in its args so it animates in. Use {"preset":"rise","duration":12,"distance":40} for most; {"preset":"fade","duration":12} occasionally. Never omit anim.
+  · EVERY beat MUST have a "camera" move. First beat = "establishing". Then VARY across beats: "slow_push_in", "slow_pull_out", "pan_left", "pan_right", with an occasional "hold". Never repeat the same camera on 3 beats in a row.
+- Use ONLY these beat keys: id, say, duration, camera, show. Use ONLY these show keys: text, as, at, args. "at" is one of: center, top, bottom, left, right. "camera" is one of: establishing, slow_push_in, slow_pull_out, pan_left, pan_right, hold. Give each beat a unique id.
 - Return VALID JSON only.`;
 
 function buildPrompt(b: StoryBrief, priorError?: string): string {

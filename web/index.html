@@ -88,6 +88,7 @@
     <pre class="log hidden" id="log"></pre>
     <video id="video" class="hidden" controls></video>
     <div class="actions" id="doneActions" style="display:none">
+      <a id="download" class="hidden" download><button>Download video</button></a>
       <button class="ghost" onclick="reset()">Make another</button>
     </div>
   </section>
@@ -100,6 +101,8 @@
 
 <script>
 const $ = (id) => document.getElementById(id);
+// Escape any model/job-derived string before it goes into innerHTML (titles, stage notes are LLM output).
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 let pollTimer = null;
 
 async function go() {
@@ -140,13 +143,16 @@ function render(job, id) {
   s.innerHTML = spin + job.status.replace('_', ' ');
   $('title').textContent = job.title || '';
   $('stages').innerHTML = (job.stages || []).map(
-    (st) => `<li><b>${new Date(st.at).toLocaleTimeString()}</b> ${st.name}${st.note ? ' — ' + st.note : ''}</li>`
+    (st) => `<li><b>${new Date(st.at).toLocaleTimeString()}</b> ${esc(st.name)}${st.note ? ' — ' + esc(st.note) : ''}</li>`
   ).join('');
   const log = $('log');
   if (job.log) { log.classList.remove('hidden'); log.textContent = job.log; log.scrollTop = log.scrollHeight; }
   else log.classList.add('hidden');
   if (job.status === 'done') {
     const v = $('video'); v.src = '/api/jobs/' + id + '/video'; v.classList.remove('hidden');
+    const dl = $('download'); dl.href = '/api/jobs/' + id + '/video';
+    dl.setAttribute('download', (job.title || 'video').replace(/[^a-z0-9]+/gi, '-') + '.mp4');
+    dl.classList.remove('hidden');
     $('doneActions').style.display = 'flex';
   }
   if (job.status === 'error') {
@@ -164,7 +170,7 @@ async function loadJobs() {
   const ul = $('jobs');
   if (!jobs.length) return;
   ul.innerHTML = jobs.map((j) =>
-    `<li onclick="watch('${j.id}')"><span class="pill ${j.status}">${j.status.replace('_',' ')}</span><span class="t">${j.title || j.id}</span></li>`
+    `<li onclick="watch('${esc(j.id)}')"><span class="pill ${esc(j.status)}">${esc(j.status.replace('_',' '))}</span><span class="t">${esc(j.title || j.id)}</span></li>`
   ).join('');
 }
 

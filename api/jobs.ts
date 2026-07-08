@@ -10,6 +10,19 @@ import { PROJECT_ROOT } from '../agents/claude.js';
 import { orchestrateBrief } from '../agents/orchestrate.js';
 import type { StoryBrief } from '../agents/story-architect.js';
 
+// Map a human language name (from the brief) to a Sarvam Bulbul target_language_code. English is the
+// studio default; Hindi/Hinglish → hi-IN; the common Indic languages Sarvam supports are handled too.
+function sarvamLang(language?: string): string {
+  const l = (language ?? 'English').toLowerCase();
+  if (l.includes('hindi') || l.includes('hinglish')) return 'hi-IN';
+  const map: Record<string, string> = {
+    bengali: 'bn-IN', tamil: 'ta-IN', telugu: 'te-IN', kannada: 'kn-IN', malayalam: 'ml-IN',
+    marathi: 'mr-IN', gujarati: 'gu-IN', punjabi: 'pa-IN', odia: 'od-IN',
+  };
+  for (const [name, code] of Object.entries(map)) if (l.includes(name)) return code;
+  return 'en-IN';
+}
+
 export type JobStatus = 'queued' | 'writing_story' | 'rendering' | 'done' | 'error';
 
 export interface JobStage {
@@ -99,17 +112,22 @@ async function runJob(id: string): Promise<void> {
     job.beats = res.beats;
     stage(job, `Story ready · ${res.beats} beats`, 'writing_story');
 
-    // 2. Render (full video with narration + captions + music/sfx). espeak-ng = fast, offline,
-    //    always-available TTS for the walking skeleton; word-align/lip-sync (venv-gated) disabled.
+    // 2. Render (full video with narration + captions + music/sfx). Narration goes through Sarvam AI
+    //    (best voice); if SARVAM_API_KEY is unset it falls back to espeak-ng automatically. word-align
+    //    / lip-sync (venv-gated) stay disabled for speed.
     stage(job, 'Rendering video', 'rendering');
     const args = [
       'tsx', 'src/cli/render.ts', res.storyPath,
       '--project', res.projectId,
-      '--engine', 'espeak-ng',
+      '--engine', 'sarvam',
       '--no-word-align', '--no-lip-sync',
     ];
     const code = await new Promise<number>((done) => {
-      const p = spawn('npx', args, { cwd: PROJECT_ROOT, stdio: 'ignore' });
+      const p = spawn('npx', args, {
+        cwd: PROJECT_ROOT,
+        stdio: 'ignore',
+        env: { ...process.env, SARVAM_LANG: sarvamLang(job.brief.language) },
+      });
       p.on('close', (c) => done(c ?? -1));
       p.on('error', () => done(-1));
     });
