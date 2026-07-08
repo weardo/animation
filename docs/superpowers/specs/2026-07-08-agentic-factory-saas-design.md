@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-08
 **Status:** Draft (awaiting review)
-**Scope:** Convert the deterministic Animation Factory from a *human-operated* pipeline (a person driving the CLIs and applying judgment) into an *autonomous, agent-operated* pipeline, and make it deploy-ready. Portfolio-flagship first; open-source; extensible as code **and** live after deploy.
+**Scope:** Convert the deterministic Animation Factory from a *human-operated* pipeline (a person driving the CLIs and applying judgment) into an *autonomous, agent-operated* pipeline delivered as a **complete, self-hosted web application** — clone, `docker compose up`, open a browser, type a brief, get a video. Portfolio-flagship first; open-source; extensible as code **and** live after deploy. Cloud / multi-tenant is optional upside beyond the self-hosted line.
 
 ---
 
@@ -23,12 +23,12 @@ The missing piece is **judgment**. Right now a human (the operator) *is* the orc
 - G1. A **brief → finished video** pipeline that runs with **zero human intervention**.
 - G2. **Determinism preserved**: the render stays byte-identical; the (stochastic) agent step is tamed by content-addressed caching (run-once, replay-fixed) — the existing M5 `LlmDirector` pattern, generalized.
 - G3. **Extensible** at every layer: a new capability is an additive plugin / agent / tool / gate / data entry, **never a core edit**. Some extension is **live** (no redeploy); the rest is additive.
-- G4. **Deploy-ready**: an async, worker-based topology that survives minutes-long, RAM-heavy renders.
-- G5. **Value banks incrementally**: each milestone (P0…P5) is an independently demoable **portfolio artifact**.
+- G4. **A runnable self-hosted app is the definition of done.** The *guaranteed* end-state is a single-user application someone can **clone and run locally** (`docker compose up` / one command), open in a browser, type a brief, and get a video back. It must survive minutes-long, RAM-heavy renders (a local render worker keeps the UI responsive). **Cloud / multi-tenant is optional upside *beyond* this line — never a prerequisite for it.**
+- G5. **Value banks incrementally**: a runnable app exists early (P1) and each milestone (P0…P5) is an independently demoable **portfolio artifact**.
 
-**Non-goals (explicitly out of scope for the flagship)**
-- Billing, metering, subscription plans, multi-tenant auth hardening (scaffold the *shape*, don't build the store).
-- Serving *other paying users'* LLM inference (the `claude -p` constraint — see §11).
+**Non-goals (beyond the self-hosted target — optional, not required)**
+- Billing, metering, subscription plans, multi-tenant auth hardening (P5 scaffolds the *shape* only; don't build the store).
+- Serving *other paying users'* LLM inference — irrelevant on a single-user localhost app, where `claude -p` uses the operator's own CLI (see §11).
 - Model training / fine-tuning / a model registry.
 - Chasing the funded text-to-video market head-on.
 
@@ -43,9 +43,10 @@ The missing piece is **judgment**. Right now a human (the operator) *is* the orc
 ## 4. Architecture — four layers
 
 ```
-┌─ Service layer ──────────────────────────────────────────────┐
-│ API (stateless) · queue · workers (agent pool + render pool) │
-│ Postgres · object storage · Langfuse                         │
+┌─ Service layer (self-host default → cloud optional) ─────────┐
+│ local API · job runner · workers (agent pool + render pool)  │
+│ SQLite · filesystem · JSONL ledger (+ Langfuse profile)      │
+│   └ cloud swap-in: Postgres · S3/MinIO · Redis/BullMQ        │
 ├─ Agent layer (NEW — the portfolio centerpiece) ──────────────┤
 │ Orchestrator (deterministic DAG) → specialist agents         │
 │ verify gates · agent-output cache · claude -p · Langfuse      │
@@ -147,21 +148,42 @@ Shaped for multi-tenant even while single-tenant:
 - `Tenant → Project → Job → Artifact`.
 - **Project** = manifest + story + scene.json + lock + assets, namespaced per tenant in object storage (today's `projects/<id>/` layout, hosted).
 - **Library** = shared public (content-addressed) + optional per-tenant private namespace.
-- **Provenance ledger** (Postgres + JSONL) — every asset's source/license (fair-use compliance is a first-class record, not a comment).
+- **Provenance ledger** (SQLite self-host / Postgres cloud, + JSONL) — every asset's source/license (fair-use compliance is a first-class record, not a comment).
+- **Storage** — local filesystem for self-host (`projects/`, `assets/`, `outputs/`); S3/MinIO an optional cloud swap-in behind the same interface.
 
-## 11. Deployment topology + the honest constraint
+## 11. Deployment — self-hosted first
+
+**Primary target: a single-user, self-hosted app that runs on localhost with one command.** Deliberately lightweight — no cloud services required:
 
 ```
-Web ─▶ API (stateless) ─▶ queue (Redis/BullMQ)
-                              ├─▶ agent-orchestration workers  (claude -p; light CPU)
-                              └─▶ render workers               (RAM-heavy; isolated pool)
-Object storage (MinIO/S3): assets, outputs, caches
-Postgres: tenants, projects, jobs, provenance
-Langfuse (self-hosted): traces
+docker compose up                    # → app on http://localhost:<port>
+  web (thin UI) ─▶ local API ─▶ local job runner
+                                   ├─ agent worker  (claude -p via the host's Claude CLI)
+                                   └─ render worker (separate process; RAM-heavy)
+  storage: local filesystem  (projects/ assets/ outputs/)   # no S3/MinIO needed
+  db:      SQLite            (projects, jobs, provenance)    # zero-config
+  tracing: JSONL run-ledger (always on) + Langfuse (opt-in `--profile observability`)
 ```
-Render **must** be off-request (minutes-long, RAM-heavy) — hence the queue + a **separate** render pool.
 
-⚠️ **The one real constraint:** agent workers need LLM inference, and the zero-budget path is `claude -p` **keyless = an authenticated Claude CLI**. Perfect for a **single-tenant flagship** (the agent worker runs on the operator's box or a VPS with the CLI logged in). It does **not** cleanly serve *other* paying users (one account, rate limits, ToS). Accepted, because monetization is a non-goal; the provider registry preserves a paid-key drop-in for a hypothetical multi-tenant future.
+- **LLM on localhost = the operator's own authenticated Claude CLI** (`claude -p`, keyless). On a single-user self-host this is **free and unconstrained — the multi-tenant `claude -p` problem does not exist here.** The provider registry keeps a paid-API-key path for anyone who wants one.
+- **Render stays off-request** — a separate local render **worker process** keeps the UI responsive through the minutes-long render (CPU-raster default: byte-safe + disk-safe).
+- **Langfuse** (your chosen tracer) ships as an **optional compose profile**, so the minimal app stays light; the always-on baseline is the JSONL run-ledger. Flip the profile on for the dashboard/demo.
+
+**Optional cloud shape (beyond the self-hosted line, P5):** swap SQLite→Postgres, filesystem→S3/MinIO, the local runner→Redis/BullMQ, and add per-tenant namespacing — same code, heavier backends. Not required to "run and make videos."
+
+### 11.1 Web UI — the complete self-host front-end (`packages/web`)
+
+The UI is a **first-class, required deliverable**, not a thin form. A small SPA (Vite + React + Tailwind, framework TBD in §15) served by the local API; live progress over **SSE/WebSocket** from the job runner; the video plays in-browser via an `<video>` tag off the local outputs dir. Screens:
+
+1. **Create** — the entry point. A brief textarea + controls: **style** preset (kurzgesagt / plain), **aspect** (9:16 / 16:9 / 1:1), **target length**, **language**, **voice**, optional **reference/notes**. "Generate" enqueues a job. Sample briefs one-click to load.
+2. **Run / Progress** (the money screen) — a **live pipeline view**: the stages (Story → Assets → Map → Audio → Assemble → Render) as a progress rail, each showing the active **agent**, its tool calls, the **verify-gate** verdict (✓/✗) and **retries** (the self-correction made *visible*), streamed log lines, and — if the Langfuse profile is on — a deep-link to the full trace.
+3. **Preview / Review** — the finished **video player** beside the **Story IR** (beats list). Optional **human-in-the-loop overrides** per beat: "re-pick this footage", "rewrite this line", "retime SFX" → re-runs just that stage (reuses the agent cache for the rest). "Looks good" → ready to publish.
+4. **Projects** — the library of past projects (thumbnail, title, status, date). Open / duplicate / re-render / delete. This is the "project management" surface.
+5. **Assets** — browse a project's + the shared library's assets (footage / photos / sfx / music / fonts), each showing **provenance + license** (the fair-use ledger, visible — a credibility feature). This is "project asset management".
+6. **Publish** — pick platform (YouTube today; registry-driven), visibility (**unlisted default**), editable metadata (title / description / tags / language), a **dry-run preview**, then upload. Shows the resulting link.
+7. **Settings** — LLM provider (**`claude -p` default** / API key), voice + style defaults, storage paths, the **Langfuse toggle**, and the external keys (Sarvam / Pexels / YouTube OAuth) with a **first-run setup check** that tells the self-hoster exactly what's missing.
+
+**Progressive build:** P1 ships screens 1–3 (Create / Progress / Preview) as the walking skeleton; P2 enriches the Progress screen with the live agent/gate view; P3 completes 4–7 (Projects / Assets / Publish / Settings) + packaging.
 
 ## 12. Extension surface (the open-source contribution points)
 
@@ -175,46 +197,47 @@ Render **must** be off-request (minutes-long, RAM-heavy) — hence the queue + a
 | Publisher (TikTok/IG…) | publish registry (YouTube exists) | redeploy (additive) |
 | LLM provider | provider registry (`claude -p` default) | config |
 
-## 13. Build sequence — each increment is a standalone portfolio artifact
+## 13. Build sequence — anchored on a runnable, self-hosted **web app**
 
-> **Value-banking rule:** you never need to reach the end to have won. Each Pn ships something demoable.
+> **The self-hosted web app is guaranteed, early, and continuous** — a runnable app with a browser UI exists from **P1** and gets more autonomous + more polished each step. Evals and cloud shape are *beyond* the "good enough to run" line. Each Pn also banks a standalone 🎞 portfolio artifact.
 
-### P0 — Factory-over-MCP
+### P0 — Factory-over-MCP (the tool boundary)
 - **Scope:** refactor CLIs → callable core; stand up `mcp-server` exposing the tool families (§6).
 - **Verify:** an MCP client (or the operator) drives the *entire* factory through MCP tools end-to-end.
-- 🎞 **Portfolio artifact:** "A whole deterministic video factory, exposed as an MCP server." **Show it:** connect Claude Desktop / any MCP client, ask it to build a reel, screen-record it calling `footage.pick` → `narrate.probe` → `render.submit`.
+- 🎞 "A whole deterministic video factory, exposed as an MCP server." **Show:** an MCP client calling `footage.pick` → `narrate.probe` → `render.submit`.
 
-### P1 — Orchestrator skeleton + first specialist + tracing
-- **Scope:** the DAG runner, the agent-output cache, Langfuse wiring, and the **Story Architect** (rest of the pipeline still manual/CLI).
-- **Verify:** a brief → a valid structured Story IR, autonomously, with a Langfuse trace.
-- 🎞 **Portfolio artifact:** "An autonomous agent writes a structured, verified story from a one-line brief — here's the trace." **Show it:** the brief, the Story IR, the Langfuse span tree.
+### P1 — Runnable self-hosted **walking skeleton** ← "at least it runs, in a browser"
+- **Scope:** the orchestrator skeleton + agent-output cache + tracing + the **Story Architect** (brief → structured story), wrapped in the **local app**: `docker compose up` → **Web UI** (Create + Progress + Preview screens, §11.1) → local API → SQLite job → render worker → a video plays in the browser. Assets/audio/assembly initially lean on existing tools + the `HeuristicDirector`, so a **rough-but-real** video comes out end-to-end.
+- **Verify:** `git clone` → one command → open `localhost` → type a brief → watch it run → a (rough) video plays. No manual authoring, no terminal.
+- 🎞 "A self-hosted web app that turns a one-line brief into a video." **Show:** the browser flow + the generated Story IR + the trace.
 
-### P2 — Full specialist team + verify gates  ← **the flagship demo**
-- **Scope:** Asset Scout, Map Designer, Audio Designer, Assembler, Verifier; all gates; retry/fallback.
-- **Verify:** **brief → finished, publish-quality reel with zero human touch**; the trace shows verify-retry loops in action.
-- 🎞 **Portfolio artifact:** THE headline piece — "One brief in, a finished video out, no human — and you can watch the agents *correct themselves*." **Show it:** the video + a Langfuse trace with a visible "off-subject footage rejected → re-picked" or "riser mistimed → fixed" loop.
+### P2 — Full specialist team + verify gates (the app gets *good*)
+- **Scope:** Asset Scout, Map Designer, Audio Designer, Assembler, Verifier + all gates + retry/fallback — behind the same UI. The Progress screen now surfaces each agent + gate live.
+- **Verify:** the same localhost flow yields a **publish-quality reel, zero human touch**; the Progress/trace view shows agents **self-correcting** (off-subject footage re-picked; riser retimed).
+- 🎞 THE flagship: "One brief in, a finished video out, no human — watch the agents fix themselves, live in the UI." **Show:** the video + the self-correcting run view.
 
-### P3 — Eval-driven reliability
-- **Scope:** `packages/eval`, golden briefs, pass-rate report.
+### P3 — Complete, polished self-hosted product ← **definition of done**
+- **Scope:** the full Web UI (§11.1) — Projects library, Asset browser (with provenance/license), per-beat human-in-the-loop overrides, the Publish flow, Settings/keys — plus **packaging** for easy self-host (README, `docker compose up`, sample briefs, first-run setup check for the Claude CLI + API keys).
+- **Verify:** a stranger can `git clone`, run one command, and **create + preview + publish** a video entirely in the browser, without touching code.
+- 🎞 "An open-source, self-hostable AI video studio." **Show:** the repo + a 90s clone-to-published-video screen recording.
+
+### P4 — Eval-driven reliability *(beyond the line)*
+- **Scope:** `packages/eval`, golden briefs, pass-rate report (surfaced as a dashboard tab).
 - **Verify:** a metrics report; a seeded regression is caught by a pass-rate drop.
-- 🎞 **Portfolio artifact:** "I don't just build agents, I measure them." **Show it:** the eval report (pass-rates, retries/run, cost/video) + a caught regression.
+- 🎞 "I measure my agents, not just build them." **Show:** the eval report (pass-rates, retries/run, cost/video) + a caught regression.
 
-### P4 — Deployed self-serve
-- **Scope:** `api` + `worker` (both pools) + queue + object storage + Postgres + thin `web` UI.
-- **Verify:** submit a brief in the browser → watch progress → download the video.
-- 🎞 **Portfolio artifact:** "It's live." **Show it:** a URL + a 60–90s screen recording, brief-to-video, plus the architecture diagram.
-
-### P5 — Production-shaped & provably general
-- **Scope:** multi-tenancy scaffolding, more publishers, contribution docs (how to add a tool/agent/gate/publisher), and — to prove the pattern is domain-agnostic — a *second* small domain wired through the same orchestrator.
-- **Verify:** an external contributor can add a specialist/tool by following the docs; the second domain runs end-to-end.
-- 🎞 **Portfolio artifact:** "A reusable agentic-pipeline framework, open-source, proven on two domains." **Show it:** the OSS repo + "extend it" guide + the second-domain demo.
+### P5 — Cloud/production-shaped + provably general *(beyond the line)*
+- **Scope:** swap SQLite→Postgres, filesystem→S3/MinIO, local runner→BullMQ + per-tenant namespacing; more publishers; contribution docs; a *second* domain through the same orchestrator to prove domain-agnosticism.
+- **Verify:** an external contributor adds a specialist/tool by the docs; the second domain runs end-to-end; the app runs multi-tenant on a server.
+- 🎞 "A reusable agentic-pipeline framework, open-source, proven on two domains." **Show:** the extend-it guide + the second-domain demo + a live URL.
 
 ## 14. Risks & mitigations
 
 | Risk | Mitigation |
 |---|---|
 | Cold-run agent nondeterminism confuses "determinism" claim | Document the boundary (§7.3): render is byte-exact; agent step is cached-deterministic (run-once, replay). |
-| `claude -p` can't serve other users | Accepted (§11); single-tenant flagship; provider registry keeps a paid-key drop-in. |
+| `claude -p` can't serve other users | Not a problem for self-host (the operator's own CLI, free + unconstrained). Only relevant for the *optional* cloud shape (P5), where the provider registry swaps in a paid key. |
+| Self-hoster hasn't authenticated the Claude CLI / lacks API keys | First-run setup check in Settings (§11.1 #7) names exactly what's missing before the first run. |
 | Agent quality regressions | The eval harness (P3) + versioned prompts (`PROMPT_VERSION`) + verify gates. |
 | Render RAM/latency on a shared box | Separate render worker pool; async queue; CPU-raster default (byte-safe, disk-safe). |
 | Monorepo migration breaks the engine | Mechanical move guarded by typecheck + a golden render diff; behavior unchanged. |
@@ -222,10 +245,10 @@ Render **must** be off-request (minutes-long, RAM-heavy) — hence the queue + a
 
 ## 15. Open questions (for the plan phase)
 
-- Queue: BullMQ (Redis) vs a Postgres-backed queue (one less service for local-first)?
-- Web UI: minimal server-rendered vs a small SPA — how much is needed for the demo?
-- How many golden briefs constitute a meaningful eval set for P3?
-- Do we vendor Langfuse via docker-compose in `infra/`, or point at Langfuse Cloud's free tier for the demo?
+- Job runner for self-host: an in-process worker vs a lightweight SQLite/file-backed queue (restart-safe)? (BullMQ/Redis deferred to the optional cloud shape, P5.)
+- Web UI framework: Vite + React SPA vs Next.js vs a server-rendered app — lightest to self-host **and** nicest to demo?
+- Langfuse self-host is a bit heavy (Postgres + Clickhouse). Ship it as an opt-in compose profile (default tracing = the JSONL ledger), or point the demo at Langfuse Cloud's free tier with self-host documented?
+- How many golden briefs make a meaningful eval set (P4)?
 
 ---
 
