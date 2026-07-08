@@ -1,9 +1,15 @@
 ---
 name: producing-documentaries
-description: Use when producing a ~5-minute Indian-language (Hinglish) geopolitics/defense SHORT DOCUMENTARY in the animation factory — a longer-form, multi-ACT piece (vs a 40-60s reel) built from journalism EVIDENCE: real news-article screenshots (ubiquity montage), real news video clips, Wikimedia archival stills with Ken Burns motion, cinematic maps, footage, stage-aware music/SFX, and आप-respectful direct-address narration. Read it BEFORE building a documentary. It BUILDS ON producing-news-reels (all reel principles carry over) and adds the documentary-specific process: act structure, the evidence content-source CLIs (factory:photo/newsshot/newsclip), Ken Burns, the news-montage pattern, stage-aware audio, and the 5-min render reality.
+description: Use when producing a ~5-minute Indian-language (Hinglish) SHORT DOCUMENTARY on ANY subject (history, economy, science, a person, a place, an event, a technology, geopolitics…) in the animation factory — a longer-form, multi-ACT piece (vs a 40-60s reel) built from journalism EVIDENCE: real news-article screenshots (ubiquity montage), real news video clips, Wikimedia archival stills with Ken Burns motion, cinematic maps, footage, stage-aware music/SFX, and आप-respectful direct-address narration. Read it BEFORE building a documentary. It BUILDS ON producing-news-reels (all reel principles carry over) and adds the documentary-specific process: act structure, the evidence content-source CLIs (factory:photo/newsshot/newsclip), Ken Burns, the news-montage pattern, stage-aware audio, and the 5-min render reality.
 ---
 
-# Producing a short documentary (5-min Hinglish geopolitics)
+# Producing a short documentary (5-min Hinglish, ANY subject)
+
+**⚠️ TOPIC-NEUTRAL SKILL.** This is a GENERAL documentary-production process — it works for ANY subject
+(history, science, economy, a biography, an event, a place, a technology, geopolitics). Concrete examples
+below (a border, a stat, "at 18,000 feet") are ILLUSTRATIONS drawn from one build, NOT the domain — swap
+in whatever YOUR subject needs. The only fixed elements are the CHANNEL (Hinglish, आप-respectful, the
+official-India map WHEN a map shows India) and the craft rules, never the topic.
 
 **⭐ NORTH STAR — MAXIMUM VALUE DENSITY WITHOUT LOSING COMPREHENSION (user's core goal).** Every second must
 deliver something worth knowing; nothing is padding. This is NOT "make it longer" — it's "pack more VALUE
@@ -41,7 +47,7 @@ evidence CLI records provenance/attribution automatically.
 
 Author as comment-grouped acts (a documentary is a JOURNEY, not a 5-beat reel):
 - **ACT I — HOOK + THE WORLD** (~45-75s): the make-or-break cold-open (first-frame text hook + a
-  pre-commitment question), then establish the stakes/place ("at 18,000 feet…").
+  pre-commitment question), then establish the stakes/place (e.g. "at 18,000 feet…" — whatever grounds YOUR subject).
 - **ACT II — THE CONFLICT / ESCALATION** (~90-140s): the problem, the antagonist, rising tension. The
   ubiquity montage lives here ("everyone is reporting this"). Multiple sub-beats, maps, evidence.
 - **ACT III — THE ANSWER + PAYOFF** (~90-140s): the turn/insight (the tech, the move), the resolution,
@@ -52,7 +58,7 @@ Each beat still obeys the reel rules: one visual per beat, connective narration,
 ## 2. EVIDENCE — the new content sources (all cache-once-offline, attributed)
 
 - **`factory:photo "<q>" --source wikimedia|pexels [--list N] [--index n] [--orientation portrait]`** —
-  stills. **Wikimedia** = REAL subjects (Indian Army, DRDO drones, a specific mountain, a leader) with
+  stills. **Wikimedia** = REAL subjects (a person, a place, an object, an event, an institution — whatever the VO names) with
   CC/PD + author attribution; **Pexels** = generic mood b-roll. BROWSE (`--list`) + pick a specific one;
   the page title is the content signal. Use with **Ken Burns**: `{ asset: <id>, as: still, args: { z: 1,
   kenburns: "in" } }`.
@@ -108,6 +114,22 @@ A 5-min doc must not ride one loop. Use the EXISTING capability, staged:
 
 ## 5b. CRAFT REFINEMENTS (from the first doc's review, 2026-07-08 — bake these in)
 
+**⭐ SHOW WHAT YOU'RE SAYING — VISUAL/NARRATION SYNC IS THE IMPACT (user's core rule).** At every beat, the
+image on screen must MATCH the exact thing the VO is naming RIGHT NOW — the entity, the place, the event,
+the emotion. Name a specific thing → show THAT thing; cite a place → show that place; say "at its lowest / a collapse"
+→ show the decline/aftermath, NOT a celebratory image; say "hundreds of X" → show MANY, not one. A mismatch (a smiling ceremony under a
+somber line) breaks the spell; a match lands the point. TEST each beat: "does the picture prove the words?"
+If not, re-source the visual or re-cut the line. This is WHY per-entity sourcing + exact event imagery
+matter. When the exact visual doesn't exist, use a LABELED stand-in (text names the specific system over
+illustrative footage) — honest, and still roughly synced — never a visual that CONTRADICTS the words.
+**CONTEXT-SPECIFICITY (deeper than "show the category").** Match the SUBJECT'S context, not just the noun:
+narrating about country/org A's tech → show A's, NOT another nation's clearly-LABELLED hardware (a clip
+captioned with someone else's equipment CONTRADICTS the VO). Distinguish LOOK-ALIKES: an entertainment
+drone LIGHT-SHOW ≠ a military drone swarm; a parade ≠ a battle. When stock/Wikimedia lack the exact subject,
+**`factory:newsclip` a fair-use clip from public YouTube** (`yt-dlp "ytsearch10:<exact subject>"` → pick a
+candidate → pull a brief `--section` → verify on a contact sheet). A clip carrying the subject's OWN on-
+screen label (e.g. "…from the Indian Army") strengthens both fair-use and authenticity.
+
 The first doc "held attention"; these notes make the next one sharper:
 - **OPENERS — warm + natural, not formulaic.** "एक second रुकिए…" read as CRINGE. The Guyana "दोस्तों…" opener
   felt natural. Open like a person talking to friends: "दोस्तों…", "ज़रा एक बात सोचिए…", a bold stat, or a
@@ -130,13 +152,13 @@ The first doc "held attention"; these notes make the next one sharper:
   still must sit, push the KB harder.
 - **ONE PROPER, CLEAR, CENTERED VISUAL PER NAMED ENTITY/EVENT.** When the VO names 2-3 things (drones,
   systems, people, places), show a SPECIFIC, sharp, centered image/clip for EACH — not one blurry generic
-  stand-in (the low-res off-center drone was weak). Source per-entity: `factory:photo "Archer NG UAV"`,
-  `"MAPSS solar drone"`, etc.; verify it's the actual subject, high-res, well-framed. For EVENTS, get the
-  EXACT imagery (real Galwan/LAC photos), not generic. Reject low-res (<800px) for a full-frame KB shot.
+  stand-in (the low-res off-center drone was weak). Source per-entity: `factory:photo "<the exact named subject>"`
+  for EACH; verify it IS the actual subject, high-res, well-framed. For EVENTS, get the EXACT imagery of
+  THAT event, not a generic stand-in. If the VO says "many/hundreds", the visual must show MANY. Reject low-res (<800px) for a full-frame KB shot.
 - **TEXT-EFFECT VARIETY (all BUILT — use them).** Text `anim.preset` supports: `fade`, `rise`,
   `stagger` (per word/char), **`typewriter`** (`{ preset: typewriter, cps: 14 }` — types the string out),
   **`count_up`** (`{ preset: count_up, from: 12, to: 140, duration: 40 }` — animates a stat number). Use
-  typewriter for a headline/quote reveal, count_up for a "12 → 140 drones" stat pop, rise/stagger for
+  typewriter for a headline/quote reveal, count_up for a "12 → 140" stat pop, rise/stagger for
   titles. Variety keeps on-screen text alive across 30+ beats. Montage per-cut SFX (also BUILT): **`shutter`**
   (camera snap) or **`glitch`** (digital stutter) — one per montage cut, tightening as the montage accelerates.
 - **VERTICAL-FIRST, but frame for it.** 9:16 is the target (a horizontal 16:9 cut is a future option). In

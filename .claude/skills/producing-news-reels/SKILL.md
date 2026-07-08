@@ -1,21 +1,28 @@
 ---
 name: producing-news-reels
-description: Use when producing a premium Indian-language (Hinglish) news / geopolitics EXPLAINER REEL in the animation factory — a vertical 9:16 short with native voiceover, animated maps (routes/markers/fly-to), cinematic-dark visuals, music + sound-effects, and a coherent narrative. Covers the voice engines (Sarvam Bulbul is the channel default), Devanagari/Hinglish typography, the OFFICIAL Government-of-India map (legally required), the geopolitics map toolkit, story STRUCTURE (not stitched facts), the audio-design layer (music bed + SFX + ducking + narration-driven beat durations), and the stale-artifact/verification gotchas. Read it BEFORE building a news-explainer reel so you don't ship a flat, mis-voiced, illegally-bordered, or silent-audio reel.
+description: Use when producing a premium Indian-language (Hinglish) news / explainer REEL on ANY subject in the animation factory — a vertical 9:16 short with native voiceover, animated maps (routes/markers/fly-to), cinematic-dark visuals, music + sound-effects, and a coherent narrative. Covers the voice engines (Sarvam Bulbul is the channel default), Devanagari/Hinglish typography, the OFFICIAL Government-of-India map (legally required), the map toolkit, story STRUCTURE (not stitched facts), the audio-design layer (music bed + SFX + ducking + narration-driven beat durations), and the stale-artifact/verification gotchas. Read it BEFORE building a news-explainer reel so you don't ship a flat, mis-voiced, illegally-bordered, or silent-audio reel.
 ---
 
 # Producing an Indian-language news-explainer reel
 
-A geopolitics/news reel = a **9:16 vertical short** (~40-60s) built as ONE factory project
+A news / explainer reel = a **9:16 vertical short** (~40-60s) built as ONE factory project
 (`projects/<id>/story.yaml`). It layers: native **Hinglish voiceover** + **animated maps** +
 **cinematic-dark visuals** + **music + SFX** over a **coherent narrative**. Author it like any scene
 (read `building-scenes` first), then apply the specifics below. The `hormuz-reel` project is the
 reference implementation.
 
+**⚠️ TOPIC-NEUTRAL.** This skill is the CHANNEL's FORMAT + CRAFT — it works for ANY
+subject (geopolitics, economy, history, science, technology, a place, a person, an event). The concrete
+examples below (a chokepoint, a border, an oil stat, two rival countries) are ILLUSTRATIONS from past
+reels, NOT the domain — swap in whatever YOUR topic needs. Fixed = the CHANNEL (Hinglish, आप-respectful
+narration, the official-India map WHEN India is shown) + the craft rules; the TOPIC is always yours.
+
 ## The positioning (why this niche)
 
-Indian geopolitics/current-affairs content (Prashant Dhawan's "World Affairs" lane) has huge demand
-but the incumbents use *simple* visuals. The edge = **that content niche + Johnny-Harris-tier
-cinematic maps, in Hinglish**. Maps are the powerhouse of geopolitics-YouTube — make them the star.
+Hinglish explainer / current-affairs content has huge demand, but the incumbents use *simple* visuals.
+The edge = **Johnny-Harris-tier cinematic visuals + Hinglish**, on ANY subject. When the topic is
+GEOGRAPHIC, maps are the powerhouse — make them the star; for a non-geographic topic, the equivalent HERO
+visual (a chart, a diagram, archival footage, a data animation) is the star instead.
 
 ## 1. VOICE — Sarvam Bulbul is the channel default
 
@@ -63,7 +70,7 @@ over the 43 v3 speakers (young male: shubh/aditya/dev/aayan/sunny/advait) on one
 
 ## 2. TYPOGRAPHY — Devanagari needs a DUAL-SCRIPT heavy font
 
-**Noto Sans Devanagari has ZERO Latin letters** — so Hinglish like "China की Weakness" splits into two
+**Noto Sans Devanagari has ZERO Latin letters** — so Hinglish like "आज की Technology" splits into two
 mismatched fonts (Devanagari in Noto, Latin falling back to thin DejaVu). Fix: **Mukta ExtraBold**
 (`public/fonts/Mukta-ExtraBold.ttf`, OFL, dual-script Devanagari+Latin+digits) — one heavy font for all
 Hinglish text. Set per text layer: `font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf"`.
@@ -86,17 +93,29 @@ in the `world-in` commit.
 
 The `map` generator (core-dataviz) has a full toolkit, all authored as DATA, all pure fns of frame:
 - **`routes`** — `[{ coords: [[lon,lat]...], arc: true, arrow: true, glow, draw_on }]` — shipping
-  lanes/corridors that draw on along the great-circle. THE signature visual (e.g. show China's oil
-  funneling through the Malacca chokepoint → the "weakness" is *visible*).
+  lanes/corridors that draw on along the great-circle. THE signature visual (e.g. show a flow/supply-route funnelling through a chokepoint → the dependency is
+  *visible*; or any path between two points).
 - **`markers`** — `[{ coord: [lon,lat], label, color, radius }]` + `markers_pop` — ports/cities/
   chokepoints, pop in. Coords are geographic → align exactly with the country geometry.
 - **fly-to** — `center_to`, `scale_to`, `fly: { duration, easing }` — pan/zoom across the map in a beat.
-- **texture** — `graticule: {step,color,opacity}` (lat/lon grid) + `ocean: "#..."` (filled sea).
+  UNDERUSED — a map should almost never sit still; a slow push or a pan to the subject adds life for free.
+- **⭐ ANIMATED BORDERS (draw the outline ON during narration) — BUILT, use it.** On the map, set
+  `draw_on: { delay, duration }` + `draw_on_stroke: true` + `draw_on_fill: true` → the highlighted
+  country's OUTLINE strokes on (dashoffset reveal) and then the fill fades in behind it, timed to the VO.
+  This is the single biggest "maps feel alive" upgrade and needs no code — just author it on the map beat.
+- **⭐ PROJECTION — go beyond flat.** `projection:` accepts **`orthographic`** (a dramatic 3D **GLOBE** — the
+  Johnny-Harris "spin to the region" establishing shot), `naturalEarth1`, `equalEarth`, `azimuthalEqualArea`,
+  and `mercator` (the flat default). Open a doc/reel on an orthographic globe, then cut to a tight mercator
+  region. (A globe rotation can be animated via fly-to's `center_to`.)
+- **texture** — `graticule: {step,color,opacity}` (lat/lon grid) + `ocean: "#..."` (filled sea). NOTE: a
+  RELIEF/terrain/hillshade look + GRADIENT (non-flat) polygon fills are NOT built yet — a future feature
+  (raster elevation under the vectors / wire the paint-shading system to map polygons). For now, richness
+  = draw-on borders + globe + fly-to + graticule + glow + tight framing.
 - **region zoom** — `fit: false` + `projection: mercator` + `center: [lon,lat]` + `scale: N` (higher =
   tighter). NOTE: the preset defaults `fit: true` — you MUST set `fit: false` to use center/scale. **Zoom
   TIGHT to the relevant region** — a broad map (whole hemisphere) reads as unfocused; frame just the
-  countries the beat is about (e.g. SE Asia + China for a Malacca beat, not Africa-to-Australia).
-- **`labels`** — `{ "China": "China", "India": "India", … }` (feature name → text) names countries at
+  countries/region the beat is about, not a whole hemisphere.
+- **`labels`** — `{ "<Country A>": "<Country A>", "<Country B>": "<Country B>", … }` (feature name → text) names countries at
   their projected centroid. **Name the relevant countries on every map beat** — an unlabeled map is
   disorienting. English names read naturally in Hinglish and help the algorithm.
 - **Legible land:** non-highlighted land must be LIGHT enough to read against the dark ocean — use
@@ -141,8 +160,8 @@ The `map` generator (core-dataviz) has a full toolkit, all authored as DATA, all
 
 A reel of disconnected fact-sentences feels cheap. Use **storytelling STAGES with connective tissue**:
 HOOK → SETUP → STAKES → TURN → ESCALATION → THE MOVE → THE COUNTER → INSIGHT → PAYOFF+LOOP. Pick ONE
-clear thesis; bridge beats ("लेकिन असली डर China को…" TURNS the viewer forward; "और भारत? …" sets up the
-India-vs-China rivalry — the emotional climax for this audience). **Keep every fact verifiable.**
+clear thesis; bridge beats (a "लेकिन असली सवाल…" TURNS the viewer forward; a "और…?" sets up the next stakes — the
+emotional climax for YOUR subject). **Keep every fact verifiable.**
 
 **⚠️ WRITE THE NARRATION AS ONE CONTINUOUS MONOLOGUE, THEN SPLIT IT INTO BEATS (the #1 narration bug).**
 The trap: authoring each beat's `say` line IN ISOLATION → you get 5 self-contained HEADLINES stitched
@@ -179,7 +198,7 @@ statements into second-person conversation:
   रखिए — …" — this also closes the hook loop.
 - **ASK FOR THEIR OPINION → drives COMMENTS (the strongest engagement signal for reach).** Weave a GENUINE
   opinion question that invites a reply: "आपको क्या लगता है — क्या ये दांव काम करेगा? नीचे comment में बताइए।",
-  "आप India की जगह होते तो क्या करते?", "किसका पलड़ा भारी — India या China? बताइए।" This is the ONE in-video
+  "आप उनकी जगह होते तो क्या करते?", "किसका पलड़ा भारी — X या Y? बताइए।" This is the ONE in-video
   CTA that's ENCOURAGED (unlike "subscribe करो", which breaks the loop and tanks completion — keep that in
   the DESCRIPTION). Best placement: a beat BEFORE the final loop line, or fold the opinion question INTO the
   close so it doubles as the loop. Make it a real, debatable question tied to the story — not a generic
@@ -193,7 +212,7 @@ statements into second-person conversation:
 - **HOOK (0-3s) is make-or-break.** 70% retention at 3s ≈ 5× more viral. And **92% watch on MUTE** → the
   ON-SCREEN TEXT hook must hit in the FIRST FRAME (fast `anim: { preset: fade, duration: 5 }`, not a slow
   rise). Hook types: curiosity-gap / bold claim ("एक रास्ता, जो पूरी दुनिया हिला सकता है"), "No/Stop"
-  ("ये मत समझना…"), stat-shock ("20% तेल एक 40km गली से"), identity-call ("अगर तुम geopolitics समझते हो…").
+  ("ये मत समझना…"), stat-shock (a striking number, e.g. "20% X, एक छोटी सी वजह से"), identity-call ("अगर आप ये समझते हैं…").
   Start Hindi, end on an English keyword — natural AND helps the algorithm categorize.
 - **FLOW = escalation.** Each beat raises stakes; fast visual tempo (fly-tos, route draws, marker pops =
   the "filmy" hero-zoom/whip-pan energy).
