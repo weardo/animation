@@ -64,7 +64,9 @@ export async function resolveVisuals(story: StoryIR, aspect?: string): Promise<S
       if (id) {
         const a = { ...((item.args as Record<string, unknown>) ?? {}) };
         if (a['fit'] === undefined) a['fit'] = 'cover';
-        kept.push({ ...item, footage: id, args: a });
+        // Anchor the bg to CENTER so the layout director doesn't place it at a focal slot (which shoved
+        // it 256px below centre → an uncovered band at the top). Centered + fit:cover fills the frame.
+        kept.push({ ...item, footage: id, at: 'center', args: a });
         hasFootage = true;
       }
       // else: drop the footage item → the beat renders text over the styled background
