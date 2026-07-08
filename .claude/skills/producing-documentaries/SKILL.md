@@ -134,12 +134,24 @@ The first doc "held attention"; these notes make the next one sharper:
 - **OPENERS — warm + natural, not formulaic.** "एक second रुकिए…" read as CRINGE. The Guyana "दोस्तों…" opener
   felt natural. Open like a person talking to friends: "दोस्तों…", "ज़रा एक बात सोचिए…", a bold stat, or a
   direct image — NOT a canned "रुकिए/wait" gimmick. Still आप-respectful, still a curiosity hook.
-- **RISER SFX DISCIPLINE — a `riser` is a ~1.2s CLIP, NOT a buildup.** It works ONLY as a 1-second LEAD-IN
-  to an IMMEDIATE impact: place `riser at N` with a `boom` / hard-cut / reveal at **~N+25-35 frames (≈1s
-  later)** so it resolves ON the hit. If NOTHING lands within ~1s after it, DON'T use it — a lone riser
-  fires and FIZZLES into noise (a common overuse). A real multi-SECOND buildup is the MUSIC's job (a
-  swelling bed / a rising layered `audio[]`), never a 1s SFX. Rule of thumb: a riser must ALWAYS be paired
-  with the thing it builds into, ~1s apart; most cuts just want a soft `whoosh`. One paired riser > five loose ones.
+- **RISER SFX DISCIPLINE (the most-repeated SFX mistake — "it appears out of nowhere where not needed").**
+  A `riser` is a 1.2s (**36 frames @30fps**) RISING sweep that PEAKS AT ITS END. Three rules, all mandatory:
+  1. **WHERE (placement).** ONLY to build into the SINGLE biggest reveal/turn of the whole piece — use it
+     roughly ONCE per video. NEVER on an info/spec beat (a systems list), a map-label beat, a quote, or a
+     comment-CTA / soft "…"-ellipsis CLOSE. Those are not builds — they get a `whoosh` (+ maybe one impact),
+     not a riser. **If you can't name the exact hard reveal it resolves into, delete it.**
+  2. **WHEN (timing — do the math, don't eyeball).** The impact (`boom`/hard-cut) MUST land EXACTLY at
+     `riser_start + 36f`. So place `riser at (impact_frame − 36)`, NOT the riser first and boom "somewhere
+     after". If the peak lands before/after the impact, the tail sweeps up into nothing = the "out of
+     nowhere" artifact. Anchor the impact to a WORD (read the narration `duration_frames` from scene.json;
+     put the boom on the payoff word), then subtract 36 for the riser. A multi-SECOND build is the MUSIC's
+     job (a swelling bed), never a 1s SFX.
+  3. **HOW LOUD (mix).** SFX are ACCENTS UNDER the voice, never over it — the VO peaks ~−0.4 dB, so an
+     impact/riser at full level (`boom` masters near 0 dB) punches through and reads as jarring EVEN when
+     placed right. The `sfx` pass now ducks every cue via a per-effect `mix` (boom 0.38, riser/sub_drop
+     0.45, others ~0.55); if you add a real sourced wav or a new loud recipe, set its `mix` so its in-video
+     peak sits ~6–10 dB under the VO. Verify: an SFX you NOTICE as "loud" is wrong; you should feel it, not
+     hear it jump. **Most cuts just want a soft `whoosh`. One correctly-placed, ducked riser > five loose ones.**
 - **MUSIC — more variety + dynamics that follow the PHASE.** One bed per act isn't enough; the score should
   BUILD and RELEASE with the story (tension rising into the turn, a release/resolve after). Source a wider
   bed library (Incompetech CC-BY: e.g. "Ghost Story", "Long Note Two", "Echoes of Time", "Anguish", "The

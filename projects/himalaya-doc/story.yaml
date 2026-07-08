@@ -407,7 +407,7 @@ beats:
 
   - id: grid
     say: "दुश्मन के drones को रोकने के लिए — D4 और SAKSHAM anti-drone grid। और DRDO के laser weapons, जो दो किलोमीटर दूर से target को जला सकते हैं।"
-    sfx: [ { name: whoosh, at: 2 }, { name: riser, at: 22 }, { name: boom, at: 42 } ]
+    sfx: [ { name: whoosh, at: 2 }, { name: boom, at: 228 } ]
     show:
       - shape: rect
         as: bg
@@ -482,7 +482,7 @@ beats:
 
   - id: payoff
     say: "तो आपको क्या लगता है — क्या technology ही इस बर्फ़ीली सरहद की असली रक्षक है? नीचे comment में ज़रूर बताइए। पर याद रखिए — अठारह हज़ार फीट पर, अब जंग सिर्फ़ जवानों की नहीं… machines की भी है।"
-    sfx: [ { name: whoosh, at: 2 }, { name: riser, at: 40 }, { name: boom, at: 68 } ]
+    sfx: [ { name: whoosh, at: 2 } ]
     show:
       - shape: rect
         as: bg

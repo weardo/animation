@@ -85,6 +85,7 @@ export function applySfx(sceneIR: SceneIR, story: StoryIR, opts: SfxOptions): Sc
         src: `audio://${res.publicRel}`,
         at,
         duration_frames: res.durationFrames,
+        volume: res.mix, // duck SFX under the VO — they're accents, not the lead
       });
       cueCount += 1;
     });
@@ -99,6 +100,7 @@ export function applySfx(sceneIR: SceneIR, story: StoryIR, opts: SfxOptions): Sc
         src: `audio://${res.publicRel}`,
         at: at + offset,
         duration_frames: res.durationFrames,
+        volume: res.mix, // duck SFX under the VO — they're accents, not the lead
       });
       cueCount += 1;
     });

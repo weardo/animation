@@ -33,7 +33,17 @@ interface SfxRecipe {
   graph: string;
   /** Output duration in seconds. */
   dur: number;
+  /**
+   * Cue-level MIX gain (0..1) applied to the baked wav when this effect is placed — the volume the
+   * effect sits at IN THE VIDEO, so SFX read as ACCENTS UNDER the narration, never over it. Impacts
+   * and tension builds (boom/sub_drop/riser/swell/stinger) are mastered hot in isolation for punch,
+   * so they get a LOWER mix here to duck them below the voice. Omitted → DEFAULT_SFX_MIX.
+   */
+  mix?: number;
 }
+
+/** Default cue-level SFX volume — accents sit clearly under the VO (VO peaks ~−0.4 dB). */
+const DEFAULT_SFX_MIX = 0.55;
 
 /**
  * The built-in SFX palette. Each is a short, recognizable UI/motion cue synthesized from math:
@@ -84,6 +94,7 @@ const SFX_RECIPES: Record<string, SfxRecipe> = {
   },
   thud: {
     dur: 0.45,
+    mix: 0.5,
     // A cinematic IMPACT: a sub-bass sine that DROPS in pitch (an exponentially falling frequency,
     // ~150→40 Hz) for the "boom", plus a short noise transient for the attack "hit". The classic
     // trailer-hit synthesis. Snappy exp decay.
@@ -116,9 +127,17 @@ const SFX_RECIPES: Record<string, SfxRecipe> = {
   },
   riser: {
     dur: 1.2,
+    mix: 0.45,
     // A TENSION BUILD: rising filtered noise + a rising pitch, crescendo to the end → tension before a
-    // reveal/turn. Fixed seed = deterministic. NOTE: this is a ~1.2s LEAD-IN (pair it with an impact ~1s
-    // later); for a longer multi-second buildup use `swell` (below), not a lone riser.
+    // reveal/turn. Fixed seed = deterministic.
+    // ⚠️ RISER RULE (this SFX is the one most-often misused — it "appears out of nowhere"):
+    //   1. WHEN: only to BUILD INTO a single hard reveal/turn — the ONE biggest beat of a video. NEVER on
+    //      an info/spec beat, a map-label beat, a quote, or a comment-CTA / soft (…ellipsis) close. Those
+    //      get a whoosh (+ maybe one impact), not a build. Use ~once per video; if unsure, don't.
+    //   2. TIMING IS MANDATORY: the riser is 1.2s ≈ 36f@30fps and PEAKS AT ITS END. The impact (boom/cut)
+    //      MUST land exactly at riser_start + round(1.2*fps). Place the riser at `impact_frame − 36`, not
+    //      the other way round. If the peak falls before/after the impact, the rising tail sweeps into
+    //      nothing = the "out of nowhere" artifact. For a multi-second bed use `swell`, never a lone riser.
     graph:
       'anoisesrc=color=white:duration=1.2:seed=3:amplitude=0.5,highpass=f=500[n];' +
       "aevalsrc='0.35*sin(2*PI*(180+700*t)*t)':d=1.2:s=44100[t];" +
@@ -126,6 +145,7 @@ const SFX_RECIPES: Record<string, SfxRecipe> = {
   },
   swell: {
     dur: 2.2,
+    mix: 0.5,
     // A REAL multi-second BUILDUP (what a 1s riser can't be): a slow 2.2s crescendo of pink noise + a
     // rising low tone → place UNDER a whole beat that builds into a turn/reveal, resolving ON the hit.
     graph:
@@ -143,6 +163,7 @@ const SFX_RECIPES: Record<string, SfxRecipe> = {
   },
   sub_drop: {
     dur: 1.1,
+    mix: 0.45,
     // A DEEP cinematic sub-bass DROP (deeper + longer than `boom`): the big beat / a heavy reveal — felt
     // more than heard. Pairs well after a `swell`/`riser`.
     graph:
@@ -152,6 +173,7 @@ const SFX_RECIPES: Record<string, SfxRecipe> = {
   },
   stinger: {
     dur: 0.45,
+    mix: 0.5,
     // A sharp dramatic HIT (a stab): the TURN / a shock reveal — brighter + more tonal than a `boom`.
     graph:
       'sine=frequency=175:duration=0.45[low];sine=frequency=523:duration=0.45[mid];' +
@@ -179,6 +201,7 @@ const SFX_RECIPES: Record<string, SfxRecipe> = {
   },
   boom: {
     dur: 0.85,
+    mix: 0.38,
     // A BIG cinematic sub-impact: a deeper, longer pitch drop (~110→30 Hz) with a longer tail than
     // `thud` → the payoff/climax hit. Sub-bass — feel it more than hear it.
     graph:
@@ -199,6 +222,8 @@ export interface SfxResult {
   publicRel: string;
   /** Cue length in frames at the given fps (≥1). */
   durationFrames: number;
+  /** Cue-level mix gain (0..1) — the volume this effect sits at in the video (accent under the VO). */
+  mix: number;
   /** True when this call reused an existing cached wav (skip-if-exists). */
   cached: boolean;
 }
@@ -220,9 +245,10 @@ export function synthSfx(name: string, libSfxDir: string, fps: number): SfxResul
   const wavPath = resolvePath(libSfxDir, `${name}.wav`);
   const publicRel = `audio/${name}.wav`;
   const durationFrames = Math.max(1, Math.round(recipe.dur * fps));
+  const mix = recipe.mix ?? DEFAULT_SFX_MIX;
 
   if (existsSync(wavPath)) {
-    return { name, libPath: wavPath, publicRel, durationFrames, cached: true };
+    return { name, libPath: wavPath, publicRel, durationFrames, mix, cached: true };
   }
 
   // Render the recipe to a 44.1kHz mono PCM wav (a fixed, deterministic encode). `-filter_complex` +
@@ -241,5 +267,5 @@ export function synthSfx(name: string, libSfxDir: string, fps: number): SfxResul
     { stdio: 'pipe' },
   );
   if (!existsSync(wavPath)) throw new Error(`[sfx] ffmpeg produced no wav at ${wavPath}`);
-  return { name, libPath: wavPath, publicRel, durationFrames, cached: false };
+  return { name, libPath: wavPath, publicRel, durationFrames, mix, cached: false };
 }
