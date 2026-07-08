@@ -287,37 +287,9 @@ YouTube needs a one-time OAuth setup + `--auth` (see `docs/factory/PUBLISHING.md
 API uploads to private/unlisted until the OAuth app is verified — so the practical flow is upload-unlisted
 → glance in Studio → click Publish. Quota ≈ 6 uploads/day free.
 
-## 10. DOCUMENTARIES (5-min upgrade — v1, 2026-07-08)
+## 10. DOCUMENTARIES → see the `producing-documentaries` skill
 
-A short documentary is the SAME pipeline scaled to ~40-60 beats in ACTS, plus new journalism content
-sources. Spec: `docs/superpowers/specs/2026-07-08-documentary-v1-design.md`. **Operating principle:
-journalism FAIR USE *with attribution*** — publicly-accessible media as brief, attributed, transformative
-evidence (attribution = licensing cover AND authenticity). New content-source CLIs (all cache-once-offline
-→ deterministic replay, all record provenance/attribution):
-- **`factory:photo "<q>" --source wikimedia|pexels [--list N] [--index n]`** — still images. Wikimedia
-  Commons = REAL archival subjects (leaders/warships/ports; records CC/PD + author attribution); Pexels =
-  generic mood b-roll. Auto-downscaled. Browse+verify like footage. → `{ asset: <id>, as: still }`.
-- **`factory:newsshot "<url>" --id <id> [--selector "<css>"] [--full-page]`** — screenshot a public news
-  article (headless Chromium via Remotion's browser + puppeteer-core). Powers the RAPID UBIQUITY MONTAGE.
-  Use `--selector` to crop to the headline/article node. → `{ asset: <id>, as: shot }`.
-- **`factory:newsclip "<url>" --id <id> [--section 12-20]`** — pull a BRIEF public news video clip via
-  yt-dlp → light footage proxy. Real event evidence. `--section` keeps it short (fair use). No paywall/DRM
-  bypass. → `{ footage: <id>, as: broll }`.
-- **Ken Burns** — `kenburns: "in"|"out"|"in-slow"|"out-slow"` (or `{from,to}` scale %) on any image/asset
-  show-item → a slow scale zoom over the beat (lowering sugar over the existing transform anim; `smooth`
-  easing). Gives stills cinematic motion.
-
-**Authoring a doc (convention, no extra code):** ACT structure (Act I hook/context → II escalation → III
-turn+resolution) as comment-grouped beats; **news montage = 5-8 rapid ~0.6-1.0 s beats**, hard cuts, a
-whip/click per cut → ubiquity; **stage-aware audio** — different music bed per act via the layered
-story-level `audio[]` tracks (crossfade at act boundaries: fade_out overlapping fade_in), SFX mapped to
-STORY functions (riser into a reveal, boom on the turn, drone under tension), transitions matched to plot
-(hard cuts in montages, dissolves within an act, a longer fade+whoosh at ACT breaks). Needs a few
-royalty-free beds (calm-intro/tension/climax/resolution) in the project `assets/audio/`. ALL reel
-principles carry over (official map, आप-respectful direct address + opinion prompt, coherent one-story
-script, tailored per-clip effects, चाइना-style phonetic TTS spellings, beat-duration-fits-narration,
-publish block). NOTE: a 5-min render ≈ 9,000 frames ≈ 25-35 min — verify look on `--frames` stills first.
-**v2 (not built):** kinetic typography (pull-quotes/lower-thirds/stat callouts), automated pacing tooling.
+A ~5-min short documentary is the SAME pipeline scaled to multi-ACT + journalism evidence sources (factory:photo/newsshot/newsclip + Ken Burns + ubiquity montage + stage-aware audio). ALL reel principles here carry over. Use the dedicated **`producing-documentaries`** skill for the doc-specific process.
 
 ## The channel is production-DONE; the leap not yet built
 

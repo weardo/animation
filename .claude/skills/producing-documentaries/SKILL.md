@@ -1,0 +1,105 @@
+---
+name: producing-documentaries
+description: Use when producing a ~5-minute Indian-language (Hinglish) geopolitics/defense SHORT DOCUMENTARY in the animation factory — a longer-form, multi-ACT piece (vs a 40-60s reel) built from journalism EVIDENCE: real news-article screenshots (ubiquity montage), real news video clips, Wikimedia archival stills with Ken Burns motion, cinematic maps, footage, stage-aware music/SFX, and आप-respectful direct-address narration. Read it BEFORE building a documentary. It BUILDS ON producing-news-reels (all reel principles carry over) and adds the documentary-specific process: act structure, the evidence content-source CLIs (factory:photo/newsshot/newsclip), Ken Burns, the news-montage pattern, stage-aware audio, and the 5-min render reality.
+---
+
+# Producing a short documentary (5-min Hinglish geopolitics)
+
+A documentary is the **SAME factory pipeline as a reel, scaled up**: one `projects/<id>/story.yaml` with
+**~30-60 beats grouped into ACTS**, compiled → rendered → published exactly as a reel. **Everything in
+`producing-news-reels` applies unchanged** — read it first. This skill adds only what's DIFFERENT for
+long-form: act structure, journalism-evidence sourcing, Ken Burns, the ubiquity montage, and stage-aware
+audio. Design spec: `docs/superpowers/specs/2026-07-08-documentary-v1-design.md`.
+
+## Carries over from `producing-news-reels` (do NOT re-derive)
+
+Voice (Sarvam shubh/48k/0.9, चाइना-style phonetic TTS fixes) · Mukta font · **`world-in` OFFICIAL India
+map** (legally required) + the map toolkit (routes/markers/fly-to) · cinematic-dark look + **tailored
+per-clip effects** (bright clips stay bright; localized text scrim, not a full dark crush) · **narration
+craft**: ONE-story monologue split into beats + **आप-respectful DIRECT ADDRESS** + rhetorical questions +
+an **opinion/comment prompt** + beat-duration-fits-narration · footage **browse+contact-sheet verify** ·
+the `publish:` block + `factory:publish` · render.log monitoring + RAM-safe concurrency.
+
+## The operating principle — journalism fair use WITH attribution
+
+A documentary uses **publicly-available media as EVIDENCE** inside brief, attributed, transformative
+commentary. Attribution does double duty: **licensing cover + authenticity** (a sourced screenshot IS the
+credibility). Guardrails: publicly-accessible only (no paywall/DRM bypass), keep clips/shots BRIEF,
+source-attribute on-screen AND in the description, and it must be commentary — not a re-upload. Every
+evidence CLI records provenance/attribution automatically.
+
+## 1. STRUCTURE — three acts, ~30-60 beats
+
+Author as comment-grouped acts (a documentary is a JOURNEY, not a 5-beat reel):
+- **ACT I — HOOK + THE WORLD** (~45-75s): the make-or-break cold-open (first-frame text hook + a
+  pre-commitment question), then establish the stakes/place ("at 18,000 feet…").
+- **ACT II — THE CONFLICT / ESCALATION** (~90-140s): the problem, the antagonist, rising tension. The
+  ubiquity montage lives here ("everyone is reporting this"). Multiple sub-beats, maps, evidence.
+- **ACT III — THE ANSWER + PAYOFF** (~90-140s): the turn/insight (the tech, the move), the resolution,
+  the opinion prompt, and a LOOP close returning to the hook visual+text.
+Each beat still obeys the reel rules: one visual per beat, connective narration, tailored effects.
+**Write the WHOLE ~700-900-word script as one spoken monologue FIRST, then cut it at visual changes.**
+
+## 2. EVIDENCE — the new content sources (all cache-once-offline, attributed)
+
+- **`factory:photo "<q>" --source wikimedia|pexels [--list N] [--index n] [--orientation portrait]`** —
+  stills. **Wikimedia** = REAL subjects (Indian Army, DRDO drones, a specific mountain, a leader) with
+  CC/PD + author attribution; **Pexels** = generic mood b-roll. BROWSE (`--list`) + pick a specific one;
+  the page title is the content signal. Use with **Ken Burns**: `{ asset: <id>, as: still, args: { z: 1,
+  kenburns: "in" } }`.
+- **`factory:newsshot "<url>" --id <id> [--selector "<css>"] [--width 1200] [--height 1600]`** — a public
+  news-article screenshot (Remotion's Chromium via puppeteer-core). Powers the **UBIQUITY MONTAGE**.
+  `--selector` crops to the headline/article node (drop site chrome). VERIFY the shot (extract a frame +
+  look) — a 404/consent page is useless. Use REAL, current article URLs (find them via WebSearch).
+- **`factory:newsclip "<url>" --id <id> --section <start>-<end>`** — a BRIEF public news video clip via
+  yt-dlp → light footage proxy (event evidence). Keep `--section` short. → `{ footage: <id>, as: broll }`.
+- **Ken Burns** (`kenburns: "in"|"out"|"in-slow"|"out-slow"` or `{from,to}` scale %) — a slow zoom on a
+  still so it isn't dead. THE way to make archival photos + screenshots feel alive. Default "in" = 100→112.
+
+## 3. THE UBIQUITY MONTAGE (the documentary's signature evidence device)
+
+To signify "the whole world is reporting this" / consensus: **5-8 RAPID beats of ~0.6-1.0 s each**, each a
+`newsshot` (or a headline card) with a **hard cut** (no transition) + a whip/click SFX per cut, often with
+a subtle `kenburns` push. Front-load it in Act II to establish the stakes are real + widely-covered. Keep
+each shot on-screen just long enough to register a logo + headline. Attribute the publishers in the
+description.
+
+## 4. STAGE-AWARE AUDIO — score/SFX/transitions follow the PLOT (not one flat loop)
+
+A 5-min doc must not ride one loop. Use the EXISTING capability, staged:
+- **Per-act music** via the story-level layered **`audio[]` tracks** (each `{src, at, duration, volume,
+  fade_in, fade_out, loop}`): a DIFFERENT bed per act, **crossfaded** at act boundaries (outgoing
+  `fade_out` overlapping incoming `fade_in`). Arc: Act I sparse/ambient → Act II rising tension → the turn
+  a swell/impact → Act III climax → a calmer resolution outro. All auto-duck under VO. Source a few
+  royalty-free beds (Incompetech CC-BY is curl-able; credit in the description) into `assets/audio/`; the
+  built-in synth beds are too thin for long-form.
+- **SFX mapped to STORY FUNCTIONS**: `riser` INTO a reveal/act-turn; `boom`/impact ON the central turn or
+  a key stat; a low drone under a tension passage; `ding`/`pop` on a marker/fact pop; whip/click per
+  montage cut. "Every STORY BEAT has an audio gesture."
+- **Transitions matched to plot**: HARD CUTS inside a montage; short cross-dissolves within an act; a
+  longer **fade + whoosh/impact at ACT boundaries** (the chapter break). Reserve the biggest transition
+  for the turn.
+- **Mix**: music ducks ~0.3 under VO; SFX accent without masking narration; verify audible (mean ≫ −60 dB)
+  and VO never buried.
+
+## 5. WORKFLOW (the order that works)
+
+1. **Research + ground the facts** (WebSearch) — a documentary must be accurate; collect REAL article URLs
+   for the montage + the verifiable facts. Attribute contested claims as stated positions.
+2. **Write the full script** as one आप-respectful direct-address monologue (~700-900 words), 3 acts.
+3. **Source evidence** to match: footage (browse+verify), Wikimedia stills, news screenshots (verify each),
+   1-2 news clips, music beds. Everything cached + attributed.
+4. **Author beats** (~30-60) in acts, with the montage, KB stills, maps, footage, tailored effects, SFX,
+   per-act `audio[]`, transitions.
+5. **Synth once → read cue durations → fit each beat** (= say + ~0.9s); verify 0 overlaps in scene.json.
+6. **VERIFY LOOK ON `--frames` STILLS** across the acts BEFORE the slow full render.
+7. **Full render** — a 5-min doc ≈ 9,000 frames ≈ **25-35 min** (monitor via render.log). Verify the
+   artifact (duration, audio audible, montage reads, attributions present).
+8. **Review with the user, then publish** (evidence-based, outward-facing → confirm before public).
+
+## 6. Scope (v1) — what's built vs deferred
+
+BUILT: the evidence CLIs (photo/newsshot/newsclip), Ken Burns, the montage + act + stage-audio
+conventions. DEFERRED to v2: kinetic typography (animated pull-quotes/lower-thirds/stat callouts) and
+automated act-pacing/music-swell tooling — for now, place stat callouts as normal `text` beats + author
+the audio staging by hand.
