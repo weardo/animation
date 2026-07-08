@@ -206,6 +206,10 @@ export const MapParamsSchema = z
     fill: z.string().default('#3a4a60'),
     /** Land fill opacity 0..1. */
     fill_opacity: z.number().min(0).max(1).default(1),
+    /** RELIEF SHADE: overlay a per-feature directional light (lit top-left → shadowed bottom-right) on
+     *  every polygon → a raised-terrain 3D feel that DOESN'T touch the base/choropleth fills. Off by
+     *  default (flat). Safe with choropleth (unlike `draw_on`). */
+    shade: z.boolean().default(false),
     /** Feature outline stroke (CSS color OR a `defs.palette` token). Generic neutral default. */
     stroke: z.string().default('#1a2230'),
     /** Outline stroke width in px. */

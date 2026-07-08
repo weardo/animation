@@ -210,7 +210,7 @@ export function renderMap(props: {
     const strokeReveal = p.draw_on_stroke ? prog : 1;
     const fillReveal = p.draw_on_fill ? ease('easeOut', prog) : 1;
 
-    return (
+    const base = (
       <path
         key={i}
         d={d}
@@ -225,7 +225,28 @@ export function renderMap(props: {
           : {})}
       />
     );
+    // SHADE (relief): a per-feature directional light overlay (lit top-left → shadowed bottom-right, in
+    // each polygon's own bounding box) → a raised-terrain 3D feel WITHOUT killing the fills. NOT applied
+    // to draw-on'd features mid-reveal (fillReveal gates it too).
+    if (!p.shade) return base;
+    return (
+      <g key={i}>
+        {base}
+        <path d={d} fill="url(#mapShade)" fillOpacity={fillReveal} stroke="none" />
+      </g>
+    );
   });
+
+  // The shared directional-light gradient def (identical across maps → a fixed id is collision-safe).
+  const shadeDefs = p.shade ? (
+    <defs key="shadeDefs">
+      <linearGradient id="mapShade" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stopColor="#ffffff" stopOpacity={0.16} />
+        <stop offset="0.55" stopColor="#ffffff" stopOpacity={0} />
+        <stop offset="1" stopColor="#000000" stopOpacity={0.24} />
+      </linearGradient>
+    </defs>
+  ) : null;
 
   // --- OCEAN: a flat sea fill behind the land (optional; else transparent) ---
   const ocean = p.ocean ? (
@@ -352,6 +373,7 @@ export function renderMap(props: {
       style={{ position: 'absolute', left: 0, top: 0, overflow: 'visible' }}
       opacity={p.opacity}
     >
+      {shadeDefs}
       {ocean}
       {graticule}
       {paths}
