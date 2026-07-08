@@ -8,6 +8,7 @@ import { resolve } from 'node:path';
 
 import { stringify as stringifyYaml } from 'yaml';
 
+import { resolveVisuals } from './asset-scout.js';
 import { PROJECT_ROOT } from './claude.js';
 import { runStoryArchitect, type StoryBrief } from './story-architect.js';
 
@@ -22,11 +23,15 @@ export interface OrchestrateResult {
   beats: number;
   cached: boolean;
   attempts: number;
+  visualsResolved: number;
+  visualsFailed: number;
 }
 
-/** Brief → Story IR → projects/<id>/story.yaml. Deterministic id derived from the brief. */
-export function orchestrateBrief(b: StoryBrief, projectId?: string): OrchestrateResult {
-  const arch = runStoryArchitect(b);
+/** Brief → Story IR → Asset Scout (visuals) → projects/<id>/story.yaml. Deterministic id from the brief. */
+export async function orchestrateBrief(b: StoryBrief, projectId?: string): Promise<OrchestrateResult> {
+  const arch = await runStoryArchitect(b);
+  // Asset Scout: resolve the architect's per-beat `q:<query>` footage intent into real fetched clips.
+  const scout = await resolveVisuals(arch.story, b.aspect);
   const hash = createHash('sha256').update(JSON.stringify(b)).digest('hex').slice(0, 6);
   const id = projectId ?? `gen-${slug(arch.story.title)}-${hash}`;
   const dir = resolve(PROJECT_ROOT, 'projects', id);
@@ -39,5 +44,7 @@ export function orchestrateBrief(b: StoryBrief, projectId?: string): Orchestrate
     beats: arch.story.beats.length,
     cached: arch.cached,
     attempts: arch.attempts,
+    visualsResolved: scout.resolved,
+    visualsFailed: scout.failed,
   };
 }

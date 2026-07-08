@@ -10,7 +10,7 @@ import { StoryIRSchema, type StoryIR } from '../src/ir/story.js';
 import { PROJECT_ROOT, runClaudeText, extractJson } from './claude.js';
 
 /** Bump when the prompt changes → invalidates the cache (like a pass PASS_VERSION). */
-const PROMPT_VERSION = 'story-architect@3';
+const PROMPT_VERSION = 'story-architect@4';
 
 export interface StoryBrief {
   brief: string;
@@ -34,8 +34,11 @@ SHAPE (all keys shown are the ONLY allowed keys — extras are rejected):
       "duration": { "seconds": 5 },
       "camera": "slow_push_in",
       "show": [
+        { "footage": "q:swirling galaxy in deep space", "as": "bg",
+          "args": { "z": 0, "loop": true, "muted": true, "fit": "cover",
+                    "effects": [{ "kind": "color_grade", "brightness": 0.42, "saturate": 1.05 }] } },
         { "text": "SHORT HEADLINE", "as": "t", "at": "center",
-          "args": { "size": 68, "weight": 800, "color": "#f5f7fa",
+          "args": { "z": 20, "size": 68, "weight": 800, "color": "#f5f7fa",
                     "anim": { "preset": "rise", "duration": 12, "distance": 40 } } }
       ]
     }
@@ -48,10 +51,13 @@ RULES:
 - "text" is a VERY SHORT scannable headline (2-4 words MAX), DIFFERENT from the narration. It MUST fit the frame width: for 9:16 (vertical) keep "size" 48-72 and 2-4 words; for 16:9 you may go 60-96. Never a full sentence — it will overflow and clip.
 - Bump the PROMPT_VERSION-worthy note: prefer punchy fragments ("THE LITTLE ENGINE", "25× A SECOND") over long phrases.
 - Keep every fact plausible/verifiable; do not invent statistics you are unsure of.
-- MOTION IS MANDATORY (a static frame reads as broken):
-  · EVERY text MUST have an "anim" in its args so it animates in. Use {"preset":"rise","duration":12,"distance":40} for most; {"preset":"fade","duration":12} occasionally. Never omit anim.
-  · EVERY beat MUST have a "camera" move. First beat = "establishing". Then VARY across beats: "slow_push_in", "slow_pull_out", "pan_left", "pan_right", with an occasional "hold". Never repeat the same camera on 3 beats in a row.
-- Use ONLY these beat keys: id, say, duration, camera, show. Use ONLY these show keys: text, as, at, args. "at" is one of: center, top, bottom, left, right. "camera" is one of: establishing, slow_push_in, slow_pull_out, pan_left, pan_right, hold. Give each beat a unique id.
+- VISUALS ARE MANDATORY — a video of only text is broken. EVERY beat's "show" MUST START with a background FOOTAGE item that visually depicts the beat:
+  { "footage": "q:<query>", "as": "bg", "args": { "z": 0, "loop": true, "muted": true, "fit": "cover", "effects": [{ "kind": "color_grade", "brightness": 0.42, "saturate": 1.05 }] } }
+  The "q:" value is a CONCRETE, literal STOCK-VIDEO search phrase (2-4 words) for real filmable footage that shows this beat's subject — e.g. "black hole space", "spinning galaxy", "clock close up", "city traffic timelapse", "ocean waves aerial". NEVER abstract concepts ("time", "confusion") — those return nothing. Pick footage a stock library would actually have. Vary it per beat.
+- MOTION IS MANDATORY:
+  · EVERY text MUST have an "anim" in its args (plus "z": 20 so it sits above the footage). Use {"preset":"rise","duration":12,"distance":40} for most; {"preset":"fade","duration":12} occasionally.
+  · EVERY beat MUST have a "camera" move. First beat = "establishing". Then VARY: "slow_push_in", "slow_pull_out", "pan_left", "pan_right", occasional "hold". Never repeat the same camera 3 beats running.
+- Use ONLY these beat keys: id, say, duration, camera, show. Use ONLY these show keys: footage, text, as, at, args. "at" is one of: center, top, bottom, left, right. "camera" is one of: establishing, slow_push_in, slow_pull_out, pan_left, pan_right, hold. Give each beat a unique id.
 - Return VALID JSON only.`;
 
 function buildPrompt(b: StoryBrief, priorError?: string): string {
@@ -75,7 +81,7 @@ export interface ArchitectResult {
 }
 
 /** Run the Story Architect. Returns a validated StoryIR, content-addressed cached (run-once, replay). */
-export function runStoryArchitect(b: StoryBrief): ArchitectResult {
+export async function runStoryArchitect(b: StoryBrief): Promise<ArchitectResult> {
   const cacheDir = resolve(PROJECT_ROOT, '.cache/agents/story-architect');
   const key = createHash('sha256').update(PROMPT_VERSION + '\n' + JSON.stringify(b)).digest('hex').slice(0, 16);
   const cacheFile = resolve(cacheDir, `${key}.json`);
@@ -88,7 +94,7 @@ export function runStoryArchitect(b: StoryBrief): ArchitectResult {
   for (let attempt = 1; attempt <= MAX; attempt++) {
     let candidate: unknown;
     try {
-      candidate = extractJson(runClaudeText(buildPrompt(b, priorError)));
+      candidate = extractJson(await runClaudeText(buildPrompt(b, priorError)));
     } catch (e) {
       priorError = `Response was not parseable JSON: ${(e as Error).message}`;
       continue;

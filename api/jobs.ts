@@ -103,14 +103,14 @@ async function runJob(id: string): Promise<void> {
   const job = jobs.get(id);
   if (!job) return;
   try {
-    // 1. Story Architect: brief → Story IR → story.yaml
-    stage(job, 'Writing story', 'writing_story');
-    const res = orchestrateBrief(job.brief);
+    // 1. Story Architect (brief → Story IR) + Asset Scout (fetch a background clip per beat)
+    stage(job, 'Writing story + fetching visuals', 'writing_story');
+    const res = await orchestrateBrief(job.brief);
     job.projectId = res.projectId;
     job.storyPath = res.storyPath;
     job.title = res.title;
     job.beats = res.beats;
-    stage(job, `Story ready · ${res.beats} beats`, 'writing_story');
+    stage(job, `Story ready · ${res.beats} beats · ${res.visualsResolved} clips`, 'writing_story');
 
     // 2. Render (full video with narration + captions + music/sfx). Narration goes through Sarvam AI
     //    (best voice); if SARVAM_API_KEY is unset it falls back to espeak-ng automatically. word-align
