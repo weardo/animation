@@ -249,7 +249,12 @@ function parseArgs(argv: string[]): Args {
   const lipSync = !argv.includes('--no-lip-sync');
   // A3 music bed: on by default (under the same --no-audio master switch); --no-music skips just music.
   const music = !argv.includes('--no-music');
-  return { target: positional[0] ?? 'examples/character.yaml', id: flag('--project'), name: flag('--name'), frames: flag('--frames'), gpu: argv.includes('--gpu'), format, out, audio, engine, voice, wpm, captions, captionMode, wordAlign, lipSync, music };
+  // GPU (Iris Xe / gl:'angle') is now the DEFAULT — faster, and only PERCEPTUALLY identical, which is
+  // fine because the factory verifies the GPU tier with VMAF, not byte-exact cmp (CLAUDE.md M6). Opt OUT
+  // with `--no-gpu` (or RENDER_GPU=0) for the CPU byte-exact path the determinism/golden-fixture gate
+  // uses (verify-render). `--gpu` is still accepted (redundant no-op now).
+  const gpu = !argv.includes('--no-gpu') && process.env['RENDER_GPU'] !== '0';
+  return { target: positional[0] ?? 'examples/character.yaml', id: flag('--project'), name: flag('--name'), frames: flag('--frames'), gpu, format, out, audio, engine, voice, wpm, captions, captionMode, wordAlign, lipSync, music };
 }
 
 /**
@@ -326,10 +331,24 @@ const chromiumOpts = (gpu: boolean) => (gpu ? { gl: 'angle' as const } : {});
 // OOM-crashes mid-render ("Target closed" / "browser crashed while rendering frame N, retrying"). Cap the
 // default by BOTH cores (`cpu-2`) and free memory (~1.3 GB/worker, min 1) so renders stay stable here.
 // `RENDER_CONCURRENCY` overrides explicitly (e.g. on a fat machine). See DECISIONS 2026-06-23.
-const PER_WORKER_BYTES = 1.3 * 1024 * 1024 * 1024;
+// Conservative RAM model: each headless-Chrome worker (blur-heavy SVG + a footage/video decode) balloons
+// well past the naive estimate, and freemem() at LAUNCH over-reads (workers haven't spawned yet) — so the
+// old 1.3 GB/worker with no reserve spawned ~14 workers that then THRASHED swap (the ~7-min render). Now:
+// reserve a base for the OS + node/Chrome parents, budget ~2 GB/worker, and hard-cap at 6 so a
+// mostly-free box never over-provisions. `RENDER_CONCURRENCY` still overrides. See DECISIONS 2026-06-23.
+const BASE_RESERVE_BYTES = 4 * 1024 * 1024 * 1024;
+const PER_WORKER_BYTES = 2 * 1024 * 1024 * 1024;
+const CONCURRENCY_HARD_CAP = 6;
 const CONCURRENCY = process.env['RENDER_CONCURRENCY']
   ? Math.max(1, Number(process.env['RENDER_CONCURRENCY']))
-  : Math.max(1, Math.min(cpus().length - 2, Math.floor(freemem() / PER_WORKER_BYTES)));
+  : Math.max(
+      1,
+      Math.min(
+        cpus().length - 2,
+        CONCURRENCY_HARD_CAP,
+        Math.floor((freemem() - BASE_RESERVE_BYTES) / PER_WORKER_BYTES),
+      ),
+    );
 
 /**
  * Bundle the project + select the composition for a Scene IR. Shared by video + stills.

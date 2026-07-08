@@ -807,6 +807,50 @@
           "generated": true
         }
       }
+    },
+    "footage": {
+      "tanker": {
+        "id": "tanker",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/tanker.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/a-boat-is-in-the-water-near-a-large-ship-26329253/ by Thiago  Matos (https://www.pexels.com/@thiagomobile)",
+          "prompt": "oil tanker ship ocean",
+          "size": "medium",
+          "cache_hash": "baa707d073c1",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "fuel": {
+        "id": "fuel",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/fuel.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/snowy-night-at-illuminated-gas-station-35560146/ by Luca Dross (https://www.pexels.com/@lucadross) [portrait]",
+          "prompt": "gas station fuel pump night",
+          "size": "medium",
+          "cache_hash": "9262c6383f75",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      }
     }
   }
 }

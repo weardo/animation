@@ -129,14 +129,25 @@ beats:
       - shape: rect
         as: bg
         args: { z: 0, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#0a0d14" } }
-      - text: "⛔"
-        as: icon
-        at: center
-        args: { z: 10, size: 300, weight: 800, color: "#ff4438", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ff4438", radius: 24, intensity: 1.0 } ], anim: { preset: rise, duration: 18, distance: 60 } }
+      # REAL fuel-station footage (Pexels) instead of a ⛔ emoji — graded to the dark palette + a red push
+      - footage: fuel
+        as: broll
+        args:
+          z: 1
+          loop: true
+          muted: true
+          fit: cover
+          effects:
+            - { kind: color_grade, brightness: 0.5, contrast: 1.16, saturate: 0.7, hue: -8 }
+            - { kind: blur, radius: 1 }
+            - { kind: vignette, amount: 0.5, softness: 0.6 }
+      - shape: rect
+        as: scrim
+        args: { z: 2, position: [540, 960], params: { width: 1080, height: 1920 }, fill: { a: 0, k: "#1a0808" }, opacity: 0.5 }
       - text: "दाम आसमान पर"
         as: big
-        at: bottom
-        args: { z: 20, size: 84, weight: 800, color: "#ff6b4d", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ff4438", radius: 10, intensity: 0.6 }, { kind: drop_shadow, dx: 0, dy: 5, blur: 16, color: "#000000", opacity: 0.8 } ], anim: { preset: rise, duration: 20, distance: 70 } }
+        at: center
+        args: { z: 20, size: 100, weight: 800, color: "#ff6b4d", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: glow, color: "#ff4438", radius: 14, intensity: 0.8 }, { kind: drop_shadow, dx: 0, dy: 5, blur: 18, color: "#000000", opacity: 0.85 } ], anim: { preset: rise, duration: 12, distance: 50 } }
     camera: slow_push_in
     duration: { seconds: 4.4 }
     transition: { kind: fade, duration: 16 }
