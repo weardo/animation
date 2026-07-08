@@ -136,12 +136,13 @@ beats:
           center: [80, 33.5]
           scale: 1500
           key_field: name
-          fill: "#223249"
-          no_data_fill: "#223249"
-          stroke: "#3a516c"
+          shade: true
+          fill: "#35507a"
+          no_data_fill: "#35507a"
+          stroke: "#7ea1cb"
           stroke_width: 0.9
-          ocean: "#0a1420"
-          graticule: { step: 3, color: "#1a2636", opacity: 0.4, width: 0.6 }
+          ocean: "#081524"
+          graticule: { step: 3, color: "#34517c", opacity: 0.4, width: 0.6 }
           choropleth: { India: "#2ee6a6", China: "#ff4438" }
           labels: { India: India, China: China }
           markers:
@@ -172,12 +173,13 @@ beats:
           center: [90, 30]
           scale: 480
           key_field: name
-          fill: "#223249"
-          no_data_fill: "#223249"
-          stroke: "#3a516c"
+          shade: true
+          fill: "#35507a"
+          no_data_fill: "#35507a"
+          stroke: "#7ea1cb"
           stroke_width: 0.8
-          ocean: "#0a1420"
-          graticule: { step: 6, color: "#1a2636", opacity: 0.4, width: 0.6 }
+          ocean: "#081524"
+          graticule: { step: 6, color: "#34517c", opacity: 0.4, width: 0.6 }
           choropleth: { India: "#ff6b4d", China: "#ff4438" }
           labels: { India: India, China: China }
           effects: [ { kind: glow, color: "#ff4438", radius: 8, intensity: 0.5 } ]
@@ -291,12 +293,13 @@ beats:
           center: [79, 33.8]
           scale: 1900
           key_field: name
-          fill: "#223249"
-          no_data_fill: "#223249"
-          stroke: "#3a516c"
+          shade: true
+          fill: "#35507a"
+          no_data_fill: "#35507a"
+          stroke: "#7ea1cb"
           stroke_width: 1.0
-          ocean: "#0a1420"
-          graticule: { step: 2, color: "#1a2636", opacity: 0.45, width: 0.6 }
+          ocean: "#081524"
+          graticule: { step: 2, color: "#34517c", opacity: 0.45, width: 0.6 }
           choropleth: { India: "#2ee6a6", China: "#ff4438" }
           labels: { India: India, China: China }
           markers:
@@ -459,12 +462,13 @@ beats:
           center: [80, 28]
           scale: 620
           key_field: name
-          fill: "#223249"
-          no_data_fill: "#223249"
-          stroke: "#3a516c"
+          shade: true
+          fill: "#35507a"
+          no_data_fill: "#35507a"
+          stroke: "#7ea1cb"
           stroke_width: 0.8
-          ocean: "#0a1420"
-          graticule: { step: 5, color: "#1a2636", opacity: 0.4, width: 0.6 }
+          ocean: "#081524"
+          graticule: { step: 5, color: "#34517c", opacity: 0.4, width: 0.6 }
           choropleth: { India: "#2ee6a6" }
           labels: { India: India, China: China }
           effects: [ { kind: glow, color: "#2ee6a6", radius: 8, intensity: 0.5 } ]
