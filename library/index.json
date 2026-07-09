@@ -459,6 +459,25 @@
           "source": "factory (Painting Style System design 2026-06-23 — paint model DATA)",
           "license": "CC0"
         }
+      },
+      "india-storyboard": {
+        "id": "india-storyboard",
+        "version": "1.0.0",
+        "kind": "stylekit",
+        "format": "stylekit",
+        "uri": "stylekit://india-storyboard",
+        "tags": [
+          "stylekit",
+          "brand",
+          "india-storyboard",
+          "news",
+          "geopolitics"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "India Storyboard brand (2026-07-09 spec)",
+          "license": "proprietary-brand"
+        }
       }
     },
     "palettes": {
@@ -1562,6 +1581,153 @@
           "prompt": "fighter jets blue sky",
           "size": "medium",
           "cache_hash": "3f029a952707",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "bg-snakes-crawling-ground": {
+        "id": "bg-snakes-crawling-ground",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/bg-snakes-crawling-ground.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/sunset-glows-17833648/ by Cfq938888 Chen (https://www.pexels.com/@cfq938888-chen-642707385) [portrait]",
+          "prompt": "snakes crawling ground",
+          "size": "medium",
+          "cache_hash": "4e4c3f6b24e7",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "bg-china-flood-aerial": {
+        "id": "bg-china-flood-aerial",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/bg-china-flood-aerial.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/aerial-view-of-road-and-river-construction-site-34426163/ by SÀI GÒN CÔNG TY CP SẢN XUẤT - THƯƠNG MẠI (https://www.pexels.com/@betongsmcsg) [portrait]",
+          "prompt": "china flood aerial",
+          "size": "medium",
+          "cache_hash": "87d55659ba86",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "bg-flooded-village-street": {
+        "id": "bg-flooded-village-street",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/bg-flooded-village-street.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/beautiful-rain-in-kerala-village-19072635/ by sabir salam (https://www.pexels.com/@thiszsabir) [portrait]",
+          "prompt": "flooded village street",
+          "size": "medium",
+          "cache_hash": "ec4cd6335afa",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "bg-rain-window-sad": {
+        "id": "bg-rain-window-sad",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/bg-rain-window-sad.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/a-woman-in-scrubs-looking-out-the-window-6297714/ by Klaus Nielsen (https://www.pexels.com/@klaus-nielsen) [portrait]",
+          "prompt": "rain window sad",
+          "size": "medium",
+          "cache_hash": "943357fa5f45",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "bg-snake-in-water": {
+        "id": "bg-snake-in-water",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/bg-snake-in-water.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/water-snake-27469278/ by Pablo Buendia (https://www.pexels.com/@pablo-buendia-143462043) [portrait]",
+          "prompt": "snake in water",
+          "size": "medium",
+          "cache_hash": "926d8a40b73d",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "bg-snake-on-wall": {
+        "id": "bg-snake-on-wall",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/bg-snake-on-wall.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/person-with-snake-crawling-on-arm-8458671/ by MART  PRODUCTION (https://www.pexels.com/@mart-production) [portrait]",
+          "prompt": "snake on wall",
+          "size": "medium",
+          "cache_hash": "600262064ebc",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "bg-flood-water-rising": {
+        "id": "bg-flood-water-rising",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/bg-flood-water-rising.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/rain-pouring-down-7681539/ by Jill Burrow (https://www.pexels.com/@jill-burrow) [portrait]",
+          "prompt": "flood water rising",
+          "size": "medium",
+          "cache_hash": "d6f1405af225",
           "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
         }
       }

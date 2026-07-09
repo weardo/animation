@@ -127,6 +127,15 @@ The `map` generator (core-dataviz) has a full toolkit, all authored as DATA, all
 
 ## 5. CINEMATIC-DARK look (Johnny Harris)
 
+- **⚠️ BRAND — every reel uses `style: india-storyboard` (the channel identity, applied automatically).**
+  The `india-storyboard` stylekit (`library/stylekits/india-storyboard.json`) is the flat, footage-forward
+  `plain` look PLUS a `brand` block that the render composites automatically: a persistent **India Storyboard
+  logo bug** (top-left, every frame — the "instantly recognizable in frame 1" lever) and a **branded
+  end-card** (last ~1.5s: logo + `@IndiaStoryboard` + tagline over dimmed footage, that still LOOPS). Values
+  are DATA in the stylekit (bug corner/size/opacity, end-card, brand palette saffron/navy/green/gold); the
+  mechanism is `src/render/BrandOverlay.tsx`. `productionize` sets this style for every generated reel, so
+  dashboard + hand-authored reels are on-brand with zero per-video work. Just author with `style: india-storyboard`.
+
 - **Palette:** near-black bg (`#0a0d14`), dark land (`#141c28`), one hot accent per beat (amber
   `#ffb020` / red `#ff4438` / teal `#2ee6a6`), white text (`#f5f7fa`). Highlighted country = vivid fill.
 - **Depth — ⚠️ VIGNETTE IS OPT-IN, NOT A DEFAULT (user 2026-07-09: "normal news don't need it").** The

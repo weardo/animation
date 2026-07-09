@@ -63,6 +63,11 @@ export interface ProductionizeOptions {
  * architect left it out — never overwrites author-provided post/music/publish fields.
  */
 export function productionize(story: StoryIR, opts: ProductionizeOptions = {}): void {
+  // 0. Brand: news reels default to the India Storyboard stylekit (persistent bug + end-card, same flat
+  // footage-forward look as `plain`). Leave a deliberately-chosen non-plain style (e.g. concept videos'
+  // `kurzgesagt`) alone. So every generated reel is on-brand automatically.
+  if (!story.style || story.style === 'plain') story.style = 'india-storyboard';
+
   // 1. Cinematic-dark post grade (color_grade + grain; NO vignette by default — skill §Depth).
   if (!story.post || story.post.length === 0) {
     story.post = [

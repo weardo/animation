@@ -45,6 +45,7 @@ import { Scene } from './Scene.js';
 import { CaptionTrack } from './CaptionTrack.js';
 import { easingFn } from './stylekit.js';
 import { resolveEffects, applyEffects } from './effects.js';
+import { BrandOverlay } from './BrandOverlay.js';
 
 // P3 (alpha): `inputProps` is the Scene IR PLUS an optional transient render-time `_alpha` flag the
 // CLI sets ONLY for an `--alpha` render. It is NOT part of scene.json (the canonical record stays a
@@ -355,6 +356,10 @@ export const SceneIRComposition: React.FC<SceneIRCompositionProps> = (props) => 
       {/* Caption track (A1): narration-synced on-screen subtitles, derived from the same cues. Dropped
           on an alpha render — captions belong to the finished film, like the narration track. */}
       {!alpha && <CaptionTrack captions={sceneIR.captions} />}
+      {/* Channel BRAND (India Storyboard): persistent corner bug + end-card, from the resolved stylekit's
+          `brand` block. Composited last so the bug sits above the frame + captions. Absent brand → no-op;
+          dropped on an alpha render like the other finished-film layers. */}
+      {!alpha && <BrandOverlay brand={sceneIR.defs.stylekit?.brand} />}
     </AbsoluteFill>
   );
 };
