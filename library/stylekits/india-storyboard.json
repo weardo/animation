@@ -151,7 +151,7 @@
    "marginPct": 4
   },
   "endcard": {
-   "enabled": true,
+   "enabled": false,
    "seconds": 1.5,
    "logo": "brand/india-storyboard-logo.png"
   },

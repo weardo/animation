@@ -130,8 +130,11 @@ The `map` generator (core-dataviz) has a full toolkit, all authored as DATA, all
 - **⚠️ BRAND — every reel uses `style: india-storyboard` (the channel identity, applied automatically).**
   The `india-storyboard` stylekit (`library/stylekits/india-storyboard.json`) is the flat, footage-forward
   `plain` look PLUS a `brand` block that the render composites automatically: a persistent **India Storyboard
-  logo bug** (top-left, every frame — the "instantly recognizable in frame 1" lever) and a **branded
-  end-card** (last ~1.5s: logo + `@IndiaStoryboard` + tagline over dimmed footage, that still LOOPS). Values
+  logo bug** (top-left, EVERY frame — the "instantly recognizable in frame 1" lever, and it loops
+  seamlessly since it's on the hook frame too). **NO outro/end-card by default** (`brand.endcard.enabled:
+  false`): a full-screen sign-off card breaks the Shorts LOOP (logo-card→hook is a visual jump) and tanks
+  the >100%-retention rewatch — the persistent bug carries the brand instead. The end-card mechanism stays
+  in `BrandOverlay.tsx` for a future LONG-FORM channel (where a loop doesn't matter). Values
   are DATA in the stylekit (bug corner/size/opacity, end-card, brand palette saffron/navy/green/gold); the
   mechanism is `src/render/BrandOverlay.tsx`. `productionize` sets this style for every generated reel, so
   dashboard + hand-authored reels are on-brand with zero per-video work. Just author with `style: india-storyboard`.
