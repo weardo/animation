@@ -103,6 +103,11 @@
     <pre class="log hidden" id="pubout"></pre>
   </section>
 
+  <section class="card" id="radar">
+    <h2>📡 News Radar <span class="hint" id="radarState" style="font-weight:400">— breaking opportunities</span></h2>
+    <ul class="jobs" id="candidates"><li class="hint" style="cursor:default">Radar idle — start it with <code>npm run radar</code>. Ranked breaking stories will appear here.</li></ul>
+  </section>
+
   <section class="card" id="recent">
     <h2>Recent</h2>
     <ul class="jobs" id="jobs"><li class="hint" style="cursor:default">Nothing yet — create your first video above.</li></ul>
@@ -232,10 +237,55 @@ async function publish(confirm) {
   btn.textContent = 'Publish to YouTube'; btn.disabled = false; delete btn.dataset.confirm;
 }
 
+// --- News Radar inbox ---------------------------------------------------------------------------
+const laneEmoji = (l) => l === 'india' ? '🇮🇳' : l === 'viral' ? '🔥' : '•';
+const scorePill = (n) => { const c = n >= 85 ? 'error' : n >= 70 ? '' : 'done'; return `<span class="pill ${c}">${Math.round(n)}</span>`; };
+
+async function loadRadar() {
+  try {
+    const { candidates } = await (await fetch('/api/radar/candidates')).json();
+    const el = $('candidates');
+    if (!candidates || !candidates.length) {
+      el.innerHTML = '<li class="hint" style="cursor:default">No candidates yet — the radar surfaces breaking India-relevant + viral stories here as they score.</li>';
+      $('radarState').textContent = '— idle / no candidates';
+      return;
+    }
+    $('radarState').textContent = `— ${candidates.length} ranked`;
+    el.innerHTML = candidates.map((c) => {
+      const built = c.jobId ? `<span class="pill">building → job ${esc(c.jobId)}</span>` : '';
+      const actions = c.jobId ? '' :
+        `<button data-approve="${esc(c.id)}">Approve → build</button> <button class="ghost" data-dismiss="${esc(c.id)}">Dismiss</button>`;
+      return `<li style="cursor:default;display:block">
+        <div><span class="t">${scorePill(c.aiScore)} ${laneEmoji(c.lane)} ${esc(c.title)}</span></div>
+        <div class="hint" style="margin:2px 0">${esc(c.whyIndia || '')} · <b>${esc(c.source)}</b> · India ${Math.round(c.indiaFit)} / viral ${Math.round(c.virality)}${c.producible ? '' : ' · ⚠ hard to build'}</div>
+        <div class="hint" style="margin:2px 0"><i>${esc(c.angle || '')}</i></div>
+        <div class="actions">${built}${actions}</div>
+      </li>`;
+    }).join('');
+  } catch (e) { $('radarState').textContent = '— radar offline'; }
+}
+
+async function approveCandidate(id) {
+  const r = await (await fetch('/api/radar/' + id + '/approve', { method: 'POST' })).json();
+  if (r.jobId) { await loadRadar(); watch(r.jobId); }
+  else alert(r.error || 'approve failed');
+}
+async function dismissCandidate(id) {
+  await fetch('/api/radar/' + id + '/dismiss', { method: 'POST' });
+  loadRadar();
+}
+$('candidates').addEventListener('click', (e) => {
+  const a = e.target.closest('[data-approve]'); const d = e.target.closest('[data-dismiss]');
+  if (a) approveCandidate(a.getAttribute('data-approve'));
+  else if (d) dismissCandidate(d.getAttribute('data-dismiss'));
+});
+
 $('publish').addEventListener('click', () => publish($('publish').dataset.confirm === '1'));
 $('go').addEventListener('click', go);
 init();
 loadConfig();
+loadRadar();
+setInterval(loadRadar, 30000); // poll the radar shortlist
 </script>
 </body>
 </html>

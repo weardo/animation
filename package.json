@@ -26,7 +26,9 @@
     "factory:newsshot": "tsx src/cli/newsshot.ts",
     "factory:newsclip": "tsx src/cli/newsclip.ts",
     "mcp": "tsx mcp-server/index.ts",
-    "mcp:smoke": "tsx mcp-server/_smoke.mts"
+    "mcp:smoke": "tsx mcp-server/_smoke.mts",
+    "radar": "tsx radar/radar.ts",
+    "radar:smoke": "tsx radar/radar.smoke.test.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
@@ -38,6 +40,7 @@
     "@remotion/renderer": "4.0.481",
     "@remotion/shapes": "^4.0.481",
     "@remotion/transitions": "^4.0.481",
+    "better-sqlite3": "^12.11.1",
     "culori": "^4.0.2",
     "d3-geo": "^3.1.1",
     "d3-shape": "3.2.0",
@@ -52,6 +55,7 @@
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "remotion": "4.0.481",
+    "rss-parser": "^3.13.0",
     "simplex-noise": "4.0.3",
     "topojson-client": "^3.1.0",
     "yaml": "2.7.0",

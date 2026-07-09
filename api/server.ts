@@ -8,12 +8,16 @@ import express, { type Request, type Response } from 'express';
 import { PROJECT_ROOT } from '../agents/claude.js';
 import { loadDotenv } from './env.js';
 import { createJob, getJob, listJobs, publishProject, renderLogTail, type Job } from './jobs.js';
+import { registerRadarRoutes } from './radar-routes.js';
 
 loadDotenv(); // pull .env (SARVAM_API_KEY, …) into process.env before any job spawns a render
 
 const app = express();
 app.use(express.json());
 app.use(express.static(resolve(PROJECT_ROOT, 'web')));
+
+// News Radar inbox: read the ranked shortlist + approve→build / dismiss (reads the radar daemon's store).
+registerRadarRoutes(app);
 
 const summary = (j: Job) => ({ id: j.id, title: j.title ?? '(untitled)', status: j.status, createdAt: j.createdAt });
 
