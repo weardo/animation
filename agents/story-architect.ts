@@ -11,7 +11,7 @@ import { PROJECT_ROOT, runClaudeText, extractJson } from './claude.js';
 import type { FactSheet } from './research.js';
 
 /** Bump when the prompt changes → invalidates the cache (like a pass PASS_VERSION). */
-const PROMPT_VERSION = 'story-architect@6';
+const PROMPT_VERSION = 'story-architect@7';
 
 export interface StoryBrief {
   brief: string;
@@ -77,14 +77,21 @@ RULES:
     "labels": { "<Country>": "<Country>" } } }
   Put a MARKER at each incident location using the fact sheet's 'where[].lon/lat'; choropleth-highlight the
   'mapCountries'; set center/scale to frame those places tightly. Use ONLY if geography genuinely helps.
-- VISUALS: every NON-map beat's "show" starts with a background FOOTAGE item:
-  { "footage": "q:<query>", "as": "bg", "args": { "z": 0, "loop": true, "muted": true, "fit": "cover", "effects": [{ "kind": "color_grade", "brightness": 0.7, "saturate": 1.05 }] } }
-  The "q:" value MUST come from (or closely match) the fact sheet's 'footageHints' — SPECIFIC, filmable
-  phrases grounded in the facts (e.g. "pakistan army convoy", "border security checkpoint", "flooded street
-  rescue"). NEVER generic/abstract ("war", "conflict", "time") — those return fireworks/junk. Vary per beat.
+- ⚠️ VISUALS — pick the RIGHT source per beat (every non-map beat needs ONE background visual):
+  (A) REAL WIKIMEDIA IMAGE — PREFER THIS for a beat about a SPECIFIC named subject that a real photo exists
+      for (a person, a specific building/place, a named event/operation/weapon) — use a subject from the
+      fact sheet's 'imageSubjects'. Shows the ACTUAL thing, which stock footage never has:
+      { "asset": "wiki:<exact subject name>", "as": "bg", "args": { "z": 0, "fit": "cover", "kenburns": "in", "effects": [{ "kind": "color_grade", "brightness": 0.7, "saturate": 1.02 }] } }
+      (e.g. "wiki:Baitullah Mehsud", "wiki:Army Public School Peshawar", "wiki:Operation Zarb-e-Azb").
+  (B) STOCK FOOTAGE — for GENERIC action/atmosphere (soldiers patrolling, a flooded street, a crowd), use
+      a 'footageHints' phrase: { "footage": "q:<specific phrase>", "as": "bg", "args": { "z": 0, "loop": true, "muted": true, "fit": "cover", "effects": [{ "kind": "color_grade", "brightness": 0.7, "saturate": 1.05 }] } }
+      "q:" MUST be a SPECIFIC filmable phrase from 'footageHints' — NEVER generic ("war"/"conflict"/"time"),
+      which return fireworks/junk.
+  RULE OF THUMB: a named person/place/event → a WIKIMEDIA image (A); a generic scene → footage (B);
+  geography → the map. Prefer real images/maps over vague stock for a hard-news story.
 - MOTION: every text has an "anim" (+ "z":20). Every beat has a "camera" (first="establishing", then vary
   slow_push_in / slow_pull_out / pan_left / pan_right / hold; never 3 same in a row).
-- Use ONLY these beat keys: id, say, duration, camera, show. Show keys: footage OR generator, text, as, at, args.
+- Use ONLY these beat keys: id, say, duration, camera, show. Show keys: footage OR asset OR generator, text, as, at, args.
   "at" ∈ {center,top,bottom,left,right}. "camera" ∈ {establishing,slow_push_in,slow_pull_out,pan_left,pan_right,hold}.
 - Return VALID JSON only.`;
 

@@ -47,11 +47,15 @@ export interface FactSheet {
   mapCountries: string[];
   /** Specific stock-footage search phrases grounded in the facts (NOT generic terms). */
   footageHints: string[];
+  /** REAL-IMAGE subjects that likely have a Wikimedia/Wikipedia photo — named people, specific places,
+   *  buildings, events, operations (e.g. "Baitullah Mehsud", "Army Public School Peshawar"). Used for
+   *  hard-news subjects stock footage never carries; the exact Wikipedia-style name is best. */
+  imageSubjects: string[];
   /** How well-sourced this is: 'sourced' (real articles fetched) | 'thin' (little/no source text). */
   confidence: 'sourced' | 'thin';
 }
 
-const PROMPT_VERSION = 'research@2';
+const PROMPT_VERSION = 'research@3';
 const MAX_CORPUS = 14000;
 
 /** Fetch a URL and strip it to readable text (best-effort; '' on any failure). */
@@ -113,13 +117,18 @@ RULES:
 - \`mapCountries\`: if needsMap, the country names to highlight (English, e.g. "Pakistan", "India", "China").
 - \`footageHints\`: 4-6 SPECIFIC stock-footage search phrases grounded in the facts (e.g. "pakistan army
   convoy", "border security patrol", "bomb blast aftermath street") — never generic ("war", "conflict").
+- \`imageSubjects\`: 3-8 REAL-IMAGE subjects that a WIKIMEDIA/WIKIPEDIA photo almost certainly exists for —
+  named people, specific places/buildings, events, operations, weapons (e.g. "Baitullah Mehsud", "Army
+  Public School Peshawar", "Operation Zarb-e-Azb"). Use the EXACT common Wikipedia-style name. These give
+  real visuals for hard-news subjects that stock footage never carries. Empty if the topic has no such
+  concrete named subjects.
 - \`confidence\`: "sourced" if the SOURCE MATERIAL contained real reporting; "thin" if it was sparse/empty.
 
 SHAPE (all keys required):
 {"topic":"","headline":"","summary":"","when":"","where":[{"place":"","lat":0,"lon":0,"note":""}],
  "who":[""],"keyNumbers":[{"label":"","value":""}],"incidents":[""],
  "timeline":[{"when":"","event":""}],"sources":[""],
- "needsMap":false,"mapCountries":[""],"footageHints":[""],"confidence":"sourced"}`;
+ "needsMap":false,"mapCountries":[""],"footageHints":[""],"imageSubjects":[""],"confidence":"sourced"}`;
 
 export interface ResearchOptions {
   sourceUrl?: string;
@@ -177,6 +186,7 @@ export async function research(brief: string, opts: ResearchOptions = {}): Promi
       needsMap: false,
       mapCountries: [],
       footageHints: [],
+      imageSubjects: [],
       confidence: 'thin',
     };
   }

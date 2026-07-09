@@ -4,6 +4,7 @@
 // for the asset id the render resolves. Failures degrade gracefully — the footage item is dropped and
 // the beat falls back to text on the styled background (never a broken render).
 import { pickFootage } from '../src/cli/footage.js';
+import { pickPhoto } from '../src/cli/photo.js';
 import type { StoryIR } from '../src/ir/story.js';
 import { PROJECT_ROOT } from './claude.js';
 
@@ -19,6 +20,10 @@ function slugQuery(q: string): string {
   return ('bg-' + q.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')).slice(0, 36);
 }
 
+function slugSubject(q: string): string {
+  return ('img-' + q.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')).slice(0, 40);
+}
+
 export interface ScoutResult {
   resolved: number;
   failed: number;
@@ -30,7 +35,8 @@ export interface ScoutResult {
  */
 export async function resolveVisuals(story: StoryIR, aspect?: string): Promise<ScoutResult> {
   const orientation = orientationForAspect(aspect);
-  const seen = new Map<string, string | null>(); // query → resolved asset id (or null = failed)
+  const seen = new Map<string, string | null>(); // footage query → resolved asset id (or null = failed)
+  const seenWiki = new Map<string, string | null>(); // wiki subject → resolved image asset id
   let resolved = 0;
   let failed = 0;
 
@@ -43,6 +49,36 @@ export async function resolveVisuals(story: StoryIR, aspect?: string): Promise<S
     const kept: NonNullable<typeof beat.show> = [];
     let hasFootage = false;
     for (const item of beat.show) {
+      // A `asset: "wiki:<subject>"` placeholder → a REAL Wikimedia image (the actual person/place/event),
+      // rendered as a Ken Burns still. This is how hard-news subjects that stock footage never carries
+      // (a named leader, a specific building, an event) get real visuals. Falls back gracefully.
+      const av = typeof (item as { asset?: unknown }).asset === 'string' ? (item as { asset: string }).asset : '';
+      if (av.startsWith('wiki:')) {
+        const subject = av.slice(5).trim();
+        let wid = seenWiki.get(subject);
+        if (wid === undefined) {
+          try {
+            const photoOrient = orientation === 'square' ? 'any' : orientation;
+            const r = await pickPhoto({ query: subject, source: 'wikimedia', id: slugSubject(subject), orientation: photoOrient, rootDir: PROJECT_ROOT });
+            wid = slugSubject(subject);
+            void r;
+            resolved += 1;
+          } catch {
+            wid = null;
+            failed += 1;
+          }
+          seenWiki.set(subject, wid);
+        }
+        if (wid) {
+          const a = { ...((item.args as Record<string, unknown>) ?? {}) };
+          if (a['kenburns'] === undefined) a['kenburns'] = 'in';
+          if (a['fit'] === undefined) a['fit'] = 'cover';
+          kept.push({ ...(item as object), asset: wid, at: 'center', args: a } as (typeof kept)[number]);
+          hasFootage = true; // a full-frame still — treat like footage for the camera-safety downgrade
+        }
+        // else: drop → the beat renders text over the styled background
+        continue;
+      }
       const fv = typeof item.footage === 'string' ? item.footage : '';
       if (!fv.startsWith('q:')) {
         kept.push(item);
