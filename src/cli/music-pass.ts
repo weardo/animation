@@ -19,7 +19,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
-import { resolve as resolvePath } from 'node:path';
+import { basename, isAbsolute, resolve as resolvePath } from 'node:path';
 
 import type { SceneIR, AudioCue, StoryIR } from '../ir/index.js';
 import type { Music } from '../ir/story.js';
@@ -97,16 +97,36 @@ export function applyMusic(sceneIR: SceneIR, story: StoryIR, opts: MusicOptions)
     src = `audio://${res.publicRel}`;
     loopFrames = Math.max(1, Math.round(res.loopSeconds * fps));
     detail = `bed "${ref}" (${res.cached ? 'cached' : 'synthesized'}, ${res.loopSeconds}s loop)`;
-  } else {
-    // A user-supplied ref (asset://… or a public-relative path). Used verbatim; the project must vendor
-    // it (the asset pipeline handles `asset://` refs that appear in layers/defs). ffprobe its length so
-    // the renderer can tile the loop; if the file isn't resolvable at compile time, fall back to the
-    // full timeline (one play, no loop) rather than fail the build.
-    src = ref.includes('://') ? ref : `audio://${ref}`;
-    const rel = src.slice(src.indexOf('://') + 3);
+  } else if (ref.startsWith('asset://')) {
+    // A library asset ref → the asset pipeline vendors it (like layer/def asset refs). Pass verbatim.
+    src = ref;
+    const rel = ref.slice(ref.indexOf('://') + 3);
     const probePath = resolvePath(opts.assetsDir, rel);
     loopFrames = probeLoopFrames(probePath, fps) ?? sceneIR.config.duration_frames;
-    detail = `ref "${ref}"`;
+    detail = `asset ref "${ref}"`;
+  } else {
+    // A bare PATH ref (repo-root-relative like "library/music/tension.mp3", or absolute). The renderer
+    // resolves a cue `src` with staticFile UNDER the project's public/assets dir — a file that lives
+    // outside it (e.g. the shared library/music/ cache) 404s at render. So VENDOR it into the project's
+    // self-contained assets/audio/ (exactly like a built-in bed), then reference the vendored copy. This
+    // makes the documented `music: { ref: "library/music/<name>.mp3" }` usage actually work + keeps the
+    // project bundle self-contained. Not found on disk → pass through + warn (never fail the build).
+    const srcPath = isAbsolute(ref) ? ref : resolvePath(opts.rootDir, ref);
+    if (existsSync(srcPath)) {
+      const base = basename(ref);
+      const audioDir = resolvePath(opts.assetsDir, 'audio');
+      mkdirSync(audioDir, { recursive: true });
+      const dst = resolvePath(audioDir, base);
+      if (!existsSync(dst)) copyFileSync(srcPath, dst);
+      src = `audio://audio/${base}`;
+      loopFrames = probeLoopFrames(dst, fps) ?? sceneIR.config.duration_frames;
+      detail = `copied "${ref}" → assets/audio/${base}`;
+    } else {
+      src = `audio://${ref}`;
+      const probePath = resolvePath(opts.assetsDir, ref);
+      loopFrames = probeLoopFrames(probePath, fps) ?? sceneIR.config.duration_frames;
+      detail = `ref "${ref}" (⚠ not found at ${srcPath} — not vendored)`;
+    }
   }
 
   // One music cue spanning the whole timeline, looped, carrying the mix controls.

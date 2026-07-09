@@ -68,8 +68,10 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Sarvam Bulbul v3 TTS -> wav")
     ap.add_argument("--text", required=True)
     ap.add_argument("--out", required=True)
-    ap.add_argument("--speaker", default="shubh", help="v3 voices; young male: shubh, aditya, dev, aayan, sunny, advait")
-    ap.add_argument("--lang", default="hi-IN")
+    ap.add_argument("--speaker", "--voice", default="shubh", help="v3 voices; young male: shubh, aditya, dev, aayan, sunny, advait")
+    # `--language` is an accepted alias for `--lang` (both map to args.lang) so a caller passing the
+    # long form doesn't crash with "unrecognized arguments: --language" (bit a manual re-synth once).
+    ap.add_argument("--lang", "--language", default="hi-IN")
     ap.add_argument("--model", default="bulbul:v3")
     ap.add_argument("--pace", type=float, default=1.08)
     # temperature 0.9 = expressive storytelling delivery (audition-picked over the flat 0.6 default).

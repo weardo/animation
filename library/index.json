@@ -1144,6 +1144,426 @@
           "cache_hash": "2832f61bbab0",
           "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
         }
+      },
+      "bg-volcano-explosion-ash": {
+        "id": "bg-volcano-explosion-ash",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/bg-volcano-explosion-ash.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/spectacular-mount-etna-eruption-plume-29171249/ by LauraB (https://www.pexels.com/@laurab-2040771016) [portrait]",
+          "prompt": "volcano explosion ash",
+          "size": "medium",
+          "cache_hash": "91139ffb811a",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "bg-cracked-earth-ground": {
+        "id": "bg-cracked-earth-ground",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/bg-cracked-earth-ground.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/water-falling-from-the-plants-10080669/ by dabatepatvideos (https://www.pexels.com/@dabatepatvideos-19938937) [portrait]",
+          "prompt": "cracked earth ground",
+          "size": "medium",
+          "cache_hash": "d9dc9d76e9e7",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "bg-volcanic-island-aerial": {
+        "id": "bg-volcanic-island-aerial",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/bg-volcanic-island-aerial.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/breathtaking-hawaiian-volcano-landscape-view-31973150/ by Vasilis Karkalas (https://www.pexels.com/@vasilis-karkalas-155349971) [portrait]",
+          "prompt": "volcanic island aerial",
+          "size": "medium",
+          "cache_hash": "a52c6385c5bb",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "bg-volcano-eruption-lava": {
+        "id": "bg-volcano-eruption-lava",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/bg-volcano-eruption-lava.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels (cached)",
+          "prompt": "volcano eruption lava",
+          "size": "medium",
+          "cache_hash": "1d6587372f1f",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "bg-molten-lava-flow": {
+        "id": "bg-molten-lava-flow",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/bg-molten-lava-flow.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/vivid-abstract-neon-lava-flow-animation-19777570/ by Nicola Narracci (https://www.pexels.com/@nicola-narracci-157460431) [portrait]",
+          "prompt": "molten lava flow",
+          "size": "medium",
+          "cache_hash": "9b2a22494074",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "bg-glowing-magma-cracks": {
+        "id": "bg-glowing-magma-cracks",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/bg-glowing-magma-cracks.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/aerial-view-of-frozen-lake-with-cracking-ice-35740664/ by Sebastian Luna (https://www.pexels.com/@sebastian-luna-736234668) [portrait]",
+          "prompt": "glowing magma cracks",
+          "size": "medium",
+          "cache_hash": "15c90e4f6fed",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "bg-lava-bubbles-closeup": {
+        "id": "bg-lava-bubbles-closeup",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/bg-lava-bubbles-closeup.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/motion-from-a-lava-lamp-9112662/ by Javon Swaby (https://www.pexels.com/@javon-swaby-197616) [portrait]",
+          "prompt": "lava bubbles closeup",
+          "size": "medium",
+          "cache_hash": "bb1a44ccff27",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "bg-volcano-smoke-crater": {
+        "id": "bg-volcano-smoke-crater",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/bg-volcano-smoke-crater.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/aerial-view-of-a-volcano-9340000/ by Marina Leonova (https://www.pexels.com/@marina-zasorina) [portrait]",
+          "prompt": "volcano smoke crater",
+          "size": "medium",
+          "cache_hash": "763d5d3881f6",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "bg-volcano-explosion-night": {
+        "id": "bg-volcano-explosion-night",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/bg-volcano-explosion-night.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/spectacular-mount-etna-eruption-plume-29171249/ by LauraB (https://www.pexels.com/@laurab-2040771016) [portrait]",
+          "prompt": "volcano explosion night",
+          "size": "medium",
+          "cache_hash": "81240ba25149",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "mon-flood-street": {
+        "id": "mon-flood-street",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/mon-flood-street.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/rickshaws-navigating-flooded-urban-streets-31589250/ by Somogro Bangladesh (https://www.pexels.com/@somogrobangladesh) [portrait]",
+          "prompt": "flooded urban street rickshaw",
+          "size": "medium",
+          "cache_hash": "62789c909b98",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "mon-flood-people": {
+        "id": "mon-flood-people",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/mon-flood-people.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/people-walking-on-the-flooded-street-14109231/ by As hik (https://www.pexels.com/@as-hik-3916827) [portrait]",
+          "prompt": "people walking flooded street",
+          "size": "medium",
+          "cache_hash": "0517b7302cf9",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "nsk-flood-street": {
+        "id": "nsk-flood-street",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/nsk-flood-street.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/people-walking-on-the-flooded-street-14109231/ by As hik (https://www.pexels.com/@as-hik-3916827) [portrait]",
+          "prompt": "flooded street people",
+          "size": "medium",
+          "cache_hash": "cb8dce6c651b",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "nsk-rain-sky": {
+        "id": "nsk-rain-sky",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/nsk-rain-sky.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/rainy-highway-with-thunderstorm-clouds-38481282/ by Rahul Gupta (https://www.pexels.com/@rahul-gupta-2157040712) [portrait]",
+          "prompt": "rainy highway thunderstorm",
+          "size": "medium",
+          "cache_hash": "0d09394eae79",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "nsk-dam-spill": {
+        "id": "nsk-dam-spill",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/nsk-dam-spill.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/dynamic-water-flow-over-dam-spillway-29973133/ by Ravi Kant (https://www.pexels.com/@ravikant) [portrait]",
+          "prompt": "dam spillway water",
+          "size": "medium",
+          "cache_hash": "216146d0f334",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "nsk-flood-traffic": {
+        "id": "nsk-flood-traffic",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/nsk-flood-traffic.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/rickshaws-navigating-flooded-urban-streets-31589250/ by Somogro Bangladesh (https://www.pexels.com/@somogrobangladesh) [portrait]",
+          "prompt": "rickshaws flooded street",
+          "size": "medium",
+          "cache_hash": "9792f55d4ed1",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "nfu-fire": {
+        "id": "nfu-fire",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/nfu-fire.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/burning-fire-on-black-background-9666938/ by cottonbro studio (https://www.pexels.com/@cottonbro) [portrait]",
+          "prompt": "fire on black",
+          "size": "medium",
+          "cache_hash": "35d20c919386",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "nfu-parade": {
+        "id": "nfu-parade",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/nfu-parade.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/military-parade-in-sunny-urban-setting-with-flags-35887500/ by Semih Başaran (https://www.pexels.com/@semih-basaran-353570345) [portrait]",
+          "prompt": "military parade flags",
+          "size": "medium",
+          "cache_hash": "db7332023a1b",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "nfu-jet-sunset": {
+        "id": "nfu-jet-sunset",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/nfu-jet-sunset.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/dramatic-fighter-jet-airshow-at-sunset-29170230/ by Asya Birinci (https://www.pexels.com/@asyabirinci) [portrait]",
+          "prompt": "fighter jet sunset",
+          "size": "medium",
+          "cache_hash": "02d9dece39a3",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "nfu-nuclear-plant": {
+        "id": "nfu-nuclear-plant",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/nfu-nuclear-plant.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/time-lapse-of-cooling-towers-emitting-water-vapor-15536876/ by Yauheni Anhaliuk (https://www.pexels.com/@yauheni-anhaliuk-453707866) [portrait]",
+          "prompt": "nuclear cooling towers",
+          "size": "medium",
+          "cache_hash": "d989fc7d74ec",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "nfu-jets": {
+        "id": "nfu-jets",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/nfu-jets.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/fighter-jets-in-blue-sky-12954782/ by Rachel Lustiva (https://www.pexels.com/@rachel-lustiva-264852677) [portrait]",
+          "prompt": "fighter jets blue sky",
+          "size": "medium",
+          "cache_hash": "3f029a952707",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
       }
     },
     "photos": {
@@ -1334,6 +1754,42 @@
           "source": "Cybersurg — \"Indian Army Drone Swarm action - 5 minute edit\" — https://www.youtube.com/watch?v=wZ3SWbbhu34 (captured 2026-07-08)",
           "license": "editorial / fair-use — brief attributed commentary; publicly-accessible source",
           "cache_hash": "26f2ab729d83"
+        }
+      },
+      "mankhurd-collapse": {
+        "id": "mankhurd-collapse",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/mankhurd-collapse.mp4",
+        "tags": [
+          "newsclip",
+          "evidence",
+          "footage"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "DNAIndiaNews — \"Mumbai Rains: 6 Killed As Mumbai Building Collapse In Mankhurd After Heavy Rains | Monsoon | Storm\" — https://www.youtube.com/watch?v=QSVAzuRm-X8",
+          "license": "editorial / fair-use — brief attributed commentary; publicly-accessible source",
+          "cache_hash": "8b6ab0e2d7bc"
+        }
+      },
+      "nashik-temples-flood": {
+        "id": "nashik-temples-flood",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/nashik-temples-flood.mp4",
+        "tags": [
+          "newsclip",
+          "evidence",
+          "footage"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "NEWS9 Live — \"Maharashtra : Nashik Temples Submerged as Godavari River Overflows After Heavy Rain | News9\" — https://www.youtube.com/watch?v=a2uYCsh2-SA (captured 2026-07-08)",
+          "license": "editorial / fair-use — brief attributed commentary; publicly-accessible source",
+          "cache_hash": "f8095d3fbc47"
         }
       }
     }

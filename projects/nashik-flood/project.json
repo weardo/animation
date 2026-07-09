@@ -1,0 +1,66 @@
+{
+  "project_version": "1.0",
+  "id": "nashik-flood",
+  "name": "nashik-flood",
+  "created": "2026-07-09T09:08:38.439Z",
+  "updated": "2026-07-09T09:08:38.439Z",
+  "config": {
+    "w": 1080,
+    "h": 1920,
+    "fps": 30,
+    "duration_frames": 1278
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "c5600df01c93ffa47f4a87eef0e39b453a6f16dc",
+  "engine": "remotion@4.0.481",
+  "deps": [
+    "nashik-temples-flood@1.0.0",
+    "nsk-dam-spill@1.0.0",
+    "nsk-flood-street@1.0.0",
+    "nsk-flood-traffic@1.0.0",
+    "nsk-rain-sky@1.0.0"
+  ],
+  "assets": [
+    "assets/video/nsk-flood-street.mp4",
+    "assets/video/nsk-rain-sky.mp4",
+    "assets/video/nashik-temples-flood.mp4",
+    "assets/video/nsk-dam-spill.mp4",
+    "assets/video/nsk-flood-traffic.mp4",
+    "assets/fonts/Mukta-ExtraBold.ttf",
+    "assets/fonts/NotoSansDevanagari.ttf",
+    "assets/fonts/DejaVuSans.ttf"
+  ],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  },
+  "publish": {
+    "title": "Nashik की तबाही — Godavari उफान पर, Igatpuri में 729mm बारिश | Monsoon 2026",
+    "description": "Nashik में monsoon 2026 का कहर — सिर्फ़ एक दिन में Igatpuri में 729mm, Trimbakeshwar में 150mm और Nashik शहर में 107mm बारिश। पवित्र Godavari नदी उफान पर, Ramkund के घाट और मंदिर जलमग्न। Nandur Madhyameshwar dam से 2 लाख cusec से ज़्यादा पानी छोड़ा गया, 27 पेड़ गिरे, सड़कें धंसीं और Mumbai-Nashik trains घंटों लेट। प्रशासन ने नदी किनारे के निवासियों को alert किया।\n\nआपको क्या लगता है — क्या हमारे शहर हर मानसून की इस बाढ़ के लिए तैयार हैं? नीचे comment में बताइए।\nFollow for daily India news, explained in Hinglish. 🇮🇳\n\nSources: Nashik/Godavari flood, 8 July 2026 · Igatpuri 729mm, Trimbakeshwar 150mm, Nashik city 107mm (IMD) · Gangapur dam ~45%, Nandur Madhyameshwar discharge ~2,11,965 cusecs · 27 trees uprooted, Mumbai–Nashik trains delayed ~1hr. Reporting: Free Press Journal, Deccan Herald, India.com, News9.\nCredits: News footage — NEWS9 Live (editorial/fair-use, attributed) · b-roll — Pexels · Voice — Sarvam Bulbul · Music — \"Tension\" by Kevin MacLeod (incompetech.com), CC-BY 4.0.\nDisclaimer: A news explainer compiled from public reporting; facts per cited sources as of July 2026. No casualty figures were officially confirmed at the time of publishing.\n",
+    "tags": [
+      "Nashik",
+      "Nashik flood",
+      "Godavari",
+      "monsoon",
+      "Maharashtra rains",
+      "Igatpuri",
+      "India news",
+      "Hinglish",
+      "monsoon 2026"
+    ],
+    "hashtags": [
+      "Nashik",
+      "NashikFlood",
+      "Godavari",
+      "monsoon",
+      "IndiaNews"
+    ],
+    "category": "News & Politics",
+    "language": "hi-IN",
+    "privacy": "unlisted",
+    "made_for_kids": false,
+    "license": "standard"
+  }
+}

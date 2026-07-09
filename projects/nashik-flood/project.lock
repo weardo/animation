@@ -1,0 +1,41 @@
+{
+  "lockfile_version": "1",
+  "algorithm": "object-hash@sha1/v1",
+  "refs": {
+    "nashik-temples-flood@1.0.0": {
+      "namespace": "newsclips",
+      "id": "nashik-temples-flood",
+      "version": "1.0.0",
+      "hash": "0a666228bb7ed2a9ed3e70bf09a3119998344143",
+      "deps": []
+    },
+    "nsk-dam-spill@1.0.0": {
+      "namespace": "footage",
+      "id": "nsk-dam-spill",
+      "version": "1.0.0",
+      "hash": "86bc768001e62c5412c6d28ad5a6429c9335dd64",
+      "deps": []
+    },
+    "nsk-flood-street@1.0.0": {
+      "namespace": "footage",
+      "id": "nsk-flood-street",
+      "version": "1.0.0",
+      "hash": "1963bb2789fe3bf7824cf5d448bc2c3261f6be83",
+      "deps": []
+    },
+    "nsk-flood-traffic@1.0.0": {
+      "namespace": "footage",
+      "id": "nsk-flood-traffic",
+      "version": "1.0.0",
+      "hash": "e451255cc36ba193ebf17cd3c4753ce69a5db1c2",
+      "deps": []
+    },
+    "nsk-rain-sky@1.0.0": {
+      "namespace": "footage",
+      "id": "nsk-rain-sky",
+      "version": "1.0.0",
+      "hash": "90d88effa28a6a0d5ff9e98204b11a751503d451",
+      "deps": []
+    }
+  }
+}

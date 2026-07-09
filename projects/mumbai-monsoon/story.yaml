@@ -1,0 +1,119 @@
+title: Mumbai Monsoon Tragedy — Mankhurd Building Collapse
+format: { aspect: "9:16" }
+style: plain
+cast: {}
+
+# Story-level cinematic-dark grade over the whole frame.
+post:
+  - { kind: color_grade, contrast: 1.12, saturate: 1.02 }
+  - { kind: vignette, amount: 0.45 }
+  - { kind: grain, amount: 0.05 }
+
+beats:
+  - id: hook
+    say: "दोस्तों, इस बार Mumbai में बारिश सिर्फ़ पानी नहीं लाई — अपने साथ मौत लेकर आई।"
+    duration: { seconds: 6.0 }
+    show:
+      - footage: mon-flood-street
+        as: bg
+        args: { z: 0, loop: true, muted: true, fit: cover, effects: [ { kind: color_grade, brightness: 0.72, contrast: 1.1 } ] }
+      - text: "मौत की बारिश"
+        as: t
+        at: top
+        args: { z: 20, size: 66, weight: 800, color: "#ffffff", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 3, blur: 16, color: "#000000", opacity: 0.95 } ], anim: { preset: fade, duration: 5 } }
+
+  - id: rain
+    say: "सिर्फ़ 24 घंटे में 200 millimetre से ज़्यादा बारिश गिरी, पूरा शहर थम गया, और red alert जारी हो गया।"
+    duration: { seconds: 8.5 }
+    transition: { kind: fade, duration: 14 }
+    show:
+      - footage: mon-flood-people
+        as: bg
+        args: { z: 0, loop: true, muted: true, fit: cover, effects: [ { kind: color_grade, brightness: 0.72, contrast: 1.1 } ] }
+      - text: "200mm+ बारिश"
+        as: t
+        at: top
+        args: { z: 20, size: 62, weight: 800, color: "#ffb020", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 3, blur: 16, color: "#000000", opacity: 0.95 } ], anim: { preset: rise, duration: 12, distance: 30 } }
+
+  - id: collapse
+    say: "फिर रात के करीब साढ़े आठ बजे, Mankhurd के Janta Nagar में एक chawl भरभरा कर गिर गई।"
+    duration: { seconds: 6.6 }
+    transition: { kind: fade, duration: 14 }
+    sfx: [ { name: boom, at: 4 } ]
+    show:
+      - footage: mankhurd-collapse
+        as: bg
+        args: { z: 0, loop: true, muted: true, fit: cover, effects: [ { kind: color_grade, brightness: 0.95, contrast: 1.05 } ] }
+      - text: "MANKHURD हादसा"
+        as: t
+        at: top
+        args: { z: 20, size: 60, weight: 800, color: "#ffffff", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 3, blur: 16, color: "#000000", opacity: 0.95 } ], anim: { preset: fade, duration: 6 } }
+
+  - id: cost
+    say: "मलबे में दबकर छह लोगों की जान चली गई — जिनमें पाँच मासूम बच्चे थे।"
+    duration: { seconds: 5.8 }
+    transition: { kind: fade, duration: 14 }
+    show:
+      - footage: mankhurd-collapse
+        as: bg
+        args: { z: 0, loop: true, muted: true, from: 120, fit: cover, effects: [ { kind: color_grade, brightness: 0.9, contrast: 1.05 } ] }
+      - text: "6 मौतें · 5 बच्चे"
+        as: t
+        at: top
+        args: { z: 20, size: 62, weight: 800, color: "#ffffff", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 3, blur: 16, color: "#000000", opacity: 0.95 } ], anim: { preset: rise, duration: 12, distance: 30 } }
+
+  - id: illegal
+    say: "लेकिन असली सच ये है — जो building गिरी, वो पूरी तरह illegal थी। ना कोई permission, ना कोई safety।"
+    duration: { seconds: 7.9 }
+    transition: { kind: fade, duration: 14 }
+    show:
+      - footage: mankhurd-collapse
+        as: bg
+        args: { z: 0, loop: true, muted: true, from: 240, fit: cover, effects: [ { kind: color_grade, brightness: 0.9, contrast: 1.05 } ] }
+      - text: "ILLEGAL BUILDING"
+        as: t
+        at: top
+        args: { z: 20, size: 58, weight: 800, color: "#ffb020", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 3, blur: 16, color: "#000000", opacity: 0.95 } ], anim: { preset: fade, duration: 6 } }
+
+  - id: accountability
+    say: "अब building के मालिक और contractor को गिरफ़्तार कर लिया गया है, और CM ने हर परिवार को पाँच लाख रुपये देने का ऐलान किया।"
+    duration: { seconds: 8.9 }
+    transition: { kind: fade, duration: 14 }
+    show:
+      - footage: mon-flood-street
+        as: bg
+        args: { z: 0, loop: true, muted: true, from: 90, fit: cover, effects: [ { kind: color_grade, brightness: 0.72, contrast: 1.1 } ] }
+      - text: "मालिक गिरफ़्तार"
+        as: t
+        at: top
+        args: { z: 20, size: 60, weight: 800, color: "#ffffff", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 3, blur: 16, color: "#000000", opacity: 0.95 } ], anim: { preset: rise, duration: 12, distance: 30 } }
+
+  - id: close
+    say: "पर सोचिए — क्या पाँच लाख रुपये उन बच्चों को वापस ला सकते हैं? आपको क्या लगता है, इस हादसे का असली ज़िम्मेदार कौन है? नीचे comment में ज़रूर बताइए।"
+    duration: { seconds: 12.0 }
+    transition: { kind: fade, duration: 14 }
+    show:
+      - footage: mon-flood-people
+        as: bg
+        args: { z: 0, loop: true, muted: true, from: 60, fit: cover, effects: [ { kind: color_grade, brightness: 0.68, contrast: 1.1 } ] }
+      - text: "ज़िम्मेदार कौन?"
+        as: t
+        at: top
+        args: { z: 20, size: 64, weight: 800, color: "#ffb020", font: "Mukta", fontUri: "asset://fonts/Mukta-ExtraBold.ttf", effects: [ { kind: drop_shadow, dx: 0, dy: 3, blur: 16, color: "#000000", opacity: 0.95 } ], anim: { preset: fade, duration: 6 } }
+
+publish:
+  title: "Mumbai की बारिश और Mankhurd का हादसा — 6 मौतें, 5 बच्चे | Monsoon 2026"
+  description: |
+    Mumbai में monsoon 2026 की एक दर्दनाक रात — Mankhurd के Janta Nagar में एक illegal chawl heavy rain में गिर गई, और 6 लोगों की जान चली गई, जिनमें 5 मासूम बच्चे थे। 24 घंटे में 200mm+ बारिश, red alert, और NDRF का rescue। मालिक और contractor गिरफ़्तार, CM ने ₹5 लाख मुआवज़ा दिया।
+
+    आपको क्या लगता है — इस हादसे का असली ज़िम्मेदार कौन है? नीचे comment में बताइए।
+    Follow for daily India news, explained in Hinglish. 🇮🇳
+
+    Sources: Mankhurd (Janta Nagar) chawl collapse, 5-6 July 2026 · 6 dead incl. 5 children · IMD 200mm+/24h, red alert · FIR vs owner Gulam Raza Sayyed + contractor (BNS 105 & 3(5)) · CM Devendra Fadnavis ₹5 lakh ex-gratia. Reporting: Dawn, SCMP, Free Press Journal, The Statesman, Gulf News.
+    Credits: News footage — DNA India (editorial/fair-use, attributed) · b-roll — Pexels · Voice — Sarvam Bulbul.
+    Disclaimer: A news explainer compiled from public reporting; facts per cited sources as of July 2026.
+  tags: [Mumbai, monsoon, Mankhurd, building collapse, Mumbai rains, India news, Hinglish, monsoon 2026]
+  hashtags: [Mumbai, MumbaiRains, Mankhurd, monsoon, IndiaNews]
+  category: "News & Politics"
+  language: "hi-IN"
+  privacy: unlisted

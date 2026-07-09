@@ -46,8 +46,11 @@ evidence CLI records provenance/attribution automatically.
 ## 1. STRUCTURE — three acts, ~30-60 beats
 
 Author as comment-grouped acts (a documentary is a JOURNEY, not a 5-beat reel):
-- **ACT I — HOOK + THE WORLD** (~45-75s): the make-or-break cold-open (first-frame text hook + a
-  pre-commitment question), then establish the stakes/place (e.g. "at 18,000 feet…" — whatever grounds YOUR subject).
+- **ACT I — HOOK + THE WORLD** (~45-75s): the make-or-break cold-open. **The 3-SECOND HOOK is a HARD RULE
+  (same as the reel skill §6): the very first line MUST be a high-stakes QUESTION or a dramatic fact/stat
+  that stops the swipe** — never a warm wind-up or a slow scene-set. Pair it with a first-frame text hook +
+  a pre-commitment question, THEN establish the stakes/place (e.g. "at 18,000 feet…" — whatever grounds YOUR
+  subject).
 - **ACT II — THE CONFLICT / ESCALATION** (~90-140s): the problem, the antagonist, rising tension. The
   ubiquity montage lives here ("everyone is reporting this"). Multiple sub-beats, maps, evidence.
 - **ACT III — THE ANSWER + PAYOFF** (~90-140s): the turn/insight (the tech, the move), the resolution,

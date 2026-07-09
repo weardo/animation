@@ -20,7 +20,7 @@
 // env; the cached wav is the deterministic record regardless of which engine produced it.
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { resolve as resolvePath } from 'node:path';
 
 import objectHash from 'object-hash';
@@ -356,12 +356,12 @@ export function synthNarration(
     };
   }
 
-  let engineUsed: NarrateEngine = req.engine;
+  const engineUsed: NarrateEngine = req.engine;
   if (req.engine === 'espeak-ng') {
     synthEspeak(req.text, req.voice, req.wpm, wavPath);
   } else {
-    // Optional engines: try the selected engine; on any miss/error fall back to espeak-ng (never fail
-    // the build — the cached wav from whatever engine is the deterministic record, golden rule 1).
+    // Optional engines: try the selected engine. On any miss/error we NO LONGER fall back to espeak-ng
+    // (that silently shipped robotic audio + poisoned the content-addressed cache) — we THROW below.
     let ok = false;
     switch (req.engine) {
       case 'coqui':
@@ -387,13 +387,22 @@ export function synthNarration(
         break;
     }
     if (!ok) {
-      console.warn(`[narrate] ${req.engine} unavailable/failed → falling back to espeak-ng for "${truncate(req.text)}"`);
-      synthEspeak(req.text, DEFAULT_VOICE['espeak-ng'], req.wpm, wavPath);
-      engineUsed = 'espeak-ng';
+      // NO silent espeak-ng fallback (removed 2026-07-09). The old fallback wrote espeak audio to the
+      // REQUESTED engine's hash path, so the poisoned wav then read back as "cached" on every later
+      // render — the reel silently shipped in the robotic espeak voice and never retried the real engine.
+      // Fail LOUDLY so the true cause (missing SARVAM_API_KEY, no network, a bad speaker id) gets fixed
+      // instead of masked. To use espeak-ng, select it deliberately with `--engine espeak-ng`.
+      if (existsSync(wavPath)) rmSync(wavPath); // never leave a partial wav that would read as "cached"
+      throw new Error(
+        `[narrate] TTS engine "${req.engine}" failed for "${truncate(req.text)}" and produced no wav. ` +
+        `There is no silent espeak-ng fallback. Fix the engine — e.g. set SARVAM_API_KEY (and check the ` +
+        `network / speaker id) — then re-run. To use espeak-ng on purpose, pass --engine espeak-ng.`,
+      );
     }
   }
 
   if (!existsSync(wavPath)) throw new Error(`[narrate] synthesis produced no wav at ${wavPath}`);
+  trimEdgeSilence(wavPath); // tighten head/tail silence so beats stitch without a long dead-air gap
   return {
     hash,
     wavPath,
@@ -406,6 +415,32 @@ export function synthNarration(
 
 function truncate(s: string, n = 48): string {
   return s.length > n ? `${s.slice(0, n)}…` : s;
+}
+
+/**
+ * Trim only LEADING and TRAILING silence from a freshly-synthesized narration wav (INTERNAL pauses are
+ * preserved). TTS engines — Sarvam especially — pad each clip with ~0.3–1s of head/tail silence; and a
+ * beat's on-screen duration is fit to the wav LENGTH (see agents/fit-durations.ts), so that padding
+ * COMPOUNDS into a 1.5–2s dead-air GAP between stitched sentences (user report 2026-07-09). Trimming the
+ * edges (keeping a natural ~0.08–0.12s so nothing is clipped) makes the beat reflect the SPEECH, so
+ * consecutive lines flow with only the intended small tail pause. The two-pass `areverse` trims the tail
+ * without touching mid-sentence pauses. Deterministic (a pure ffmpeg op) → the cached wav stays byte-
+ * stable across re-renders. ffmpeg missing / any failure → keep the wav untrimmed (never fail the build).
+ */
+function trimEdgeSilence(wavPath: string): void {
+  try {
+    const tmp = `${wavPath}.trim.wav`;
+    const filter =
+      'silenceremove=start_periods=1:start_silence=0.08:start_threshold=-45dB,' +
+      'areverse,' +
+      'silenceremove=start_periods=1:start_silence=0.12:start_threshold=-45dB,' +
+      'areverse';
+    execFileSync('ffmpeg', ['-y', '-i', wavPath, '-af', filter, tmp], { stdio: 'pipe' });
+    if (existsSync(tmp) && statSync(tmp).size > 0) renameSync(tmp, wavPath);
+    else if (existsSync(tmp)) rmSync(tmp);
+  } catch {
+    /* ffmpeg missing or trim failed → keep the original wav (never fail the build) */
+  }
 }
 
 // --- M4 whisper word-sync alignment (OFFLINE, build-time, content-addressed cache) ---

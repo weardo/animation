@@ -2,8 +2,8 @@
   "project_version": "1.0",
   "id": "himalaya-doc",
   "name": "himalaya-doc",
-  "created": "2026-07-08T10:33:17.861Z",
-  "updated": "2026-07-08T10:33:17.861Z",
+  "created": "2026-07-09T12:10:17.535Z",
+  "updated": "2026-07-09T12:10:17.535Z",
   "config": {
     "w": 1080,
     "h": 1920,
@@ -13,7 +13,7 @@
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "f2eabb5525685e4fce076a0135ea33150561b581",
+  "scene_ir_hash": "591ce8c693e3abac7f279da04fb6e6be0eeb663d",
   "engine": "remotion@4.0.481",
   "deps": [
     "blizzard@1.0.0",

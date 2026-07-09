@@ -1,9 +1,9 @@
 {
   "project_version": "1.0",
   "id": "duqm-port",
-  "name": "Duqm Port",
-  "created": "2026-07-08T04:21:08.307Z",
-  "updated": "2026-07-08T04:21:08.307Z",
+  "name": "duqm-port",
+  "created": "2026-07-09T11:52:45.460Z",
+  "updated": "2026-07-09T11:52:45.460Z",
   "config": {
     "w": 1080,
     "h": 1920,
@@ -13,7 +13,7 @@
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "16e915f881284239c1a9510677dd11a7572888e2",
+  "scene_ir_hash": "b39f3d8d50ebe991d9f56146e2ad4b7a82069f5a",
   "engine": "remotion@4.0.481",
   "deps": [
     "duqmport@1.0.0",

@@ -1,0 +1,999 @@
+{
+  "scene_ir_version": "1.0",
+  "config": {
+    "w": 1080,
+    "h": 1920,
+    "fps": 30,
+    "duration_frames": 1278
+  },
+  "defs": {
+    "palette": {
+      "bg": "#f4f4f4",
+      "bg2": "#e8e8e8",
+      "accent": "#3b82f6",
+      "accent2": "#10b981",
+      "ink": "#1f2937",
+      "light": "#ffffff",
+      "shadow": "#94a3b8"
+    },
+    "easings": {
+      "linear": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "smooth": [
+        0.25,
+        0.1,
+        0.25,
+        1
+      ],
+      "easeIn": [
+        0.42,
+        0,
+        1,
+        1
+      ],
+      "easeOut": [
+        0,
+        0,
+        0.58,
+        1
+      ],
+      "easeInOut": [
+        0.42,
+        0,
+        0.58,
+        1
+      ],
+      "pop": "smooth"
+    },
+    "assets": {
+      "nsk-flood-street": {
+        "uri": "asset://video/nsk-flood-street.mp4",
+        "kind": "video"
+      },
+      "nsk-rain-sky": {
+        "uri": "asset://video/nsk-rain-sky.mp4",
+        "kind": "video"
+      },
+      "nashik-temples-flood": {
+        "uri": "asset://video/nashik-temples-flood.mp4",
+        "kind": "video"
+      },
+      "nsk-dam-spill": {
+        "uri": "asset://video/nsk-dam-spill.mp4",
+        "kind": "video"
+      },
+      "nsk-flood-traffic": {
+        "uri": "asset://video/nsk-flood-traffic.mp4",
+        "kind": "video"
+      }
+    },
+    "rigs": {},
+    "clips": {},
+    "stylekit": {
+      "easings": {
+        "linear": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "smooth": [
+          0.25,
+          0.1,
+          0.25,
+          1
+        ],
+        "easeIn": [
+          0.42,
+          0,
+          1,
+          1
+        ],
+        "easeOut": [
+          0,
+          0,
+          0.58,
+          1
+        ],
+        "easeInOut": [
+          0.42,
+          0,
+          0.58,
+          1
+        ]
+      },
+      "defaultEasings": {
+        "linear": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "smooth": [
+          0.25,
+          0.1,
+          0.25,
+          1
+        ],
+        "easeIn": [
+          0.42,
+          0,
+          1,
+          1
+        ],
+        "easeOut": [
+          0,
+          0,
+          0.58,
+          1
+        ],
+        "easeInOut": [
+          0.42,
+          0,
+          0.58,
+          1
+        ],
+        "pop": "smooth"
+      },
+      "palette": {
+        "bg": "#f4f4f4",
+        "bg2": "#e8e8e8",
+        "accent": "#3b82f6",
+        "accent2": "#10b981",
+        "ink": "#1f2937",
+        "light": "#ffffff",
+        "shadow": "#94a3b8"
+      },
+      "motion": {
+        "spring": {
+          "stiffness": 100,
+          "damping": 20,
+          "mass": 1
+        },
+        "springHeavy": {
+          "stiffness": 100,
+          "damping": 20,
+          "mass": 1
+        },
+        "springBouncy": {
+          "stiffness": 100,
+          "damping": 20,
+          "mass": 1
+        },
+        "idle": {
+          "swayAmplitudeDeg": 0,
+          "swaySpeedHz": 0,
+          "driftAmplitudePx": 0,
+          "driftSpeedHz": 0,
+          "saccadeAmplitudeDeg": 0,
+          "saccadeMeanSeconds": 1
+        },
+        "breathing": {
+          "amplitude": 0,
+          "periodSeconds": 4
+        },
+        "blink": {
+          "rateHz": 0,
+          "closeFrames": 0
+        },
+        "stagger": {
+          "offsetFrames": 0
+        },
+        "parallax": {
+          "nearFactor": 1,
+          "farFactor": 1
+        },
+        "motionBlurShutter": 180
+      },
+      "light": {
+        "dir": 270,
+        "elevation": 90,
+        "color": "#ffffff",
+        "intensity": 0,
+        "ambient": 1
+      },
+      "shading": {
+        "form": false,
+        "contact_shadow": false,
+        "rim": 0,
+        "ao": false,
+        "glow": 0
+      },
+      "floor": {
+        "liveness": false,
+        "parallax": false,
+        "shading": false,
+        "nonLinearMotion": false
+      }
+    }
+  },
+  "audio": [
+    {
+      "id": "music-bed",
+      "kind": "music",
+      "src": "audio://audio/tension.mp3",
+      "at": 0,
+      "duration_frames": 1278,
+      "loop": true,
+      "loop_frames": 1860,
+      "mix": {
+        "gain": 0.26,
+        "duck": 0.12,
+        "fade": 16
+      }
+    },
+    {
+      "id": "narration-hook",
+      "kind": "narration",
+      "src": "audio://audio/6efeae1a1c0e8ba0.wav",
+      "at": 0,
+      "duration_frames": 168,
+      "transcript": "दोस्तों, ज़रा सोचिए — सिर्फ़ एक दिन में नासिक के Igatpuri में 729 millimetre बारिश गिरी।"
+    },
+    {
+      "id": "narration-scale",
+      "kind": "narration",
+      "src": "audio://audio/cf33a57da301ac4b.wav",
+      "at": 163,
+      "duration_frames": 174,
+      "transcript": "पूरा ज़िला पानी-पानी हो गया — Trimbakeshwar में 150, और नासिक शहर में 107 millimetre।"
+    },
+    {
+      "id": "narration-godavari",
+      "kind": "narration",
+      "src": "audio://audio/e5b48344dfd4d7d1.wav",
+      "at": 335,
+      "duration_frames": 169,
+      "transcript": "इतनी बारिश से पवित्र गोदावरी नदी उफान पर आ गई, और Ramkund के घाट और मंदिर पानी में डूब गए।"
+    },
+    {
+      "id": "sfx-godavari-beat0",
+      "kind": "sfx",
+      "src": "audio://audio/boom.wav",
+      "at": 338,
+      "duration_frames": 26,
+      "volume": 0.38
+    },
+    {
+      "id": "narration-dams",
+      "kind": "narration",
+      "src": "audio://audio/54b00123b80328d2.wav",
+      "at": 501,
+      "duration_frames": 202,
+      "transcript": "ऊपर से dams भर गए — Nandur Madhyameshwar से दो लाख cusec से ज़्यादा पानी छोड़ा गया, और नदियाँ और चढ़ गईं।"
+    },
+    {
+      "id": "sfx-dams-beat0",
+      "kind": "sfx",
+      "src": "audio://audio/whoosh.wav",
+      "at": 503,
+      "duration_frames": 17,
+      "volume": 0.55
+    },
+    {
+      "id": "narration-impact",
+      "kind": "narration",
+      "src": "audio://audio/d3a1103f00bad22a.wav",
+      "at": 700,
+      "duration_frames": 168,
+      "transcript": "शहर में 27 पेड़ धराशायी हो गए, सड़कें धंस गईं, और Mumbai-नासिक की trains घंटों लेट हो गईं।"
+    },
+    {
+      "id": "narration-warning",
+      "kind": "narration",
+      "src": "audio://audio/d7beb18d0e38a858.wav",
+      "at": 866,
+      "duration_frames": 187,
+      "transcript": "प्रशासन ने नदी किनारे रहने वालों को alert कर दिया — मवेशी और सामान सुरक्षित जगह ले जाने की चेतावनी दी।"
+    },
+    {
+      "id": "narration-close",
+      "kind": "narration",
+      "src": "audio://audio/cad2696d2f1b138e.wav",
+      "at": 1050,
+      "duration_frames": 218,
+      "transcript": "पर हर मानसून यही कहानी दोहराती है। तो सोचिए — क्या हमारे शहर इस बाढ़ के लिए सच में तैयार हैं? नीचे comment में ज़रूर बताइए।"
+    }
+  ],
+  "captions": [
+    {
+      "id": "caption-hook",
+      "text": "दोस्तों, ज़रा सोचिए — सिर्फ़ एक दिन में नासिक के Igatpuri में 729 millimetre बारिश गिरी।",
+      "at": 0,
+      "duration_frames": 168,
+      "mode": "line"
+    },
+    {
+      "id": "caption-scale",
+      "text": "पूरा ज़िला पानी-पानी हो गया — Trimbakeshwar में 150, और नासिक शहर में 107 millimetre।",
+      "at": 163,
+      "duration_frames": 174,
+      "mode": "line"
+    },
+    {
+      "id": "caption-godavari",
+      "text": "इतनी बारिश से पवित्र गोदावरी नदी उफान पर आ गई, और Ramkund के घाट और मंदिर पानी में डूब गए।",
+      "at": 335,
+      "duration_frames": 169,
+      "mode": "line"
+    },
+    {
+      "id": "caption-dams",
+      "text": "ऊपर से dams भर गए — Nandur Madhyameshwar से दो लाख cusec से ज़्यादा पानी छोड़ा गया, और नदियाँ और चढ़ गईं।",
+      "at": 501,
+      "duration_frames": 202,
+      "mode": "line"
+    },
+    {
+      "id": "caption-impact",
+      "text": "शहर में 27 पेड़ धराशायी हो गए, सड़कें धंस गईं, और Mumbai-नासिक की trains घंटों लेट हो गईं।",
+      "at": 700,
+      "duration_frames": 168,
+      "mode": "line"
+    },
+    {
+      "id": "caption-warning",
+      "text": "प्रशासन ने नदी किनारे रहने वालों को alert कर दिया — मवेशी और सामान सुरक्षित जगह ले जाने की चेतावनी दी।",
+      "at": 866,
+      "duration_frames": 187,
+      "mode": "line"
+    },
+    {
+      "id": "caption-close",
+      "text": "पर हर मानसून यही कहानी दोहराती है। तो सोचिए — क्या हमारे शहर इस बाढ़ के लिए सच में तैयार हैं? नीचे comment में ज़रूर बताइए।",
+      "at": 1050,
+      "duration_frames": 218,
+      "mode": "line"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "hook",
+      "at": 0,
+      "duration_frames": 177,
+      "labels": {
+        "reveal": 88
+      },
+      "camera": {
+        "position": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": [
+                0,
+                -20
+              ],
+              "e": "smooth"
+            },
+            {
+              "t": 177,
+              "s": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        "zoom": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": 0.92,
+              "e": "smooth"
+            },
+            {
+              "t": 177,
+              "s": 1
+            }
+          ]
+        }
+      },
+      "layers": [
+        {
+          "type": "footage",
+          "id": "L_footage_bg",
+          "z": 0,
+          "effects": [
+            {
+              "kind": "color_grade",
+              "brightness": 0.9,
+              "contrast": 1.06
+            }
+          ],
+          "ref": "nsk-flood-street",
+          "loop": true,
+          "muted": true,
+          "fit": "cover",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                960
+              ]
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "L_text_t",
+          "z": 20,
+          "effects": [
+            {
+              "kind": "drop_shadow",
+              "dx": 0,
+              "dy": 3,
+              "blur": 16,
+              "color": "#000000",
+              "opacity": 0.95
+            }
+          ],
+          "content": "729mm बारिश",
+          "font": "Mukta",
+          "fontUri": "asset://fonts/Mukta-ExtraBold.ttf",
+          "size": 66,
+          "weight": 800,
+          "color": "#ffb020",
+          "anim": {
+            "preset": "fade",
+            "duration": 5
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                480
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "scale",
+      "at": 163,
+      "duration_frames": 186,
+      "labels": {
+        "reveal": 93
+      },
+      "camera": {
+        "position": {
+          "a": 0,
+          "k": [
+            0,
+            0
+          ]
+        },
+        "zoom": {
+          "a": 0,
+          "k": 1
+        }
+      },
+      "layers": [
+        {
+          "type": "footage",
+          "id": "L_footage_bg",
+          "z": 0,
+          "effects": [
+            {
+              "kind": "color_grade",
+              "brightness": 0.88,
+              "contrast": 1.08
+            }
+          ],
+          "ref": "nsk-rain-sky",
+          "loop": true,
+          "muted": true,
+          "fit": "cover",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                960
+              ]
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "L_text_t",
+          "z": 20,
+          "effects": [
+            {
+              "kind": "drop_shadow",
+              "dx": 0,
+              "dy": 3,
+              "blur": 16,
+              "color": "#000000",
+              "opacity": 0.95
+            }
+          ],
+          "content": "पूरा ज़िला जलमग्न",
+          "font": "Mukta",
+          "fontUri": "asset://fonts/Mukta-ExtraBold.ttf",
+          "size": 60,
+          "weight": 800,
+          "color": "#ffffff",
+          "anim": {
+            "preset": "rise",
+            "duration": 12,
+            "distance": 30
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                480
+              ]
+            }
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 14
+      }
+    },
+    {
+      "id": "godavari",
+      "at": 335,
+      "duration_frames": 180,
+      "labels": {
+        "reveal": 90
+      },
+      "camera": {
+        "position": {
+          "a": 0,
+          "k": [
+            0,
+            0
+          ]
+        },
+        "zoom": {
+          "a": 0,
+          "k": 1
+        }
+      },
+      "layers": [
+        {
+          "type": "footage",
+          "id": "L_footage_bg",
+          "z": 0,
+          "effects": [
+            {
+              "kind": "color_grade",
+              "brightness": 0.95,
+              "contrast": 1.05
+            }
+          ],
+          "ref": "nashik-temples-flood",
+          "from": 260,
+          "loop": true,
+          "muted": true,
+          "fit": "cover",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                960
+              ]
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "L_text_t",
+          "z": 20,
+          "effects": [
+            {
+              "kind": "drop_shadow",
+              "dx": 0,
+              "dy": 3,
+              "blur": 16,
+              "color": "#000000",
+              "opacity": 0.95
+            }
+          ],
+          "content": "गोदावरी उफान पर",
+          "font": "Mukta",
+          "fontUri": "asset://fonts/Mukta-ExtraBold.ttf",
+          "size": 62,
+          "weight": 800,
+          "color": "#ffffff",
+          "anim": {
+            "preset": "fade",
+            "duration": 6
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                480
+              ]
+            }
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 14
+      }
+    },
+    {
+      "id": "dams",
+      "at": 501,
+      "duration_frames": 213,
+      "labels": {
+        "reveal": 106
+      },
+      "camera": {
+        "position": {
+          "a": 0,
+          "k": [
+            0,
+            0
+          ]
+        },
+        "zoom": {
+          "a": 0,
+          "k": 1
+        }
+      },
+      "layers": [
+        {
+          "type": "footage",
+          "id": "L_footage_bg",
+          "z": 0,
+          "effects": [
+            {
+              "kind": "color_grade",
+              "brightness": 0.9,
+              "contrast": 1.06
+            }
+          ],
+          "ref": "nsk-dam-spill",
+          "loop": true,
+          "muted": true,
+          "fit": "cover",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                960
+              ]
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "L_text_t",
+          "z": 20,
+          "effects": [
+            {
+              "kind": "drop_shadow",
+              "dx": 0,
+              "dy": 3,
+              "blur": 16,
+              "color": "#000000",
+              "opacity": 0.95
+            }
+          ],
+          "content": "डैम से पानी छोड़ा",
+          "font": "Mukta",
+          "fontUri": "asset://fonts/Mukta-ExtraBold.ttf",
+          "size": 58,
+          "weight": 800,
+          "color": "#ffb020",
+          "anim": {
+            "preset": "rise",
+            "duration": 12,
+            "distance": 30
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                480
+              ]
+            }
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 14
+      }
+    },
+    {
+      "id": "impact",
+      "at": 700,
+      "duration_frames": 180,
+      "labels": {
+        "reveal": 90
+      },
+      "camera": {
+        "position": {
+          "a": 0,
+          "k": [
+            0,
+            0
+          ]
+        },
+        "zoom": {
+          "a": 0,
+          "k": 1
+        }
+      },
+      "layers": [
+        {
+          "type": "footage",
+          "id": "L_footage_bg",
+          "z": 0,
+          "effects": [
+            {
+              "kind": "color_grade",
+              "brightness": 0.9,
+              "contrast": 1.06
+            }
+          ],
+          "ref": "nsk-flood-traffic",
+          "loop": true,
+          "muted": true,
+          "fit": "cover",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                960
+              ]
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "L_text_t",
+          "z": 20,
+          "effects": [
+            {
+              "kind": "drop_shadow",
+              "dx": 0,
+              "dy": 3,
+              "blur": 16,
+              "color": "#000000",
+              "opacity": 0.95
+            }
+          ],
+          "content": "27 पेड़ गिरे",
+          "font": "Mukta",
+          "fontUri": "asset://fonts/Mukta-ExtraBold.ttf",
+          "size": 62,
+          "weight": 800,
+          "color": "#ffffff",
+          "anim": {
+            "preset": "rise",
+            "duration": 12,
+            "distance": 30
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                480
+              ]
+            }
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 14
+      }
+    },
+    {
+      "id": "warning",
+      "at": 866,
+      "duration_frames": 198,
+      "labels": {
+        "reveal": 99
+      },
+      "camera": {
+        "position": {
+          "a": 0,
+          "k": [
+            0,
+            0
+          ]
+        },
+        "zoom": {
+          "a": 0,
+          "k": 1
+        }
+      },
+      "layers": [
+        {
+          "type": "footage",
+          "id": "L_footage_bg",
+          "z": 0,
+          "effects": [
+            {
+              "kind": "color_grade",
+              "brightness": 0.92,
+              "contrast": 1.05
+            }
+          ],
+          "ref": "nashik-temples-flood",
+          "from": 10,
+          "loop": true,
+          "muted": true,
+          "fit": "cover",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                960
+              ]
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "L_text_t",
+          "z": 20,
+          "effects": [
+            {
+              "kind": "drop_shadow",
+              "dx": 0,
+              "dy": 3,
+              "blur": 16,
+              "color": "#000000",
+              "opacity": 0.95
+            }
+          ],
+          "content": "अलर्ट जारी",
+          "font": "Mukta",
+          "fontUri": "asset://fonts/Mukta-ExtraBold.ttf",
+          "size": 62,
+          "weight": 800,
+          "color": "#ffb020",
+          "anim": {
+            "preset": "fade",
+            "duration": 6
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                480
+              ]
+            }
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 14
+      }
+    },
+    {
+      "id": "close",
+      "at": 1050,
+      "duration_frames": 228,
+      "labels": {
+        "reveal": 114
+      },
+      "camera": {
+        "position": {
+          "a": 0,
+          "k": [
+            0,
+            0
+          ]
+        },
+        "zoom": {
+          "a": 0,
+          "k": 1
+        }
+      },
+      "layers": [
+        {
+          "type": "footage",
+          "id": "L_footage_bg",
+          "z": 0,
+          "effects": [
+            {
+              "kind": "color_grade",
+              "brightness": 0.86,
+              "contrast": 1.08
+            }
+          ],
+          "ref": "nsk-flood-street",
+          "from": 60,
+          "loop": true,
+          "muted": true,
+          "fit": "cover",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                960
+              ]
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "L_text_t",
+          "z": 20,
+          "effects": [
+            {
+              "kind": "drop_shadow",
+              "dx": 0,
+              "dy": 3,
+              "blur": 16,
+              "color": "#000000",
+              "opacity": 0.95
+            }
+          ],
+          "content": "शहर तैयार हैं?",
+          "font": "Mukta",
+          "fontUri": "asset://fonts/Mukta-ExtraBold.ttf",
+          "size": 64,
+          "weight": 800,
+          "color": "#ffb020",
+          "anim": {
+            "preset": "fade",
+            "duration": 6
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                480
+              ]
+            }
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 14
+      }
+    }
+  ],
+  "post": [
+    {
+      "kind": "color_grade",
+      "contrast": 1.12,
+      "saturate": 1.03
+    },
+    {
+      "kind": "grain",
+      "amount": 0.05
+    }
+  ],
+  "provenance": {
+    "story_ir_hash": "sha1:b35905aad615f04ddc37892c11b4be897224e374",
+    "passes": [
+      "lower@2.8"
+    ]
+  }
+}
