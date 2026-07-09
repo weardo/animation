@@ -8,6 +8,7 @@ import { existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
 
 import { PROJECT_ROOT, runClaudeVision, extractJson } from './claude.js';
+import { progress } from './progress.js';
 
 /** Render the project's beats to stills (fast, no audio). Returns true on success. */
 function renderStills(projectId: string): Promise<boolean> {
@@ -28,6 +29,7 @@ function renderStills(projectId: string): Promise<boolean> {
  * build — the video still ships, just unverified).
  */
 export async function visualVerify(projectId: string, concept: string): Promise<string[]> {
+  progress('Rendering preview frames to review…');
   const ok = await renderStills(projectId);
   const framesDir = resolve(PROJECT_ROOT, 'projects', projectId, 'media', 'frames');
   if (!ok || !existsSync(framesDir)) return [];
@@ -53,6 +55,7 @@ export async function visualVerify(projectId: string, concept: string): Promise<
   }
   if (!frames.length) return [];
 
+  progress('Looking at each diagram to check the geometry…');
   const prompt =
     `You are a STRICT visual-QA reviewer for an educational video explaining "${concept}". ` +
     `Look at each of these ${frames.length} rendered frames:\n` +

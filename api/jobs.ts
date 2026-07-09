@@ -100,7 +100,7 @@ export function listJobs(): Job[] {
 }
 
 /** Run the orchestration (Story Architect + Asset Scout) in its own process (keeps the server free). */
-function runOrchestrateSubprocess(brief: StoryBrief): Promise<OrchestrateResult> {
+function runOrchestrateSubprocess(brief: StoryBrief, onProgress: (m: string) => void): Promise<OrchestrateResult> {
   return new Promise((done, reject) => {
     const p = spawn('npx', ['tsx', 'api/orchestrate-cli.ts'], {
       cwd: PROJECT_ROOT,
@@ -110,8 +110,19 @@ function runOrchestrateSubprocess(brief: StoryBrief): Promise<OrchestrateResult>
     });
     let out = '';
     let err = '';
+    let buf = ''; // line-buffer stderr to pull out @@P@@ progress markers (rest is real error text)
     p.stdout.on('data', (d: Buffer) => (out += d.toString()));
-    p.stderr.on('data', (d: Buffer) => (err += d.toString()));
+    p.stderr.on('data', (d: Buffer) => {
+      const s = d.toString();
+      err += s;
+      buf += s;
+      let nl: number;
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, nl);
+        buf = buf.slice(nl + 1);
+        if (line.startsWith('@@P@@')) onProgress(line.slice(5));
+      }
+    });
     p.on('error', reject);
     p.on('close', (code) => {
       if (code !== 0) {
@@ -137,7 +148,7 @@ async function runJob(id: string): Promise<void> {
     //    Run in a SUBPROCESS: the footage proxy-transcode (ffmpeg, synchronous) would otherwise block
     //    the server's event loop for a minute+ and freeze the UI mid-job.
     stage(job, 'Writing story + fetching visuals', 'writing_story');
-    const res = await runOrchestrateSubprocess(job.brief);
+    const res = await runOrchestrateSubprocess(job.brief, (msg) => stage(job, msg, 'writing_story'));
     job.projectId = res.projectId;
     job.storyPath = res.storyPath;
     job.title = res.title;

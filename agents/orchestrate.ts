@@ -13,6 +13,7 @@ import { resolveVisuals } from './asset-scout.js';
 import { PROJECT_ROOT } from './claude.js';
 import { runConceptArchitect, type ConceptBrief } from './concept-architect.js';
 import { fitDurations } from './fit-durations.js';
+import { progress } from './progress.js';
 import { runStoryArchitect, type StoryBrief } from './story-architect.js';
 import { visualVerify } from './visual-verify.js';
 
@@ -70,17 +71,22 @@ export async function orchestrateBrief(b: StoryBrief, projectId?: string): Promi
     // Concept path: Concept Architect (real-physics sim) → VISUAL VERIFY loop. After writing the story
     // we render the beats to stills and a model LOOKS at the geometry; if a shadow/rope/etc. doesn't
     // connect (or something is off-screen), we regenerate feeding the visual critique back. One retry.
+    progress('Writing the script + designing the simulation…');
     let arch = await runConceptArchitect(conceptBriefFrom(b));
     const id = projectId ?? `gen-${slug(arch.story.title)}-${hash}`;
+    progress(`Script ready · ${arch.story.beats.length} steps · timing the narration…`);
     writeStory(id, arch.story);
     let attempts = arch.attempts;
     let problems = await visualVerify(id, b.brief);
     for (let v = 0; problems.length > 0 && v < 1; v++) {
+      progress(`Found ${problems.length} visual issue(s) — fixing the geometry…`);
       arch = await runConceptArchitect(conceptBriefFrom(b, problems.join('\n')));
       attempts += arch.attempts;
       writeStory(id, arch.story);
+      progress('Re-reviewing the corrected diagrams…');
       problems = await visualVerify(id, b.brief);
     }
+    progress(problems.length ? 'Visuals reviewed — starting the render…' : 'Visuals verified ✓ — starting the render…');
     return {
       projectId: id,
       storyPath: `projects/${id}/story.yaml`,
@@ -94,7 +100,9 @@ export async function orchestrateBrief(b: StoryBrief, projectId?: string): Promi
   }
 
   // Story path: the Story Architect + the Asset Scout (real footage per beat).
+  progress('Writing the script…');
   const arch = await runStoryArchitect(b);
+  progress(`Script ready · ${arch.story.beats.length} beats · fetching footage…`);
   const scout = await resolveVisuals(arch.story, b.aspect);
   const id = projectId ?? `gen-${slug(arch.story.title)}-${hash}`;
   writeStory(id, arch.story);
