@@ -11,6 +11,7 @@ import { stringify as stringifyYaml } from 'yaml';
 import { resolveVisuals } from './asset-scout.js';
 import { PROJECT_ROOT } from './claude.js';
 import { runConceptArchitect } from './concept-architect.js';
+import { fitDurations } from './fit-durations.js';
 import { runStoryArchitect, type StoryBrief } from './story-architect.js';
 
 // "explain X", "how X works", "what is X", "why does X" → a concept/teaching video (real simulation).
@@ -75,6 +76,8 @@ export async function orchestrateBrief(b: StoryBrief, projectId?: string): Promi
   const id = projectId ?? `gen-${slug(story.title)}-${hash}`;
   const dir = resolve(PROJECT_ROOT, 'projects', id);
   mkdirSync(dir, { recursive: true });
+  // Fit each beat's duration to its real narration length so the video never cuts off mid-sentence.
+  fitDurations(story, id, { ...(process.env['SARVAM_LANG'] ? { lang: process.env['SARVAM_LANG'] } : {}) });
   writeFileSync(resolve(dir, 'story.yaml'), stringifyYaml(story), 'utf8');
   return {
     projectId: id,

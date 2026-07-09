@@ -13,7 +13,7 @@ import Matter from 'matter-js';
 import { StoryIRSchema, type StoryIR } from '../src/ir/story.js';
 import { PROJECT_ROOT, runClaudeText, extractJson } from './claude.js';
 
-const PROMPT_VERSION = 'concept-architect@2';
+const PROMPT_VERSION = 'concept-architect@3';
 
 export interface ConceptBrief {
   brief: string;
@@ -55,6 +55,20 @@ THE SIM CODE (the heart of this) — the value of "code" is the BODY of a JS fun
 - LABEL the important parts with <text fill="#cfd8e6" font-size="26"> so the viewer understands what they see. Keep labels short.
 - Return "" only if truly nothing to draw (avoid — always draw something).
 
+MAKE IT BEAUTIFUL (eye-candy — this is a premium video, not a whiteboard):
+- Put a <defs> block at the START of the returned markup with a soft radial-gradient BACKGROUND and a GLOW filter, then use them:
+    '<defs>'
+    + '<radialGradient id="bg" cx="50%" cy="38%" r="75%"><stop offset="0" stop-color="#16223b"/><stop offset="1" stop-color="#080c15"/></radialGradient>'
+    + '<filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+    + '<radialGradient id="orb" cx="38%" cy="35%" r="70%"><stop offset="0" stop-color="#8fc0ff"/><stop offset="1" stop-color="#2f6fd0"/></radialGradient>'
+    + '</defs>'
+    + '<rect x="0" y="0" width="'+width+'" height="'+height+'" fill="url(#bg)"/>'
+- Use a COHESIVE, refined palette (not flat red/green): base navy, warm accent #ffb020, teal #2ee6a6, soft blue via url(#orb), coral #ff6b6b. Fill important round bodies with the gradient (url(#orb)) for volume, not flat color.
+- Add GLOW (filter="url(#glow)") to the key moving/highlight element. Give rects rounded corners (rx="14"). Use soft strokes (stroke-width 3-4, rounded). Add faint guide lines/orbits at low opacity (stroke-opacity="0.25").
+- Motion should EASE, not jerk: e.g. var e = 0.5 - 0.5*Math.cos(2*Math.PI*t/PERIOD); interpolate with e.
+- Vector arrows: draw as a <line> + a small triangle <polygon> head, in an accent color, with a short label.
+- Keep it clean and uncluttered — a few beautiful, well-spaced elements beat many tiny ones.
+
 USE REAL PHYSICS — accuracy is the whole point (don't eyeball motion):
 - For MECHANICS (pulleys, levers, gears, ramps, collisions, pendulums, springs, projectiles, gravity): use the injected \`Matter\` — the real matter.js 2D physics engine. Build an engine + bodies + constraints, then RE-SIMULATE FROM FRAME 0 each call so it stays deterministic:
     var eng = Matter.Engine.create(); eng.gravity.y = 1;
@@ -72,6 +86,7 @@ The viewer should learn something TRUE. If a value is uncertain, pick a physical
 
 RULES:
 - 4 to 6 beats, each a clear step. Narration flows as ONE explanation (step builds on step), spoken TO the viewer, warm and plain. Be accurate; don't invent false facts.
+- LANGUAGE: write "say" in the requested language. For HINGLISH, narrate the way a great Indian teacher explains on YouTube — natural Hindi (Devanagari) sentences with English technical terms mixed in ("देखिए, जब आप इस pulley की rope को नीचे खींचते हैं, तो load ऊपर उठता है…"). Respectful आप, warm and conversational. Keep the on-screen "text" LABELS short and in ENGLISH (technical terms read best in English).
 - Every beat: a "sim" generator (z:0) + a short "text" label (z:20). "at" is one of center/top/bottom/left/right. "camera" is "hold".
 - Use ONLY these beat keys: id, say, duration, camera, show. Show keys: generator, text, as, at, args.
 - Return VALID JSON only.`;

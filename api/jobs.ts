@@ -102,7 +102,12 @@ export function listJobs(): Job[] {
 /** Run the orchestration (Story Architect + Asset Scout) in its own process (keeps the server free). */
 function runOrchestrateSubprocess(brief: StoryBrief): Promise<OrchestrateResult> {
   return new Promise((done, reject) => {
-    const p = spawn('npx', ['tsx', 'api/orchestrate-cli.ts'], { cwd: PROJECT_ROOT, stdio: ['pipe', 'pipe', 'pipe'] });
+    const p = spawn('npx', ['tsx', 'api/orchestrate-cli.ts'], {
+      cwd: PROJECT_ROOT,
+      stdio: ['pipe', 'pipe', 'pipe'],
+      // Same narration language the render uses, so fit-durations measures (and caches) the right wavs.
+      env: { ...process.env, SARVAM_LANG: sarvamLang(brief.language) },
+    });
     let out = '';
     let err = '';
     p.stdout.on('data', (d: Buffer) => (out += d.toString()));
