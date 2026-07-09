@@ -14,6 +14,7 @@ import { PROJECT_ROOT } from './claude.js';
 import { runConceptArchitect, type ConceptBrief } from './concept-architect.js';
 import { fitDurations } from './fit-durations.js';
 import { progress } from './progress.js';
+import { productionize } from './productionize.js';
 import { runStoryArchitect, type StoryBrief } from './story-architect.js';
 import { visualVerify } from './visual-verify.js';
 
@@ -61,6 +62,9 @@ export async function orchestrateBrief(b: StoryBrief, projectId?: string): Promi
   // (so the video never cuts off mid-sentence — producing-news-reels §7).
   const writeStory = (id: string, story: StoryIR): void => {
     mkdirSync(resolve(PROJECT_ROOT, 'projects', id), { recursive: true });
+    // Make a generated story as complete as a hand-authored one (post grade + music bed + a real,
+    // upload-ready publish block) BEFORE timing — so a dashboard build === a manual build (one process).
+    productionize(story, { ...(lang ? { lang } : {}), brief: b.brief });
     fitDurations(story, id, { ...(lang ? { lang } : {}) });
     writeFileSync(resolve(PROJECT_ROOT, 'projects', id, 'story.yaml'), stringifyYaml(story), 'utf8');
   };
