@@ -10,7 +10,7 @@ import { StoryIRSchema, type StoryIR } from '../src/ir/story.js';
 import { PROJECT_ROOT, runClaudeText, extractJson } from './claude.js';
 
 /** Bump when the prompt changes → invalidates the cache (like a pass PASS_VERSION). */
-const PROMPT_VERSION = 'story-architect@4';
+const PROMPT_VERSION = 'story-architect@5';
 
 export interface StoryBrief {
   brief: string;
@@ -49,7 +49,7 @@ SHAPE (all keys shown are the ONLY allowed keys — extras are rejected):
 
 RULES:
 - 6 to 9 beats. Structure the narration as ONE continuous story split into beats: HOOK → context → stakes → turn → payoff. Each beat's "say" must connect to the previous (cause→effect), not read as isolated headlines.
-- Talk TO the viewer (second person, respectful). Open warmly, not with a gimmick. End on a loop/takeaway.
+- Talk TO the viewer (second person, respectful). Open warmly, not with a gimmick — for HINGLISH/Hindi, open the first beat with a warm "दोस्तों," hook the way Shorts open (NOT "देखिए"). End on a loop/takeaway.
 - "text" is a VERY SHORT scannable headline (2-4 words MAX), DIFFERENT from the narration. It MUST fit the frame width: for 9:16 (vertical) keep "size" 48-72 and 2-4 words; for 16:9 you may go 60-96. Never a full sentence — it will overflow and clip.
 - Bump the PROMPT_VERSION-worthy note: prefer punchy fragments ("THE LITTLE ENGINE", "25× A SECOND") over long phrases.
 - Keep every fact plausible/verifiable; do not invent statistics you are unsure of.

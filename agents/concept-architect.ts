@@ -13,7 +13,7 @@ import Matter from 'matter-js';
 import { StoryIRSchema, type StoryIR } from '../src/ir/story.js';
 import { PROJECT_ROOT, runClaudeText, extractJson } from './claude.js';
 
-const PROMPT_VERSION = 'concept-architect@4';
+const PROMPT_VERSION = 'concept-architect@5';
 
 export interface ConceptBrief {
   brief: string;
@@ -94,7 +94,8 @@ The viewer should learn something TRUE. If a value is uncertain, pick a physical
 
 RULES:
 - 4 to 6 beats, each a clear step. Narration flows as ONE explanation (step builds on step), spoken TO the viewer, warm and plain. Be accurate; don't invent false facts.
-- LANGUAGE: write "say" in the requested language. For HINGLISH, narrate the way a great Indian teacher explains on YouTube — natural Hindi (Devanagari) sentences with English technical terms mixed in ("देखिए, जब आप इस pulley की rope को नीचे खींचते हैं, तो load ऊपर उठता है…"). Respectful आप, warm and conversational. Keep the on-screen "text" LABELS short and in ENGLISH (technical terms read best in English).
+- LANGUAGE: write "say" in the requested language. For HINGLISH, narrate the way a top Indian YouTuber explains — natural Hindi (Devanagari) sentences with English technical terms mixed in. Respectful आप, warm and conversational. Keep the on-screen "text" LABELS short and in ENGLISH (technical terms read best in English).
+- OPENING (Hinglish): start the VERY FIRST beat with a warm "दोस्तों," hook, the way Shorts/reels open — friendly, pulling the viewer in with a question or a surprising idea (e.g. "दोस्तों, क्या आपने कभी सोचा है कि…"). Do NOT open with "देखिए" (it reads flat). Later beats may use देखिए/सोचिए sparingly.
 - Every beat: a "sim" generator (z:0) + a short "text" label (z:20). "at" is one of center/top/bottom/left/right. "camera" is "hold".
 - Use ONLY these beat keys: id, say, duration, camera, show. Show keys: generator, text, as, at, args.
 - Return VALID JSON only.`;
