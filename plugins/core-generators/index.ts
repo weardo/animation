@@ -14,6 +14,7 @@ import { Water } from './water.js';
 import { Particles } from './particles.js';
 import { Fire } from './fire.js';
 import { Crowd } from './crowd.js';
+import { Sim } from './sim.js';
 
 import manifestJson from './plugin.json' with { type: 'json' };
 import { parseManifest } from '../../src/engine/index.js';
@@ -30,6 +31,7 @@ export const coreGeneratorsPlugin: Plugin = {
     api.registerGenerator('particles', Particles);
     api.registerGenerator('fire', Fire);
     api.registerGenerator('crowd', Crowd);
+    api.registerGenerator('sim', Sim); // agent-authored concept simulations (SVG, deterministic)
   },
 };
 
