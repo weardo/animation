@@ -32,7 +32,7 @@
     },
     "newsdata": {
       "enabled": true,
-      "dailyBudget": 180,
+      "dailyBudget": 48,
       "params": { "country": "in", "language": "en,hi" }
     },
     "osint": { "enabled": false }

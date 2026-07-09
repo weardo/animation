@@ -12,19 +12,44 @@
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text);
     font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-  header { padding: 20px 28px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 12px; }
-  header h1 { font-size: 18px; margin: 0; font-weight: 700; letter-spacing: .2px; }
-  header .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
-  header .sub { color: var(--muted); font-size: 13px; margin-left: auto; }
-  main { max-width: 1080px; margin: 0 auto; padding: 28px; display: grid; grid-template-columns: 1fr; gap: 22px; }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
-  .card h2 { margin: 0 0 16px; font-size: 15px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
+  .app { display: flex; min-height: 100vh; }
+
+  /* ---- sidebar ---- */
+  .sidebar { width: 234px; flex: none; border-right: 1px solid var(--line); background: #0c0f17;
+    padding: 20px 14px; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 4px 10px 16px; }
+  .brand .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+  .brand b { font-size: 15px; letter-spacing: .2px; }
+  .nav { display: flex; align-items: center; gap: 11px; padding: 11px 13px; border-radius: 10px;
+    color: var(--muted); cursor: pointer; font-weight: 600; font-size: 14px; user-select: none; }
+  .nav:hover { background: var(--panel); color: var(--text); }
+  .nav.active { background: var(--panel2); color: var(--text); }
+  .nav .ic { font-size: 16px; }
+  .nav .badge { margin-left: auto; font-size: 11px; font-weight: 700; background: var(--accent); color: #1a1205;
+    min-width: 19px; height: 19px; padding: 0 6px; border-radius: 999px; display: none; align-items: center; justify-content: center; }
+  .nav .badge.show { display: inline-flex; }
+  .side-status { margin-top: auto; padding: 10px; display: grid; gap: 8px; font-size: 12.5px; color: var(--muted); }
+  .side-status span { display: flex; align-items: center; gap: 8px; }
+  .side-status i { width: 8px; height: 8px; border-radius: 50%; background: #394559; display: inline-block; }
+  .side-status i.on { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); }
+  .side-status i.off { background: var(--danger); }
+
+  /* ---- main / pages ---- */
+  main { flex: 1; min-width: 0; padding: 26px 30px; }
+  .page { max-width: 1000px; margin: 0 auto; display: grid; gap: 22px; }
+  .page.hidden { display: none; }
+  .page-head { margin: 0 0 2px; }
+  .page-head h1 { font-size: 21px; margin: 0; font-weight: 700; }
+  .page-head p { margin: 5px 0 0; color: var(--muted); font-size: 13.5px; }
+
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; }
+  .card h2 { margin: 0 0 14px; font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
   label { display: block; font-size: 13px; color: var(--muted); margin: 0 0 6px; }
   textarea, input, select { width: 100%; background: var(--panel2); color: var(--text); border: 1px solid var(--line);
     border-radius: 9px; padding: 11px 13px; font: inherit; }
-  textarea { min-height: 90px; resize: vertical; }
-  .row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 14px; }
-  .actions { margin-top: 18px; display: flex; gap: 12px; align-items: center; }
+  textarea { min-height: 84px; resize: vertical; }
+  .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 14px; }
+  .actions { margin-top: 18px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
   button { background: var(--accent); color: #1a1205; border: 0; border-radius: 10px; padding: 12px 22px;
     font: inherit; font-weight: 700; cursor: pointer; }
   button:disabled { opacity: .5; cursor: default; }
@@ -50,80 +75,128 @@
   .spin { width: 14px; height: 14px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%;
     display: inline-block; animation: s .8s linear infinite; }
   @keyframes s { to { transform: rotate(360deg); } }
+
+  /* ---- radar candidate cards ---- */
+  .feed { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+  .cand { border: 1px solid var(--line); border-radius: 12px; padding: 13px 15px; background: var(--panel2); }
+  .cand.india { border-left: 3px solid var(--accent2); }
+  .cand.viral { border-left: 3px solid var(--accent); }
+  .cand-top { display: flex; align-items: flex-start; gap: 11px; }
+  .cand-top .score { font-weight: 800; font-size: 14px; min-width: 34px; text-align: center; padding: 4px 6px; border-radius: 8px; flex: none; }
+  .score.hot { background: #2e1616; color: var(--danger); }
+  .score.warm { background: #2a2f1a; color: var(--accent); }
+  .score.mild { background: #102a20; color: var(--accent2); }
+  .cand-title { font-weight: 600; line-height: 1.35; }
+  .cand-meta { color: var(--muted); font-size: 12.5px; margin: 6px 0 0; }
+  .cand-angle { color: #b9c4d8; font-size: 13px; font-style: italic; margin: 7px 0 0; }
+  .cand-actions { margin-top: 11px; display: flex; gap: 9px; }
+  .cand-actions button { padding: 8px 15px; font-size: 13px; }
+  .empty { color: var(--muted); font-size: 13.5px; padding: 10px 0; }
+  @media (max-width: 760px) {
+    .app { flex-direction: column; }
+    .sidebar { width: 100%; height: auto; position: static; flex-direction: row; flex-wrap: wrap; align-items: center; }
+    .side-status { margin: 0 0 0 auto; grid-auto-flow: column; }
+  }
 </style>
 </head>
 <body>
-<header>
-  <span class="dot"></span>
-  <h1>Animation Factory · Studio</h1>
-  <span class="sub">brief in → video out · self-hosted</span>
-</header>
-
-<main>
-  <section class="card" id="create">
-    <h2>Create a video</h2>
-    <label for="brief">What's the video about?</label>
-    <textarea id="brief" placeholder="e.g. Why the Strait of Hormuz matters — or: explain how a pulley works"></textarea>
-    <div class="row" style="grid-template-columns: 1fr 1fr; margin-top:14px">
-      <div><label>Mode</label>
-        <select id="mode">
-          <option value="auto">Auto (detect "explain…")</option>
-          <option value="story">Explainer · real footage</option>
-          <option value="concept">Concept · real physics simulation</option>
-        </select></div>
-      <div><label>Length (s)</label><input id="targetSeconds" type="number" value="40" min="15" max="120" /></div>
+<div class="app">
+  <nav class="sidebar">
+    <div class="brand"><span class="dot"></span><b>Studio</b></div>
+    <div class="nav active" data-page="radar"><span class="ic">📡</span> News Radar <span class="badge" id="navBadge"></span></div>
+    <div class="nav" data-page="create"><span class="ic">🎬</span> Generate video</div>
+    <div class="nav" data-page="setup"><span class="ic">⚙️</span> Setup</div>
+    <div class="side-status">
+      <span><i id="dotRadar"></i> Radar tracker</span>
+      <span><i id="dotSarvam"></i> Sarvam voice</span>
+      <span><i id="dotPexels"></i> Pexels footage</span>
     </div>
-    <div class="row">
-      <div><label>Aspect</label>
-        <select id="aspect"><option value="9:16">9:16 vertical</option><option value="16:9">16:9 wide</option><option value="1:1">1:1 square</option></select></div>
-      <div><label>Style</label>
-        <select id="style"><option value="kurzgesagt">kurzgesagt</option><option value="plain">plain</option></select></div>
-      <div><label>Language</label><input id="language" value="Hinglish" /></div>
-    </div>
-    <div class="actions">
-      <button id="go">Generate video</button>
-      <span class="hint">An AI story architect writes it, then the factory renders it — a couple of minutes.</span>
-    </div>
-  </section>
+  </nav>
 
-  <section class="card hidden" id="job">
-    <h2>Progress</h2>
-    <div style="display:flex;align-items:center;gap:12px">
-      <span class="pill" id="status">queued</span>
-      <span id="title" style="font-weight:600"></span>
-    </div>
-    <ul class="stages" id="stages"></ul>
-    <pre class="log hidden" id="log"></pre>
-    <video id="video" class="hidden" controls></video>
-    <div class="actions" id="doneActions" style="display:none">
-      <a id="download" class="hidden" download><button>Download video</button></a>
-      <button id="publish" class="ghost">Publish to YouTube</button>
-      <button class="ghost" onclick="reset()">Make another</button>
-    </div>
-    <pre class="log hidden" id="pubout"></pre>
-  </section>
+  <main>
+    <!-- ===== News Radar ===== -->
+    <section class="page" id="page-radar">
+      <div class="page-head"><h1>📡 News Radar</h1><p>Breaking India-relevant + globally-viral stories, ranked. Approve one to build a draft.</p></div>
+      <div class="card" id="radar">
+        <h2>Opportunities <span id="radarState" class="hint" style="font-weight:400;text-transform:none;letter-spacing:0"></span></h2>
+        <ul class="feed" id="candidates"><li class="empty">Radar idle — start the tracker with <code>npm run radar</code>. Ranked breaking stories will appear here.</li></ul>
+      </div>
+    </section>
 
-  <section class="card" id="radar">
-    <h2>📡 News Radar <span class="hint" id="radarState" style="font-weight:400">— breaking opportunities</span></h2>
-    <ul class="jobs" id="candidates"><li class="hint" style="cursor:default">Radar idle — start it with <code>npm run radar</code>. Ranked breaking stories will appear here.</li></ul>
-  </section>
+    <!-- ===== Generate video ===== -->
+    <section class="page hidden" id="page-create">
+      <div class="page-head"><h1>🎬 Generate a video</h1><p>Describe it, or approve a story from the Radar — an AI writes it and the factory renders it.</p></div>
+      <div class="card" id="create">
+        <h2>New video</h2>
+        <label for="brief">What's the video about?</label>
+        <textarea id="brief" placeholder="e.g. Why the Strait of Hormuz matters — or: explain how a pulley works"></textarea>
+        <div class="row" style="grid-template-columns:1fr 1fr;margin-top:14px">
+          <div><label>Mode</label>
+            <select id="mode">
+              <option value="auto">Auto (detect "explain…")</option>
+              <option value="story">Explainer · real footage</option>
+              <option value="concept">Concept · real physics simulation</option>
+            </select></div>
+          <div><label>Length (s)</label><input id="targetSeconds" type="number" value="40" min="15" max="120" /></div>
+        </div>
+        <div class="row">
+          <div><label>Aspect</label>
+            <select id="aspect"><option value="9:16">9:16 vertical</option><option value="16:9">16:9 wide</option><option value="1:1">1:1 square</option></select></div>
+          <div><label>Style</label>
+            <select id="style"><option value="kurzgesagt">kurzgesagt</option><option value="plain">plain</option></select></div>
+          <div><label>Language</label><input id="language" value="Hinglish" /></div>
+        </div>
+        <div class="actions">
+          <button id="go">Generate video</button>
+          <span class="hint">A couple of minutes: an AI story architect writes it, then the factory renders it.</span>
+        </div>
+      </div>
 
-  <section class="card" id="recent">
-    <h2>Recent</h2>
-    <ul class="jobs" id="jobs"><li class="hint" style="cursor:default">Nothing yet — create your first video above.</li></ul>
-  </section>
+      <div class="card hidden" id="job">
+        <h2>Progress</h2>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span class="pill" id="status">queued</span>
+          <span id="title" style="font-weight:600"></span>
+        </div>
+        <ul class="stages" id="stages"></ul>
+        <pre class="log hidden" id="log"></pre>
+        <video id="video" class="hidden" controls></video>
+        <div class="actions" id="doneActions" style="display:none">
+          <a id="download" class="hidden" download><button>Download video</button></a>
+          <button id="publish" class="ghost">Publish to YouTube</button>
+          <button class="ghost" onclick="reset()">Make another</button>
+        </div>
+        <pre class="log hidden" id="pubout"></pre>
+      </div>
 
-  <section class="card" id="setup">
-    <h2>Setup</h2>
-    <ul class="jobs" id="config"><li class="hint" style="cursor:default">Checking integrations…</li></ul>
-  </section>
-</main>
+      <div class="card" id="recent">
+        <h2>Recent</h2>
+        <ul class="jobs" id="jobs"><li class="hint" style="cursor:default">Nothing yet — create your first video above.</li></ul>
+      </div>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="page hidden" id="page-setup">
+      <div class="page-head"><h1>⚙️ Setup</h1><p>Integrations the factory uses. Keys live in <code>.env</code>.</p></div>
+      <div class="card" id="setup">
+        <h2>Integrations</h2>
+        <ul class="jobs" id="config"><li class="hint" style="cursor:default">Checking integrations…</li></ul>
+      </div>
+    </section>
+  </main>
+</div>
 
 <script>
 const $ = (id) => document.getElementById(id);
-// Escape any model/job-derived string before it goes into innerHTML (titles, stage notes are LLM output).
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 let pollTimer = null;
+
+// --- page router ---
+function showPage(name) {
+  document.querySelectorAll('.page').forEach((p) => p.classList.toggle('hidden', p.id !== 'page-' + name));
+  document.querySelectorAll('.nav').forEach((n) => n.classList.toggle('active', n.dataset.page === name));
+}
+document.querySelectorAll('.nav').forEach((n) => n.addEventListener('click', () => showPage(n.dataset.page)));
 
 async function go() {
   const brief = $('brief').value.trim();
@@ -145,6 +218,7 @@ async function go() {
 let currentId = null;
 function watch(id) {
   currentId = id;
+  showPage('create');
   try { localStorage.setItem('watchId', id); } catch (e) {}
   $('pubout').classList.add('hidden');
   $('job').classList.remove('hidden');
@@ -179,9 +253,7 @@ function render(job, id) {
     dl.classList.remove('hidden');
     $('doneActions').style.display = 'flex';
   }
-  if (job.status === 'error') {
-    $('doneActions').style.display = 'flex';
-  }
+  if (job.status === 'error') { $('doneActions').style.display = 'flex'; }
 }
 
 function reset() {
@@ -200,7 +272,6 @@ async function loadJobs() {
   return jobs;
 }
 
-// On load, restore the live view: prefer the last-watched job, else the newest still-running one.
 async function init() {
   const jobs = await loadJobs();
   const running = (j) => j && j.status !== 'done' && j.status !== 'error';
@@ -220,6 +291,8 @@ async function loadConfig() {
       `<li style="cursor:default"><span class="t">Pexels (footage visuals)</span>${ok(c.keys.pexels)}</li>`,
       `<li style="cursor:default"><span class="t">Narration engine</span><span class="hint">${esc(c.narrationEngine)}</span></li>`,
     ].join('');
+    $('dotSarvam').className = c.keys.sarvam ? 'on' : 'off';
+    $('dotPexels').className = c.keys.pexels ? 'on' : 'off';
   } catch (e) {}
 }
 
@@ -236,33 +309,44 @@ async function publish(confirm) {
   } catch (e) { out.textContent = 'Publish failed: ' + e; }
   btn.textContent = 'Publish to YouTube'; btn.disabled = false; delete btn.dataset.confirm;
 }
+$('publish').addEventListener('click', () => publish($('publish').dataset.confirm === '1'));
+$('go').addEventListener('click', go);
 
-// --- News Radar inbox ---------------------------------------------------------------------------
+// --- News Radar ---
 const laneEmoji = (l) => l === 'india' ? '🇮🇳' : l === 'viral' ? '🔥' : '•';
-const scorePill = (n) => { const c = n >= 85 ? 'error' : n >= 70 ? '' : 'done'; return `<span class="pill ${c}">${Math.round(n)}</span>`; };
+const scoreClass = (n) => n >= 85 ? 'hot' : n >= 70 ? 'warm' : 'mild';
 
 async function loadRadar() {
   try {
     const { candidates } = await (await fetch('/api/radar/candidates')).json();
+    $('dotRadar').className = 'on';
     const el = $('candidates');
+    const open = (candidates || []).filter((c) => !c.jobId);
+    const badge = $('navBadge');
+    badge.textContent = open.length; badge.classList.toggle('show', open.length > 0);
     if (!candidates || !candidates.length) {
-      el.innerHTML = '<li class="hint" style="cursor:default">No candidates yet — the radar surfaces breaking India-relevant + viral stories here as they score.</li>';
-      $('radarState').textContent = '— idle / no candidates';
+      el.innerHTML = '<li class="empty">No candidates yet — breaking India-relevant + viral stories surface here as the radar scores them.</li>';
+      $('radarState').textContent = '· idle';
       return;
     }
-    $('radarState').textContent = `— ${candidates.length} ranked`;
+    $('radarState').textContent = '· ' + candidates.length + ' ranked';
     el.innerHTML = candidates.map((c) => {
-      const built = c.jobId ? `<span class="pill">building → job ${esc(c.jobId)}</span>` : '';
+      const built = c.jobId ? `<span class="pill">building → ${esc(c.jobId)}</span>` : '';
       const actions = c.jobId ? '' :
-        `<button data-approve="${esc(c.id)}">Approve → build</button> <button class="ghost" data-dismiss="${esc(c.id)}">Dismiss</button>`;
-      return `<li style="cursor:default;display:block">
-        <div><span class="t">${scorePill(c.aiScore)} ${laneEmoji(c.lane)} ${esc(c.title)}</span></div>
-        <div class="hint" style="margin:2px 0">${esc(c.whyIndia || '')} · <b>${esc(c.source)}</b> · India ${Math.round(c.indiaFit)} / viral ${Math.round(c.virality)}${c.producible ? '' : ' · ⚠ hard to build'}</div>
-        <div class="hint" style="margin:2px 0"><i>${esc(c.angle || '')}</i></div>
-        <div class="actions">${built}${actions}</div>
+        `<button data-approve="${esc(c.id)}">Approve → build</button><button class="ghost" data-dismiss="${esc(c.id)}">Dismiss</button>`;
+      return `<li class="cand ${esc(c.lane || '')}">
+        <div class="cand-top">
+          <span class="score ${scoreClass(c.aiScore)}">${Math.round(c.aiScore)}</span>
+          <div>
+            <div class="cand-title">${laneEmoji(c.lane)} ${esc(c.title)}</div>
+            <div class="cand-meta">${esc(c.whyIndia || '')} · <b>${esc(c.source)}</b> · India ${Math.round(c.indiaFit)} / viral ${Math.round(c.virality)}${c.producible ? '' : ' · ⚠ hard to build'}</div>
+            <div class="cand-angle">${esc(c.angle || '')}</div>
+          </div>
+        </div>
+        <div class="cand-actions">${built}${actions}</div>
       </li>`;
     }).join('');
-  } catch (e) { $('radarState').textContent = '— radar offline'; }
+  } catch (e) { $('dotRadar').className = 'off'; $('radarState').textContent = '· offline'; }
 }
 
 async function approveCandidate(id) {
@@ -280,12 +364,10 @@ $('candidates').addEventListener('click', (e) => {
   else if (d) dismissCandidate(d.getAttribute('data-dismiss'));
 });
 
-$('publish').addEventListener('click', () => publish($('publish').dataset.confirm === '1'));
-$('go').addEventListener('click', go);
 init();
 loadConfig();
 loadRadar();
-setInterval(loadRadar, 30000); // poll the radar shortlist
+setInterval(loadRadar, 30000);
 </script>
 </body>
 </html>
