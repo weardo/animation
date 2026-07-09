@@ -1,0 +1,61 @@
+{
+  "project_version": "1.0",
+  "id": "mumbai-monsoon",
+  "name": "mumbai-monsoon",
+  "created": "2026-07-09T07:56:08.063Z",
+  "updated": "2026-07-09T07:56:08.063Z",
+  "config": {
+    "w": 1080,
+    "h": 1920,
+    "fps": 30,
+    "duration_frames": 1587
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "a56e77ef895045796a347b41f4f8ff20a31be89a",
+  "engine": "remotion@4.0.481",
+  "deps": [
+    "mankhurd-collapse@1.0.0",
+    "mon-flood-people@1.0.0",
+    "mon-flood-street@1.0.0"
+  ],
+  "assets": [
+    "assets/video/mon-flood-street.mp4",
+    "assets/video/mon-flood-people.mp4",
+    "assets/video/mankhurd-collapse.mp4",
+    "assets/fonts/Mukta-ExtraBold.ttf",
+    "assets/fonts/NotoSansDevanagari.ttf",
+    "assets/fonts/DejaVuSans.ttf"
+  ],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  },
+  "publish": {
+    "title": "Mumbai की बारिश और Mankhurd का हादसा — 6 मौतें, 5 बच्चे | Monsoon 2026",
+    "description": "Mumbai में monsoon 2026 की एक दर्दनाक रात — Mankhurd के Janta Nagar में एक illegal chawl heavy rain में गिर गई, और 6 लोगों की जान चली गई, जिनमें 5 मासूम बच्चे थे। 24 घंटे में 200mm+ बारिश, red alert, और NDRF का rescue। मालिक और contractor गिरफ़्तार, CM ने ₹5 लाख मुआवज़ा दिया।\n\nआपको क्या लगता है — इस हादसे का असली ज़िम्मेदार कौन है? नीचे comment में बताइए।\nFollow for daily India news, explained in Hinglish. 🇮🇳\n\nSources: Mankhurd (Janta Nagar) chawl collapse, 5-6 July 2026 · 6 dead incl. 5 children · IMD 200mm+/24h, red alert · FIR vs owner Gulam Raza Sayyed + contractor (BNS 105 & 3(5)) · CM Devendra Fadnavis ₹5 lakh ex-gratia. Reporting: Dawn, SCMP, Free Press Journal, The Statesman, Gulf News.\nCredits: News footage — DNA India (editorial/fair-use, attributed) · b-roll — Pexels · Voice — Sarvam Bulbul.\nDisclaimer: A news explainer compiled from public reporting; facts per cited sources as of July 2026.\n",
+    "tags": [
+      "Mumbai",
+      "monsoon",
+      "Mankhurd",
+      "building collapse",
+      "Mumbai rains",
+      "India news",
+      "Hinglish",
+      "monsoon 2026"
+    ],
+    "hashtags": [
+      "Mumbai",
+      "MumbaiRains",
+      "Mankhurd",
+      "monsoon",
+      "IndiaNews"
+    ],
+    "category": "News & Politics",
+    "language": "hi-IN",
+    "privacy": "unlisted",
+    "made_for_kids": false,
+    "license": "standard"
+  }
+}

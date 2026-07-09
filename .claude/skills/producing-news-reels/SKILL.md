@@ -129,10 +129,14 @@ The `map` generator (core-dataviz) has a full toolkit, all authored as DATA, all
 
 - **Palette:** near-black bg (`#0a0d14`), dark land (`#141c28`), one hot accent per beat (amber
   `#ffb020` / red `#ff4438` / teal `#2ee6a6`), white text (`#f5f7fa`). Highlighted country = vivid fill.
-- **Depth:** a story-level `post:` grade — `color_grade` (contrast ~1.18) + `vignette` (~0.6) + `grain`
-  (~0.055). This gives the cinematic feel; DON'T rely on giant blurred "glow" circle shapes (they
-  misbehaved — a green-filled glow rendered amber and washed the frame). Vignette + map glow effects
-  are enough.
+- **Depth — ⚠️ VIGNETTE IS OPT-IN, NOT A DEFAULT (user 2026-07-09: "normal news don't need it").** The
+  default story-level `post:` grade is `color_grade` (contrast ~1.18) + `grain` (~0.055) — **NO `vignette`.**
+  A vignette is a MOOD choice, not a house look: its darkened corners read as heavy/editorial and CRUSH
+  bright footage. **Add `vignette` ONLY where it genuinely suits the piece** — a deliberately cinematic /
+  somber / night / documentary tone. A straight/normal news reel should OMIT it. When you DO use it, keep
+  it LIGHT (~0.3–0.4), never ~0.6. DON'T rely on giant blurred "glow" circle shapes either (they misbehaved
+  — a green-filled glow rendered amber and washed the frame); `color_grade` + `grain` (+ map glow) are
+  enough for depth without a vignette.
 - **Type:** huge Mukta ExtraBold, `drop_shadow` for legibility over maps, subtle `glow` on accent text.
 - **Footage over emojis/flat beats.** WHERE YOU'RE NOT ANIMATING (a "prices skyrocket" / "meanwhile" /
   establishing beat), use REAL graded footage, NOT an emoji (⛔🔥) or a bare word on a color — emojis read
@@ -146,8 +150,9 @@ The `map` generator (core-dataviz) has a full toolkit, all authored as DATA, all
   grade (`brightness ~0.9, contrast ~1.1`), little/no per-clip `vignette` (≤0.25), and — for text
   legibility — a **LOCALIZED scrim BAND behind the text only** (a `rect` ~1080×360 at the text's y,
   `opacity ~0.4` + a `blur` to soften its edges), NOT a full-frame dark overlay; rely on the text's own
-  `drop_shadow`+`glow`. A MOODY clip (stormy sky, night) can take a darker grade + light vignette. Keep
-  the story-level `post` vignette modest (~0.4) on footage-heavy reels so bright clips aren't crushed.
+  `drop_shadow`+`glow`. A MOODY clip (stormy sky, night) can take a darker grade + a light vignette. For a
+  STRAIGHT news reel, OMIT the story-level `post` vignette entirely (it's opt-in — see §Depth); only a
+  deliberately moody/cinematic piece adds it, and then keep it modest (~0.3–0.4) so bright clips aren't crushed.
 - **VERIFY EVERY CLIP — and BROWSE, don't take the first (user: "not always the first clip is best").**
   Pexels ranks by loose relevance → the top hit is often wrong: "fire"→fireworks, "military soldiers"→
   NAPOLEONIC REENACTORS, "warship"→a marina/just-water pan. Workflow: (1) `factory:footage "<q>" --list 8`
@@ -212,29 +217,61 @@ statements into second-person conversation:
   a "you"/a question/an imperative.
 
 **The proven YouTube-Shorts patterns (India, 2026) — bake these in:**
-- **HOOK (0-3s) is make-or-break.** 70% retention at 3s ≈ 5× more viral. And **92% watch on MUTE** → the
-  ON-SCREEN TEXT hook must hit in the FIRST FRAME (fast `anim: { preset: fade, duration: 5 }`, not a slow
-  rise). Hook types: curiosity-gap / bold claim ("एक रास्ता, जो पूरी दुनिया हिला सकता है"), "No/Stop"
-  ("ये मत समझना…"), stat-shock (a striking number, e.g. "20% X, एक छोटी सी वजह से"), identity-call ("अगर आप ये समझते हैं…").
-  Start Hindi, end on an English keyword — natural AND helps the algorithm categorize.
-- **FLOW = escalation.** Each beat raises stakes; fast visual tempo (fly-tos, route draws, marker pops =
-  the "filmy" hero-zoom/whip-pan energy).
-- **CLOSE = a LOOP, not a CTA.** CUT the in-video "Follow करो!" — a 3s CTA BREAKS the loop and tanks
-  completion. Instead end on a LOOP: the last beat RETURNS to the hook's visual + repeats the hook TEXT
-  verbatim (recontextualized by the narration) → visual + verbal loop → rewatches (which the algorithm
-  rewards). Put the "follow / subscribe" CTA in the video DESCRIPTION. End mid-momentum, never on a hard
-  period + black frame.
-- **LENGTH.** 20-25s peaks completion for simple content — but a value-dense GEOPOLITICS EXPLAINER
-  legitimately runs ~40-50s (depth is the draw); don't gut the content to chase 25s. Offer a separate
-  tight "viral cut" (~30s) only if max reach is the goal.
+- **⚠️ THE 3-SECOND HOOK — a HARD RULE, not a suggestion (script generator MUST obey).** Beat 1's `say`
+  ALWAYS opens with a **high-stakes QUESTION or a dramatic fact/stat** that stops the swipe — never a warm
+  wind-up, a definition, or a slow scene-set. This is the single biggest retention lever: 70% retention at
+  3s ≈ 5× more viral, and **92% watch on MUTE** → the ON-SCREEN TEXT hook must also land in the FIRST FRAME
+  (fast `anim: { preset: fade, duration: 5 }`, not a slow rise). The FIVE allowed hook shapes (pick one,
+  make it specific to THIS story):
+  · **high-stakes question** — "क्या आपका शहर अगली बाढ़ के लिए तैयार है?" / "अगर ये रास्ता बंद हो जाए, तो?"
+  · **dramatic stat-shock** — a striking number in the first breath ("24 घंटे में 729 millimetre बारिश।")
+  · **bold claim / curiosity-gap** — "एक रास्ता, जो पूरी दुनिया हिला सकता है।"
+  · **"No/Stop" pattern-interrupt** — "ये मत समझिए कि…"
+  · **identity-call** — "अगर आप India में रहते हैं, तो ये आपके लिए है।"
+  For Hinglish, still open the SENTENCE warmly with "दोस्तों," then immediately hit the question/fact — the
+  warmth is the greeting, the hook is the very next clause. Start Hindi, END on an English keyword (natural
+  AND helps the algorithm categorize). **A reel that opens on anything BUT a question or a dramatic fact is
+  a failed hook — rewrite beat 1 before rendering.**
+- **FLOW = escalation + FAST VISUAL PACING (a HARD RULE).** Each beat raises stakes AND **the VISUAL must
+  CHANGE every ~2–3 seconds** — Shorts die on a static shot. Never hold one image/clip/map longer than ~3s:
+  cut to a new clip, a fly-to/zoom, a marker-pop, a route-draw, a text-rise, or a Ken-Burns push. Concretely:
+  keep beat `duration`s in the ~2.5–4s band (a long narration line → SPLIT it into two beats with DIFFERENT
+  visuals rather than one long static beat), and give every beat internal motion (a slow push/pan on
+  footage via `kenburns`/camera, a `markers_pop`/`draw_on` on a map) so even within a beat the frame is never
+  frozen. The "filmy" hero-zoom / whip-pan energy = fly-tos, route draws, marker pops, quick cuts. TEST: scrub
+  the reel — if any 3-second window shows a motionless frame, add a cut or a move there.
+- **CLOSE = a SEAMLESS LOOP, not a CTA (retention >100% is the goal).** Design the end so it flows back
+  into the START: the video should end EXACTLY where it begins. Two layers — (a) VISUAL loop: the last
+  beat RETURNS to the hook's footage; (b) VERBAL loop: the last spoken sentence should hand off cleanly
+  into the FIRST word, so a viewer who keeps watching doesn't perceive a "stop" — they watch it twice
+  before realizing it ended. That rewatch pushes average-view-duration ABOVE 100%, which is the single
+  strongest signal that makes the algorithm promote a Short. So: repeat the hook TEXT verbatim on the last
+  beat (recontextualized by the narration), end mid-momentum (never a hard period + a beat of black or a
+  slow fade to nothing), and make the final clause loopable into the opener. CUT the in-video "Follow
+  करो!" — a 3s CTA BREAKS the loop and tanks completion; put "follow / subscribe" in the DESCRIPTION only.
+- **LENGTH — SHORTER WINS COMPLETION.** Videos **under ~30s** hit 80–100% completion far more easily, and
+  completion is what the algorithm rewards — so DEFAULT to the tightest cut that still tells the story
+  (~20–30s for a punchy news beat). A value-dense EXPLAINER can legitimately run ~40–50s when depth IS the
+  draw, but that's the exception — don't pad. Cut ruthlessly: every blank pause, filler, and dead frame
+  (the narration silence-trim in §7 does this for the VO; do the same for visuals — no held/motionless
+  shots, see the 2–3s pacing rule above). If max reach matters, also cut a separate tight **~25s "viral
+  cut."**
 
 ## 7. AUDIO DESIGN — music + SFX + ducking, and beat-durations that FIT
 
-- **Music bed:** `music: { ref: "audio/<track>.mp3", gain: 0.6, duck: 0.32, fade: 16 }` — auto-ducks
-  under the VO. The built-in math beds (`drone`) are near-inaudible (−39 dB) — use a **licensed
-  royalty-free track** vendored to `assets/audio/`. Incompetech (Kevin MacLeod) is directly
-  downloadable (CC-BY → **credit in the video description**); Pixabay/Mixkit are no-attribution but
-  JS-only (not curl-able — user must download). Normalize the track (`loudnorm=I=-16`) so it's audible.
+- **⚠️ MUSIC BED IS MANDATORY — EVERY news reel ships with one (user 2026-07-09: "we're missing bg music").**
+  A reel with only voice + SFX feels flat/amateur; a subtle ducked bed is ~half the "production" feel. So
+  **ALWAYS author a top-level `music:` block** — never leave it out. Add it to the story root:
+  `music: { ref: "library/music/<name>.mp3", gain: 0.26, duck: 0.12, fade: 16 }` — it auto-ducks HARD under
+  the VO (gain≈0.24–0.30 when no one speaks, duck≈0.10–0.14 while narrating, so the voice always wins).
+  **Real royalty-free beds are ALREADY vendored in `library/music/`** (Kevin MacLeod, Incompetech) — pick by
+  mood: `tension` (conflict / rising stakes — the news default), `the-descent` (sinking dread), `anguish`
+  (somber / loss), `impact-prelude` (building to a turn), `echoes-of-time-v2` (epic / reflective),
+  `ghost-story` (dark ambient). **CREDIT it in the description** — e.g. `Music — "Tension" by Kevin MacLeod
+  (incompetech.com), CC-BY 4.0` (see `library/music/CREDITS.md`). The built-in MATH beds (`drone`/`calm`/
+  `uplift`) are near-inaudible (−39 dB) — do NOT rely on them; use the vendored mp3s. **VERIFY the mix is
+  AUDIBLE and the bed doesn't drown the VO:** after render, `ffmpeg volumedetect` the mux (mean well above
+  −60 dB), and spot-listen that the voice sits clearly on top of the bed.
 - **SFX:** the built-in recipes (`src/cli/sfx.ts`) were upgraded to cinematic quality — whoosh
   (pink-noise swoosh), thud/boom (sub-bass pitch-drop impacts), pop (UI), ding (bell), riser (tension
   build). Author per beat: `sfx: [{ name: whoosh, at: 2 }, { name: pop, at: 8 }, …]` (frame offsets)
@@ -243,9 +280,16 @@ statements into second-person conversation:
   `library/sfx/<name>.wav` (skip-if-exists by name → they override the synthesized ones).
 - **BEAT DURATIONS MUST FIT THE NARRATION.** Sarvam's output length VARIES run-to-run and doesn't scale
   linearly with pace, so *estimating* durations upfront → overlapping voice across transitions. The
-  reliable recipe: synth once, READ the actual cue `duration_frames` from `scene.json`, then set each
-  beat `duration = narration_seconds + ~0.9s` (gives a tight ~0.35s pause; the 16f transition eats the
-  rest). Verify 0 overlaps in `scene.json` before the full render.
+  reliable recipe: `agents/fit-durations.ts` synths once (Sarvam) + sets `beat.duration = narration + 0.35s`
+  tail (round 0.1s) — call it before rendering, or synth once, READ the cue `duration_frames` from
+  `scene.json` and set it by hand. Verify each narration fits its beat before the full render.
+- **⚠️ NARRATION EDGE-SILENCE IS AUTO-TRIMMED (don't re-add a big tail).** TTS engines (Sarvam especially)
+  pad each clip with ~0.3–1s of head/tail silence; because a beat is fit to the WAV LENGTH, that padding
+  used to COMPOUND into a **1.5–2s dead-air gap between stitched sentences** (user report 2026-07-09).
+  `narrate.ts` now silence-trims each freshly-synthed wav's LEADING + TRAILING silence (internal pauses
+  kept) so the beat reflects SPEECH — sentences flow with just the intended ~0.35s tail. So keep the tail
+  SMALL (~0.35s); a big tail brings the long gap back. **If you hear long pauses between lines, delete
+  `assets/audio/*.wav` and re-synth** (old un-trimmed wavs are cached by hash and won't auto-retrim).
 
 ## 8. OPERATIONAL GOTCHAS (these bit repeatedly)
 
@@ -309,7 +353,30 @@ YouTube needs a one-time OAuth setup + `--auth` (see `docs/factory/PUBLISHING.md
 API uploads to private/unlisted until the OAuth app is verified — so the practical flow is upload-unlisted
 → glance in Studio → click Publish. Quota ≈ 6 uploads/day free.
 
-## 10. DOCUMENTARIES → see the `producing-documentaries` skill
+## 10. GROWTH & DISTRIBUTION — the algorithm game (author + publish for reach)
+
+The reel is only half the job; how it's PACKAGED and POSTED decides reach. These are craft rules for the
+`publish:` block + the posting workflow, distinct from the in-video narrative (§6):
+
+- **SEARCH-HACK the title + description (evergreen discovery).** Shorts also surface in **YouTube SEARCH**,
+  not just the feed — so a Short can pull views for MONTHS if it answers a real query. Put the **primary
+  keyword FIRST in the title** and again in the first line of the description, in the words people actually
+  type. Prefer a **question / "how / why / what" framing** the video answers ("Nashik में इतनी बाढ़ क्यों आई?",
+  "Strait of Hormuz क्यों ज़रूरी है?") — that matches search intent and ages well. Add specific proper nouns
+  (place, person, event, year) as tags + in the description; they're what a searcher months later types.
+  Keep the human hook too — the title must be both searchable AND clickable.
+- **POST CONSISTENTLY + OFTEN — volume beats perfection.** One video to 100k is hard; **five to 20k each is
+  easier** and trains the channel. Aim **2–3 Shorts/day**. This is exactly why the factory exists: a reel is
+  a new `story.yaml`, so lean on the pipeline to ship many rather than polishing one forever. (The un-built
+  auto-scripting milestone — news item → `story.yaml` — is what makes daily volume trivial; see below.)
+- **POST AT PEAK HOURS.** Check **YouTube Studio → Analytics → "When your viewers are on YouTube"** and
+  schedule/upload in those windows (for an India channel this is usually evenings IST, but READ the actual
+  data per channel). Don't post into a dead hour.
+- **The LOOP + sub-30s completion + the 3-sec hook (see §6) ARE the on-video growth levers** — they raise
+  retention/rewatch, which is what makes the algorithm promote a Short. Package (this section) + retention
+  (§6) compound; do both.
+
+## 11. DOCUMENTARIES → see the `producing-documentaries` skill
 
 A ~5-min short documentary is the SAME pipeline scaled to multi-ACT + journalism evidence sources (factory:photo/newsshot/newsclip + Ken Burns + ubiquity montage + stage-aware audio). ALL reel principles here carry over. Use the dedicated **`producing-documentaries`** skill for the doc-specific process.
 

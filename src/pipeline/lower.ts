@@ -59,7 +59,7 @@ import { resolveScenePalette, paletteDiff, interpolatePalettes } from './color-s
 
 /** This pass's id + version — folded into cache keys / provenance (spec §5). */
 export const PASS_ID = 'lower';
-export const PASS_VERSION = '2.7'; // 2.7: Ken Burns sugar (kenburns → transform.scale keyframes)
+export const PASS_VERSION = '2.8'; // 2.8: fit:cover footage with no `at` → anchor center (full-frame bg fills, no top gap)
 
 /**
  * The default render config: a 1920×1080, 30fps film. Generic — no domain assumptions. A scene's
@@ -761,7 +761,14 @@ function buildFootageLayer(item: ShowItem, index: number): LoweredLayer {
     ...(Object.keys(transform).length > 0 ? { transform } : {}),
     ...(effects && effects.length > 0 ? { effects } : {}),
   };
+  // Author placement wins. When `at` is omitted, a `fit: cover` clip is a FULL-FRAME BACKGROUND by
+  // definition (it fills+crops the frame), so anchor it to CENTER — otherwise the layout director (M5)
+  // scores a FOCAL slot (e.g. y≈1216 for 9:16), the frame-sized box centers there, and its top edge
+  // drops below the top → a black band ("the gap at the top"). Non-cover footage (contain/fill, or a
+  // small inset) can still be director-placed. This makes every full-bleed background fill permanently,
+  // with no per-story `at: center` needed.
   if (typeof item.at === 'string') return { ...layer, anchor: item.at } as LoweredLayer;
+  if (fit === 'cover') return { ...layer, anchor: 'center' } as LoweredLayer;
   return layer;
 }
 

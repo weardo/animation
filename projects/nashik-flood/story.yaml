@@ -1,0 +1,360 @@
+title: Nashik Flood — Godavari उफान पर, 729mm बारिश | Monsoon 2026
+format:
+  aspect: 9:16
+style: plain
+cast: {}
+post:
+  - kind: color_grade
+    contrast: 1.12
+    saturate: 1.03
+  - kind: grain
+    amount: 0.05
+# Background music bed — a subtle tension underscore, ducked hard under the VO (Kevin MacLeod, CC-BY).
+music:
+  ref: library/music/tension.mp3
+  gain: 0.26
+  duck: 0.12
+  fade: 16
+beats:
+  - id: hook
+    say: दोस्तों, ज़रा सोचिए — सिर्फ़ एक दिन में नासिक के Igatpuri में 729
+      millimetre बारिश गिरी।
+    duration:
+      seconds: 5.9
+    show:
+      - footage: nsk-flood-street
+        as: bg
+        args:
+          z: 0
+          loop: true
+          muted: true
+          fit: cover
+          kenburns: in
+          effects:
+            - kind: color_grade
+              brightness: 0.9
+              contrast: 1.06
+      - text: 729mm बारिश
+        as: t
+        at: top
+        args:
+          z: 20
+          size: 66
+          weight: 800
+          color: "#ffb020"
+          font: Mukta
+          fontUri: asset://fonts/Mukta-ExtraBold.ttf
+          effects:
+            - kind: drop_shadow
+              dx: 0
+              dy: 3
+              blur: 16
+              color: "#000000"
+              opacity: 0.95
+          anim:
+            preset: fade
+            duration: 5
+  - id: scale
+    say: पूरा ज़िला पानी-पानी हो गया — Trimbakeshwar में 150, और नासिक शहर में 107
+      millimetre।
+    duration:
+      seconds: 6.2
+    transition:
+      kind: fade
+      duration: 14
+    show:
+      - footage: nsk-rain-sky
+        as: bg
+        args:
+          z: 0
+          loop: true
+          muted: true
+          fit: cover
+          kenburns: out
+          effects:
+            - kind: color_grade
+              brightness: 0.88
+              contrast: 1.08
+      - text: पूरा ज़िला जलमग्न
+        as: t
+        at: top
+        args:
+          z: 20
+          size: 60
+          weight: 800
+          color: "#ffffff"
+          font: Mukta
+          fontUri: asset://fonts/Mukta-ExtraBold.ttf
+          effects:
+            - kind: drop_shadow
+              dx: 0
+              dy: 3
+              blur: 16
+              color: "#000000"
+              opacity: 0.95
+          anim:
+            preset: rise
+            duration: 12
+            distance: 30
+  - id: godavari
+    say: इतनी बारिश से पवित्र गोदावरी नदी उफान पर आ गई, और Ramkund के घाट और मंदिर
+      पानी में डूब गए।
+    duration:
+      seconds: 6
+    transition:
+      kind: fade
+      duration: 14
+    sfx:
+      - name: boom
+        at: 3
+    show:
+      - footage: nashik-temples-flood
+        as: bg
+        args:
+          z: 0
+          loop: true
+          muted: true
+          from: 260
+          fit: cover
+          kenburns: in
+          effects:
+            - kind: color_grade
+              brightness: 0.95
+              contrast: 1.05
+      - text: गोदावरी उफान पर
+        as: t
+        at: top
+        args:
+          z: 20
+          size: 62
+          weight: 800
+          color: "#ffffff"
+          font: Mukta
+          fontUri: asset://fonts/Mukta-ExtraBold.ttf
+          effects:
+            - kind: drop_shadow
+              dx: 0
+              dy: 3
+              blur: 16
+              color: "#000000"
+              opacity: 0.95
+          anim:
+            preset: fade
+            duration: 6
+  - id: dams
+    say: ऊपर से dams भर गए — Nandur Madhyameshwar से दो लाख cusec से ज़्यादा पानी
+      छोड़ा गया, और नदियाँ और चढ़ गईं।
+    duration:
+      seconds: 7.1
+    transition:
+      kind: fade
+      duration: 14
+    sfx:
+      - name: whoosh
+        at: 2
+    show:
+      - footage: nsk-dam-spill
+        as: bg
+        args:
+          z: 0
+          loop: true
+          muted: true
+          fit: cover
+          kenburns: in
+          effects:
+            - kind: color_grade
+              brightness: 0.9
+              contrast: 1.06
+      - text: डैम से पानी छोड़ा
+        as: t
+        at: top
+        args:
+          z: 20
+          size: 58
+          weight: 800
+          color: "#ffb020"
+          font: Mukta
+          fontUri: asset://fonts/Mukta-ExtraBold.ttf
+          effects:
+            - kind: drop_shadow
+              dx: 0
+              dy: 3
+              blur: 16
+              color: "#000000"
+              opacity: 0.95
+          anim:
+            preset: rise
+            duration: 12
+            distance: 30
+  - id: impact
+    say: शहर में 27 पेड़ धराशायी हो गए, सड़कें धंस गईं, और Mumbai-नासिक की trains
+      घंटों लेट हो गईं।
+    duration:
+      seconds: 6
+    transition:
+      kind: fade
+      duration: 14
+    show:
+      - footage: nsk-flood-traffic
+        as: bg
+        args:
+          z: 0
+          loop: true
+          muted: true
+          fit: cover
+          kenburns: out
+          effects:
+            - kind: color_grade
+              brightness: 0.9
+              contrast: 1.06
+      - text: 27 पेड़ गिरे
+        as: t
+        at: top
+        args:
+          z: 20
+          size: 62
+          weight: 800
+          color: "#ffffff"
+          font: Mukta
+          fontUri: asset://fonts/Mukta-ExtraBold.ttf
+          effects:
+            - kind: drop_shadow
+              dx: 0
+              dy: 3
+              blur: 16
+              color: "#000000"
+              opacity: 0.95
+          anim:
+            preset: rise
+            duration: 12
+            distance: 30
+  - id: warning
+    say: प्रशासन ने नदी किनारे रहने वालों को alert कर दिया — मवेशी और सामान सुरक्षित
+      जगह ले जाने की चेतावनी दी।
+    duration:
+      seconds: 6.6
+    transition:
+      kind: fade
+      duration: 14
+    show:
+      - footage: nashik-temples-flood
+        as: bg
+        args:
+          z: 0
+          loop: true
+          muted: true
+          from: 10
+          fit: cover
+          kenburns: in
+          effects:
+            - kind: color_grade
+              brightness: 0.92
+              contrast: 1.05
+      - text: अलर्ट जारी
+        as: t
+        at: top
+        args:
+          z: 20
+          size: 62
+          weight: 800
+          color: "#ffb020"
+          font: Mukta
+          fontUri: asset://fonts/Mukta-ExtraBold.ttf
+          effects:
+            - kind: drop_shadow
+              dx: 0
+              dy: 3
+              blur: 16
+              color: "#000000"
+              opacity: 0.95
+          anim:
+            preset: fade
+            duration: 6
+  - id: close
+    say: पर हर मानसून यही कहानी दोहराती है। तो सोचिए — क्या हमारे शहर इस बाढ़ के लिए
+      सच में तैयार हैं? नीचे comment में ज़रूर बताइए।
+    duration:
+      seconds: 7.6
+    transition:
+      kind: fade
+      duration: 14
+    show:
+      - footage: nsk-flood-street
+        as: bg
+        args:
+          z: 0
+          loop: true
+          muted: true
+          from: 60
+          fit: cover
+          kenburns: in
+          effects:
+            - kind: color_grade
+              brightness: 0.86
+              contrast: 1.08
+      - text: शहर तैयार हैं?
+        as: t
+        at: top
+        args:
+          z: 20
+          size: 64
+          weight: 800
+          color: "#ffb020"
+          font: Mukta
+          fontUri: asset://fonts/Mukta-ExtraBold.ttf
+          effects:
+            - kind: drop_shadow
+              dx: 0
+              dy: 3
+              blur: 16
+              color: "#000000"
+              opacity: 0.95
+          anim:
+            preset: fade
+            duration: 6
+publish:
+  title: Nashik की तबाही — Godavari उफान पर, Igatpuri में 729mm बारिश | Monsoon 2026
+  description: >
+    Nashik में monsoon 2026 का कहर — सिर्फ़ एक दिन में Igatpuri में 729mm,
+    Trimbakeshwar में 150mm और Nashik शहर में 107mm बारिश। पवित्र Godavari नदी
+    उफान पर, Ramkund के घाट और मंदिर जलमग्न। Nandur Madhyameshwar dam से 2 लाख
+    cusec से ज़्यादा पानी छोड़ा गया, 27 पेड़ गिरे, सड़कें धंसीं और Mumbai-Nashik
+    trains घंटों लेट। प्रशासन ने नदी किनारे के निवासियों को alert किया।
+
+
+    आपको क्या लगता है — क्या हमारे शहर हर मानसून की इस बाढ़ के लिए तैयार हैं?
+    नीचे comment में बताइए।
+
+    Follow for daily India news, explained in Hinglish. 🇮🇳
+
+
+    Sources: Nashik/Godavari flood, 8 July 2026 · Igatpuri 729mm, Trimbakeshwar
+    150mm, Nashik city 107mm (IMD) · Gangapur dam ~45%, Nandur Madhyameshwar
+    discharge ~2,11,965 cusecs · 27 trees uprooted, Mumbai–Nashik trains delayed
+    ~1hr. Reporting: Free Press Journal, Deccan Herald, India.com, News9.
+
+    Credits: News footage — NEWS9 Live (editorial/fair-use, attributed) · b-roll
+    — Pexels · Voice — Sarvam Bulbul · Music — "Tension" by Kevin MacLeod (incompetech.com), CC-BY 4.0.
+
+    Disclaimer: A news explainer compiled from public reporting; facts per cited
+    sources as of July 2026. No casualty figures were officially confirmed at
+    the time of publishing.
+  tags:
+    - Nashik
+    - Nashik flood
+    - Godavari
+    - monsoon
+    - Maharashtra rains
+    - Igatpuri
+    - India news
+    - Hinglish
+    - monsoon 2026
+  hashtags:
+    - Nashik
+    - NashikFlood
+    - Godavari
+    - monsoon
+    - IndiaNews
+  category: News & Politics
+  language: hi-IN
+  privacy: unlisted

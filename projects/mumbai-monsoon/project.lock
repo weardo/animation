@@ -1,0 +1,27 @@
+{
+  "lockfile_version": "1",
+  "algorithm": "object-hash@sha1/v1",
+  "refs": {
+    "mankhurd-collapse@1.0.0": {
+      "namespace": "newsclips",
+      "id": "mankhurd-collapse",
+      "version": "1.0.0",
+      "hash": "e9ba4a58a4c97a3a6d2f721d378cb81d1c4648a6",
+      "deps": []
+    },
+    "mon-flood-people@1.0.0": {
+      "namespace": "footage",
+      "id": "mon-flood-people",
+      "version": "1.0.0",
+      "hash": "d8f848cceec672ec865b13323dd1de8947b09525",
+      "deps": []
+    },
+    "mon-flood-street@1.0.0": {
+      "namespace": "footage",
+      "id": "mon-flood-street",
+      "version": "1.0.0",
+      "hash": "0c967523c826726d93fc60448ebf65a3c3c92159",
+      "deps": []
+    }
+  }
+}

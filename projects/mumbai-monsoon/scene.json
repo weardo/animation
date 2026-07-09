@@ -1,0 +1,974 @@
+{
+  "scene_ir_version": "1.0",
+  "config": {
+    "w": 1080,
+    "h": 1920,
+    "fps": 30,
+    "duration_frames": 1587
+  },
+  "defs": {
+    "palette": {
+      "bg": "#f4f4f4",
+      "bg2": "#e8e8e8",
+      "accent": "#3b82f6",
+      "accent2": "#10b981",
+      "ink": "#1f2937",
+      "light": "#ffffff",
+      "shadow": "#94a3b8"
+    },
+    "easings": {
+      "linear": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "smooth": [
+        0.25,
+        0.1,
+        0.25,
+        1
+      ],
+      "easeIn": [
+        0.42,
+        0,
+        1,
+        1
+      ],
+      "easeOut": [
+        0,
+        0,
+        0.58,
+        1
+      ],
+      "easeInOut": [
+        0.42,
+        0,
+        0.58,
+        1
+      ],
+      "pop": "smooth"
+    },
+    "assets": {
+      "mon-flood-street": {
+        "uri": "asset://video/mon-flood-street.mp4",
+        "kind": "video"
+      },
+      "mon-flood-people": {
+        "uri": "asset://video/mon-flood-people.mp4",
+        "kind": "video"
+      },
+      "mankhurd-collapse": {
+        "uri": "asset://video/mankhurd-collapse.mp4",
+        "kind": "video"
+      }
+    },
+    "rigs": {},
+    "clips": {},
+    "stylekit": {
+      "easings": {
+        "linear": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "smooth": [
+          0.25,
+          0.1,
+          0.25,
+          1
+        ],
+        "easeIn": [
+          0.42,
+          0,
+          1,
+          1
+        ],
+        "easeOut": [
+          0,
+          0,
+          0.58,
+          1
+        ],
+        "easeInOut": [
+          0.42,
+          0,
+          0.58,
+          1
+        ]
+      },
+      "defaultEasings": {
+        "linear": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "smooth": [
+          0.25,
+          0.1,
+          0.25,
+          1
+        ],
+        "easeIn": [
+          0.42,
+          0,
+          1,
+          1
+        ],
+        "easeOut": [
+          0,
+          0,
+          0.58,
+          1
+        ],
+        "easeInOut": [
+          0.42,
+          0,
+          0.58,
+          1
+        ],
+        "pop": "smooth"
+      },
+      "palette": {
+        "bg": "#f4f4f4",
+        "bg2": "#e8e8e8",
+        "accent": "#3b82f6",
+        "accent2": "#10b981",
+        "ink": "#1f2937",
+        "light": "#ffffff",
+        "shadow": "#94a3b8"
+      },
+      "motion": {
+        "spring": {
+          "stiffness": 100,
+          "damping": 20,
+          "mass": 1
+        },
+        "springHeavy": {
+          "stiffness": 100,
+          "damping": 20,
+          "mass": 1
+        },
+        "springBouncy": {
+          "stiffness": 100,
+          "damping": 20,
+          "mass": 1
+        },
+        "idle": {
+          "swayAmplitudeDeg": 0,
+          "swaySpeedHz": 0,
+          "driftAmplitudePx": 0,
+          "driftSpeedHz": 0,
+          "saccadeAmplitudeDeg": 0,
+          "saccadeMeanSeconds": 1
+        },
+        "breathing": {
+          "amplitude": 0,
+          "periodSeconds": 4
+        },
+        "blink": {
+          "rateHz": 0,
+          "closeFrames": 0
+        },
+        "stagger": {
+          "offsetFrames": 0
+        },
+        "parallax": {
+          "nearFactor": 1,
+          "farFactor": 1
+        },
+        "motionBlurShutter": 180
+      },
+      "light": {
+        "dir": 270,
+        "elevation": 90,
+        "color": "#ffffff",
+        "intensity": 0,
+        "ambient": 1
+      },
+      "shading": {
+        "form": false,
+        "contact_shadow": false,
+        "rim": 0,
+        "ao": false,
+        "glow": 0
+      },
+      "floor": {
+        "liveness": false,
+        "parallax": false,
+        "shading": false,
+        "nonLinearMotion": false
+      }
+    }
+  },
+  "audio": [
+    {
+      "id": "narration-hook",
+      "kind": "narration",
+      "src": "audio://audio/7d1e0048ed2ae44d.wav",
+      "at": 0,
+      "duration_frames": 126,
+      "transcript": "दोस्तों, इस बार Mumbai में बारिश सिर्फ़ पानी नहीं लाई — अपने साथ मौत लेकर आई।"
+    },
+    {
+      "id": "narration-rain",
+      "kind": "narration",
+      "src": "audio://audio/46a5df2da21a32f5.wav",
+      "at": 166,
+      "duration_frames": 166,
+      "transcript": "सिर्फ़ 24 घंटे में 200 millimetre से ज़्यादा बारिश गिरी, पूरा शहर थम गया, और red alert जारी हो गया।"
+    },
+    {
+      "id": "narration-collapse",
+      "kind": "narration",
+      "src": "audio://audio/f45f6556a0782777.wav",
+      "at": 407,
+      "duration_frames": 154,
+      "transcript": "फिर रात के करीब साढ़े आठ बजे, Mankhurd के Janta Nagar में एक chawl भरभरा कर गिर गई।"
+    },
+    {
+      "id": "sfx-collapse-beat0",
+      "kind": "sfx",
+      "src": "audio://audio/boom.wav",
+      "at": 411,
+      "duration_frames": 26,
+      "volume": 0.38
+    },
+    {
+      "id": "narration-cost",
+      "kind": "narration",
+      "src": "audio://audio/7f020a1ad46884dc.wav",
+      "at": 591,
+      "duration_frames": 126,
+      "transcript": "मलबे में दबकर छह लोगों की जान चली गई — जिनमें पाँच मासूम बच्चे थे।"
+    },
+    {
+      "id": "narration-illegal",
+      "kind": "narration",
+      "src": "audio://audio/153612293e957cc3.wav",
+      "at": 751,
+      "duration_frames": 173,
+      "transcript": "लेकिन असली सच ये है — जो building गिरी, वो पूरी तरह illegal थी। ना कोई permission, ना कोई safety।"
+    },
+    {
+      "id": "narration-accountability",
+      "kind": "narration",
+      "src": "audio://audio/42a8674fb4237b43.wav",
+      "at": 974,
+      "duration_frames": 218,
+      "transcript": "अब building के मालिक और contractor को गिरफ़्तार कर लिया गया है, और CM ने हर परिवार को पाँच लाख रुपये देने का ऐलान किया।"
+    },
+    {
+      "id": "narration-close",
+      "kind": "narration",
+      "src": "audio://audio/644b46587135dfad.wav",
+      "at": 1227,
+      "duration_frames": 228,
+      "transcript": "पर सोचिए — क्या पाँच लाख रुपये उन बच्चों को वापस ला सकते हैं? आपको क्या लगता है, इस हादसे का असली ज़िम्मेदार कौन है? नीचे comment में ज़रूर बताइए।"
+    }
+  ],
+  "captions": [
+    {
+      "id": "caption-hook",
+      "text": "दोस्तों, इस बार Mumbai में बारिश सिर्फ़ पानी नहीं लाई — अपने साथ मौत लेकर आई।",
+      "at": 0,
+      "duration_frames": 126,
+      "mode": "line"
+    },
+    {
+      "id": "caption-rain",
+      "text": "सिर्फ़ 24 घंटे में 200 millimetre से ज़्यादा बारिश गिरी, पूरा शहर थम गया, और red alert जारी हो गया।",
+      "at": 166,
+      "duration_frames": 166,
+      "mode": "line"
+    },
+    {
+      "id": "caption-collapse",
+      "text": "फिर रात के करीब साढ़े आठ बजे, Mankhurd के Janta Nagar में एक chawl भरभरा कर गिर गई।",
+      "at": 407,
+      "duration_frames": 154,
+      "mode": "line"
+    },
+    {
+      "id": "caption-cost",
+      "text": "मलबे में दबकर छह लोगों की जान चली गई — जिनमें पाँच मासूम बच्चे थे।",
+      "at": 591,
+      "duration_frames": 126,
+      "mode": "line"
+    },
+    {
+      "id": "caption-illegal",
+      "text": "लेकिन असली सच ये है — जो building गिरी, वो पूरी तरह illegal थी। ना कोई permission, ना कोई safety।",
+      "at": 751,
+      "duration_frames": 173,
+      "mode": "line"
+    },
+    {
+      "id": "caption-accountability",
+      "text": "अब building के मालिक और contractor को गिरफ़्तार कर लिया गया है, और CM ने हर परिवार को पाँच लाख रुपये देने का ऐलान किया।",
+      "at": 974,
+      "duration_frames": 218,
+      "mode": "line"
+    },
+    {
+      "id": "caption-close",
+      "text": "पर सोचिए — क्या पाँच लाख रुपये उन बच्चों को वापस ला सकते हैं? आपको क्या लगता है, इस हादसे का असली ज़िम्मेदार कौन है? नीचे comment में ज़रूर बताइए।",
+      "at": 1227,
+      "duration_frames": 228,
+      "mode": "line"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "hook",
+      "at": 0,
+      "duration_frames": 180,
+      "labels": {
+        "reveal": 90
+      },
+      "camera": {
+        "position": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": [
+                0,
+                -20
+              ],
+              "e": "smooth"
+            },
+            {
+              "t": 180,
+              "s": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        "zoom": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": 0.92,
+              "e": "smooth"
+            },
+            {
+              "t": 180,
+              "s": 1
+            }
+          ]
+        }
+      },
+      "layers": [
+        {
+          "type": "footage",
+          "id": "L_footage_bg",
+          "z": 0,
+          "effects": [
+            {
+              "kind": "color_grade",
+              "brightness": 0.72,
+              "contrast": 1.1
+            }
+          ],
+          "ref": "mon-flood-street",
+          "loop": true,
+          "muted": true,
+          "fit": "cover",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                960
+              ]
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "L_text_t",
+          "z": 20,
+          "effects": [
+            {
+              "kind": "drop_shadow",
+              "dx": 0,
+              "dy": 3,
+              "blur": 16,
+              "color": "#000000",
+              "opacity": 0.95
+            }
+          ],
+          "content": "मौत की बारिश",
+          "font": "Mukta",
+          "fontUri": "asset://fonts/Mukta-ExtraBold.ttf",
+          "size": 66,
+          "weight": 800,
+          "color": "#ffffff",
+          "anim": {
+            "preset": "fade",
+            "duration": 5
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                480
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "rain",
+      "at": 166,
+      "duration_frames": 255,
+      "labels": {
+        "reveal": 127
+      },
+      "camera": {
+        "position": {
+          "a": 0,
+          "k": [
+            0,
+            0
+          ]
+        },
+        "zoom": {
+          "a": 0,
+          "k": 1
+        }
+      },
+      "layers": [
+        {
+          "type": "footage",
+          "id": "L_footage_bg",
+          "z": 0,
+          "effects": [
+            {
+              "kind": "color_grade",
+              "brightness": 0.72,
+              "contrast": 1.1
+            }
+          ],
+          "ref": "mon-flood-people",
+          "loop": true,
+          "muted": true,
+          "fit": "cover",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                960
+              ]
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "L_text_t",
+          "z": 20,
+          "effects": [
+            {
+              "kind": "drop_shadow",
+              "dx": 0,
+              "dy": 3,
+              "blur": 16,
+              "color": "#000000",
+              "opacity": 0.95
+            }
+          ],
+          "content": "200mm+ बारिश",
+          "font": "Mukta",
+          "fontUri": "asset://fonts/Mukta-ExtraBold.ttf",
+          "size": 62,
+          "weight": 800,
+          "color": "#ffb020",
+          "anim": {
+            "preset": "rise",
+            "duration": 12,
+            "distance": 30
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                480
+              ]
+            }
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 14
+      }
+    },
+    {
+      "id": "collapse",
+      "at": 407,
+      "duration_frames": 198,
+      "labels": {
+        "reveal": 99
+      },
+      "camera": {
+        "position": {
+          "a": 0,
+          "k": [
+            0,
+            0
+          ]
+        },
+        "zoom": {
+          "a": 0,
+          "k": 1
+        }
+      },
+      "layers": [
+        {
+          "type": "footage",
+          "id": "L_footage_bg",
+          "z": 0,
+          "effects": [
+            {
+              "kind": "color_grade",
+              "brightness": 0.95,
+              "contrast": 1.05
+            }
+          ],
+          "ref": "mankhurd-collapse",
+          "loop": true,
+          "muted": true,
+          "fit": "cover",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                960
+              ]
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "L_text_t",
+          "z": 20,
+          "effects": [
+            {
+              "kind": "drop_shadow",
+              "dx": 0,
+              "dy": 3,
+              "blur": 16,
+              "color": "#000000",
+              "opacity": 0.95
+            }
+          ],
+          "content": "MANKHURD हादसा",
+          "font": "Mukta",
+          "fontUri": "asset://fonts/Mukta-ExtraBold.ttf",
+          "size": 60,
+          "weight": 800,
+          "color": "#ffffff",
+          "anim": {
+            "preset": "fade",
+            "duration": 6
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                480
+              ]
+            }
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 14
+      }
+    },
+    {
+      "id": "cost",
+      "at": 591,
+      "duration_frames": 174,
+      "labels": {
+        "reveal": 87
+      },
+      "camera": {
+        "position": {
+          "a": 0,
+          "k": [
+            0,
+            0
+          ]
+        },
+        "zoom": {
+          "a": 0,
+          "k": 1
+        }
+      },
+      "layers": [
+        {
+          "type": "footage",
+          "id": "L_footage_bg",
+          "z": 0,
+          "effects": [
+            {
+              "kind": "color_grade",
+              "brightness": 0.9,
+              "contrast": 1.05
+            }
+          ],
+          "ref": "mankhurd-collapse",
+          "from": 120,
+          "loop": true,
+          "muted": true,
+          "fit": "cover",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                960
+              ]
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "L_text_t",
+          "z": 20,
+          "effects": [
+            {
+              "kind": "drop_shadow",
+              "dx": 0,
+              "dy": 3,
+              "blur": 16,
+              "color": "#000000",
+              "opacity": 0.95
+            }
+          ],
+          "content": "6 मौतें · 5 बच्चे",
+          "font": "Mukta",
+          "fontUri": "asset://fonts/Mukta-ExtraBold.ttf",
+          "size": 62,
+          "weight": 800,
+          "color": "#ffffff",
+          "anim": {
+            "preset": "rise",
+            "duration": 12,
+            "distance": 30
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                480
+              ]
+            }
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 14
+      }
+    },
+    {
+      "id": "illegal",
+      "at": 751,
+      "duration_frames": 237,
+      "labels": {
+        "reveal": 118
+      },
+      "camera": {
+        "position": {
+          "a": 0,
+          "k": [
+            0,
+            0
+          ]
+        },
+        "zoom": {
+          "a": 0,
+          "k": 1
+        }
+      },
+      "layers": [
+        {
+          "type": "footage",
+          "id": "L_footage_bg",
+          "z": 0,
+          "effects": [
+            {
+              "kind": "color_grade",
+              "brightness": 0.9,
+              "contrast": 1.05
+            }
+          ],
+          "ref": "mankhurd-collapse",
+          "from": 240,
+          "loop": true,
+          "muted": true,
+          "fit": "cover",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                960
+              ]
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "L_text_t",
+          "z": 20,
+          "effects": [
+            {
+              "kind": "drop_shadow",
+              "dx": 0,
+              "dy": 3,
+              "blur": 16,
+              "color": "#000000",
+              "opacity": 0.95
+            }
+          ],
+          "content": "ILLEGAL BUILDING",
+          "font": "Mukta",
+          "fontUri": "asset://fonts/Mukta-ExtraBold.ttf",
+          "size": 58,
+          "weight": 800,
+          "color": "#ffb020",
+          "anim": {
+            "preset": "fade",
+            "duration": 6
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                480
+              ]
+            }
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 14
+      }
+    },
+    {
+      "id": "accountability",
+      "at": 974,
+      "duration_frames": 267,
+      "labels": {
+        "reveal": 133
+      },
+      "camera": {
+        "position": {
+          "a": 0,
+          "k": [
+            0,
+            0
+          ]
+        },
+        "zoom": {
+          "a": 0,
+          "k": 1
+        }
+      },
+      "layers": [
+        {
+          "type": "footage",
+          "id": "L_footage_bg",
+          "z": 0,
+          "effects": [
+            {
+              "kind": "color_grade",
+              "brightness": 0.72,
+              "contrast": 1.1
+            }
+          ],
+          "ref": "mon-flood-street",
+          "from": 90,
+          "loop": true,
+          "muted": true,
+          "fit": "cover",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                960
+              ]
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "L_text_t",
+          "z": 20,
+          "effects": [
+            {
+              "kind": "drop_shadow",
+              "dx": 0,
+              "dy": 3,
+              "blur": 16,
+              "color": "#000000",
+              "opacity": 0.95
+            }
+          ],
+          "content": "मालिक गिरफ़्तार",
+          "font": "Mukta",
+          "fontUri": "asset://fonts/Mukta-ExtraBold.ttf",
+          "size": 60,
+          "weight": 800,
+          "color": "#ffffff",
+          "anim": {
+            "preset": "rise",
+            "duration": 12,
+            "distance": 30
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                480
+              ]
+            }
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 14
+      }
+    },
+    {
+      "id": "close",
+      "at": 1227,
+      "duration_frames": 360,
+      "labels": {
+        "reveal": 180
+      },
+      "camera": {
+        "position": {
+          "a": 0,
+          "k": [
+            0,
+            0
+          ]
+        },
+        "zoom": {
+          "a": 0,
+          "k": 1
+        }
+      },
+      "layers": [
+        {
+          "type": "footage",
+          "id": "L_footage_bg",
+          "z": 0,
+          "effects": [
+            {
+              "kind": "color_grade",
+              "brightness": 0.68,
+              "contrast": 1.1
+            }
+          ],
+          "ref": "mon-flood-people",
+          "from": 60,
+          "loop": true,
+          "muted": true,
+          "fit": "cover",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                960
+              ]
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "L_text_t",
+          "z": 20,
+          "effects": [
+            {
+              "kind": "drop_shadow",
+              "dx": 0,
+              "dy": 3,
+              "blur": 16,
+              "color": "#000000",
+              "opacity": 0.95
+            }
+          ],
+          "content": "ज़िम्मेदार कौन?",
+          "font": "Mukta",
+          "fontUri": "asset://fonts/Mukta-ExtraBold.ttf",
+          "size": 64,
+          "weight": 800,
+          "color": "#ffb020",
+          "anim": {
+            "preset": "fade",
+            "duration": 6
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                480
+              ]
+            }
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 14
+      }
+    }
+  ],
+  "post": [
+    {
+      "kind": "color_grade",
+      "contrast": 1.12,
+      "saturate": 1.02
+    },
+    {
+      "kind": "vignette",
+      "amount": 0.45
+    },
+    {
+      "kind": "grain",
+      "amount": 0.05
+    }
+  ],
+  "provenance": {
+    "story_ir_hash": "sha1:e042522443b2273aa004aed6a1f8647059af56db",
+    "passes": [
+      "lower@2.8"
+    ]
+  }
+}
