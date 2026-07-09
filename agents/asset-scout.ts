@@ -72,10 +72,40 @@ export async function resolveVisuals(story: StoryIR, aspect?: string): Promise<S
         }
         if (wid) {
           const a = { ...((item.args as Record<string, unknown>) ?? {}) };
+          delete a['fallback_q']; // consumed here — never leak into the asset layer args
           if (a['kenburns'] === undefined) a['kenburns'] = 'in';
           if (a['fit'] === undefined) a['fit'] = 'cover';
           kept.push({ ...(item as object), asset: wid, at: 'center', args: a } as (typeof kept)[number]);
           hasFootage = true; // a full-frame still — treat like footage for the camera-safety downgrade
+          continue;
+        }
+        // No free photo for this subject (common for militant leaders / obscure people). Rather than leave
+        // a bare dark frame, fall back to the beat's `fallback_q` footage so it still has a real background.
+        const fb = typeof (item.args as { fallback_q?: unknown } | undefined)?.fallback_q === 'string'
+          ? (item.args as { fallback_q: string }).fallback_q.trim()
+          : '';
+        if (fb) {
+          let fid = seen.get(fb);
+          if (fid === undefined) {
+            try {
+              const r = await pickFootage({ query: fb, id: slugQuery(fb), orientation, rootDir: PROJECT_ROOT });
+              fid = r.id;
+              resolved += 1;
+            } catch {
+              fid = null;
+            }
+            seen.set(fb, fid);
+          }
+          if (fid) {
+            const a = { ...((item.args as Record<string, unknown>) ?? {}) };
+            delete a['fallback_q'];
+            delete a['kenburns']; // it's now a video, not a ken-burns still
+            if (a['fit'] === undefined) a['fit'] = 'cover';
+            a['loop'] = true;
+            a['muted'] = true;
+            kept.push({ ...(item as object), asset: undefined, footage: fid, at: 'center', args: a } as (typeof kept)[number]);
+            hasFootage = true;
+          }
         }
         // else: drop → the beat renders text over the styled background
         continue;

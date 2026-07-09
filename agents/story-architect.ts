@@ -11,7 +11,7 @@ import { PROJECT_ROOT, runClaudeText, extractJson } from './claude.js';
 import type { FactSheet } from './research.js';
 
 /** Bump when the prompt changes → invalidates the cache (like a pass PASS_VERSION). */
-const PROMPT_VERSION = 'story-architect@7';
+const PROMPT_VERSION = 'story-architect@8';
 
 export interface StoryBrief {
   brief: string;
@@ -81,8 +81,12 @@ RULES:
   (A) REAL WIKIMEDIA IMAGE — PREFER THIS for a beat about a SPECIFIC named subject that a real photo exists
       for (a person, a specific building/place, a named event/operation/weapon) — use a subject from the
       fact sheet's 'imageSubjects'. Shows the ACTUAL thing, which stock footage never has:
-      { "asset": "wiki:<exact subject name>", "as": "bg", "args": { "z": 0, "fit": "cover", "kenburns": "in", "effects": [{ "kind": "color_grade", "brightness": 0.7, "saturate": 1.02 }] } }
+      { "asset": "wiki:<exact subject name>", "as": "bg", "args": { "z": 0, "fit": "cover", "kenburns": "in", "fallback_q": "<a specific footage phrase for this beat>", "effects": [{ "kind": "color_grade", "brightness": 0.7, "saturate": 1.02 }] } }
       (e.g. "wiki:Baitullah Mehsud", "wiki:Army Public School Peshawar", "wiki:Operation Zarb-e-Azb").
+      ⚠️ ALWAYS include "fallback_q" (a 'footageHints'-style filmable phrase) on a wiki image: some subjects
+      (esp. militant leaders / obscure people) have NO free photo, so if the image can't be found the beat
+      falls back to this footage instead of an empty frame. Make it relevant to the beat (e.g. for
+      "wiki:Baitullah Mehsud" during the 2007 origins → "fallback_q": "pakistan tribal areas mountains fighters").
   (B) STOCK FOOTAGE — for GENERIC action/atmosphere (soldiers patrolling, a flooded street, a crowd), use
       a 'footageHints' phrase: { "footage": "q:<specific phrase>", "as": "bg", "args": { "z": 0, "loop": true, "muted": true, "fit": "cover", "effects": [{ "kind": "color_grade", "brightness": 0.7, "saturate": 1.05 }] } }
       "q:" MUST be a SPECIFIC filmable phrase from 'footageHints' — NEVER generic ("war"/"conflict"/"time"),
