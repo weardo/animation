@@ -18,6 +18,8 @@ export interface StoryBrief {
   style?: 'kurzgesagt' | 'plain';
   language?: string; // e.g. "Hinglish", "English"
   targetSeconds?: number;
+  /** 'story' = footage explainer; 'concept' = teach with a real simulation; 'auto' = detect. */
+  mode?: 'auto' | 'story' | 'concept';
 }
 
 const SYSTEM = `You are the STORY ARCHITECT of an automated video studio. Turn the user's brief into a short, punchy explainer as STRICT JSON (a "Story IR"). Output ONLY the JSON object — no prose, no markdown fences.

@@ -63,14 +63,22 @@
   <section class="card" id="create">
     <h2>Create a video</h2>
     <label for="brief">What's the video about?</label>
-    <textarea id="brief" placeholder="e.g. Why the Strait of Hormuz matters to the world economy"></textarea>
+    <textarea id="brief" placeholder="e.g. Why the Strait of Hormuz matters — or: explain how a pulley works"></textarea>
+    <div class="row" style="grid-template-columns: 1fr 1fr; margin-top:14px">
+      <div><label>Mode</label>
+        <select id="mode">
+          <option value="auto">Auto (detect "explain…")</option>
+          <option value="story">Explainer · real footage</option>
+          <option value="concept">Concept · real physics simulation</option>
+        </select></div>
+      <div><label>Length (s)</label><input id="targetSeconds" type="number" value="40" min="15" max="120" /></div>
+    </div>
     <div class="row">
       <div><label>Aspect</label>
         <select id="aspect"><option value="9:16">9:16 vertical</option><option value="16:9">16:9 wide</option><option value="1:1">1:1 square</option></select></div>
       <div><label>Style</label>
         <select id="style"><option value="kurzgesagt">kurzgesagt</option><option value="plain">plain</option></select></div>
       <div><label>Language</label><input id="language" value="English" /></div>
-      <div><label>Length (s)</label><input id="targetSeconds" type="number" value="40" min="15" max="120" /></div>
     </div>
     <div class="actions">
       <button id="go">Generate video</button>
@@ -119,7 +127,7 @@ async function go() {
   const res = await fetch('/api/jobs', {
     method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
-      brief, aspect: $('aspect').value, style: $('style').value,
+      brief, aspect: $('aspect').value, style: $('style').value, mode: $('mode').value,
       language: $('language').value, targetSeconds: Number($('targetSeconds').value),
     }),
   });

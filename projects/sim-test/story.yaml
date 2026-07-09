@@ -1,31 +1,26 @@
-title: Sim Test
+title: Matter Test
 format: { aspect: "16:9" }
 style: plain
 cast: {}
 beats:
-  - id: orbit
-    say: "A simple orbit."
-    duration: { seconds: 4 }
+  - id: bounce
+    say: "A ball bounces under real gravity."
+    duration: { seconds: 5 }
     show:
       - generator: sim
         as: viz
         args:
           z: 0
           code: |
-            var cx = width/2, cy = height/2;
-            var t = frame / fps;
-            var ea = t * 0.9;
-            var ex = cx + 320*Math.cos(ea), ey = cy + 320*Math.sin(ea);
-            var ma = t * 3.2;
-            var mx = ex + 90*Math.cos(ma), my = ey + 90*Math.sin(ma);
-            return '<rect x="0" y="0" width="'+width+'" height="'+height+'" fill="#0a0d14"/>'
-              + '<circle cx="'+cx+'" cy="'+cy+'" r="320" fill="none" stroke="#33405a" stroke-width="2"/>'
-              + '<circle cx="'+cx+'" cy="'+cy+'" r="70" fill="#ffcc33"/>'
-              + '<circle cx="'+ex+'" cy="'+ey+'" r="26" fill="#4a90d9"/>'
-              + '<circle cx="'+mx+'" cy="'+my+'" r="11" fill="#cccccc"/>';
+            var bg = '<rect x="0" y="0" width="'+width+'" height="'+height+'" fill="#0a0d14"/>';
+            var eng = Matter.Engine.create();
+            eng.gravity.y = 1;
+            var ground = Matter.Bodies.rectangle(width/2, height-60, width, 40, { isStatic: true, restitution: 0.9 });
+            var ball = Matter.Bodies.circle(width/2, 180, 44, { restitution: 0.9 });
+            Matter.Composite.add(eng.world, [ground, ball]);
+            for (var i = 0; i < frame; i++) Matter.Engine.update(eng, 1000 / fps);
+            return bg
+              + '<rect x="0" y="'+(height-80)+'" width="'+width+'" height="40" fill="#33405a"/>'
+              + '<circle cx="'+ball.position.x+'" cy="'+ball.position.y+'" r="44" fill="#4a90d9"/>';
           params: {}
-      - text: "THE MOON ORBITS EARTH"
-        as: t
-        at: bottom
-        args: { z: 20, size: 54, weight: 800, color: "#f5f7fa" }
     camera: hold

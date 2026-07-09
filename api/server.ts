@@ -31,6 +31,7 @@ app.post('/api/jobs', (req: Request, res: Response) => {
     ...(typeof body['style'] === 'string' ? { style: body['style'] as 'kurzgesagt' | 'plain' } : {}),
     ...(typeof body['language'] === 'string' ? { language: body['language'] } : {}),
     ...(typeof body['targetSeconds'] === 'number' ? { targetSeconds: body['targetSeconds'] } : {}),
+    ...(typeof body['mode'] === 'string' ? { mode: body['mode'] as 'auto' | 'story' | 'concept' } : {}),
   });
   res.json({ id: job.id });
 });

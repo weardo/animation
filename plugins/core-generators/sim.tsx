@@ -11,6 +11,7 @@
 // input; the SVG renders in the headless render process, not the studio UI, so it's not a browser-XSS
 // vector). A hardened multi-tenant deploy would run the code in a worker/sandbox.
 import React from 'react';
+import Matter from 'matter-js';
 import { useCurrentFrame, useVideoConfig } from 'remotion';
 import { z } from 'zod';
 
@@ -25,15 +26,26 @@ export const SimParamsSchema = z
   })
   .passthrough();
 
-type SimFn = (frame: number, fps: number, width: number, height: number, params: unknown) => unknown;
+type SimFn = (
+  frame: number,
+  fps: number,
+  width: number,
+  height: number,
+  params: unknown,
+  Matter: typeof import('matter-js'),
+) => unknown;
 
-// Compile each distinct code string ONCE (pure → caching across frames is sound + fast).
+// Compile each distinct code string ONCE (pure → caching across frames is sound + fast). `Matter` is
+// the real 2D physics engine (matter-js) injected into the sim scope so agent code runs ACCURATE
+// rigid-body physics (pulleys, gears, collisions, pendulums) rather than eyeballed motion. Determinism
+// holds because the code re-simulates from frame 0 with a fixed timestep each call (matter-js has no
+// internal randomness) — so the same `frame` always yields the same SVG.
 const compiled = new Map<string, SimFn>();
 function compile(code: string): SimFn {
   let fn = compiled.get(code);
   if (!fn) {
     // eslint-disable-next-line no-new-func
-    fn = new Function('frame', 'fps', 'width', 'height', 'params', code) as SimFn;
+    fn = new Function('frame', 'fps', 'width', 'height', 'params', 'Matter', code) as SimFn;
     compiled.set(code, fn);
   }
   return fn;
@@ -53,7 +65,7 @@ export const Sim: React.FC<GeneratorComponentProps> = (props) => {
 
   let markup = '';
   try {
-    markup = String(compile(parsed.code)(frame, fps, width, height, parsed.params) ?? '');
+    markup = String(compile(parsed.code)(frame, fps, width, height, parsed.params, Matter) ?? '');
   } catch (e) {
     markup = `<text x="24" y="48" fill="#ff5a52" font-family="monospace" font-size="22">sim error: ${escapeXml(
       (e as Error).message.slice(0, 80),
