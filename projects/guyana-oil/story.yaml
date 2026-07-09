@@ -131,7 +131,6 @@ beats:
     say: "लेकिन इतनी दौलत ने एक दुश्मन भी खड़ा कर दिया। बगल में बैठा Venezuela बोला — ये Essequibo, Guyana का दो-तिहाई हिस्सा, है तो मेरा। और देखते ही देखते, उसकी army सरहद पर आ गई।"
     sfx:
       - { name: whoosh, at: 2 }
-      - { name: riser, at: 24 }
       - { name: boom, at: 60 }
     show:
       - shape: rect
@@ -182,7 +181,6 @@ beats:
     say: "अब ये लड़ाई सिर्फ दो देशों की नहीं थी। South America का पूरा नक्शा दांव पर था — और अमेरिका से लेकर हर बड़ी ताक़त, चुपके से अपना side चुनने लगी।"
     sfx:
       - { name: whoosh, at: 2 }
-      - { name: riser, at: 18 }
       - { name: boom, at: 44 }
     show:
       - shape: rect

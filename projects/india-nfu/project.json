@@ -1,0 +1,66 @@
+{
+  "project_version": "1.0",
+  "id": "india-nfu",
+  "name": "india-nfu",
+  "created": "2026-07-09T13:06:19.938Z",
+  "updated": "2026-07-09T13:06:19.938Z",
+  "config": {
+    "w": 1080,
+    "h": 1920,
+    "fps": 30,
+    "duration_frames": 1401
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "23036562e932821e90d14d188fde526bb4b9c692",
+  "engine": "remotion@4.0.481",
+  "deps": [
+    "nfu-fire@1.0.0",
+    "nfu-jet-sunset@1.0.0",
+    "nfu-jets@1.0.0",
+    "nfu-nuclear-plant@1.0.0",
+    "nfu-parade@1.0.0"
+  ],
+  "assets": [
+    "assets/video/nfu-fire.mp4",
+    "assets/video/nfu-parade.mp4",
+    "assets/video/nfu-jet-sunset.mp4",
+    "assets/video/nfu-nuclear-plant.mp4",
+    "assets/video/nfu-jets.mp4",
+    "assets/fonts/Mukta-ExtraBold.ttf",
+    "assets/fonts/NotoSansDevanagari.ttf",
+    "assets/fonts/DejaVuSans.ttf"
+  ],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  },
+  "publish": {
+    "title": "India की परमाणु कसम — No First Use बदलनी चाहिए? | Nuclear Doctrine Debate",
+    "description": "India की Nuclear Doctrine समझिए — Credible Minimum Deterrence, No First Use (NFU) की कसम, massive retaliation, और सिर्फ़ Prime Minister की अगुवाई वाली Nuclear Command Authority। 1998 के Pokhran-II tests के बाद अपनाई गई ये policy India को एक ज़िम्मेदार परमाणु ताकत बनाती है (और 2008 के India-US Civil Nuclear Deal तक का रास्ता खोला)।\n\nपर अब China 2030 तक 1000+ warheads की ओर बढ़ रहा है और Pakistan tactical nukes बना रहा है — तो experts पूछ रहे हैं: क्या India को NFU छोड़नी चाहिए या और flexible होना चाहिए?\n\nआपको क्या लगता है — India को अपनी No First Use कसम पर कायम रहना चाहिए, या वक़्त आ गया है बदलने का? नीचे comment में बताइए।\nFollow for daily India news & geopolitics, explained in Hinglish. 🇮🇳\n\nSources: India's Nuclear Doctrine (2003 NCA statement) — Credible Minimum Deterrence, No First Use, massive retaliation, civilian (PM-led) command · adopted after Pokhran-II (1998) · India-US Civil Nuclear Deal (2008) · projections on China's arsenal (~1000+ warheads by 2030) and Pakistan's tactical nuclear weapons per open-source strategic analysis.\nCredits: b-roll — Pexels · Voice — Sarvam Bulbul · Music — \"The Descent\" by Kevin MacLeod (incompetech.com), CC-BY 4.0.\nDisclaimer: An explainer compiled from public doctrine + open-source analysis; force projections are estimates per cited analysts, not official figures.\n",
+    "tags": [
+      "India nuclear doctrine",
+      "No First Use",
+      "NFU",
+      "nuclear policy",
+      "India China Pakistan",
+      "Pokhran",
+      "geopolitics",
+      "Hinglish",
+      "deterrence"
+    ],
+    "hashtags": [
+      "India",
+      "NuclearDoctrine",
+      "NoFirstUse",
+      "geopolitics",
+      "IndiaChina"
+    ],
+    "category": "News & Politics",
+    "language": "hi-IN",
+    "privacy": "unlisted",
+    "made_for_kids": false,
+    "license": "standard"
+  }
+}

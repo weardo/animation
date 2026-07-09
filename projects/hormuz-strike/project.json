@@ -1,9 +1,9 @@
 {
   "project_version": "1.0",
   "id": "hormuz-strike",
-  "name": "Hormuz Strike",
-  "created": "2026-07-08T02:01:01.080Z",
-  "updated": "2026-07-08T02:01:01.080Z",
+  "name": "hormuz-strike",
+  "created": "2026-07-09T11:58:21.616Z",
+  "updated": "2026-07-09T11:58:21.616Z",
   "config": {
     "w": 1080,
     "h": 1920,
@@ -13,7 +13,7 @@
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "34667a67a832fbd85a1e0d13644bda893ae0e8b2",
+  "scene_ir_hash": "a44090615c49eab6d34077104250dc691f2678f5",
   "engine": "remotion@4.0.481",
   "deps": [
     "fuel@1.0.0",
@@ -29,5 +29,16 @@
   "outputs": {
     "video": "media/out.mp4",
     "thumbnail": "media/thumbnail.png"
+  },
+  "publish": {
+    "title": "Hormuz Strike — Breaking Reel",
+    "description": "",
+    "tags": [],
+    "hashtags": [],
+    "category": "News & Politics",
+    "language": "hi",
+    "privacy": "private",
+    "made_for_kids": false,
+    "license": "standard"
   }
 }

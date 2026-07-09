@@ -148,7 +148,6 @@ beats:
     say: "नतीजा? Oil के दाम उछल गए। और याद रखो, दुनिया का बीस परसेंट तेल इसी एक रास्ते से गुज़रता है।"
     sfx:
       - { name: whoosh, at: 2 }
-      - { name: riser, at: 20 }
       - { name: pop, at: 44 }
     show:
       - shape: rect

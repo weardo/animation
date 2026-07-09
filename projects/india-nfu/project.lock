@@ -1,0 +1,41 @@
+{
+  "lockfile_version": "1",
+  "algorithm": "object-hash@sha1/v1",
+  "refs": {
+    "nfu-fire@1.0.0": {
+      "namespace": "footage",
+      "id": "nfu-fire",
+      "version": "1.0.0",
+      "hash": "6080003d88c69c70b668e1d670c93b13986d7eec",
+      "deps": []
+    },
+    "nfu-jet-sunset@1.0.0": {
+      "namespace": "footage",
+      "id": "nfu-jet-sunset",
+      "version": "1.0.0",
+      "hash": "a6240115a7346d194783e4760bb16cf050839b3d",
+      "deps": []
+    },
+    "nfu-jets@1.0.0": {
+      "namespace": "footage",
+      "id": "nfu-jets",
+      "version": "1.0.0",
+      "hash": "bb7ed6387378e51cbd61d76668cbf3f021cc8dba",
+      "deps": []
+    },
+    "nfu-nuclear-plant@1.0.0": {
+      "namespace": "footage",
+      "id": "nfu-nuclear-plant",
+      "version": "1.0.0",
+      "hash": "d2fc61f82d33d979ac2e8d969f982adcfb7c0255",
+      "deps": []
+    },
+    "nfu-parade@1.0.0": {
+      "namespace": "footage",
+      "id": "nfu-parade",
+      "version": "1.0.0",
+      "hash": "d970ab3b1ecbc7c6f274b06723b63eb0aeee90a1",
+      "deps": []
+    }
+  }
+}

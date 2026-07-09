@@ -1,0 +1,379 @@
+title: India की परमाणु कसम — No First Use पर बहस | Nuclear Doctrine
+format:
+  aspect: 9:16
+style: plain
+post:
+  - kind: color_grade
+    contrast: 1.16
+    saturate: 1
+  - kind: vignette
+    amount: 0.3
+  - kind: grain
+    amount: 0.05
+music:
+  ref: library/music/the-descent.mp3
+  gain: 0.26
+  duck: 0.12
+  fade: 16
+cast: {}
+beats:
+  - id: hook
+    say: दोस्तों, क्या India को अपनी सबसे बड़ी परमाणु कसम तोड़ देनी चाहिए?
+    duration:
+      seconds: 3.6
+    show:
+      - footage: nfu-fire
+        as: bg
+        args:
+          z: 0
+          loop: true
+          muted: true
+          fit: cover
+          kenburns: in
+          effects:
+            - kind: color_grade
+              brightness: 0.85
+              contrast: 1.1
+      - text: परमाणु कसम?
+        as: t
+        at: top
+        args:
+          z: 20
+          size: 66
+          weight: 800
+          color: "#ff5533"
+          font: Mukta
+          fontUri: asset://fonts/Mukta-ExtraBold.ttf
+          effects:
+            - kind: drop_shadow
+              dx: 0
+              dy: 3
+              blur: 16
+              color: "#000000"
+              opacity: 0.95
+          anim:
+            preset: fade
+            duration: 5
+  - id: pledge
+    say: 1998 में Pokhran test के बाद India ने एक वादा किया — No First Use। यानी
+      India पहले कभी परमाणु हमला नहीं करेगा।
+    duration:
+      seconds: 8.4
+    transition:
+      kind: fade
+      duration: 14
+    show:
+      - footage: nfu-parade
+        as: bg
+        args:
+          z: 0
+          loop: true
+          muted: true
+          fit: cover
+          kenburns: out
+          effects:
+            - kind: color_grade
+              brightness: 0.8
+              contrast: 1.08
+              saturate: 0.9
+      - text: No First Use
+        as: t
+        at: top
+        args:
+          z: 20
+          size: 62
+          weight: 800
+          color: "#ffffff"
+          font: Mukta
+          fontUri: asset://fonts/Mukta-ExtraBold.ttf
+          effects:
+            - kind: drop_shadow
+              dx: 0
+              dy: 3
+              blur: 16
+              color: "#000000"
+              opacity: 0.95
+          anim:
+            preset: rise
+            duration: 12
+            distance: 30
+  - id: retaliation
+    say: पर अगर किसी ने India पर परमाणु हमला किया — तो जवाब होगा इतना भयानक कि
+      दुश्मन का नामो-निशान मिट जाए। इसे कहते हैं massive retaliation।
+    duration:
+      seconds: 7.9
+    transition:
+      kind: fade
+      duration: 14
+    sfx:
+      - name: boom
+        at: 5
+    show:
+      - footage: nfu-jet-sunset
+        as: bg
+        args:
+          z: 0
+          loop: true
+          muted: true
+          fit: cover
+          kenburns: in
+          effects:
+            - kind: color_grade
+              brightness: 0.82
+              contrast: 1.1
+      - text: "जवाब: पूरी तबाही"
+        as: t
+        at: top
+        args:
+          z: 20
+          size: 60
+          weight: 800
+          color: "#ff5533"
+          font: Mukta
+          fontUri: asset://fonts/Mukta-ExtraBold.ttf
+          effects:
+            - kind: drop_shadow
+              dx: 0
+              dy: 3
+              blur: 16
+              color: "#000000"
+              opacity: 0.95
+          anim:
+            preset: fade
+            duration: 6
+  - id: authority
+    say: और ये फ़ैसला किसी army general का नहीं — सिर्फ़ Prime Minister की अगुवाई
+      वाली Nuclear Command Authority ले सकती है।
+    duration:
+      seconds: 7.9
+    transition:
+      kind: fade
+      duration: 14
+    show:
+      - footage: nfu-nuclear-plant
+        as: bg
+        args:
+          z: 0
+          loop: true
+          muted: true
+          fit: cover
+          kenburns: out
+          effects:
+            - kind: color_grade
+              brightness: 0.82
+              contrast: 1.08
+      - text: सिर्फ़ PM का हाथ
+        as: t
+        at: top
+        args:
+          z: 20
+          size: 60
+          weight: 800
+          color: "#ffffff"
+          font: Mukta
+          fontUri: asset://fonts/Mukta-ExtraBold.ttf
+          effects:
+            - kind: drop_shadow
+              dx: 0
+              dy: 3
+              blur: 16
+              color: "#000000"
+              opacity: 0.95
+          anim:
+            preset: rise
+            duration: 12
+            distance: 30
+  - id: threat
+    say: लेकिन अब तस्वीर बदल रही है। चाइना 2030 तक हज़ार से ज़्यादा परमाणु हथियार
+      बना रहा है, और Pakistan छोटे tactical nukes।
+    duration:
+      seconds: 7.6
+    transition:
+      kind: fade
+      duration: 14
+    show:
+      - generator: world-in
+        as: world
+        args:
+          projection: mercator
+          fit: false
+          center:
+            - 86
+            - 29
+          scale: 480
+          key_field: name
+          fill: "#223249"
+          no_data_fill: "#223249"
+          stroke: "#3a516c"
+          stroke_width: 0.7
+          ocean: "#0a1420"
+          graticule:
+            step: 10
+            color: "#1a2636"
+            opacity: 0.4
+            width: 0.6
+          choropleth:
+            India: "#ff8c1a"
+            China: "#ff4438"
+            Pakistan: "#2ee6a6"
+          labels:
+            India: India
+            China: China
+            Pakistan: Pakistan
+      - text: बदलता खतरा
+        as: t
+        at: top
+        args:
+          z: 20
+          size: 60
+          weight: 800
+          color: "#ff5533"
+          font: Mukta
+          fontUri: asset://fonts/Mukta-ExtraBold.ttf
+          effects:
+            - kind: drop_shadow
+              dx: 0
+              dy: 3
+              blur: 16
+              color: "#000000"
+              opacity: 0.95
+          anim:
+            preset: fade
+            duration: 6
+  - id: debate
+    say: तो सवाल उठता है — क्या इस बदलते खतरे के सामने India को अपनी No First Use
+      policy छोड़ देनी चाहिए?
+    duration:
+      seconds: 4.6
+    transition:
+      kind: fade
+      duration: 14
+    show:
+      - footage: nfu-jets
+        as: bg
+        args:
+          z: 0
+          loop: true
+          muted: true
+          fit: cover
+          kenburns: in
+          effects:
+            - kind: color_grade
+              brightness: 0.84
+              contrast: 1.08
+      - text: बदलें या नहीं?
+        as: t
+        at: top
+        args:
+          z: 20
+          size: 62
+          weight: 800
+          color: "#ffb020"
+          font: Mukta
+          fontUri: asset://fonts/Mukta-ExtraBold.ttf
+          effects:
+            - kind: drop_shadow
+              dx: 0
+              dy: 3
+              blur: 16
+              color: "#000000"
+              opacity: 0.95
+          anim:
+            preset: rise
+            duration: 12
+            distance: 30
+  - id: close
+    say: एक तरफ़ ये policy India को एक ज़िम्मेदार ताकत बनाती है, दूसरी तरफ़ security
+      का सवाल। तो आपको क्या लगता है — कसम पर कायम रहें, या वक़्त आ गया है बदलने
+      का? नीचे comment में ज़रूर बताइए।
+    duration:
+      seconds: 9.5
+    transition:
+      kind: fade
+      duration: 14
+    show:
+      - footage: nfu-fire
+        as: bg
+        args:
+          z: 0
+          loop: true
+          muted: true
+          from: 60
+          fit: cover
+          kenburns: in
+          effects:
+            - kind: color_grade
+              brightness: 0.82
+              contrast: 1.12
+      - text: आप क्या कहेंगे?
+        as: t
+        at: top
+        args:
+          z: 20
+          size: 64
+          weight: 800
+          color: "#ffb020"
+          font: Mukta
+          fontUri: asset://fonts/Mukta-ExtraBold.ttf
+          effects:
+            - kind: drop_shadow
+              dx: 0
+              dy: 3
+              blur: 16
+              color: "#000000"
+              opacity: 0.95
+          anim:
+            preset: fade
+            duration: 6
+publish:
+  title: India की परमाणु कसम — No First Use बदलनी चाहिए? | Nuclear Doctrine Debate
+  description: >
+    India की Nuclear Doctrine समझिए — Credible Minimum Deterrence, No First Use
+    (NFU) की कसम, massive retaliation, और सिर्फ़ Prime Minister की अगुवाई वाली
+    Nuclear Command Authority। 1998 के Pokhran-II tests के बाद अपनाई गई ये
+    policy India को एक ज़िम्मेदार परमाणु ताकत बनाती है (और 2008 के India-US
+    Civil Nuclear Deal तक का रास्ता खोला)।
+
+
+    पर अब China 2030 तक 1000+ warheads की ओर बढ़ रहा है और Pakistan tactical
+    nukes बना रहा है — तो experts पूछ रहे हैं: क्या India को NFU छोड़नी चाहिए या
+    और flexible होना चाहिए?
+
+
+    आपको क्या लगता है — India को अपनी No First Use कसम पर कायम रहना चाहिए, या
+    वक़्त आ गया है बदलने का? नीचे comment में बताइए।
+
+    Follow for daily India news & geopolitics, explained in Hinglish. 🇮🇳
+
+
+    Sources: India's Nuclear Doctrine (2003 NCA statement) — Credible Minimum
+    Deterrence, No First Use, massive retaliation, civilian (PM-led) command ·
+    adopted after Pokhran-II (1998) · India-US Civil Nuclear Deal (2008) ·
+    projections on China's arsenal (~1000+ warheads by 2030) and Pakistan's
+    tactical nuclear weapons per open-source strategic analysis.
+
+    Credits: b-roll — Pexels · Voice — Sarvam Bulbul · Music — "The Descent" by
+    Kevin MacLeod (incompetech.com), CC-BY 4.0.
+
+    Disclaimer: An explainer compiled from public doctrine + open-source
+    analysis; force projections are estimates per cited analysts, not official
+    figures.
+  tags:
+    - India nuclear doctrine
+    - No First Use
+    - NFU
+    - nuclear policy
+    - India China Pakistan
+    - Pokhran
+    - geopolitics
+    - Hinglish
+    - deterrence
+  hashtags:
+    - India
+    - NuclearDoctrine
+    - NoFirstUse
+    - geopolitics
+    - IndiaChina
+  category: News & Politics
+  language: hi-IN
+  privacy: unlisted

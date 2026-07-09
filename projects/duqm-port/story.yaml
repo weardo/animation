@@ -87,7 +87,6 @@ beats:
     say: "देखिए — India का ज़्यादातर trade और energy गुज़रता है कुछ पतली समंदरी गलियों से। अब सोचिए, अगर किसी दुश्मन ने इन्हें बंद कर दिया, तो? पूरी सप्लाई ठप। इसी को कहते हैं — chokepoint trap।"
     sfx:
       - { name: whoosh, at: 2 }
-      - { name: riser, at: 22 }
       - { name: boom, at: 58 }
     show:
       - shape: rect
@@ -180,7 +179,6 @@ beats:
     say: "अब समझिए इसका असली फ़ायदा — India इन hostile गलियों को bypass कर सकता है, और अपनी नौसेना पूरे Indian Ocean में तैनात, ठीक चाइना के सामने।"
     sfx:
       - { name: whoosh, at: 2 }
-      - { name: riser, at: 20 }
       - { name: boom, at: 52 }
     show:
       - shape: rect

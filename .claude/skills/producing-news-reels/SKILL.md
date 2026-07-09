@@ -273,11 +273,16 @@ statements into second-person conversation:
   AUDIBLE and the bed doesn't drown the VO:** after render, `ffmpeg volumedetect` the mux (mean well above
   −60 dB), and spot-listen that the voice sits clearly on top of the bed.
 - **SFX:** the built-in recipes (`src/cli/sfx.ts`) were upgraded to cinematic quality — whoosh
-  (pink-noise swoosh), thud/boom (sub-bass pitch-drop impacts), pop (UI), ding (bell), riser (tension
-  build). Author per beat: `sfx: [{ name: whoosh, at: 2 }, { name: pop, at: 8 }, …]` (frame offsets)
-  timed to transitions / text rises / route draws / marker pops / impacts. **Every animation should
-  have a sound** — it's ~half of perceived polish. To swap in real sourced SFX, drop files into
-  `library/sfx/<name>.wav` (skip-if-exists by name → they override the synthesized ones).
+  (pink-noise swoosh), thud/boom (sub-bass pitch-drop impacts), pop (UI), ding (bell). Author per beat:
+  `sfx: [{ name: whoosh, at: 2 }, { name: pop, at: 8 }, …]` (frame offsets) timed to transitions / text
+  rises / route draws / marker pops / impacts. **Every animation should have a sound** — it's ~half of
+  perceived polish. To swap in real sourced SFX, drop files into `library/sfx/<name>.wav` (skip-if-exists
+  by name → they override the synthesized ones).
+- **⚠️ DO NOT use `riser` in news reels (user 2026-07-09: "it is annoying, remove it").** The rising
+  tension-sweep reads as cheap/jarring in a fast news reel and the user has flagged it repeatedly. Default
+  SFX per cut is a soft `whoosh`; use `boom`/`pop`/`ding` for impacts. `riser` is reserved ONLY for a
+  deliberate documentary act-turn build (see `producing-documentaries`), never a reel — and even there,
+  sparingly + ducked + landing on an exact hard reveal. When in doubt, leave it out.
 - **BEAT DURATIONS MUST FIT THE NARRATION.** Sarvam's output length VARIES run-to-run and doesn't scale
   linearly with pace, so *estimating* durations upfront → overlapping voice across transitions. The
   reliable recipe: `agents/fit-durations.ts` synths once (Sarvam) + sets `beat.duration = narration + 0.35s`

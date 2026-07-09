@@ -1,9 +1,9 @@
 {
   "project_version": "1.0",
   "id": "hormuz-reel",
-  "name": "Hormuz Reel",
-  "created": "2026-07-08T01:14:50.139Z",
-  "updated": "2026-07-08T01:14:50.139Z",
+  "name": "hormuz-reel",
+  "created": "2026-07-09T12:02:35.875Z",
+  "updated": "2026-07-09T12:02:35.875Z",
   "config": {
     "w": 1080,
     "h": 1920,
@@ -13,7 +13,7 @@
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "652b6264ce46dfc1442f02d07acbd0c477b207c0",
+  "scene_ir_hash": "3351ee96bbb1e85bd881edc062c58173b31232c9",
   "engine": "remotion@4.0.481",
   "deps": [
     "fuel@1.0.0",
@@ -22,10 +22,23 @@
   "assets": [
     "assets/video/tanker.mp4",
     "assets/video/fuel.mp4",
-    "assets/fonts/Mukta-ExtraBold.ttf"
+    "assets/fonts/Mukta-ExtraBold.ttf",
+    "assets/fonts/NotoSansDevanagari.ttf",
+    "assets/fonts/DejaVuSans.ttf"
   ],
   "outputs": {
     "video": "media/out.mp4",
     "thumbnail": "media/thumbnail.png"
+  },
+  "publish": {
+    "title": "Chokepoint Wars — Cinematic Reel",
+    "description": "",
+    "tags": [],
+    "hashtags": [],
+    "category": "News & Politics",
+    "language": "hi",
+    "privacy": "private",
+    "made_for_kids": false,
+    "license": "standard"
   }
 }

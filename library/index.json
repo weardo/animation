@@ -1459,6 +1459,111 @@
           "cache_hash": "9792f55d4ed1",
           "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
         }
+      },
+      "nfu-fire": {
+        "id": "nfu-fire",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/nfu-fire.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/burning-fire-on-black-background-9666938/ by cottonbro studio (https://www.pexels.com/@cottonbro) [portrait]",
+          "prompt": "fire on black",
+          "size": "medium",
+          "cache_hash": "35d20c919386",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "nfu-parade": {
+        "id": "nfu-parade",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/nfu-parade.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/military-parade-in-sunny-urban-setting-with-flags-35887500/ by Semih Başaran (https://www.pexels.com/@semih-basaran-353570345) [portrait]",
+          "prompt": "military parade flags",
+          "size": "medium",
+          "cache_hash": "db7332023a1b",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "nfu-jet-sunset": {
+        "id": "nfu-jet-sunset",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/nfu-jet-sunset.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/dramatic-fighter-jet-airshow-at-sunset-29170230/ by Asya Birinci (https://www.pexels.com/@asyabirinci) [portrait]",
+          "prompt": "fighter jet sunset",
+          "size": "medium",
+          "cache_hash": "02d9dece39a3",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "nfu-nuclear-plant": {
+        "id": "nfu-nuclear-plant",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/nfu-nuclear-plant.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/time-lapse-of-cooling-towers-emitting-water-vapor-15536876/ by Yauheni Anhaliuk (https://www.pexels.com/@yauheni-anhaliuk-453707866) [portrait]",
+          "prompt": "nuclear cooling towers",
+          "size": "medium",
+          "cache_hash": "d989fc7d74ec",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
+      },
+      "nfu-jets": {
+        "id": "nfu-jets",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/nfu-jets.mp4",
+        "tags": [
+          "footage",
+          "video",
+          "pexels",
+          "stock"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "Pexels https://www.pexels.com/video/fighter-jets-in-blue-sky-12954782/ by Rachel Lustiva (https://www.pexels.com/@rachel-lustiva-264852677) [portrait]",
+          "prompt": "fighter jets blue sky",
+          "size": "medium",
+          "cache_hash": "3f029a952707",
+          "license": "Pexels License (free commercial, no-attribution; credit Pexels + author appreciated)"
+        }
       }
     },
     "photos": {
