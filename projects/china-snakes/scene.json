@@ -1,0 +1,520 @@
+{
+  "scene_ir_version": "1.0",
+  "config": {
+    "w": 1080,
+    "h": 1920,
+    "fps": 30,
+    "duration_frames": 423
+  },
+  "defs": {
+    "palette": {
+      "bg": "#f4f4f4",
+      "bg2": "#e8e8e8",
+      "accent": "#3b82f6",
+      "accent2": "#10b981",
+      "ink": "#1f2937",
+      "light": "#ffffff",
+      "shadow": "#94a3b8"
+    },
+    "easings": {
+      "linear": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "smooth": [
+        0.25,
+        0.1,
+        0.25,
+        1
+      ],
+      "easeIn": [
+        0.42,
+        0,
+        1,
+        1
+      ],
+      "easeOut": [
+        0,
+        0,
+        0.58,
+        1
+      ],
+      "easeInOut": [
+        0.42,
+        0,
+        0.58,
+        1
+      ],
+      "pop": "smooth"
+    },
+    "assets": {
+      "snakes-village": {
+        "uri": "asset://video/snakes-village.mp4",
+        "kind": "video"
+      }
+    },
+    "rigs": {},
+    "clips": {},
+    "stylekit": {
+      "easings": {
+        "linear": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "smooth": [
+          0.25,
+          0.1,
+          0.25,
+          1
+        ],
+        "easeIn": [
+          0.42,
+          0,
+          1,
+          1
+        ],
+        "easeOut": [
+          0,
+          0,
+          0.58,
+          1
+        ],
+        "easeInOut": [
+          0.42,
+          0,
+          0.58,
+          1
+        ]
+      },
+      "defaultEasings": {
+        "linear": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "smooth": [
+          0.25,
+          0.1,
+          0.25,
+          1
+        ],
+        "easeIn": [
+          0.42,
+          0,
+          1,
+          1
+        ],
+        "easeOut": [
+          0,
+          0,
+          0.58,
+          1
+        ],
+        "easeInOut": [
+          0.42,
+          0,
+          0.58,
+          1
+        ],
+        "pop": "smooth"
+      },
+      "palette": {
+        "bg": "#f4f4f4",
+        "bg2": "#e8e8e8",
+        "accent": "#3b82f6",
+        "accent2": "#10b981",
+        "ink": "#1f2937",
+        "light": "#ffffff",
+        "shadow": "#94a3b8"
+      },
+      "motion": {
+        "spring": {
+          "stiffness": 100,
+          "damping": 20,
+          "mass": 1
+        },
+        "springHeavy": {
+          "stiffness": 100,
+          "damping": 20,
+          "mass": 1
+        },
+        "springBouncy": {
+          "stiffness": 100,
+          "damping": 20,
+          "mass": 1
+        },
+        "idle": {
+          "swayAmplitudeDeg": 0,
+          "swaySpeedHz": 0,
+          "driftAmplitudePx": 0,
+          "driftSpeedHz": 0,
+          "saccadeAmplitudeDeg": 0,
+          "saccadeMeanSeconds": 1
+        },
+        "breathing": {
+          "amplitude": 0,
+          "periodSeconds": 4
+        },
+        "blink": {
+          "rateHz": 0,
+          "closeFrames": 0
+        },
+        "stagger": {
+          "offsetFrames": 0
+        },
+        "parallax": {
+          "nearFactor": 1,
+          "farFactor": 1
+        },
+        "motionBlurShutter": 180
+      },
+      "light": {
+        "dir": 270,
+        "elevation": 90,
+        "color": "#ffffff",
+        "intensity": 0,
+        "ambient": 1
+      },
+      "shading": {
+        "form": false,
+        "contact_shadow": false,
+        "rim": 0,
+        "ao": false,
+        "glow": 0
+      },
+      "floor": {
+        "liveness": false,
+        "parallax": false,
+        "shading": false,
+        "nonLinearMotion": false
+      }
+    }
+  },
+  "audio": [
+    {
+      "id": "narration-hook",
+      "kind": "narration",
+      "src": "audio://audio/2559767759801d38.wav",
+      "at": 0,
+      "duration_frames": 100,
+      "transcript": "दोस्तों, चीन में बाढ़ के बाद ये मंज़र — यक़ीन करना मुश्किल है।"
+    },
+    {
+      "id": "narration-close",
+      "kind": "narration",
+      "src": "audio://audio/d492d9246f94a3d3.wav",
+      "at": 267,
+      "duration_frames": 145,
+      "transcript": "एक snake farm बाढ़ में बह गई, और सैकड़ों सांप पूरे गाँव में फैल गए। आपने कभी ऐसा देखा है?"
+    }
+  ],
+  "captions": [],
+  "scenes": [
+    {
+      "id": "hook",
+      "at": 0,
+      "duration_frames": 111,
+      "labels": {
+        "reveal": 55
+      },
+      "camera": {
+        "position": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": [
+                0,
+                -20
+              ],
+              "e": "smooth"
+            },
+            {
+              "t": 111,
+              "s": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        "zoom": {
+          "a": 1,
+          "k": [
+            {
+              "t": 0,
+              "s": 0.92,
+              "e": "smooth"
+            },
+            {
+              "t": 111,
+              "s": 1
+            }
+          ]
+        }
+      },
+      "layers": [
+        {
+          "type": "footage",
+          "id": "L_footage_bg",
+          "z": 0,
+          "effects": [
+            {
+              "kind": "color_grade",
+              "brightness": 0.95,
+              "contrast": 1.08
+            }
+          ],
+          "ref": "snakes-village",
+          "from": 0,
+          "loop": true,
+          "muted": false,
+          "volume": 0.45,
+          "fit": "cover",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                960
+              ]
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "L_text_t",
+          "z": 20,
+          "effects": [
+            {
+              "kind": "drop_shadow",
+              "dx": 0,
+              "dy": 3,
+              "blur": 16,
+              "color": "#000000",
+              "opacity": 0.95
+            }
+          ],
+          "content": "सांपों का सैलाब",
+          "font": "Mukta",
+          "fontUri": "asset://fonts/Mukta-ExtraBold.ttf",
+          "size": 66,
+          "weight": 800,
+          "color": "#ffb020",
+          "anim": {
+            "preset": "fade",
+            "duration": 5
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                480
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "raw",
+      "at": 99,
+      "duration_frames": 180,
+      "labels": {
+        "reveal": 90
+      },
+      "camera": {
+        "position": {
+          "a": 0,
+          "k": [
+            0,
+            0
+          ]
+        },
+        "zoom": {
+          "a": 0,
+          "k": 1
+        }
+      },
+      "layers": [
+        {
+          "type": "footage",
+          "id": "L_footage_bg",
+          "z": 0,
+          "effects": [
+            {
+              "kind": "color_grade",
+              "brightness": 0.98,
+              "contrast": 1.06
+            }
+          ],
+          "ref": "snakes-village",
+          "from": 190,
+          "loop": true,
+          "muted": false,
+          "volume": 1,
+          "fit": "cover",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                960
+              ]
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "L_text_t",
+          "z": 20,
+          "effects": [
+            {
+              "kind": "drop_shadow",
+              "dx": 0,
+              "dy": 3,
+              "blur": 16,
+              "color": "#000000",
+              "opacity": 0.95
+            }
+          ],
+          "content": "800+ सांप · cobra तक",
+          "font": "Mukta",
+          "fontUri": "asset://fonts/Mukta-ExtraBold.ttf",
+          "size": 58,
+          "weight": 800,
+          "color": "#ff5533",
+          "anim": {
+            "preset": "rise",
+            "duration": 12,
+            "distance": 30
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                480
+              ]
+            }
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 12
+      }
+    },
+    {
+      "id": "close",
+      "at": 267,
+      "duration_frames": 156,
+      "labels": {
+        "reveal": 78
+      },
+      "camera": {
+        "position": {
+          "a": 0,
+          "k": [
+            0,
+            0
+          ]
+        },
+        "zoom": {
+          "a": 0,
+          "k": 1
+        }
+      },
+      "layers": [
+        {
+          "type": "footage",
+          "id": "L_footage_bg",
+          "z": 0,
+          "effects": [
+            {
+              "kind": "color_grade",
+              "brightness": 0.95,
+              "contrast": 1.08
+            }
+          ],
+          "ref": "snakes-village",
+          "from": 380,
+          "loop": true,
+          "muted": false,
+          "volume": 0.45,
+          "fit": "cover",
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                960
+              ]
+            }
+          }
+        },
+        {
+          "type": "text",
+          "id": "L_text_t",
+          "z": 20,
+          "effects": [
+            {
+              "kind": "drop_shadow",
+              "dx": 0,
+              "dy": 3,
+              "blur": 16,
+              "color": "#000000",
+              "opacity": 0.95
+            }
+          ],
+          "content": "बाढ़ का कहर",
+          "font": "Mukta",
+          "fontUri": "asset://fonts/Mukta-ExtraBold.ttf",
+          "size": 62,
+          "weight": 800,
+          "color": "#ffb020",
+          "anim": {
+            "preset": "fade",
+            "duration": 6
+          },
+          "transform": {
+            "position": {
+              "a": 0,
+              "k": [
+                540,
+                480
+              ]
+            }
+          }
+        }
+      ],
+      "transition_in": {
+        "kind": "fade",
+        "duration": 12
+      }
+    }
+  ],
+  "post": [
+    {
+      "kind": "color_grade",
+      "contrast": 1.12,
+      "saturate": 1.04
+    },
+    {
+      "kind": "grain",
+      "amount": 0.04
+    }
+  ],
+  "provenance": {
+    "story_ir_hash": "sha1:dbce94b7d5ad8baf53149d9007234354e9cbbd3b",
+    "passes": [
+      "lower@2.9"
+    ]
+  }
+}

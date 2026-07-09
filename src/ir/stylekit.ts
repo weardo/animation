@@ -228,6 +228,50 @@ export type Paint = z.infer<typeof PaintSchema>;
  * toggles + an OPTIONAL `paint` model (the painted look). This is the shape carried in the Scene IR
  * as `defs.stylekit` and read at render time.
  */
+/**
+ * Channel BRAND (spec 2026-07-09-india-storyboard): a persistent corner logo BUG + an end-card, plus
+ * accent colours for the branded framing. All values are DATA in the stylekit JSON; core owns only this
+ * schema + the generic overlay mechanism (src/render/BrandOverlay.tsx). Absent → strict no-op.
+ */
+export const BrandBugSchema = z
+  .object({
+    /** Public-relative logo asset (e.g. "brand/india-storyboard-bug.png"), resolved via staticFile. */
+    asset: z.string(),
+    corner: z.enum(['top-left', 'top-right', 'bottom-left', 'bottom-right']).default('top-left'),
+    /** Bug width as a percent of frame width. */
+    widthPct: z.number().min(2).max(40).default(13),
+    opacity: z.number().min(0).max(1).default(0.85),
+    /** Margin from the frame edges as a percent of frame width. */
+    marginPct: z.number().min(0).max(20).default(4),
+  })
+  .strict();
+export const BrandEndcardSchema = z
+  .object({
+    enabled: z.boolean().default(true),
+    seconds: z.number().min(0.5).max(5).default(1.5),
+    /** Full logo asset for the end-card (public-relative). */
+    logo: z.string(),
+  })
+  .strict();
+export const BrandAccentSchema = z
+  .object({
+    headlineUnderline: z.string().optional(),
+    captionPill: z.string().optional(),
+    captionEdge: z.string().optional(),
+  })
+  .strict();
+export const BrandSchema = z
+  .object({
+    name: z.string(),
+    handle: z.string().optional(),
+    tagline: z.string().optional(),
+    bug: BrandBugSchema.optional(),
+    endcard: BrandEndcardSchema.optional(),
+    accent: BrandAccentSchema.optional(),
+  })
+  .strict();
+export type Brand = z.infer<typeof BrandSchema>;
+
 export const StyleKitSchema = z
   .object({
     /** Named curve table: name → cubic-bezier tuple or another name. */
@@ -242,6 +286,8 @@ export const StyleKitSchema = z
     floor: FloorSchema,
     /** OPTIONAL painting model (design §1). Absent → flat (no form-shading/glow/atmosphere). */
     paint: PaintSchema.optional(),
+    /** OPTIONAL channel BRAND (India Storyboard spec). Absent → no bug/end-card (strict no-op). */
+    brand: BrandSchema.optional(),
   })
   .strict();
 export type StyleKit = z.infer<typeof StyleKitSchema>;

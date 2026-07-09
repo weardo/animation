@@ -1,0 +1,176 @@
+title: चीन में सांपों का सैलाब — बाढ़ में snake farm बही | Viral
+format:
+  aspect: 9:16
+style: plain
+post:
+  - kind: color_grade
+    contrast: 1.12
+    saturate: 1.04
+  - kind: grain
+    amount: 0.04
+cast: {}
+beats:
+  - id: hook
+    say: दोस्तों, चीन में बाढ़ के बाद ये मंज़र — यक़ीन करना मुश्किल है।
+    duration:
+      seconds: 3.7
+    show:
+      - footage: snakes-village
+        as: bg
+        args:
+          z: 0
+          loop: true
+          muted: false
+          volume: 0.45
+          from: 0
+          fit: cover
+          effects:
+            - kind: color_grade
+              brightness: 0.95
+              contrast: 1.08
+      - text: सांपों का सैलाब
+        as: t
+        at: top
+        args:
+          z: 20
+          size: 66
+          weight: 800
+          color: "#ffb020"
+          font: Mukta
+          fontUri: asset://fonts/Mukta-ExtraBold.ttf
+          effects:
+            - kind: drop_shadow
+              dx: 0
+              dy: 3
+              blur: 16
+              color: "#000000"
+              opacity: 0.95
+          anim:
+            preset: fade
+            duration: 5
+  - id: raw
+    say: ""
+    duration:
+      seconds: 6
+    transition:
+      kind: fade
+      duration: 12
+    show:
+      - footage: snakes-village
+        as: bg
+        args:
+          z: 0
+          loop: true
+          muted: false
+          volume: 1
+          from: 190
+          fit: cover
+          effects:
+            - kind: color_grade
+              brightness: 0.98
+              contrast: 1.06
+      - text: 800+ सांप · cobra तक
+        as: t
+        at: top
+        args:
+          z: 20
+          size: 58
+          weight: 800
+          color: "#ff5533"
+          font: Mukta
+          fontUri: asset://fonts/Mukta-ExtraBold.ttf
+          effects:
+            - kind: drop_shadow
+              dx: 0
+              dy: 3
+              blur: 16
+              color: "#000000"
+              opacity: 0.95
+          anim:
+            preset: rise
+            duration: 12
+            distance: 30
+  - id: close
+    say: एक snake farm बाढ़ में बह गई, और सैकड़ों सांप पूरे गाँव में फैल गए। आपने
+      कभी ऐसा देखा है?
+    duration:
+      seconds: 5.2
+    transition:
+      kind: fade
+      duration: 12
+    show:
+      - footage: snakes-village
+        as: bg
+        args:
+          z: 0
+          loop: true
+          muted: false
+          volume: 0.45
+          from: 380
+          fit: cover
+          effects:
+            - kind: color_grade
+              brightness: 0.95
+              contrast: 1.08
+      - text: बाढ़ का कहर
+        as: t
+        at: top
+        args:
+          z: 20
+          size: 62
+          weight: 800
+          color: "#ffb020"
+          font: Mukta
+          fontUri: asset://fonts/Mukta-ExtraBold.ttf
+          effects:
+            - kind: drop_shadow
+              dx: 0
+              dy: 3
+              blur: 16
+              color: "#000000"
+              opacity: 0.95
+          anim:
+            preset: fade
+            duration: 6
+publish:
+  title: चीन में सांपों का सैलाब 🐍 — बाढ़ में snake farm बही, 800+ सांप गाँव में
+    | Viral
+  description: >
+    चीन के Guangxi में Typhoon Maysak की भयानक बाढ़ में एक snake farm बह गई — और
+    800 से ज़्यादा सांप, जिनमें ज़हरीले cobra भी, पूरे गाँव में फैल गए। एक
+    ग्रामीण को सांप ने काटा और अस्पताल ले जाना पड़ा। बाढ़ में कम से कम 6 लोगों
+    की जान गई और करीब 3.75 लाख लोग प्रभावित हुए।
+
+
+    आपने कभी ऐसा मंज़र देखा है? नीचे comment में बताइए।
+
+    Follow for daily world news, explained in Hinglish. 🇮🇳
+
+
+    Sources: Hengzhou village (Guangxi, China) snake-farm flood escape, 6-7 July
+    2026 · 800+ snakes incl. cobras, 1 villager bitten · Typhoon Maysak flooding
+    — 6+ dead, ~375,000 affected. Reporting: CNN, BFMTV, Briefly.
+
+    Credits: News footage — BFMTV (editorial/fair-use, attributed) · Voice —
+    Sarvam Bulbul.
+
+    Disclaimer: A news clip compiled from public reporting; facts per cited
+    sources as of July 2026.
+  tags:
+    - China snakes
+    - snake invasion
+    - Guangxi flood
+    - Typhoon Maysak
+    - viral
+    - cobra
+    - world news
+    - Hinglish
+  hashtags:
+    - China
+    - snakes
+    - viral
+    - flood
+    - Guangxi
+  category: News & Politics
+  language: hi-IN
+  privacy: unlisted

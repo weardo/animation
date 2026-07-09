@@ -122,7 +122,8 @@ const VideoFootage: React.FC<{
   fit: NonNullable<FootageLayerIR['fit']>;
   loop: boolean;
   muted: boolean;
-}> = ({ url, playbackRate, fit, loop, muted }) => {
+  volume: number;
+}> = ({ url, playbackRate, fit, loop, muted, volume }) => {
   const { fps } = useVideoConfig();
   const [srcFrames, setSrcFrames] = useState<number | null>(null);
   const [handle] = useState(() => delayRender(`Probing video footage: ${url}`));
@@ -150,6 +151,7 @@ const VideoFootage: React.FC<{
       src={url}
       playbackRate={playbackRate}
       muted={muted}
+      volume={volume}
       style={{ width: '100%', height: '100%', objectFit: fit, display: 'block' }}
     />
   );
@@ -199,9 +201,20 @@ export const FootageLayer: React.FC<FootageLayerProps> = ({ layer, assetDef, eas
 
   let media: React.ReactNode;
   if (assetDef.kind === 'video') {
-    // `muted` is the LAYER's setting (story `muted:`), defaulting to Remotion's own behavior — we
-    // never force mute/unmute in core. Loop (when set) repeats over the source's real length.
-    media = <VideoFootage url={url} playbackRate={playbackRate} fit={fit} loop={loop} muted={layer.muted ?? false} />;
+    // Footage now ALWAYS carries its audio track (the proxy keeps it), so DEFAULT to muted — b-roll under
+    // narration must not blast its own sound. A story opts INTO the raw audio with `muted: false` (e.g. a
+    // viral clip where the sound IS the point), and can turn it down with `volume` (0..1). Loop (when set)
+    // repeats over the source's real length.
+    media = (
+      <VideoFootage
+        url={url}
+        playbackRate={playbackRate}
+        fit={fit}
+        loop={loop}
+        muted={layer.muted ?? true}
+        volume={layer.volume ?? 1}
+      />
+    );
   } else if (assetDef.kind === 'lottie') {
     media = <LottieFootage url={url} loop={loop} playbackRate={playbackRate} />;
   } else {

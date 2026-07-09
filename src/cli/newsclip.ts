@@ -95,7 +95,10 @@ function toProxy(src: string, out: string, maxSeconds: number): void {
     ...(maxSeconds > 0 ? ['-t', String(maxSeconds)] : []),
     '-vf', "scale='min(iw,1920)':'min(ih,1920)':force_original_aspect_ratio=decrease:force_divisible_by=2,fps=30",
     '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26', '-maxrate', '2500k', '-bufsize', '5000k',
-    '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', out,
+    // KEEP the news clip's OWN audio (light aac) — a raw viral clip's sound is often the point. It's
+    // silent at render UNLESS the story sets `muted: false` (footage defaults to muted; add `volume` to duck).
+    '-c:a', 'aac', '-b:a', '128k',
+    '-pix_fmt', 'yuv420p', '-movflags', '+faststart', out,
   ]);
 }
 

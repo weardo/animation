@@ -1,0 +1,65 @@
+{
+  "ingestIntervalSec": 240,
+  "scoreIntervalSec": 420,
+  "finalistCount": 25,
+  "notifyThreshold": 78,
+  "scoreFloor": 4,
+  "pruneOlderThanHours": 48,
+  "clusterWindowMin": 90,
+  "sources": {
+    "gdelt": {
+      "enabled": true,
+      "queries": [
+        "sourcecountry:IN",
+        "India (border OR military OR economy OR rupee OR election OR flood OR cyclone)",
+        "(China OR Pakistan) India",
+        "(evacuation OR killed OR explosion OR viral OR rescue OR record)"
+      ]
+    },
+    "rss": {
+      "enabled": true,
+      "feeds": [
+        { "id": "ap-topnews", "url": "https://feedx.net/rss/ap.xml", "sourceWeightKey": "ap" },
+        { "id": "bno-news", "url": "https://bnonews.com/index.php/feed/", "sourceWeightKey": "bno" },
+        { "id": "ndtv-top", "url": "https://feeds.feedburner.com/ndtvnews-top-stories", "sourceWeightKey": "ndtv" },
+        { "id": "ndtv-world", "url": "https://feeds.feedburner.com/ndtvnews-world-news", "sourceWeightKey": "ndtv" },
+        { "id": "indianexpress", "url": "https://indianexpress.com/feed/", "sourceWeightKey": "indianexpress" },
+        { "id": "hindustantimes-india", "url": "https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml", "sourceWeightKey": "ht" },
+        { "id": "thehindu-national", "url": "https://www.thehindu.com/news/national/feeder/default.rss", "sourceWeightKey": "thehindu" },
+        { "id": "toi-topstories", "url": "https://timesofindia.indiatimes.com/rssfeedstopstories.cms", "sourceWeightKey": "toi" },
+        { "id": "pib", "url": "https://pib.gov.in/RssMain.aspx?ModId=6&Lang=1&Regid=3", "sourceWeightKey": "pib" }
+      ]
+    },
+    "newsdata": {
+      "enabled": true,
+      "dailyBudget": 48,
+      "params": { "country": "in", "language": "en,hi" }
+    },
+    "osint": { "enabled": false }
+  },
+  "lexicons": {
+    "india": [
+      "india", "bharat", "indian", "new delhi", "delhi", "mumbai", "kolkata", "chennai", "bengaluru",
+      "kashmir", "ladakh", "arunachal", "galwan", "lac", "loc", "siachen", "manipur", "assam",
+      "modi", "jaishankar", "rajnath", "isro", "drdo", "iaf", "indian army", "indian navy", "brahmos",
+      "rupee", "rbi", "sensex", "nifty", "adani", "reliance", "upi",
+      "pakistan", "china", "bangladesh", "sri lanka", "nepal", "bhutan", "myanmar", "maldives",
+      "monsoon", "cyclone", "imd"
+    ],
+    "viral": [
+      "goes viral", "viral video", "caught on camera", "shocking", "unbelievable", "watch",
+      "snakes", "shark", "tiger", "elephant", "flood", "landslide", "earthquake", "tsunami",
+      "explosion", "collapse", "stampede", "rescue", "evacuated", "record", "first ever", "million"
+    ],
+    "crisis": [
+      "killed", "dead", "death toll", "strike", "airstrike", "attack", "clash", "border", "escalation",
+      "war", "missile", "drone", "nuclear", "ceasefire", "invasion", "troops", "standoff", "blast"
+    ]
+  },
+  "weights": { "recency": 1.0, "source": 0.8, "india": 1.3, "viral": 0.9, "crisisSpike": 1.2 },
+  "sourceWeights": {
+    "ap": 1.0, "bno": 0.95, "ndtv": 0.85, "indianexpress": 0.85, "ht": 0.8, "thehindu": 0.85,
+    "toi": 0.75, "pib": 0.9, "gdelt": 0.7, "newsdata": 0.7
+  },
+  "notify": { "channel": "telegram" }
+}

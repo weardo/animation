@@ -294,6 +294,15 @@ function vendorAssets(sceneIR: SceneIR, paths: ProjectPaths): string[] {
   for (const rel of ['fonts/NotoSansDevanagari.ttf', 'fonts/DejaVuSans.ttf']) {
     copy(resolvePath(PROJECT_ROOT, 'public', rel), rel);
   }
+  // 1c. BRAND assets (channel bug + end-card logo). The BrandOverlay loads them by their stylekit paths
+  // (e.g. "brand/india-storyboard-bug.png"), NOT as asset:// refs, so the scan above misses them. Vendor
+  // from public/ when the resolved kit carries a `brand` block (unbranded kits skip this entirely).
+  const brand = sceneIR.defs?.stylekit?.brand;
+  if (brand) {
+    for (const rel of [brand.bug?.asset, brand.endcard?.logo].filter((s): s is string => !!s)) {
+      copy(resolvePath(PROJECT_ROOT, 'public', rel), rel);
+    }
+  }
   // 2. Rig source material, vendored for a self-contained bundle. Keyed on the rig URI SCHEME (a
   // generic data convention), NOT on any provider plugin name — core names no provider (ADR-007):
   //   • proc://<id>      — an inlined-spec entry: vendor its co-located <id>.spec.json + preview.
