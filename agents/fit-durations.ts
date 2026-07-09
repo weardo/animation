@@ -19,7 +19,9 @@ export interface FitOptions {
 /** Mutates the story: every beat with `say` gets duration = ceil(narration seconds + tail). */
 export function fitDurations(story: StoryIR, projectId: string, opts: FitOptions = {}): void {
   const engine = opts.engine ?? 'sarvam';
-  const tail = opts.tailSeconds ?? 1.2;
+  // A TIGHT tail: just enough that the last word isn't clipped, small enough that the narration flows
+  // beat-to-beat like one continuous voice (a big tail leaves dead-air gaps between beats).
+  const tail = opts.tailSeconds ?? 0.35;
   const audioDir = resolve(PROJECT_ROOT, 'projects', projectId, 'assets', 'audio');
   mkdirSync(audioDir, { recursive: true });
 
@@ -37,7 +39,8 @@ export function fitDurations(story: StoryIR, projectId: string, opts: FitOptions
         audioDir,
         PROJECT_ROOT,
       );
-      beat.duration = { seconds: Math.max(2, Math.ceil(res.durationSeconds + tail)) };
+      // Round to 0.1s (NOT ceil to a whole second — that alone would add up to ~1s of gap per beat).
+      beat.duration = { seconds: Math.max(1.5, Math.round((res.durationSeconds + tail) * 10) / 10) };
     } catch {
       /* keep the authored duration if synth fails (never worse than before) */
     }

@@ -8,11 +8,23 @@ import { resolve } from 'node:path';
 
 import { stringify as stringifyYaml } from 'yaml';
 
+import type { StoryIR } from '../src/ir/story.js';
 import { resolveVisuals } from './asset-scout.js';
 import { PROJECT_ROOT } from './claude.js';
-import { runConceptArchitect } from './concept-architect.js';
+import { runConceptArchitect, type ConceptBrief } from './concept-architect.js';
 import { fitDurations } from './fit-durations.js';
 import { runStoryArchitect, type StoryBrief } from './story-architect.js';
+import { visualVerify } from './visual-verify.js';
+
+function conceptBriefFrom(b: StoryBrief, feedback?: string): ConceptBrief {
+  return {
+    brief: b.brief,
+    ...(b.aspect ? { aspect: b.aspect } : {}),
+    ...(b.language ? { language: b.language } : {}),
+    ...(b.targetSeconds ? { targetSeconds: b.targetSeconds } : {}),
+    ...(feedback ? { feedback } : {}),
+  };
+}
 
 // "explain X", "how X works", "what is X", "why does X" → a concept/teaching video (real simulation).
 function looksLikeConcept(brief: string): boolean {
@@ -41,52 +53,59 @@ export async function orchestrateBrief(b: StoryBrief, projectId?: string): Promi
   const useConcept = b.mode === 'concept' || (b.mode !== 'story' && looksLikeConcept(b.brief));
 
   // Build the Story IR (+ any async visual resolution) via the chosen path.
-  let story;
-  let cached: boolean;
-  let attempts: number;
-  let visualsResolved: number;
-  let visualsFailed = 0;
+  const hash = createHash('sha256').update(JSON.stringify(b)).digest('hex').slice(0, 6);
+  const lang = process.env['SARVAM_LANG'];
+
+  // Write story.yaml for a project id, fitting each beat's duration to its real narration length first
+  // (so the video never cuts off mid-sentence — producing-news-reels §7).
+  const writeStory = (id: string, story: StoryIR): void => {
+    mkdirSync(resolve(PROJECT_ROOT, 'projects', id), { recursive: true });
+    fitDurations(story, id, { ...(lang ? { lang } : {}) });
+    writeFileSync(resolve(PROJECT_ROOT, 'projects', id, 'story.yaml'), stringifyYaml(story), 'utf8');
+  };
+  const simCount = (story: StoryIR): number =>
+    story.beats.filter((be) => (be.show ?? []).some((it) => (it as { generator?: string }).generator === 'sim')).length;
+
   if (useConcept) {
-    // Concept path: the Concept Architect writes teaching narration + per-beat `sim` code (real physics).
-    // The simulation IS the visual — no footage scout.
-    const arch = await runConceptArchitect({
-      brief: b.brief,
-      ...(b.aspect ? { aspect: b.aspect } : {}),
-      ...(b.language ? { language: b.language } : {}),
-      ...(b.targetSeconds ? { targetSeconds: b.targetSeconds } : {}),
-    });
-    story = arch.story;
-    cached = arch.cached;
-    attempts = arch.attempts;
-    visualsResolved = arch.story.beats.filter((be) =>
-      (be.show ?? []).some((it) => (it as { generator?: string }).generator === 'sim'),
-    ).length;
-  } else {
-    // Story path: the Story Architect + the Asset Scout (real footage per beat).
-    const arch = await runStoryArchitect(b);
-    const scout = await resolveVisuals(arch.story, b.aspect);
-    story = arch.story;
-    cached = arch.cached;
-    attempts = arch.attempts;
-    visualsResolved = scout.resolved;
-    visualsFailed = scout.failed;
+    // Concept path: Concept Architect (real-physics sim) → VISUAL VERIFY loop. After writing the story
+    // we render the beats to stills and a model LOOKS at the geometry; if a shadow/rope/etc. doesn't
+    // connect (or something is off-screen), we regenerate feeding the visual critique back. One retry.
+    let arch = await runConceptArchitect(conceptBriefFrom(b));
+    const id = projectId ?? `gen-${slug(arch.story.title)}-${hash}`;
+    writeStory(id, arch.story);
+    let attempts = arch.attempts;
+    let problems = await visualVerify(id, b.brief);
+    for (let v = 0; problems.length > 0 && v < 1; v++) {
+      arch = await runConceptArchitect(conceptBriefFrom(b, problems.join('\n')));
+      attempts += arch.attempts;
+      writeStory(id, arch.story);
+      problems = await visualVerify(id, b.brief);
+    }
+    return {
+      projectId: id,
+      storyPath: `projects/${id}/story.yaml`,
+      title: arch.story.title,
+      beats: arch.story.beats.length,
+      cached: arch.cached,
+      attempts,
+      visualsResolved: simCount(arch.story),
+      visualsFailed: problems.length,
+    };
   }
 
-  const hash = createHash('sha256').update(JSON.stringify(b)).digest('hex').slice(0, 6);
-  const id = projectId ?? `gen-${slug(story.title)}-${hash}`;
-  const dir = resolve(PROJECT_ROOT, 'projects', id);
-  mkdirSync(dir, { recursive: true });
-  // Fit each beat's duration to its real narration length so the video never cuts off mid-sentence.
-  fitDurations(story, id, { ...(process.env['SARVAM_LANG'] ? { lang: process.env['SARVAM_LANG'] } : {}) });
-  writeFileSync(resolve(dir, 'story.yaml'), stringifyYaml(story), 'utf8');
+  // Story path: the Story Architect + the Asset Scout (real footage per beat).
+  const arch = await runStoryArchitect(b);
+  const scout = await resolveVisuals(arch.story, b.aspect);
+  const id = projectId ?? `gen-${slug(arch.story.title)}-${hash}`;
+  writeStory(id, arch.story);
   return {
     projectId: id,
     storyPath: `projects/${id}/story.yaml`,
-    title: story.title,
-    beats: story.beats.length,
-    cached,
-    attempts,
-    visualsResolved,
-    visualsFailed,
+    title: arch.story.title,
+    beats: arch.story.beats.length,
+    cached: arch.cached,
+    attempts: arch.attempts,
+    visualsResolved: scout.resolved,
+    visualsFailed: scout.failed,
   };
 }

@@ -44,6 +44,38 @@ export function runClaudeText(prompt: string): Promise<string> {
   });
 }
 
+/**
+ * Like runClaudeText but ALLOWS the Read tool, so the prompt can reference image paths and the model
+ * actually LOOKS at them (used by the visual verifier to judge rendered sim frames). Keyless.
+ */
+export function runClaudeVision(prompt: string): Promise<string> {
+  return new Promise((resolvePromise, reject) => {
+    const p = spawn(
+      CLAUDE_BIN,
+      ['-p', '--output-format', 'json', '--strict-mcp-config', '--mcp-config', '{"mcpServers":{}}', '--allowedTools', 'Read'],
+      { stdio: ['pipe', 'pipe', 'pipe'] },
+    );
+    let out = '';
+    let err = '';
+    p.stdout.on('data', (d: Buffer) => (out += d.toString()));
+    p.stderr.on('data', (d: Buffer) => (err += d.toString()));
+    p.on('error', reject);
+    p.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error(`claude -p (vision) exited ${code}: ${err.slice(0, 300)}`));
+        return;
+      }
+      try {
+        resolvePromise((JSON.parse(out) as { result?: string }).result ?? '');
+      } catch (e) {
+        reject(e as Error);
+      }
+    });
+    p.stdin.write(prompt);
+    p.stdin.end();
+  });
+}
+
 /** Pull the first JSON object/array out of a model reply (tolerating ```json fences + prose around it). */
 export function extractJson(text: string): unknown {
   let t = text.trim();

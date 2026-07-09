@@ -13,13 +13,15 @@ import Matter from 'matter-js';
 import { StoryIRSchema, type StoryIR } from '../src/ir/story.js';
 import { PROJECT_ROOT, runClaudeText, extractJson } from './claude.js';
 
-const PROMPT_VERSION = 'concept-architect@3';
+const PROMPT_VERSION = 'concept-architect@4';
 
 export interface ConceptBrief {
   brief: string;
   aspect?: '9:16' | '16:9' | '1:1';
   language?: string;
   targetSeconds?: number;
+  /** Visual critique from a prior rendered attempt (from the visual verifier) → regenerate fixing it. */
+  feedback?: string;
 }
 
 const SYSTEM = `You are the CONCEPT ARCHITECT of an educational video studio. Explain the user's concept as a short, clear video, output as STRICT JSON (a "Story IR"). Output ONLY the JSON — no prose, no markdown fences.
@@ -39,7 +41,7 @@ SHAPE (only these keys allowed):
       "camera": "hold",
       "show": [
         { "generator": "sim", "as": "viz", "args": { "z": 0, "code": "<SIM CODE>", "params": {} } },
-        { "text": "SHORT LABEL", "as": "t", "at": "bottom", "args": { "z": 20, "size": 46, "weight": 800, "color": "#f5f7fa" } }
+        { "text": "SHORT LABEL", "as": "t", "at": "top", "args": { "z": 20, "size": 46, "weight": 800, "color": "#f5f7fa" } }
       ]
     }
   ]
@@ -68,6 +70,12 @@ MAKE IT BEAUTIFUL (eye-candy — this is a premium video, not a whiteboard):
 - Motion should EASE, not jerk: e.g. var e = 0.5 - 0.5*Math.cos(2*Math.PI*t/PERIOD); interpolate with e.
 - Vector arrows: draw as a <line> + a small triangle <polygon> head, in an accent color, with a short label.
 - Keep it clean and uncluttered — a few beautiful, well-spaced elements beat many tiny ones.
+
+GEOMETRY MUST BE CORRECT AND CONNECTED (this is where sims most often go wrong):
+- COMPUTE endpoints from the real geometry — things that should touch/connect MUST connect with NO gap: a shadow cone's edges must actually reach the body it falls on; a rope must run over the pulley wheel to the weight; a ray must hit the surface; an arrow must start and end on the right points. Never leave a floating gap or a shape drifting off alone.
+- KEEP A CONSISTENT LAYOUT across beats: if the same bodies recur (Sun/Earth/Moon, a circuit, a lever), keep them at the SAME screen positions and scale in every beat so the viewer isn't disoriented — don't move the Sun to a different place each beat.
+- Keep EVERYTHING fully inside the frame with margins (~80px). Nothing off-screen, nothing clipped.
+- Sanity-check your own numbers: for a beat lasting ~D seconds (~D*30 frames), the animation should complete or loop cleanly within it.
 
 USE REAL PHYSICS — accuracy is the whole point (don't eyeball motion):
 - For MECHANICS (pulleys, levers, gears, ramps, collisions, pendulums, springs, projectiles, gravity): use the injected \`Matter\` — the real matter.js 2D physics engine. Build an engine + bodies + constraints, then RE-SIMULATE FROM FRAME 0 each call so it stays deterministic:
@@ -101,7 +109,10 @@ function buildPrompt(b: ConceptBrief, priorError?: string): string {
   const fix = priorError
     ? `\n\nYour previous answer had problems:\n${priorError}\nFix EXACTLY those and return corrected JSON only.`
     : '';
-  return `${SYSTEM}\n\n${controls}${fix}`;
+  const visual = b.feedback
+    ? `\n\n⚠️ A RENDERED version of your previous answer had these VISUAL problems (a reviewer LOOKED at the frames):\n${b.feedback}\nRewrite the affected sim code to FIX these — get the geometry connected and the layout right. Return corrected JSON only.`
+    : '';
+  return `${SYSTEM}\n\n${controls}${fix}${visual}`;
 }
 
 /** Execute a sim code body once to catch runtime errors + verify it returns non-empty SVG. */
