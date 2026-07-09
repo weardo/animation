@@ -281,7 +281,7 @@ function synthSarvam(req: NarrateRequest, wavPath: string, rootDir: string): boo
   // Bulbul v3 `pace` (0.5–2.0; >1 = FASTER). Read from the request (folded into the cache key by
   // synthNarration) so it stays in sync with the hash; falls back to the env / a slightly-fast default.
   // v3 delivery params (folded into the cache key by synthNarration so a change re-synthesizes).
-  const pace = String(req.style?.['pace'] ?? process.env['SARVAM_PACE'] ?? '1.15');
+  const pace = String(req.style?.['pace'] ?? process.env['SARVAM_PACE'] ?? '1.08');
   const temperature = String(req.style?.['temperature'] ?? process.env['SARVAM_TEMPERATURE'] ?? '0.9');
   const sampleRate = String(req.style?.['sample_rate'] ?? process.env['SARVAM_SAMPLE_RATE'] ?? '48000');
   // Bulbul v3 target language: en-IN for English, hi-IN for Hindi/Hinglish (the channel default).
@@ -332,11 +332,11 @@ export function synthNarration(
   mkdirSync(audioDir, { recursive: true });
   // Fold the Sarvam v3 DELIVERY params into the request BEFORE hashing so any change re-synthesizes
   // (they were read AFTER the hash → stale wavs; the pace bug taught this). pace/temperature/sample_rate
-  // are all part of the content address now. Channel defaults: pace 1.15 (slightly fast), temperature
-  // 0.9 (expressive storytelling — audition-picked over the flat 0.6), sample_rate 48000 (full-band).
+  // are all part of the content address now. Channel defaults: pace 1.08 (a touch above neutral — 1.15
+  // read as too fast), temperature 0.9 (expressive storytelling — audition-picked), sample_rate 48000.
   if (req.engine === 'sarvam') {
     const style = { ...(req.style ?? {}) };
-    if (style['pace'] === undefined) style['pace'] = Number(process.env['SARVAM_PACE'] ?? '1.15');
+    if (style['pace'] === undefined) style['pace'] = Number(process.env['SARVAM_PACE'] ?? '1.08');
     if (style['temperature'] === undefined) style['temperature'] = Number(process.env['SARVAM_TEMPERATURE'] ?? '0.9');
     if (style['sample_rate'] === undefined) style['sample_rate'] = Number(process.env['SARVAM_SAMPLE_RATE'] ?? '48000');
     req = { ...req, style };

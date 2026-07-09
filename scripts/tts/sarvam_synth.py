@@ -71,7 +71,7 @@ def main() -> int:
     ap.add_argument("--speaker", default="shubh", help="v3 voices; young male: shubh, aditya, dev, aayan, sunny, advait")
     ap.add_argument("--lang", default="hi-IN")
     ap.add_argument("--model", default="bulbul:v3")
-    ap.add_argument("--pace", type=float, default=1.15)
+    ap.add_argument("--pace", type=float, default=1.08)
     # temperature 0.9 = expressive storytelling delivery (audition-picked over the flat 0.6 default).
     ap.add_argument("--temperature", type=float, default=0.9)
     # 48kHz full-band = richer/clearer than the 24kHz default (v3 supports up to 48000).
