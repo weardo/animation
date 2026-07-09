@@ -8,9 +8,10 @@ import { resolve } from 'node:path';
 
 import { StoryIRSchema, type StoryIR } from '../src/ir/story.js';
 import { PROJECT_ROOT, runClaudeText, extractJson } from './claude.js';
+import type { FactSheet } from './research.js';
 
 /** Bump when the prompt changes → invalidates the cache (like a pass PASS_VERSION). */
-const PROMPT_VERSION = 'story-architect@5';
+const PROMPT_VERSION = 'story-architect@6';
 
 export interface StoryBrief {
   brief: string;
@@ -20,6 +21,11 @@ export interface StoryBrief {
   targetSeconds?: number;
   /** 'story' = footage explainer; 'concept' = teach with a real simulation; 'auto' = detect. */
   mode?: 'auto' | 'story' | 'concept';
+  /** The FACT SHEET (from the research agent) — the SOLE factual basis every beat must be grounded in. */
+  factSheet?: FactSheet;
+  /** Seed source (a Radar candidate's article URL/summary) — carried for provenance/research. */
+  sourceUrl?: string;
+  sourceSummary?: string;
 }
 
 const SYSTEM = `You are the STORY ARCHITECT of an automated video studio. Turn the user's brief into a short, punchy explainer as STRICT JSON (a "Story IR"). Output ONLY the JSON object — no prose, no markdown fences.
@@ -48,18 +54,38 @@ SHAPE (all keys shown are the ONLY allowed keys — extras are rejected):
 }
 
 RULES:
-- 6 to 9 beats. Structure the narration as ONE continuous story split into beats: HOOK → context → stakes → turn → payoff. Each beat's "say" must connect to the previous (cause→effect), not read as isolated headlines.
-- Talk TO the viewer (second person, respectful). Open warmly, not with a gimmick — for HINGLISH/Hindi, open the first beat with a warm "दोस्तों," hook the way Shorts open (NOT "देखिए"). End on a loop/takeaway.
-- "text" is a VERY SHORT scannable headline (2-4 words MAX), DIFFERENT from the narration. It MUST fit the frame width: for 9:16 (vertical) keep "size" 48-72 and 2-4 words; for 16:9 you may go 60-96. Never a full sentence — it will overflow and clip.
-- Bump the PROMPT_VERSION-worthy note: prefer punchy fragments ("THE LITTLE ENGINE", "25× A SECOND") over long phrases.
-- Keep every fact plausible/verifiable; do not invent statistics you are unsure of.
-- VISUALS ARE MANDATORY — a video of only text is broken. EVERY beat's "show" MUST START with a background FOOTAGE item that visually depicts the beat:
-  { "footage": "q:<query>", "as": "bg", "args": { "z": 0, "loop": true, "muted": true, "fit": "cover", "effects": [{ "kind": "color_grade", "brightness": 0.42, "saturate": 1.05 }] } }
-  The "q:" value is a CONCRETE, literal STOCK-VIDEO search phrase (2-4 words) for real filmable footage that shows this beat's subject — e.g. "black hole space", "spinning galaxy", "clock close up", "city traffic timelapse", "ocean waves aerial". NEVER abstract concepts ("time", "confusion") — those return nothing. Pick footage a stock library would actually have. Vary it per beat.
-- MOTION IS MANDATORY:
-  · EVERY text MUST have an "anim" in its args (plus "z": 20 so it sits above the footage). Use {"preset":"rise","duration":12,"distance":40} for most; {"preset":"fade","duration":12} occasionally.
-  · EVERY beat MUST have a "camera" move. First beat = "establishing". Then VARY: "slow_push_in", "slow_pull_out", "pan_left", "pan_right", occasional "hold". Never repeat the same camera 3 beats running.
-- Use ONLY these beat keys: id, say, duration, camera, show. Use ONLY these show keys: footage, text, as, at, args. "at" is one of: center, top, bottom, left, right. "camera" is one of: establishing, slow_push_in, slow_pull_out, pan_left, pan_right, hold. Give each beat a unique id.
+- ⚠️ FACTS ARE THE CENTRE OF THE VIDEO. You are given a FACT SHEET (below). EVERY beat's narration MUST be
+  built on SPECIFIC facts from it — real dates, places, names, and NUMBERS. NEVER talk "round-about" the
+  topic with vague generalities. If the fact sheet gives a number/place/date for a point, USE it verbatim.
+  Do NOT invent facts NOT in the sheet. A beat with no concrete fact is a failed beat — rewrite it.
+- HOOK: open beat 1 on the single most STRIKING specific fact or number from the sheet (e.g. a death toll, a
+  date, a place) — for HINGLISH open with a warm "दोस्तों," then hit that fact (NOT "देखिए", not a vague teaser).
+- ⚠️ CHRONOLOGY when it helps: if the fact sheet has a 'timeline', and history explains how things got here
+  (a conflict's roots, an escalation), WALK IT IN ORDER across beats ("2007 में शुरू हुआ… 2014 में… और 2022 तक…")
+  so the viewer follows a coherent, relatable progression. Skip the timeline for a pure one-off event.
+- 6 to 9 beats. ONE continuous story (each beat's "say" connects cause→effect to the previous, not isolated
+  headlines). Talk TO the viewer (second person, respectful आप). End on a loop/takeaway + an opinion question.
+- "text" is a VERY SHORT scannable headline (2-4 words MAX), DIFFERENT from the narration — prefer a FACT
+  fragment ("150 मौतें", "2014 का हमला"). 9:16 → "size" 48-72; never a full sentence.
+- ⚠️ MAP when geography helps (the fact sheet's 'needsMap'): if true, include ONE (rarely two) MAP beat where
+  it best serves the story — a 'generator: world-in' item that shows WHERE things happened:
+  { "generator": "world-in", "as": "world", "args": { "projection": "mercator", "fit": false,
+    "center": [<lon>, <lat>], "scale": <400-1200, tighter=bigger>, "key_field": "name",
+    "fill": "#223249", "no_data_fill": "#223249", "stroke": "#3a516c", "ocean": "#0a1420",
+    "choropleth": { "<Country>": "#ff4438" },
+    "markers": [ { "coord": [<lon>,<lat>], "label": "<place>", "color": "#ffb020", "radius": 6 } ],
+    "labels": { "<Country>": "<Country>" } } }
+  Put a MARKER at each incident location using the fact sheet's 'where[].lon/lat'; choropleth-highlight the
+  'mapCountries'; set center/scale to frame those places tightly. Use ONLY if geography genuinely helps.
+- VISUALS: every NON-map beat's "show" starts with a background FOOTAGE item:
+  { "footage": "q:<query>", "as": "bg", "args": { "z": 0, "loop": true, "muted": true, "fit": "cover", "effects": [{ "kind": "color_grade", "brightness": 0.7, "saturate": 1.05 }] } }
+  The "q:" value MUST come from (or closely match) the fact sheet's 'footageHints' — SPECIFIC, filmable
+  phrases grounded in the facts (e.g. "pakistan army convoy", "border security checkpoint", "flooded street
+  rescue"). NEVER generic/abstract ("war", "conflict", "time") — those return fireworks/junk. Vary per beat.
+- MOTION: every text has an "anim" (+ "z":20). Every beat has a "camera" (first="establishing", then vary
+  slow_push_in / slow_pull_out / pan_left / pan_right / hold; never 3 same in a row).
+- Use ONLY these beat keys: id, say, duration, camera, show. Show keys: footage OR generator, text, as, at, args.
+  "at" ∈ {center,top,bottom,left,right}. "camera" ∈ {establishing,slow_push_in,slow_pull_out,pan_left,pan_right,hold}.
 - Return VALID JSON only.`;
 
 function buildPrompt(b: StoryBrief, priorError?: string): string {
@@ -70,10 +96,17 @@ function buildPrompt(b: StoryBrief, priorError?: string): string {
     `LANGUAGE: ${b.language ?? 'English'} (write the "say" narration in this language; keep "text" headlines short in the same language)`,
     `TARGET LENGTH: about ${b.targetSeconds ?? 45} seconds total`,
   ].join('\n');
+  const facts = b.factSheet
+    ? `\n\nFACT SHEET (the SOLE factual basis — ground every beat in these; do not invent beyond them):\n${JSON.stringify(
+        b.factSheet,
+        null,
+        1,
+      )}`
+    : '\n\n(No fact sheet available — stay high-level and DO NOT invent specific numbers/dates/names.)';
   const fix = priorError
     ? `\n\nYour previous answer FAILED validation with:\n${priorError}\nFix EXACTLY those problems and return corrected JSON only.`
     : '';
-  return `${SYSTEM}\n\n${controls}${fix}`;
+  return `${SYSTEM}\n\n${controls}${facts}${fix}`;
 }
 
 export interface ArchitectResult {

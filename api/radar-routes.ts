@@ -63,6 +63,10 @@ export function registerRadarRoutes(app: Express): void {
       aspect: '9:16',
       style: 'plain',
       mode: 'story',
+      // Ground the research on the REAL source article (the candidate's link + summary), so the video is
+      // fact-specific — not a vague round-about take on the headline.
+      sourceUrl: cand.url,
+      sourceSummary: cand.summary || cand.whyIndia,
     });
     s.attachJob(cand.id, job.id);
     res.json({ jobId: job.id, candidateId: cand.id });

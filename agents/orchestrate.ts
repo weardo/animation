@@ -15,6 +15,7 @@ import { runConceptArchitect, type ConceptBrief } from './concept-architect.js';
 import { fitDurations } from './fit-durations.js';
 import { progress } from './progress.js';
 import { productionize } from './productionize.js';
+import { research } from './research.js';
 import { runStoryArchitect, type StoryBrief } from './story-architect.js';
 import { visualVerify } from './visual-verify.js';
 
@@ -103,9 +104,17 @@ export async function orchestrateBrief(b: StoryBrief, projectId?: string): Promi
     };
   }
 
-  // Story path: the Story Architect + the Asset Scout (real footage per beat).
-  progress('Writing the script…');
-  const arch = await runStoryArchitect(b);
+  // Story path: RESEARCH → the Story Architect (fact-grounded) → the Asset Scout (real footage per beat).
+  // Facts first (user rule): gather the real what/when/where/who/numbers/timeline BEFORE writing a word, so
+  // the narration is specific + chronological, not vague. The fact sheet also decides if a MAP belongs.
+  progress('Researching the facts…');
+  const factSheet = await research(b.brief, {
+    ...(b.sourceUrl ? { sourceUrl: b.sourceUrl } : {}),
+    ...(b.sourceSummary ? { sourceSummary: b.sourceSummary } : {}),
+    ...(lang ? { lang } : {}),
+  });
+  progress(`Facts gathered (${factSheet.confidence}${factSheet.needsMap ? ' · map' : ''}) · writing the script…`);
+  const arch = await runStoryArchitect({ ...b, factSheet });
   progress(`Script ready · ${arch.story.beats.length} beats · fetching footage…`);
   const scout = await resolveVisuals(arch.story, b.aspect);
   const id = projectId ?? `gen-${slug(arch.story.title)}-${hash}`;
