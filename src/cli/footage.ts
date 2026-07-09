@@ -112,9 +112,12 @@ function transcodeToProxy(mp4Path: string, originalBytes: number): void {
       '-y', '-loglevel', 'error', '-i', mp4Path,
       // bounding-box cap 1920 (both orientations), even dims for yuv420p, no upscaling.
       '-vf', "scale='min(iw,1920)':'min(ih,1920)':force_original_aspect_ratio=decrease:force_divisible_by=2,fps=30",
+      // KEEP the audio (light aac) — a fetched clip's OWN sound is sometimes the point (a viral raw clip).
+      // It's silent at render UNLESS the story opts in with `muted: false` (footage defaults to muted).
+      '-c:a', 'aac', '-b:a', '128k',
       '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26',
       '-maxrate', '2500k', '-bufsize', '5000k', // cap peak bitrate so motion-heavy clips stay light
-      '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', tmp,
+      '-pix_fmt', 'yuv420p', '-movflags', '+faststart', tmp,
     ]);
   } catch {
     rmSync(tmp, { force: true });

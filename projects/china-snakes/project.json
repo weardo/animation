@@ -1,0 +1,57 @@
+{
+  "project_version": "1.0",
+  "id": "china-snakes",
+  "name": "china-snakes",
+  "created": "2026-07-09T14:48:39.485Z",
+  "updated": "2026-07-09T14:48:39.485Z",
+  "config": {
+    "w": 1080,
+    "h": 1920,
+    "fps": 30,
+    "duration_frames": 423
+  },
+  "source": "story.yaml",
+  "scene": "scene.json",
+  "lock": "project.lock",
+  "scene_ir_hash": "6d6bfb6f4cafb98f293bfdc7b162dd2fb4d58562",
+  "engine": "remotion@4.0.481",
+  "deps": [
+    "snakes-village@1.0.0"
+  ],
+  "assets": [
+    "assets/video/snakes-village.mp4",
+    "assets/fonts/Mukta-ExtraBold.ttf",
+    "assets/fonts/NotoSansDevanagari.ttf",
+    "assets/fonts/DejaVuSans.ttf"
+  ],
+  "outputs": {
+    "video": "media/out.mp4",
+    "thumbnail": "media/thumbnail.png"
+  },
+  "publish": {
+    "title": "चीन में सांपों का सैलाब 🐍 — बाढ़ में snake farm बही, 800+ सांप गाँव में | Viral",
+    "description": "चीन के Guangxi में Typhoon Maysak की भयानक बाढ़ में एक snake farm बह गई — और 800 से ज़्यादा सांप, जिनमें ज़हरीले cobra भी, पूरे गाँव में फैल गए। एक ग्रामीण को सांप ने काटा और अस्पताल ले जाना पड़ा। बाढ़ में कम से कम 6 लोगों की जान गई और करीब 3.75 लाख लोग प्रभावित हुए।\n\nआपने कभी ऐसा मंज़र देखा है? नीचे comment में बताइए।\nFollow for daily world news, explained in Hinglish. 🇮🇳\n\nSources: Hengzhou village (Guangxi, China) snake-farm flood escape, 6-7 July 2026 · 800+ snakes incl. cobras, 1 villager bitten · Typhoon Maysak flooding — 6+ dead, ~375,000 affected. Reporting: CNN, BFMTV, Briefly.\nCredits: News footage — BFMTV (editorial/fair-use, attributed) · Voice — Sarvam Bulbul.\nDisclaimer: A news clip compiled from public reporting; facts per cited sources as of July 2026.\n",
+    "tags": [
+      "China snakes",
+      "snake invasion",
+      "Guangxi flood",
+      "Typhoon Maysak",
+      "viral",
+      "cobra",
+      "world news",
+      "Hinglish"
+    ],
+    "hashtags": [
+      "China",
+      "snakes",
+      "viral",
+      "flood",
+      "Guangxi"
+    ],
+    "category": "News & Politics",
+    "language": "hi-IN",
+    "privacy": "unlisted",
+    "made_for_kids": false,
+    "license": "standard"
+  }
+}

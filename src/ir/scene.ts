@@ -607,9 +607,12 @@ export const FootageLayerSchema = z
     playbackRate: z.number().positive().optional(),
     /** Loop the source when the timeline outlasts it (video: <Loop>; lottie: loop prop). */
     loop: z.boolean().optional(),
-    /** Mute the footage's OWN audio track (project-dependent). Omitted → muted (b-roll-under-narration
-     *  convention); set `false` to keep the clip's native sound. */
+    /** Mute the footage's OWN audio track. Omitted → MUTED (b-roll-under-narration convention); set
+     *  `false` to play the clip's native sound (a viral raw clip where the audio is the point). */
     muted: z.boolean().optional(),
+    /** Linear volume 0..1 for the footage's OWN audio when unmuted (default 1). Turn it DOWN (e.g. 0.3)
+     *  so the raw clip sound sits UNDER the narration instead of fighting it. Ignored when muted. */
+    volume: z.number().min(0).max(1).optional(),
     /** Object-fit for video media within the layer box (cover/contain/fill). Default `contain`. */
     fit: z.enum(['cover', 'contain', 'fill']).optional(),
     /** Parallax factor for the whole footage unit (2.5D depth), like an asset/clip layer. */

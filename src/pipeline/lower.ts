@@ -59,7 +59,7 @@ import { resolveScenePalette, paletteDiff, interpolatePalettes } from './color-s
 
 /** This pass's id + version — folded into cache keys / provenance (spec §5). */
 export const PASS_ID = 'lower';
-export const PASS_VERSION = '2.8'; // 2.8: fit:cover footage with no `at` → anchor center (full-frame bg fills, no top gap)
+export const PASS_VERSION = '2.9'; // 2.9: footage 'volume' passthrough (raw-audio control)
 
 /**
  * The default render config: a 1920×1080, 30fps film. Generic — no domain assumptions. A scene's
@@ -742,6 +742,7 @@ function buildFootageLayer(item: ShowItem, index: number): LoweredLayer {
   const playbackRate = typeof args['playbackRate'] === 'number' ? (args['playbackRate'] as number) : undefined;
   const loop = typeof args['loop'] === 'boolean' ? (args['loop'] as boolean) : undefined;
   const muted = typeof args['muted'] === 'boolean' ? (args['muted'] as boolean) : undefined;
+  const volume = typeof args['volume'] === 'number' ? (args['volume'] as number) : undefined;
   const fit =
     args['fit'] === 'cover' || args['fit'] === 'contain' || args['fit'] === 'fill'
       ? (args['fit'] as FootageLayer['fit'])
@@ -756,6 +757,7 @@ function buildFootageLayer(item: ShowItem, index: number): LoweredLayer {
     ...(playbackRate !== undefined ? { playbackRate } : {}),
     ...(loop !== undefined ? { loop } : {}),
     ...(muted !== undefined ? { muted } : {}),
+    ...(volume !== undefined ? { volume } : {}),
     ...(fit !== undefined ? { fit } : {}),
     ...(parallax !== undefined ? { parallax } : {}),
     ...(Object.keys(transform).length > 0 ? { transform } : {}),

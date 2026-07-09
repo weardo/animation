@@ -1791,6 +1791,24 @@
           "license": "editorial / fair-use — brief attributed commentary; publicly-accessible source",
           "cache_hash": "f8095d3fbc47"
         }
+      },
+      "snakes-village": {
+        "id": "snakes-village",
+        "version": "1.0.0",
+        "kind": "asset",
+        "format": "video",
+        "uri": "asset://video/snakes-village.mp4",
+        "tags": [
+          "newsclip",
+          "evidence",
+          "footage"
+        ],
+        "deps": [],
+        "provenance": {
+          "source": "BFMTV — \"Chine: plus de 800 serpents s'échappent d'une ferme d'élevage et envahissent une ville inondée\" — https://www.youtube.com/shorts/0lpu5WJWFDI (captured 2026-07-07)",
+          "license": "editorial / fair-use — brief attributed commentary; publicly-accessible source",
+          "cache_hash": "be2941ac0717"
+        }
       }
     }
   }

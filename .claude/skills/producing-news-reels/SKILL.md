@@ -144,6 +144,16 @@ The `map` generator (core-dataviz) has a full toolkit, all authored as DATA, all
   (`PEXELS_API_KEY`, free, commercial-safe) → content-addressed cache → `footage: <id>` in a story. Great
   for a cinematic opening (a tanker/ocean shot under the hook), a fuel-station "prices" beat, or the loop
   close. Keep it SPARSE (opening + close) so the maps stay the star.
+- **⚠️ FOOTAGE KEEPS ITS OWN AUDIO — use it when the RAW SOUND is the point (user 2026-07-09).** Fetched
+  clips (`factory:footage` / `factory:newsclip`) now retain a light audio track, but footage DEFAULTS TO
+  MUTED (b-roll under narration stays silent). For a **raw viral clip where the sound matters** (a snake
+  hiss, a crowd gasp, an explosion, on-the-ground chaos) set `muted: false` on that footage item, and lean
+  on the raw footage with LESS narration — let the clip breathe. When you want the raw sound present but
+  UNDER a narration line, add `volume: 0.2–0.4` so it sits below the voice instead of fighting it (footage
+  audio does NOT auto-duck like the music bed — the low `volume` is how you tuck it). If a clip's audio is
+  a foreign reporter VO (clashes with Hinglish), keep it `muted: true` and use a music bed instead. A
+  raw-audio-led reel often wants `--no-captions` (baked-in foreign on-screen text collides with the pill)
+  and no separate `music` (the raw sound IS the bed).
 - **⚠️ TAILOR THE EFFECTS TO EACH CLIP — there is NO one-size grade (user: "dark circle shadow doesn't
   always suit").** A blanket `darken + heavy vignette + full-frame dark scrim` CRUSHES a bright hero shot
   (a blue-sky port, a sunny sea). Match the treatment to the footage + mood: a BRIGHT clip keeps a LIGHT
@@ -311,11 +321,11 @@ statements into second-person conversation:
   high-bitrate/4K Pexels download) makes Remotion's `<OffthreadVideo>` balloon the Rust compositor's RAM;
   on a swap-pressured box the decode BLOCKS at **0% CPU** and the whole render hangs (looks identical to a
   RAM thrash but isn't — 0% CPU = *blocked*, a thrash burns CPU). `factory:footage` now AUTO-TRANSCODES
-  every fetched clip to a light h264/yuv420p proxy (≤1920px bounding box, CRF 26, 2500k peak cap, muted,
-  ~2-6 MB) that replaces the served file — so a fresh fetch can never re-introduce the hang. Isolation
-  proof: footage-alone, GPU-alone, GPU+footage all render fine with light proxies; only the fat source
-  stalls. If you ever hand-place a video, downscale it the same way (`ffmpeg -vf "scale='min(iw,1920)'…"
-  -crf 26 -maxrate 2500k -pix_fmt yuv420p -an`). ffmpeg-missing → the proxy step warns + keeps the raw
+  every fetched clip to a light h264/yuv420p proxy (≤1920px bounding box, CRF 26, 2500k peak cap, light
+  aac audio KEPT, ~2-6 MB) that replaces the served file — so a fresh fetch can never re-introduce the hang.
+  Isolation proof: footage-alone, GPU-alone, GPU+footage all render fine with light proxies; only the fat
+  source stalls. If you ever hand-place a video, downscale it the same way (`ffmpeg -vf "scale='min(iw,1920)'…"
+  -crf 26 -maxrate 2500k -pix_fmt yuv420p -c:a aac -b:a 128k`). ffmpeg-missing → the proxy step warns + keeps the raw
   file (never fails).
 - **Players cache previews.** VS Code's built-in player AND VLC show a stale cached copy after a
   re-render — close the tab/window and reopen, or use `mpv <file>` (reads fresh). This caused a whole
