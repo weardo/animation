@@ -53,10 +53,118 @@ interface PhotoSource {
   search(req: PhotoRequest): Promise<PhotoCandidate[]>;
 }
 
-/** Wikimedia Commons — real archival subjects, CC/PD with required attribution. */
+const strip = (h?: string): string => (h ?? '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+
+// A real photograph on Commons is large; a locator map, icon, or thumbnail is small. Requiring a decent
+// long edge drops the small maps that slip past the title denylist (e.g. a file just named "Peshawar.png").
+const WIKI_MIN_EDGE = 480;
+
+// Wikimedia throttles bursts (HTTP 429). Serialize + space our calls so a cold first run of many subjects
+// doesn't get blocked. (Offline build-time politeness — results are content-addressed cached after.)
+let wikiGate: Promise<void> = Promise.resolve();
+function wikiThrottle(): Promise<void> {
+  const wait = wikiGate.then(() => new Promise<void>((r) => setTimeout(r, 400)));
+  wikiGate = wait;
+  return wait;
+}
+async function wikiFetch(url: string): Promise<Response> {
+  await wikiThrottle();
+  let resp = await fetch(url, { headers: { 'User-Agent': UA } });
+  if (resp.status === 429) {
+    // Throttled — back off once and retry (the gate keeps subsequent calls spaced too).
+    await new Promise<void>((r) => setTimeout(r, 2500));
+    resp = await fetch(url, { headers: { 'User-Agent': UA } });
+  }
+  return resp;
+}
+
+// File titles that are NOT a real photo of the subject — Commons full-text file search ranks these highly
+// (a locator/location map, a flag/logo/seal/coat-of-arms, a diagram/chart/graph). For a hard-news subject
+// we want the actual photograph, so drop these. (Matched on the File: title, case-insensitive.)
+const WIKI_JUNK =
+  /\b(locator|location map|\blocation\b|\bmap\b|map of|flag of|\bflag\b|\blogo\b|\bseal\b|coat of arms|emblem|insignia|diagram|schematic|\bchart\b|\bgraph\b|\bicon\b|blank|outline|topograph)/i;
+
+/** Turn one Commons imageinfo page into a PhotoCandidate (jpeg/png only). null → not a usable photo. */
+function candidateFromWikiPage(p: WikiPage): PhotoCandidate | null {
+  const ii = p.imageinfo?.[0];
+  if (!ii) return null;
+  const mime = ii.mime ?? '';
+  if (!/image\/(jpeg|png)/.test(mime)) return null; // skip svg/gif/tiff (photos only)
+  const meta = ii.extmetadata ?? {};
+  const licenseShort = strip(meta.LicenseShortName?.value) || 'see Wikimedia';
+  const artist = strip(meta.Artist?.value) || strip(meta.Credit?.value) || 'unknown author';
+  const bare = p.title.replace(/^File:/, '');
+  return {
+    key: String(p.pageid),
+    downloadUrl: ii.thumburl ?? ii.url,
+    width: ii.thumbwidth ?? ii.width ?? 0,
+    height: ii.thumbheight ?? ii.height ?? 0,
+    title: bare,
+    license: licenseShort,
+    attribution: `Wikimedia Commons — "${bare}" by ${artist} (${licenseShort}), ${ii.descriptionurl ?? ''}`.trim(),
+    pageUrl: ii.descriptionurl ?? `https://commons.wikimedia.org/?curid=${p.pageid}`,
+    ext: mime.includes('png') ? 'png' : 'jpg',
+  };
+}
+
+/** Fetch imageinfo for one exact Commons File: title (used to attribute a Wikipedia lead image). */
+async function commonsImageInfo(fileTitle: string): Promise<PhotoCandidate | null> {
+  const api =
+    'https://commons.wikimedia.org/w/api.php?' +
+    new URLSearchParams({
+      action: 'query',
+      format: 'json',
+      titles: fileTitle.startsWith('File:') ? fileTitle : `File:${fileTitle}`,
+      prop: 'imageinfo',
+      iiprop: 'url|size|extmetadata|mime',
+      iiurlwidth: '1600',
+    }).toString();
+  const resp = await wikiFetch(api);
+  if (!resp.ok) return null;
+  const data = (await resp.json()) as { query?: { pages?: Record<string, WikiPage> } };
+  const p = Object.values(data.query?.pages ?? {})[0];
+  return p ? candidateFromWikiPage(p) : null;
+}
+
+/**
+ * The subject's WIKIPEDIA ARTICLE lead image — the infobox photo (a portrait for a person, the memorial/
+ * aftermath for an event, the building for a place). This is the REAL image of a named subject; Commons
+ * file-search alone ranks a locator MAP or a flag above it. `redirects=1` follows "APS attack" → the page.
+ */
+async function wikipediaLeadCandidate(query: string): Promise<PhotoCandidate | null> {
+  try {
+    const api =
+      'https://en.wikipedia.org/w/api.php?' +
+      new URLSearchParams({
+        action: 'query',
+        format: 'json',
+        redirects: '1',
+        titles: query,
+        prop: 'pageimages',
+        piprop: 'name',
+      }).toString();
+    const resp = await wikiFetch(api);
+    if (!resp.ok) return null;
+    const data = (await resp.json()) as { query?: { pages?: Record<string, { pageimage?: string }> } };
+    const page = Object.values(data.query?.pages ?? {})[0];
+    const file = page?.pageimage;
+    if (!file || WIKI_JUNK.test(file)) return null; // no lead image, or it's a flag/map/logo
+    return await commonsImageInfo(file);
+  } catch {
+    return null;
+  }
+}
+
+/** Wikimedia — real subjects, CC/PD with required attribution. Lead image (real photo) FIRST, then Commons. */
 const wikimedia: PhotoSource = {
   id: 'wikimedia',
   async search(req) {
+    const out: PhotoCandidate[] = [];
+    // 1. The Wikipedia article's own lead image — the actual photo of THIS subject. Kept regardless of
+    //    orientation (a real subject photo, cropped by ken-burns cover, beats a map that happens to fit).
+    const lead = await wikipediaLeadCandidate(req.query);
+    if (lead) out.push(lead);
+    // 2. Commons file search as the fallback / additional candidates — junk (maps/flags/logos) filtered out.
     const api =
       'https://commons.wikimedia.org/w/api.php?' +
       new URLSearchParams({
@@ -70,34 +178,20 @@ const wikimedia: PhotoSource = {
         iiprop: 'url|size|extmetadata|mime',
         iiurlwidth: '1600', // a scaled thumb URL (light)
       }).toString();
-    const resp = await fetch(api, { headers: { 'User-Agent': UA } });
+    const resp = await wikiFetch(api);
     if (!resp.ok) throw new Error(`Wikimedia API ${resp.status}: ${(await resp.text()).slice(0, 160)}`);
     const data = (await resp.json()) as { query?: { pages?: Record<string, WikiPage> } };
-    const pages = Object.values(data.query?.pages ?? {});
-    const out: PhotoCandidate[] = [];
-    for (const p of pages) {
-      const ii = p.imageinfo?.[0];
-      if (!ii) continue;
-      const mime = ii.mime ?? '';
-      if (!/image\/(jpeg|png)/.test(mime)) continue; // skip svg/gif/tiff (photos only)
-      const meta = ii.extmetadata ?? {};
-      const strip = (h?: string): string => (h ?? '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-      const licenseShort = strip(meta.LicenseShortName?.value) || 'see Wikimedia';
-      const artist = strip(meta.Artist?.value) || strip(meta.Credit?.value) || 'unknown author';
-      const ext = mime.includes('png') ? 'png' : 'jpg';
-      out.push({
-        key: String(p.pageid),
-        downloadUrl: ii.thumburl ?? ii.url,
-        width: ii.thumbwidth ?? ii.width ?? 0,
-        height: ii.thumbheight ?? ii.height ?? 0,
-        title: p.title.replace(/^File:/, ''),
-        license: licenseShort,
-        attribution: `Wikimedia Commons — "${p.title.replace(/^File:/, '')}" by ${artist} (${licenseShort}), ${ii.descriptionurl ?? ''}`.trim(),
-        pageUrl: ii.descriptionurl ?? `https://commons.wikimedia.org/?curid=${p.pageid}`,
-        ext,
-      });
+    const seen = new Set(out.map((c) => c.key));
+    for (const p of Object.values(data.query?.pages ?? {})) {
+      if (WIKI_JUNK.test(p.title)) continue; // a locator map / flag / logo / diagram — not the subject
+      const c = candidateFromWikiPage(p);
+      if (!c || seen.has(c.key)) continue;
+      if (Math.max(c.width, c.height) < WIKI_MIN_EDGE) continue; // a small map/icon, not a real photo
+      if (!matchOrientation(c, req.orientation)) continue;
+      out.push(c);
+      seen.add(c.key);
     }
-    return out.filter((c) => matchOrientation(c, req.orientation));
+    return out;
   },
 };
 

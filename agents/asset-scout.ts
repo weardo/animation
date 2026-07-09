@@ -58,8 +58,9 @@ export async function resolveVisuals(story: StoryIR, aspect?: string): Promise<S
         let wid = seenWiki.get(subject);
         if (wid === undefined) {
           try {
-            const photoOrient = orientation === 'square' ? 'any' : orientation;
-            const r = await pickPhoto({ query: subject, source: 'wikimedia', id: slugSubject(subject), orientation: photoOrient, rootDir: PROJECT_ROOT });
+            // 'any' orientation: a REAL photo of the subject (often a landscape portrait) beats dropping it
+            // for aspect — ken-burns "in" + fit "cover" crops it to the 9:16 frame either way.
+            const r = await pickPhoto({ query: subject, source: 'wikimedia', id: slugSubject(subject), orientation: 'any', rootDir: PROJECT_ROOT });
             wid = slugSubject(subject);
             void r;
             resolved += 1;
