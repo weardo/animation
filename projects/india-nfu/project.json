@@ -2,8 +2,8 @@
   "project_version": "1.0",
   "id": "india-nfu",
   "name": "india-nfu",
-  "created": "2026-07-09T13:06:19.938Z",
-  "updated": "2026-07-09T13:06:19.938Z",
+  "created": "2026-07-09T17:12:02.783Z",
+  "updated": "2026-07-09T17:12:02.783Z",
   "config": {
     "w": 1080,
     "h": 1920,
@@ -13,7 +13,7 @@
   "source": "story.yaml",
   "scene": "scene.json",
   "lock": "project.lock",
-  "scene_ir_hash": "23036562e932821e90d14d188fde526bb4b9c692",
+  "scene_ir_hash": "4dceea0646fc1cb1d83921eaca38746fcb7fa395",
   "engine": "remotion@4.0.481",
   "deps": [
     "nfu-fire@1.0.0",
@@ -30,7 +30,9 @@
     "assets/video/nfu-jets.mp4",
     "assets/fonts/Mukta-ExtraBold.ttf",
     "assets/fonts/NotoSansDevanagari.ttf",
-    "assets/fonts/DejaVuSans.ttf"
+    "assets/fonts/DejaVuSans.ttf",
+    "assets/brand/india-storyboard-bug.png",
+    "assets/brand/india-storyboard-logo.png"
   ],
   "outputs": {
     "video": "media/out.mp4",

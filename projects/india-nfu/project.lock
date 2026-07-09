@@ -2,6 +2,13 @@
   "lockfile_version": "1",
   "algorithm": "object-hash@sha1/v1",
   "refs": {
+    "india-storyboard@1.0.0": {
+      "namespace": "stylekits",
+      "id": "india-storyboard",
+      "version": "1.0.0",
+      "hash": "d97f645d4735da25dba5ce006a09365db526bcb0",
+      "deps": []
+    },
     "nfu-fire@1.0.0": {
       "namespace": "footage",
       "id": "nfu-fire",
@@ -35,6 +42,13 @@
       "id": "nfu-parade",
       "version": "1.0.0",
       "hash": "d970ab3b1ecbc7c6f274b06723b63eb0aeee90a1",
+      "deps": []
+    },
+    "world-in@1.0.0": {
+      "namespace": "generators",
+      "id": "world-in",
+      "version": "1.0.0",
+      "hash": "722997be6264c229005e1c2680db115977f6b761",
       "deps": []
     }
   }
