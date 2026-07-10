@@ -16,6 +16,7 @@ import { fitDurations } from './fit-durations.js';
 import { progress } from './progress.js';
 import { productionize } from './productionize.js';
 import { applyHumour } from './humour.js';
+import { protectJoke } from './joke-critic.js';
 import { research, type FactSheet, PROMPT_VERSION as RESEARCH_VERSION } from './research.js';
 import { runStoryArchitect, type StoryBrief, PROMPT_VERSION as ARCHITECT_VERSION } from './story-architect.js';
 import { visualVerify } from './visual-verify.js';
@@ -153,6 +154,11 @@ export async function orchestrateBrief(b: StoryBrief, projectId?: string): Promi
     progress('Looking for a wry touch (if it lands)…');
     const h = await applyHumour(arch.story, factSheet, { rootDir: PROJECT_ROOT });
     if (h.applied > 0) progress(`Added ${h.applied} humour touch(es).`);
+    // Protect a LIGHT/viral/meme reel from AI's over-explain reflex (cut/tighten joke-killing beats).
+    const j = await protectJoke(arch.story, { rootDir: PROJECT_ROOT });
+    if (j.register === 'light' && (j.cut > 0 || j.rewritten > 0)) {
+      progress(`Kept it punchy (cut ${j.cut}, tightened ${j.rewritten}).`);
+    }
   }
   progress(`Script ready · ${arch.story.beats.length} beats · fetching footage…`);
   const scout = await resolveVisuals(arch.story, b.aspect);
