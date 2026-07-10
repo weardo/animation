@@ -11,7 +11,7 @@ import { PROJECT_ROOT, runClaudeText, extractJson } from './claude.js';
 import type { FactSheet } from './research.js';
 
 /** Bump when the prompt changes → invalidates the cache (like a pass PASS_VERSION). */
-export const PROMPT_VERSION = 'story-architect@15'; // @15: clip-audio beat has NO narration (no overlap)
+export const PROMPT_VERSION = 'story-architect@16'; // @16: register-aware — don't kill the joke/over-explain
 
 export interface StoryBrief {
   brief: string;
@@ -88,6 +88,17 @@ RULES:
   previous, not isolated headlines). Talk TO the viewer (second person, respectful आप). END on the PRESENT —
   the stakes / what happens next / what it means for the viewer today — + an opinion question. Do NOT end on a
   historical summary.
+- ⚠️ REGISTER — READ THE ROOM, DON'T KILL THE JOKE. First judge the story's register: SERIOUS (an attack, a
+  policy, a crisis, a tragedy → inform clearly, all the rules above) vs LIGHT / VIRAL / MEME / GAFFE (a slip,
+  an absurd viral clip, an internet-meme moment). For a LIGHT/VIRAL story, DO NOT be a lecturer:
+  • DON'T OVER-EXPLAIN or dissect WHY it's funny/wrong — that KILLS it. The viewer is ALREADY IN ON IT; ride
+    the shared / meme context. Assume they get the joke — wink at it, don't spell it out.
+  • ⛔ NEVER add a "here's why it's technically wrong / actually X is Y / the difference is…" correction or
+    fact-check beat for a gaffe or meme — the audience already knows. That single beat kills the whole reel.
+  • Be punchy, knowing, deadpan. Let the CLIP / the absurdity LAND on its own (a short beat, a pause). FEWER
+    words, FEWER facts — the vibe carries a light story, not a pile of explanation.
+  • Reference the REACTION / the meme wave ("इंटरनेट ने meme बना डाले", "हर timeline पर छा गया", "लोग हँस-हँस के लोट-पोट")
+    instead of explaining the thing. You can't fabricate facts, but a light story simply needs far fewer of them.
 - "text" is a VERY SHORT scannable headline (2-4 words MAX), DIFFERENT from the narration. ⚠️ ALWAYS in
   ENGLISH (even though the narration "say" is Hinglish) — the on-screen text + subtitles are English so a
   muted / non-Hindi viewer can read; prefer a punchy FACT fragment ("150 DEAD", "#1 SINCE 2013",
