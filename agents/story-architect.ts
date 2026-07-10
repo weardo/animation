@@ -11,7 +11,7 @@ import { PROJECT_ROOT, runClaudeText, extractJson } from './claude.js';
 import type { FactSheet } from './research.js';
 
 /** Bump when the prompt changes → invalidates the cache (like a pass PASS_VERSION). */
-const PROMPT_VERSION = 'story-architect@8';
+const PROMPT_VERSION = 'story-architect@9';
 
 export interface StoryBrief {
   brief: string;
@@ -58,13 +58,21 @@ RULES:
   built on SPECIFIC facts from it — real dates, places, names, and NUMBERS. NEVER talk "round-about" the
   topic with vague generalities. If the fact sheet gives a number/place/date for a point, USE it verbatim.
   Do NOT invent facts NOT in the sheet. A beat with no concrete fact is a failed beat — rewrite it.
-- HOOK: open beat 1 on the single most STRIKING specific fact or number from the sheet (e.g. a death toll, a
-  date, a place) — for HINGLISH open with a warm "दोस्तों," then hit that fact (NOT "देखिए", not a vague teaser).
-- ⚠️ CHRONOLOGY when it helps: if the fact sheet has a 'timeline', and history explains how things got here
-  (a conflict's roots, an escalation), WALK IT IN ORDER across beats ("2007 में शुरू हुआ… 2014 में… और 2022 तक…")
-  so the viewer follows a coherent, relatable progression. Skip the timeline for a pure one-off event.
-- 6 to 9 beats. ONE continuous story (each beat's "say" connects cause→effect to the previous, not isolated
-  headlines). Talk TO the viewer (second person, respectful आप). End on a loop/takeaway + an opinion question.
+- ⚠️ THE CURRENT NEWS IS THE POINT — history is only SUPPORT. This is a NEWS explainer: the SPINE is what is
+  happening NOW (the fact sheet's 'headline' / 'summary' / 'when' / latest 'incidents'). Anchor the whole
+  video on the CURRENT development — why this is news TODAY, what it means, what is at stake, what happens
+  next. Do NOT turn the reel into a history lesson / a documentary timeline; that loses the essence of the news.
+- HOOK: open beat 1 on the CURRENT news itself — the latest striking fact/number/development that makes this
+  news RIGHT NOW (not the oldest event in the timeline). For HINGLISH open with a warm "दोस्तों," then hit that
+  CURRENT fact (NOT "देखिए", not a vague teaser).
+- ⚠️ HISTORY = BRIEF CONTEXT, NOT THE BACKBONE. Use the 'timeline' ONLY to make the present make sense, and
+  COMPRESS it into AT MOST 1 (rarely 2) context beat(s) — one line like "इसकी जड़ें 2007 में हैं, जब…" that
+  lands the viewer back in the present immediately after. NEVER walk the timeline event-by-event across many
+  beats. If the current news stands on its own, skip history entirely. The MAJORITY of beats stay on the NOW.
+- 6 to 9 beats. ONE continuous story about the CURRENT event (each beat's "say" connects cause→effect to the
+  previous, not isolated headlines). Talk TO the viewer (second person, respectful आप). END on the PRESENT —
+  the stakes / what happens next / what it means for the viewer today — + an opinion question. Do NOT end on a
+  historical summary.
 - "text" is a VERY SHORT scannable headline (2-4 words MAX), DIFFERENT from the narration — prefer a FACT
   fragment ("150 मौतें", "2014 का हमला"). 9:16 → "size" 48-72; never a full sentence.
 - ⚠️ MAP when geography helps (the fact sheet's 'needsMap'): if true, include ONE (rarely two) MAP beat where
