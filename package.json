@@ -21,6 +21,8 @@
     "export:otio": "tsx src/cli/export-otio.ts",
     "compare": "node tools/perceptual-diff.mjs",
     "studio": "tsx api/server.ts",
+    "generate": "tsx api/generate-cli.ts",
+    "factory:generate": "tsx api/generate-cli.ts",
     "factory:publish": "tsx src/cli/publish.ts",
     "factory:photo": "tsx src/cli/photo.ts",
     "factory:newsshot": "tsx src/cli/newsshot.ts",

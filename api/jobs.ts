@@ -3,8 +3,10 @@
 // JSON file (.data/jobs.json) — SQLite is the P3/cloud swap-in. The render is async (off-request);
 // progress is followed via the project's own media/render.log.
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+
+import { parse as parseYaml } from 'yaml';
 
 import { PROJECT_ROOT } from '../agents/claude.js';
 import type { OrchestrateResult } from '../agents/orchestrate.js';
@@ -23,7 +25,7 @@ function sarvamLang(language?: string): string {
   return 'en-IN';
 }
 
-export type JobStatus = 'queued' | 'writing_story' | 'rendering' | 'done' | 'error';
+export type JobStatus = 'queued' | 'writing_story' | 'rendering' | 'done' | 'error' | 'draft';
 
 export interface JobStage {
   name: string;
@@ -91,12 +93,106 @@ export function createJob(brief: StoryBrief): Job {
   return job;
 }
 
-export function getJob(id: string): Job | undefined {
-  return jobs.get(id);
+/**
+ * Read a project's display metadata straight from its directory — the SINGLE SOURCE OF TRUTH. Title comes
+ * from project.json (rendered) → story.yaml → source.json → id; a finished video is projects/<id>/media/
+ * out.mp4. This is what makes EVERY project (dashboard OR CLI-generated) show up: the dashboard lists the
+ * disk, not just its own job store. Returns null if the dir isn't a real project.
+ */
+function readProjectMeta(id: string): { title: string; hasVideo: boolean; createdAt: number } | null {
+  const dir = resolve(PROJECT_ROOT, 'projects', id);
+  const story = resolve(dir, 'story.yaml');
+  const project = resolve(dir, 'project.json');
+  if (!existsSync(story) && !existsSync(project)) return null; // not a factory project
+
+  // Prefer the human STORY title (project.json.name is usually just the id). Fall back to project name →
+  // the source brief → the id.
+  let title = '';
+  try {
+    const t = (parseYaml(readFileSync(story, 'utf8')) as { title?: unknown } | null)?.title;
+    if (typeof t === 'string') title = t.trim();
+  } catch { /* no story / bad yaml */ }
+  if (!title) {
+    try {
+      const n = (JSON.parse(readFileSync(project, 'utf8')) as { name?: string }).name;
+      if (n && n !== id) title = n;
+    } catch { /* no project.json */ }
+  }
+  if (!title) {
+    try {
+      const s = JSON.parse(readFileSync(resolve(dir, 'source.json'), 'utf8')) as { brief?: string };
+      if (s.brief) title = s.brief;
+    } catch { /* none */ }
+  }
+  if (!title) title = id;
+  const out = resolve(dir, 'media', 'out.mp4');
+  const hasVideo = existsSync(out);
+  let createdAt = 0;
+  try { createdAt = statSync(hasVideo ? out : existsSync(project) ? project : story).mtimeMs; } catch { /* 0 */ }
+  return { title, hasVideo, createdAt };
 }
 
+/**
+ * Resolve a card id to a Job. A real (in-flight or recent) job wins; otherwise SYNTHESIZE one from the
+ * on-disk project so /api/jobs/:id/{video,detail,publish} work for a CLI-generated project the dashboard
+ * never ran. This is the unification: the id space is projects, and a job is just transient build status.
+ */
+export function getJob(id: string): Job | undefined {
+  const j = jobs.get(id);
+  if (j) return j;
+  const meta = readProjectMeta(id);
+  if (!meta) return undefined;
+  return {
+    id,
+    projectId: id,
+    brief: { brief: meta.title } as StoryBrief,
+    status: meta.hasVideo ? 'done' : 'draft',
+    createdAt: meta.createdAt,
+    title: meta.title,
+    ...(meta.hasVideo ? { outputRel: `projects/${id}/media/out.mp4` } : {}),
+    stages: [],
+  };
+}
+
+/**
+ * The dashboard's project list: EVERY project on disk merged with live job status. A building job with no
+ * disk project yet shows as building; a finished disk project shows as done; a job's live status overlays
+ * its project while it runs. Keyed by project id (or job id for a not-yet-written build), newest first — so
+ * a project made by the CLI and one made by the dashboard appear identically.
+ */
 export function listJobs(): Job[] {
-  return [...jobs.values()].sort((a, b) => b.createdAt - a.createdAt);
+  const cards = new Map<string, Job>();
+
+  // 1. Every project on disk (the source of truth).
+  const projectsDir = resolve(PROJECT_ROOT, 'projects');
+  let ids: string[] = [];
+  try {
+    ids = readdirSync(projectsDir, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name);
+  } catch { /* no projects dir yet */ }
+  for (const id of ids) {
+    const meta = readProjectMeta(id);
+    if (!meta) continue;
+    cards.set(id, {
+      id, projectId: id, brief: { brief: meta.title } as StoryBrief,
+      status: meta.hasVideo ? 'done' : 'draft', // a story written but not yet rendered
+      createdAt: meta.createdAt, title: meta.title,
+      ...(meta.hasVideo ? { outputRel: `projects/${id}/media/out.mp4` } : {}),
+      stages: [],
+    });
+  }
+
+  // 2. Overlay jobs: a running job shows its live status on its project; a job still building (no disk
+  //    project yet) is added on its own; a finished job just defers to the disk project (already listed).
+  for (const job of jobs.values()) {
+    const pid = job.projectId;
+    if (pid && cards.has(pid)) {
+      if (job.status !== 'done') cards.set(pid, job); // live build status wins over the static disk card
+    } else if (job.status !== 'done') {
+      cards.set(pid ?? job.id, job); // an in-flight build not yet written to disk
+    }
+  }
+
+  return [...cards.values()].sort((a, b) => b.createdAt - a.createdAt);
 }
 
 /** Run the orchestration (Story Architect + Asset Scout) in its own process (keeps the server free). */
