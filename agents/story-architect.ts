@@ -26,6 +26,8 @@ export interface StoryBrief {
   /** Seed source (a Radar candidate's article URL/summary) — carried for provenance/research. */
   sourceUrl?: string;
   sourceSummary?: string;
+  /** Add sparse, tone-gated, judge-filtered humour (default ON for reels). false → keep it straight. */
+  humour?: boolean;
   /** News-source PROVENANCE (the Radar candidate this video came from) — recorded into
    *  projects/<id>/source.json so every video is traceable to its news point even after the Radar DB
    *  rolls over. All optional (a hand-typed brief has none of this). */

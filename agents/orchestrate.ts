@@ -15,6 +15,7 @@ import { runConceptArchitect, type ConceptBrief } from './concept-architect.js';
 import { fitDurations } from './fit-durations.js';
 import { progress } from './progress.js';
 import { productionize } from './productionize.js';
+import { applyHumour } from './humour.js';
 import { research, type FactSheet, PROMPT_VERSION as RESEARCH_VERSION } from './research.js';
 import { runStoryArchitect, type StoryBrief, PROMPT_VERSION as ARCHITECT_VERSION } from './story-architect.js';
 import { visualVerify } from './visual-verify.js';
@@ -146,6 +147,13 @@ export async function orchestrateBrief(b: StoryBrief, projectId?: string): Promi
   });
   progress(`Facts gathered (${factSheet.confidence}${factSheet.needsMap ? ' · map' : ''}) · writing the script…`);
   const arch = await runStoryArchitect({ ...b, factSheet });
+  // HUMOUR (default on): tone-gated + judge-filtered, adds at most 1-2 wry touches (or none). Runs BEFORE
+  // fitDurations so any narration aside is measured/timed; edits say/text in place, never fabricates facts.
+  if (b.humour !== false) {
+    progress('Looking for a wry touch (if it lands)…');
+    const h = await applyHumour(arch.story, factSheet, { rootDir: PROJECT_ROOT });
+    if (h.applied > 0) progress(`Added ${h.applied} humour touch(es).`);
+  }
   progress(`Script ready · ${arch.story.beats.length} beats · fetching footage…`);
   const scout = await resolveVisuals(arch.story, b.aspect);
   const id = projectId ?? `gen-${slug(arch.story.title)}-${hash}`;
