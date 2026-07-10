@@ -29,7 +29,7 @@ import { resolve as resolvePath } from 'node:path';
 
 import objectHash from 'object-hash';
 import { SemverSchema } from '../library/index.js';
-import { geminiImage, hasGeminiKey } from './gemini.js';
+import { generateFromPool } from './image-providers.js';
 
 /** The isolated OpenVINO Stable-Diffusion venv + the offline synth CLI (run OFFLINE; never at render). */
 const SD_PYTHON = '.venv-sd/bin/python';
@@ -187,22 +187,6 @@ export interface ImageGenOptions extends Partial<ImageGenRequest> {
  * copied to `public/generated/<id>.png` (the render publicDir source) AND `library/generated/<id>.png`
  * (the catalog source-of-record), then registered as an `asset` (kind='asset', format='image').
  */
-/**
- * Nano Banana (Gemini 2.5 Flash Image) backend — the FREE-tier online generator. Writes the PNG to the
- * content-addressed cache path. Returns false (→ SD, then the placeholder) on no key / safety block / error,
- * so the build never fails. Build-time only; the cached PNG is the deterministic record.
- */
-async function runGemini(req: ImageGenRequest, pngPath: string): Promise<boolean> {
-  try {
-    const buf = await geminiImage(req.prompt);
-    if (!buf) return false;
-    writeFileSync(pngPath, buf);
-    return existsSync(pngPath);
-  } catch {
-    return false;
-  }
-}
-
 export async function generateImage(opts: ImageGenOptions): Promise<ImageGenResult> {
   const { id, rootDir } = opts;
   if (!id || !/^[a-z0-9_]+$/i.test(id)) {
@@ -232,13 +216,15 @@ export async function generateImage(opts: ImageGenOptions): Promise<ImageGenResu
   if (!existsSync(cachePng)) {
     cached = false;
     mkdirSync(cacheDir, { recursive: true });
-    // Backend order: Nano Banana (Gemini, free/cheap online — best quality) → local SD (if a venv exists)
-    // → deterministic placeholder. Each writes the SAME content-addressed cache file, so a re-build replays
-    // the FIXED PNG regardless of which backend produced it.
+    // Backend order: the FREE FLUX PROVIDER POOL (Cloudflare → Pollinations → AI Horde → Gemini) → local SD
+    // (if a venv exists) → deterministic placeholder. Each writes the SAME content-addressed cache file, so a
+    // re-build replays the FIXED PNG regardless of which backend produced it.
     let ok = false;
-    if (hasGeminiKey()) {
-      ok = await runGemini(req, cachePng);
-      if (ok) backend = 'gemini';
+    const pooled = await generateFromPool({ prompt: req.prompt, width: req.width, height: req.height, seed: req.seed });
+    if (pooled) {
+      writeFileSync(cachePng, pooled.buffer);
+      ok = existsSync(cachePng);
+      if (ok) backend = pooled.provider;
     }
     if (!ok) {
       ok = runSd(req, cachePng, rootDir);
@@ -288,11 +274,11 @@ export async function generateImage(opts: ImageGenOptions): Promise<ImageGenResu
     deps: [],
     provenance: {
       source:
-        backend === 'gemini'
-          ? 'Gemini 2.5 Flash Image (Nano Banana) — Google Generative Language API'
-          : backend === 'sd'
-            ? `stable-diffusion-openvino: ${prov.source}`
-            : 'placeholder (no image backend at build) — re-run factory:imagegen to generate',
+        backend === 'sd'
+          ? `stable-diffusion-openvino: ${prov.source}`
+          : backend === 'placeholder'
+            ? 'placeholder (no image backend at build) — re-run factory:imagegen to generate'
+            : `AI image via the free FLUX provider pool (${backend})`,
       // The full request recorded so the artifact is reproducible (re-run → same cache key → same PNG).
       prompt: req.prompt,
       ...(req.negative ? { negative: req.negative } : {}),
