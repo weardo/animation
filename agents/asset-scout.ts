@@ -7,6 +7,7 @@ import { createHash } from 'node:crypto';
 
 import { pickFootage } from '../src/cli/footage.js';
 import { generateImage } from '../src/cli/imagegen.js';
+import { fetchNewsclip, searchClipUrl } from '../src/cli/newsclip.js';
 import { captureNewsshot } from '../src/cli/newsshot.js';
 import { pickPhoto } from '../src/cli/photo.js';
 import type { StoryIR } from '../src/ir/story.js';
@@ -229,11 +230,47 @@ export async function resolveVisuals(story: StoryIR, aspect?: string): Promise<S
         continue;
       }
       const fv = typeof item.footage === 'string' ? item.footage : '';
-      if (!fv.startsWith('q:')) {
+      // A `footage: "clip:<search>"` placeholder → the REAL public news/social VIDEO of a statement / event /
+      // viral moment (yt-dlp search → download a short section → footage). This is the EVIDENCE for a "here's
+      // the actual clip" beat — far better than stock footage. Falls back to a stock search of the query.
+      if (fv.startsWith('clip:')) {
+        const query = fv.slice(5).trim();
+        const kkey = 'clip:' + query;
+        let cid = seen.get(kkey);
+        if (cid === undefined) {
+          try {
+            const hit = searchClipUrl(query);
+            if (hit) {
+              const r = await fetchNewsclip({ url: hit.url, id: slugQuery(query), duration: 15, rootDir: PROJECT_ROOT });
+              cid = r.id;
+              resolved += 1;
+            } else {
+              cid = null;
+              failed += 1;
+            }
+          } catch {
+            cid = null;
+            failed += 1;
+          }
+          seen.set(kkey, cid);
+        }
+        if (cid) {
+          const a = { ...((item.args as Record<string, unknown>) ?? {}) };
+          if (a['fit'] === undefined) a['fit'] = 'cover';
+          a['loop'] = true;
+          if (a['muted'] === undefined) a['muted'] = true; // a gaffe clip often WANTS its audio — architect can set muted:false
+          kept.push({ ...(item as object), footage: cid, at: 'center', args: a } as (typeof kept)[number]);
+          hasFootage = true;
+          continue;
+        }
+        // No clip found → fall through to a stock footage search of the query below.
+      }
+      if (!fv.startsWith('q:') && !fv.startsWith('clip:')) {
         kept.push(item);
         continue;
       }
-      const query = fv.slice(2).trim();
+      // A `q:<query>` footage item, OR a `clip:<query>` that found no real video (fall back to stock).
+      const query = fv.startsWith('clip:') ? fv.slice(5).trim() : fv.slice(2).trim();
       let id = seen.get(query);
       if (id === undefined) {
         try {

@@ -59,6 +59,27 @@ function clipHash(req: ClipRequest): string {
   return objectHash({ u: req.url, s: req.section ?? '', m: req.maxSeconds }).slice(0, 12);
 }
 
+/**
+ * Search public video (yt-dlp `ytsearch`) for the best match to a query → its watch URL + title (no download).
+ * This is what lets the pipeline FIND the REAL video of a public statement / event / viral moment instead of
+ * being handed a URL. Returns null on no match / yt-dlp missing / error (caller falls back to stock footage).
+ */
+export function searchClipUrl(query: string): { url: string; title: string } | null {
+  try {
+    const out = execFileSync(
+      'yt-dlp',
+      [`ytsearch1:${query}`, '--print', '%(webpage_url)s\t%(title)s', '--skip-download', '--no-warnings', '--no-playlist'],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 45_000 },
+    );
+    const line = out.split('\n').map((l) => l.trim()).find((l) => l.startsWith('http'));
+    if (!line) return null;
+    const [url, title] = line.split('\t');
+    return url ? { url, title: title ?? '' } : null;
+  } catch {
+    return null;
+  }
+}
+
 /** yt-dlp metadata (publisher/title) without downloading. */
 function probeMeta(url: string): { publisher: string; title: string } {
   try {

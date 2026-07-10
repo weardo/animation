@@ -11,7 +11,7 @@ import { PROJECT_ROOT, runClaudeText, extractJson } from './claude.js';
 import type { FactSheet } from './research.js';
 
 /** Bump when the prompt changes → invalidates the cache (like a pass PASS_VERSION). */
-export const PROMPT_VERSION = 'story-architect@12'; // @12: gen: generated-illustration option
+export const PROMPT_VERSION = 'story-architect@13'; // @13: clip: real video-clip evidence
 
 export interface StoryBrief {
   brief: string;
@@ -116,6 +116,13 @@ RULES:
       a 'footageHints' phrase: { "footage": "q:<specific phrase>", "as": "bg", "args": { "z": 0, "loop": true, "muted": true, "fit": "cover", "effects": [{ "kind": "color_grade", "brightness": 0.7, "saturate": 1.05 }] } }
       "q:" MUST be a SPECIFIC filmable phrase from 'footageHints' — NEVER generic ("war"/"conflict"/"time"),
       which return fireworks/junk.
+  (B2) REAL VIDEO CLIP (EVIDENCE) — ⚠️ when the story IS ABOUT a specific PUBLIC STATEMENT, a VIRAL CLIP, a
+      speech, a press moment, or a real event with known video, SHOW THE ACTUAL CLIP (the real moment is the
+      whole point — far better than stock or a caveat): { "footage": "clip:<a precise search query for the real video>", "as": "bg", "args": { "z": 0, "loop": true, "muted": false, "fit": "cover" } }.
+      Write "clip:" as the query YouTube would find the exact moment ("Trump Islamic Republic of Japan speech",
+      "ISRO Chandrayaan 3 landing moment"). Set "muted": false when the WORDS/audio matter (a gaffe, a quote) —
+      the clip's own audio plays. Because the clip IS the evidence, DO NOT add an "unverified/we can't confirm"
+      caveat beat for a story you are showing the real footage of.
   (C) REAL SOURCE SCREENSHOT (EVIDENCE) — for a DATA/REPORT/RANKING/STATISTIC story, show the ACTUAL
       article/report the facts come from ("here is the real source", not a reconstruction). Use a URL from
       the fact sheet's 'sourceUrls': { "asset": "newsshot:<url>", "as": "bg", "args": { "z": 0, "fit": "contain", "kenburns": "out-slow", "fallback_q": "<footage phrase>" } }.
