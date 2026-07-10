@@ -66,10 +66,17 @@ function clipHash(req: ClipRequest): string {
  */
 export function searchClipUrl(query: string): { url: string; title: string } | null {
   try {
+    // Search the top 6 but only keep SHORT clips (< 6 min) — a viral moment is short, and a long video
+    // is slow/flaky to download. Take the first short match.
     const out = execFileSync(
       'yt-dlp',
-      [`ytsearch1:${query}`, '--print', '%(webpage_url)s\t%(title)s', '--skip-download', '--no-warnings', '--no-playlist'],
-      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 45_000 },
+      [
+        `ytsearch6:${query}`,
+        '--match-filter', 'duration < 360 & duration > 3',
+        '--print', '%(webpage_url)s\t%(title)s',
+        '--skip-download', '--no-warnings', '--no-playlist',
+      ],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 60_000 },
     );
     const line = out.split('\n').map((l) => l.trim()).find((l) => l.startsWith('http'));
     if (!line) return null;
