@@ -11,7 +11,7 @@ import { PROJECT_ROOT, runClaudeText, extractJson } from './claude.js';
 import type { FactSheet } from './research.js';
 
 /** Bump when the prompt changes → invalidates the cache (like a pass PASS_VERSION). */
-export const PROMPT_VERSION = 'story-architect@9';
+export const PROMPT_VERSION = 'story-architect@10';
 
 export interface StoryBrief {
   brief: string;
@@ -112,8 +112,23 @@ RULES:
       a 'footageHints' phrase: { "footage": "q:<specific phrase>", "as": "bg", "args": { "z": 0, "loop": true, "muted": true, "fit": "cover", "effects": [{ "kind": "color_grade", "brightness": 0.7, "saturate": 1.05 }] } }
       "q:" MUST be a SPECIFIC filmable phrase from 'footageHints' — NEVER generic ("war"/"conflict"/"time"),
       which return fireworks/junk.
-  RULE OF THUMB: a named person/place/event → a WIKIMEDIA image (A); a generic scene → footage (B);
-  geography → the map. Prefer real images/maps over vague stock for a hard-news story.
+  (C) REAL SOURCE SCREENSHOT (EVIDENCE) — for a DATA/REPORT/RANKING/STATISTIC story, show the ACTUAL
+      article/report the facts come from ("here is the real source", not a reconstruction). Use a URL from
+      the fact sheet's 'sourceUrls': { "asset": "newsshot:<url>", "as": "bg", "args": { "z": 0, "fit": "cover", "kenburns": "in", "fallback_q": "<footage phrase>" } }.
+      Put it near the top (the "proof" beat right after the hook). ONLY use a URL that appears in 'sourceUrls'.
+  (D) DATA CHART — if the fact sheet has a 'chart' with non-empty data, render it as the DATA hero (a
+      striking stat IS the story): { "generator": "chart", "as": "chart", "at": "center",
+        "args": { "z": 6, "kind": "<chart.kind>", "orientation": "horizontal",
+          "inset": { "top": 560, "right": 110, "bottom": 640, "left": 300 },
+          "colors": ["#3a516c"], "gap": 0.3, "labels": true, "axes": true,
+          "draw_on": { "duration": 26, "stagger": 5, "easing": "easeOut" },
+          "data": [ { "label": "<from chart.data>", "value": <n> }, ... ] } }
+      Copy chart.data VERBATIM (the REAL numbers) into "data"; give ONLY the 'chart.emphasis' row a
+      "color": "#ff4438" (others omit color). Pair the chart beat with a short "text" naming the metric
+      ("1,045 हमले") and a 'say' built on those numbers.
+  RULE OF THUMB: a striking STAT/ranking/report → a CHART (D) + the REAL source screenshot (C) as the
+  STARS (lead with them, don't bury the number under generic footage); a named person/place/event → a
+  WIKIMEDIA image (A); a generic scene → footage (B); geography → the map. Prefer real data/images/maps.
 - MOTION: every text has an "anim" (+ "z":20). Every beat has a "camera" (first="establishing", then vary
   slow_push_in / slow_pull_out / pan_left / pan_right / hold; never 3 same in a row).
 - Use ONLY these beat keys: id, say, duration, camera, show. Show keys: footage OR asset OR generator, text, as, at, args.

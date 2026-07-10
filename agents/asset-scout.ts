@@ -4,6 +4,7 @@
 // for the asset id the render resolves. Failures degrade gracefully — the footage item is dropped and
 // the beat falls back to text on the styled background (never a broken render).
 import { pickFootage } from '../src/cli/footage.js';
+import { captureNewsshot } from '../src/cli/newsshot.js';
 import { pickPhoto } from '../src/cli/photo.js';
 import type { StoryIR } from '../src/ir/story.js';
 import { PROJECT_ROOT } from './claude.js';
@@ -37,6 +38,7 @@ export async function resolveVisuals(story: StoryIR, aspect?: string): Promise<S
   const orientation = orientationForAspect(aspect);
   const seen = new Map<string, string | null>(); // footage query → resolved asset id (or null = failed)
   const seenWiki = new Map<string, string | null>(); // wiki subject → resolved image asset id
+  const seenShot = new Map<string, string | null>(); // newsshot url → resolved screenshot asset id
   let resolved = 0;
   let failed = 0;
 
@@ -49,10 +51,58 @@ export async function resolveVisuals(story: StoryIR, aspect?: string): Promise<S
     const kept: NonNullable<typeof beat.show> = [];
     let hasFootage = false;
     for (const item of beat.show) {
+      const av = typeof (item as { asset?: unknown }).asset === 'string' ? (item as { asset: string }).asset : '';
+      // A `asset: "newsshot:<url>"` placeholder → a REAL SCREENSHOT of the source article/report (data
+      // EVIDENCE: "here's the actual source"). Captured offline (content-addressed PNG), rendered as a
+      // Ken Burns still. Falls back to the beat's `fallback_q` footage if the capture fails.
+      if (av.startsWith('newsshot:')) {
+        const url = av.slice('newsshot:'.length).trim();
+        let sid = seenShot.get(url);
+        if (sid === undefined) {
+          try {
+            const r = await captureNewsshot({ url, rootDir: PROJECT_ROOT });
+            sid = r.id;
+            resolved += 1;
+          } catch {
+            sid = null;
+            failed += 1;
+          }
+          seenShot.set(url, sid);
+        }
+        if (sid) {
+          const a = { ...((item.args as Record<string, unknown>) ?? {}) };
+          delete a['fallback_q'];
+          if (a['kenburns'] === undefined) a['kenburns'] = 'in';
+          if (a['fit'] === undefined) a['fit'] = 'cover';
+          kept.push({ ...(item as object), asset: sid, at: 'center', args: a } as (typeof kept)[number]);
+          hasFootage = true;
+          continue;
+        }
+        // capture failed → try the beat's fallback footage, else drop to text (handled by shared code below)
+        const fb0 = typeof (item.args as { fallback_q?: unknown } | undefined)?.fallback_q === 'string'
+          ? (item.args as { fallback_q: string }).fallback_q.trim()
+          : '';
+        if (fb0) {
+          let fid = seen.get(fb0);
+          if (fid === undefined) {
+            try { fid = (await pickFootage({ query: fb0, id: slugQuery(fb0), orientation, rootDir: PROJECT_ROOT })).id; resolved += 1; }
+            catch { fid = null; }
+            seen.set(fb0, fid);
+          }
+          if (fid) {
+            const a = { ...((item.args as Record<string, unknown>) ?? {}) };
+            delete a['fallback_q']; delete a['kenburns'];
+            if (a['fit'] === undefined) a['fit'] = 'cover';
+            a['loop'] = true; a['muted'] = true;
+            kept.push({ ...(item as object), asset: undefined, footage: fid, at: 'center', args: a } as (typeof kept)[number]);
+            hasFootage = true;
+          }
+        }
+        continue;
+      }
       // A `asset: "wiki:<subject>"` placeholder → a REAL Wikimedia image (the actual person/place/event),
       // rendered as a Ken Burns still. This is how hard-news subjects that stock footage never carries
       // (a named leader, a specific building, an event) get real visuals. Falls back gracefully.
-      const av = typeof (item as { asset?: unknown }).asset === 'string' ? (item as { asset: string }).asset : '';
       if (av.startsWith('wiki:')) {
         const subject = av.slice(5).trim();
         let wid = seenWiki.get(subject);

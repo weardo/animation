@@ -51,11 +51,27 @@ export interface FactSheet {
    *  buildings, events, operations (e.g. "Baitullah Mehsud", "Army Public School Peshawar"). Used for
    *  hard-news subjects stock footage never carries; the exact Wikipedia-style name is best. */
   imageSubjects: string[];
+  /** An optional DATA-VIZ series when the story has an honest quantitative comparison/ranking/trend the
+   *  sources support (a country ranking, a metric over years, a breakdown). The architect renders it as
+   *  ONE chart beat: 'bar' for a ranking/comparison, 'line' for a time trend. Empty (data:[]) when the
+   *  story has no chartable data OR you'd have to fabricate the numbers. `emphasis` = the subject label
+   *  (drawn in the accent color). This is what makes a STATISTIC the hero visual instead of vague footage. */
+  chart?: {
+    kind: 'bar' | 'line';
+    title: string;
+    unit?: string;
+    data: Array<{ label: string; value: number }>;
+    emphasis?: string;
+  };
+  /** The REAL source-article URLs the facts came from (the ORIGINAL resources, in credibility order).
+   *  The architect screenshots one as on-screen EVIDENCE for a data/report story — the actual article/
+   *  chart, which is more credible than a reconstruction. Populated in code from URLs that yielded text. */
+  sourceUrls: string[];
   /** How well-sourced this is: 'sourced' (real articles fetched) | 'thin' (little/no source text). */
   confidence: 'sourced' | 'thin';
 }
 
-export const PROMPT_VERSION = 'research@3';
+export const PROMPT_VERSION = 'research@4';
 const MAX_CORPUS = 14000;
 
 /** Fetch a URL and strip it to readable text (best-effort; '' on any failure). */
@@ -122,13 +138,21 @@ RULES:
   Public School Peshawar", "Operation Zarb-e-Azb"). Use the EXACT common Wikipedia-style name. These give
   real visuals for hard-news subjects that stock footage never carries. Empty if the topic has no such
   concrete named subjects.
+- \`chart\`: if the story turns on a QUANTITATIVE comparison / RANKING / TREND the SOURCE MATERIAL gives
+  real numbers for (a ranking of countries, a metric over years, a breakdown into parts), fill \`chart\`
+  with those ACTUAL figures so the video can show the DATA as its hero visual. kind:"bar" for a ranking/
+  comparison/breakdown, kind:"line" for a time trend. 3-6 datapoints {label, value} — values are the REAL
+  numbers from the sources, NEVER invented (no real numbers → leave data:[]). \`emphasis\` = the subject's
+  label; \`unit\` = what the values measure ("attacks","deaths","GTI score"). Omit for a non-quantitative story.
 - \`confidence\`: "sourced" if the SOURCE MATERIAL contained real reporting; "thin" if it was sparse/empty.
 
 SHAPE (all keys required):
 {"topic":"","headline":"","summary":"","when":"","where":[{"place":"","lat":0,"lon":0,"note":""}],
  "who":[""],"keyNumbers":[{"label":"","value":""}],"incidents":[""],
  "timeline":[{"when":"","event":""}],"sources":[""],
- "needsMap":false,"mapCountries":[""],"footageHints":[""],"imageSubjects":[""],"confidence":"sourced"}`;
+ "needsMap":false,"mapCountries":[""],"footageHints":[""],"imageSubjects":[""],
+ "chart":{"kind":"bar","title":"","unit":"","emphasis":"","data":[{"label":"","value":0}]},
+ "confidence":"sourced"}`;
 
 export interface ResearchOptions {
   sourceUrl?: string;
@@ -146,17 +170,25 @@ export async function research(brief: string, opts: ResearchOptions = {}): Promi
   const cacheFile = resolve(cacheDir, `${key}.json`);
   if (existsSync(cacheFile)) return JSON.parse(readFileSync(cacheFile, 'utf8')) as FactSheet;
 
-  // 1. Gather a source corpus: the seed article + a few GDELT-found corroborating pieces.
+  // 1. Gather a source corpus: the seed article + a few GDELT-found corroborating pieces. Track which
+  //    URLs actually yielded text — these are the REAL original resources the architect can screenshot.
   const parts: string[] = [];
+  const sourceUrls: string[] = [];
   if (opts.sourceSummary) parts.push(`SEED SUMMARY: ${opts.sourceSummary}`);
   if (opts.sourceUrl) {
     const t = await fetchText(opts.sourceUrl);
-    if (t) parts.push(`SEED ARTICLE: ${t}`);
+    if (t) {
+      parts.push(`SEED ARTICLE (${opts.sourceUrl}): ${t}`);
+      sourceUrls.push(opts.sourceUrl);
+    }
   }
   const related = await gdeltSearch(brief, 6);
   for (const r of related.slice(0, 3)) {
     const t = await fetchText(r.url);
-    if (t) parts.push(`ARTICLE — ${r.title}: ${t}`);
+    if (t) {
+      parts.push(`ARTICLE — ${r.title} (${r.url}): ${t}`);
+      sourceUrls.push(r.url);
+    }
   }
   const corpus = parts.join('\n\n').slice(0, MAX_CORPUS);
   const haveSources = corpus.length > 200;
@@ -187,9 +219,13 @@ export async function research(brief: string, opts: ResearchOptions = {}): Promi
       mapCountries: [],
       footageHints: [],
       imageSubjects: [],
+      sourceUrls: [],
       confidence: 'thin',
     };
   }
+  // The real original resources are known in CODE (the URLs that yielded text) — attach them for the
+  // architect to screenshot as on-screen evidence. More reliable than asking the LLM to recall URLs.
+  sheet.sourceUrls = sourceUrls;
 
   mkdirSync(cacheDir, { recursive: true });
   writeFileSync(cacheFile, JSON.stringify(sheet, null, 2) + '\n', 'utf8');
