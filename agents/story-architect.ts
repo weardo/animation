@@ -11,7 +11,7 @@ import { PROJECT_ROOT, runClaudeText, extractJson } from './claude.js';
 import type { FactSheet } from './research.js';
 
 /** Bump when the prompt changes → invalidates the cache (like a pass PASS_VERSION). */
-export const PROMPT_VERSION = 'story-architect@10';
+export const PROMPT_VERSION = 'story-architect@11';
 
 export interface StoryBrief {
   brief: string;
@@ -86,8 +86,10 @@ RULES:
   previous, not isolated headlines). Talk TO the viewer (second person, respectful आप). END on the PRESENT —
   the stakes / what happens next / what it means for the viewer today — + an opinion question. Do NOT end on a
   historical summary.
-- "text" is a VERY SHORT scannable headline (2-4 words MAX), DIFFERENT from the narration — prefer a FACT
-  fragment ("150 मौतें", "2014 का हमला"). 9:16 → "size" 48-72; never a full sentence.
+- "text" is a VERY SHORT scannable headline (2-4 words MAX), DIFFERENT from the narration. ⚠️ ALWAYS in
+  ENGLISH (even though the narration "say" is Hinglish) — the on-screen text + subtitles are English so a
+  muted / non-Hindi viewer can read; prefer a punchy FACT fragment ("150 DEAD", "#1 SINCE 2013",
+  "1,045 ATTACKS", "ZARB-E-AZB, 2014"). Keep proper nouns/numbers exact. 9:16 → "size" 48-72; never a sentence.
 - ⚠️ MAP when geography helps (the fact sheet's 'needsMap'): if true, include ONE (rarely two) MAP beat where
   it best serves the story — a 'generator: world-in' item that shows WHERE things happened:
   { "generator": "world-in", "as": "world", "args": { "projection": "mercator", "fit": false,
