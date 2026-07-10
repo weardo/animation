@@ -72,8 +72,10 @@ export async function resolveVisuals(story: StoryIR, aspect?: string): Promise<S
         if (sid) {
           const a = { ...((item.args as Record<string, unknown>) ?? {}) };
           delete a['fallback_q'];
-          if (a['kenburns'] === undefined) a['kenburns'] = 'in';
-          if (a['fit'] === undefined) a['fit'] = 'cover';
+          // A CITATION must stay READABLE: show the WHOLE screenshot ('contain', never crop it) and
+          // 'out-slow' so it SETTLES to fully-visible instead of zooming IN (which crops off the content).
+          if (a['fit'] === undefined) a['fit'] = 'contain';
+          if (a['kenburns'] === undefined) a['kenburns'] = 'out-slow';
           kept.push({ ...(item as object), asset: sid, at: 'center', args: a } as (typeof kept)[number]);
           hasFootage = true;
           continue;

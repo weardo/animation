@@ -59,7 +59,7 @@ import { resolveScenePalette, paletteDiff, interpolatePalettes } from './color-s
 
 /** This pass's id + version — folded into cache keys / provenance (spec §5). */
 export const PASS_ID = 'lower';
-export const PASS_VERSION = '2.9'; // 2.9: footage 'volume' passthrough (raw-audio control)
+export const PASS_VERSION = '2.10'; // 2.10: asset-layer 'fit' passthrough (contain for readable citations)
 
 /**
  * The default render config: a 1920×1080, 30fps film. Generic — no domain assumptions. A scene's
@@ -422,12 +422,17 @@ function buildAssetLayer(item: ShowItem, index: number, durationFrames = 0): Low
   // explicit `scale` always wins. See buildKenBurns.
   const kb = buildKenBurns(args['kenburns'], durationFrames);
   if (kb && !scaleCh) transform.scale = kb;
+  const fit =
+    args['fit'] === 'cover' || args['fit'] === 'contain' || args['fit'] === 'fill'
+      ? (args['fit'] as AssetLayer['fit'])
+      : undefined;
   const layer: AssetLayer = {
     type: 'asset',
     id,
     ref: refName(ref),
     z,
     parallax,
+    ...(fit !== undefined ? { fit } : {}),
     ...(effects && effects.length > 0 ? { effects } : {}),
     ...(Object.keys(transform).length > 0 ? { transform } : {}),
   };

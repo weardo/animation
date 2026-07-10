@@ -89,7 +89,7 @@ export const AssetLayer: React.FC<AssetLayerProps> = ({
     <AbsoluteFill data-asset-layer={layer.id} style={wrapperStyle}>
       <Img
         src={url}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        style={{ width: '100%', height: '100%', objectFit: layer.fit ?? 'cover', display: 'block' }}
       />
     </AbsoluteFill>
   );

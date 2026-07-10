@@ -114,7 +114,9 @@ RULES:
       which return fireworks/junk.
   (C) REAL SOURCE SCREENSHOT (EVIDENCE) — for a DATA/REPORT/RANKING/STATISTIC story, show the ACTUAL
       article/report the facts come from ("here is the real source", not a reconstruction). Use a URL from
-      the fact sheet's 'sourceUrls': { "asset": "newsshot:<url>", "as": "bg", "args": { "z": 0, "fit": "cover", "kenburns": "in", "fallback_q": "<footage phrase>" } }.
+      the fact sheet's 'sourceUrls': { "asset": "newsshot:<url>", "as": "bg", "args": { "z": 0, "fit": "contain", "kenburns": "out-slow", "fallback_q": "<footage phrase>" } }.
+      ⚠️ A citation MUST stay readable: "fit":"contain" (show the WHOLE screenshot, never crop) + "kenburns":
+      "out-slow" (SETTLE to fully-visible, never "in" which zooms in and crops off the article text).
       Put it near the top (the "proof" beat right after the hook). ONLY use a URL that appears in 'sourceUrls'.
   (D) DATA CHART — if the fact sheet has a 'chart' with non-empty data, render it as the DATA hero (a
       striking stat IS the story): { "generator": "chart", "as": "chart", "at": "center",

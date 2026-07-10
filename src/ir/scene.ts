@@ -374,6 +374,10 @@ export const AssetLayerSchema = z
     ref: z.string().min(1),
     /** Parallax factor (0 = static far, 1 = moves with camera). 2.5D depth. */
     parallax: z.number().default(0),
+    /** How the image fills its box. 'cover' (default, crops to fill) suits a photo background; 'contain'
+     *  shows the WHOLE image (letterboxed) — use it for a DOCUMENT/SCREENSHOT/chart citation whose content
+     *  must stay readable (a zoom-to-cover would crop the text). */
+    fit: z.enum(['cover', 'contain', 'fill']).optional(),
     transform: TransformSchema.optional(),
   })
   .strict();

@@ -83,6 +83,17 @@ function plotBox(p: ChartParams, width: number, height: number) {
 
 // --- BAR ---------------------------------------------------------------------------------------
 
+/** Format a datum value for the on-bar label: integers get thousands separators (1,045); a fractional
+ *  index keeps 2 decimals (8.57). Deterministic (no locale API). */
+function fmtVal(v: number): string {
+  const neg = v < 0;
+  const a = Math.abs(v);
+  const s = Number.isInteger(a) ? String(a) : a.toFixed(a < 100 ? 2 : 0);
+  const [int, dec] = s.split('.');
+  const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return (neg ? '-' : '') + grouped + (dec ? '.' + dec : '');
+}
+
 function renderBar(p: Extract<ChartParams, { kind: 'bar' }>, ctx: RenderCtx): React.JSX.Element {
   const data = clampData(p.data, 'bar');
   const box = plotBox(p, ctx.width, ctx.height);
@@ -97,6 +108,8 @@ function renderBar(p: Extract<ChartParams, { kind: 'bar' }>, ctx: RenderCtx): Re
   const along = vertical ? box.w : box.h;
   const band = n > 0 ? along / n : 0;
   const barThick = band * (1 - p.gap);
+  // A readable label size scaled to the bar band (12px was illegible at full-frame layer scale).
+  const labelFS = Math.max(16, Math.min(band * 0.34, 42));
   // Value axis: vertical bars map value→y (inverted), horizontal map value→x.
   const valScale = vertical
     ? linearScale(lo, hi, box.y + box.h, box.y) // value→y (top is small)
@@ -130,15 +143,31 @@ function renderBar(p: Extract<ChartParams, { kind: 'bar' }>, ctx: RenderCtx): Re
         <rect x={x} y={y} width={w} height={h} rx={r} ry={r} fill={fill} />
         {p.labels && d.label !== undefined && (
           <text
-            x={vertical ? x + w / 2 : box.x - 6}
-            y={vertical ? box.y + box.h + 16 : y + h / 2}
-            fontSize={12}
+            x={vertical ? x + w / 2 : box.x - 12}
+            y={vertical ? box.y + box.h + labelFS : y + h / 2}
+            fontSize={labelFS}
             fill="currentColor"
             textAnchor={vertical ? 'middle' : 'end'}
             dominantBaseline="middle"
-            opacity={0.7}
+            opacity={0.9}
           >
             {d.label}
+          </text>
+        )}
+        {p.labels && prog > 0.05 && (
+          // The VALUE — the number is the hero. Vertical: above the bar tip. Horizontal: just INSIDE the
+          // bar's tip (right-aligned) so it never clips at the frame edge even on the longest bar.
+          <text
+            x={vertical ? x + w / 2 : valPix + (valPix >= baselinePix ? -10 : 10)}
+            y={vertical ? valPix - labelFS * 0.5 : y + h / 2}
+            fontSize={labelFS}
+            fontWeight={700}
+            fill={vertical ? 'currentColor' : '#ffffff'}
+            textAnchor={vertical ? 'middle' : valPix >= baselinePix ? 'end' : 'start'}
+            dominantBaseline="middle"
+            opacity={prog}
+          >
+            {fmtVal(d.value)}
           </text>
         )}
       </g>

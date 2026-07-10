@@ -77,9 +77,11 @@ export function productionize(story: StoryIR, opts: ProductionizeOptions = {}): 
   }
 
   // 2. Ducked music bed (mandatory) — a deterministic pick so a given story always gets the same bed.
+  // Levels per producing-news-reels: gain 0.6 / duck 0.32. The old 0.24/0.12 was inaudible — ducked to
+  // ~-34 dB under the VO across a mostly-narrated reel, so the bed effectively vanished (user-reported).
   if (!story.music) {
     const bed = pick(story.title, MUSIC_BEDS);
-    story.music = { ref: `library/music/${bed}.mp3`, gain: 0.24, duck: 0.12, fade: 16 };
+    story.music = { ref: `library/music/${bed}.mp3`, gain: 0.6, duck: 0.32, fade: 16 };
   }
 
   // 2b. Beat polish: a fade transition between beats (smooth, not hard cuts) + a soft whoosh on each cut
