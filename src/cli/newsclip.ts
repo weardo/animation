@@ -103,7 +103,9 @@ function download(req: ClipRequest, tmpDir: string): string {
     args.push('--download-sections', `*${a}-${b}`, '--force-keyframes-at-cuts');
   }
   args.push(req.url);
-  execFileSync('yt-dlp', args, { stdio: ['ignore', 'inherit', 'inherit'] });
+  // IGNORE yt-dlp's stdout (its "[youtube] Extracting URL…" progress) — when this runs inside the
+  // orchestrate subprocess, stdout must stay PURE JSON (the OrchestrateResult); real errors go to stderr.
+  execFileSync('yt-dlp', args, { stdio: ['ignore', 'ignore', 'inherit'] });
   const file = readdirSync(tmpDir).find((f) => f.startsWith('clip.'));
   if (!file) throw new Error('yt-dlp produced no file (gated/DRM media, or unsupported host?)');
   return resolvePath(tmpDir, file);
