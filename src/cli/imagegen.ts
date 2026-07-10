@@ -29,6 +29,7 @@ import { resolve as resolvePath } from 'node:path';
 
 import objectHash from 'object-hash';
 import { SemverSchema } from '../library/index.js';
+import { geminiImage, hasGeminiKey } from './gemini.js';
 
 /** The isolated OpenVINO Stable-Diffusion venv + the offline synth CLI (run OFFLINE; never at render). */
 const SD_PYTHON = '.venv-sd/bin/python';
@@ -186,7 +187,23 @@ export interface ImageGenOptions extends Partial<ImageGenRequest> {
  * copied to `public/generated/<id>.png` (the render publicDir source) AND `library/generated/<id>.png`
  * (the catalog source-of-record), then registered as an `asset` (kind='asset', format='image').
  */
-export function generateImage(opts: ImageGenOptions): ImageGenResult {
+/**
+ * Nano Banana (Gemini 2.5 Flash Image) backend — the FREE-tier online generator. Writes the PNG to the
+ * content-addressed cache path. Returns false (→ SD, then the placeholder) on no key / safety block / error,
+ * so the build never fails. Build-time only; the cached PNG is the deterministic record.
+ */
+async function runGemini(req: ImageGenRequest, pngPath: string): Promise<boolean> {
+  try {
+    const buf = await geminiImage(req.prompt);
+    if (!buf) return false;
+    writeFileSync(pngPath, buf);
+    return existsSync(pngPath);
+  } catch {
+    return false;
+  }
+}
+
+export async function generateImage(opts: ImageGenOptions): Promise<ImageGenResult> {
   const { id, rootDir } = opts;
   if (!id || !/^[a-z0-9_]+$/i.test(id)) {
     throw new Error(`--id must be a file-safe token [a-z0-9_]+ (got '${id}')`);
@@ -211,15 +228,27 @@ export function generateImage(opts: ImageGenOptions): ImageGenResult {
   const cachePng = resolvePath(cacheDir, `${hash}.png`);
   let cached = true;
   let generated = true;
+  let backend = 'placeholder';
   if (!existsSync(cachePng)) {
     cached = false;
     mkdirSync(cacheDir, { recursive: true });
-    const ok = runSd(req, cachePng, rootDir);
+    // Backend order: Nano Banana (Gemini, free/cheap online — best quality) → local SD (if a venv exists)
+    // → deterministic placeholder. Each writes the SAME content-addressed cache file, so a re-build replays
+    // the FIXED PNG regardless of which backend produced it.
+    let ok = false;
+    if (hasGeminiKey()) {
+      ok = await runGemini(req, cachePng);
+      if (ok) backend = 'gemini';
+    }
+    if (!ok) {
+      ok = runSd(req, cachePng, rootDir);
+      if (ok) backend = 'sd';
+    }
     if (!ok) {
       generated = false;
       console.warn(
-        `[imagegen] .venv-sd unavailable/failed → writing a deterministic placeholder for '${id}' ` +
-          `(install .venv-sd + the OV SD model to generate the real image; the cache key is unchanged)`,
+        `[imagegen] no image backend produced '${id}' (set GEMINI_API_KEY for Nano Banana, or install ` +
+          `.venv-sd) → writing a deterministic placeholder; the cache key is unchanged so a re-run generates`,
       );
       if (!writePlaceholder(cachePng, req.width, req.height)) {
         throw new Error(`[imagegen] neither SD nor the ffmpeg placeholder produced a PNG at ${cachePng}`);
@@ -255,12 +284,15 @@ export function generateImage(opts: ImageGenOptions): ImageGenResult {
     kind: 'asset',
     format: 'image',
     uri,
-    tags: ['m9', 'generated', 'ai', 'sd-openvino', req.model],
+    tags: ['generated', 'ai', backend, req.model],
     deps: [],
     provenance: {
-      source: generated
-        ? `stable-diffusion-openvino: ${prov.source}`
-        : `placeholder (.venv-sd unavailable at build) — re-run factory:imagegen to generate`,
+      source:
+        backend === 'gemini'
+          ? 'Gemini 2.5 Flash Image (Nano Banana) — Google Generative Language API'
+          : backend === 'sd'
+            ? `stable-diffusion-openvino: ${prov.source}`
+            : 'placeholder (no image backend at build) — re-run factory:imagegen to generate',
       // The full request recorded so the artifact is reproducible (re-run → same cache key → same PNG).
       prompt: req.prompt,
       ...(req.negative ? { negative: req.negative } : {}),
@@ -315,7 +347,7 @@ export function parseArgs(argv: string[], rootDir: string): ImageGenOptions {
 }
 
 /** CLI entry: `npm run factory:imagegen -- --prompt … --id …`. Root = cwd (where library/ + public/ live). */
-function main(): void {
+async function main(): Promise<void> {
   const rootDir = process.cwd();
   let opts: ImageGenOptions;
   try {
@@ -326,7 +358,8 @@ function main(): void {
     process.exit(1);
   }
   try {
-    generateImage(opts);
+    const r = await generateImage(opts);
+    console.log(`[imagegen] ${r.cached ? 'cached' : 'generated'} → ${r.uri}`);
   } catch (err) {
     console.error(`[imagegen] failed: ${err instanceof Error ? err.message : String(err)}`);
     process.exit(1);

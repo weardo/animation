@@ -12,6 +12,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+import { geminiText, hasGeminiKey } from '../src/cli/gemini.js';
 import { PROJECT_ROOT, runClaudeText, extractJson } from './claude.js';
 
 /** A place the story touches — with coordinates when geography matters (drives an optional map beat). */
@@ -71,7 +72,7 @@ export interface FactSheet {
   confidence: 'sourced' | 'thin';
 }
 
-export const PROMPT_VERSION = 'research@4';
+export const PROMPT_VERSION = 'research@5'; // @5: optional Gemini search-grounding corpus
 const MAX_CORPUS = 14000;
 
 /** Fetch a URL and strip it to readable text (best-effort; '' on any failure). */
@@ -189,6 +190,21 @@ export async function research(brief: string, opts: ResearchOptions = {}): Promi
       parts.push(`ARTICLE — ${r.title} (${r.url}): ${t}`);
       sourceUrls.push(r.url);
     }
+  }
+  // Gemini GOOGLE-SEARCH GROUNDING (free tier: 1.5K grounded requests/day) — current, CITED facts. This
+  // is the fix for `thin` research when GDELT/fetch come up empty. Gated by GEMINI_API_KEY; any failure
+  // (no key, quota, error) is swallowed → we just fall back to the GDELT corpus. Its citations feed the
+  // data-viz/newsshot beats too.
+  if (hasGeminiKey()) {
+    try {
+      const g = await geminiText(
+        `Research this news topic for a factual explainer. Give the key WHO/WHAT/WHEN/WHERE, exact NUMBERS ` +
+          `(deaths, dates, amounts, rankings), and named people/places/events. Topic: ${brief}`,
+        { search: true },
+      );
+      if (g.text.trim()) parts.push(`GROUNDED RESEARCH (Google Search via Gemini): ${g.text.trim()}`);
+      for (const u of g.sources) if (!sourceUrls.includes(u)) sourceUrls.push(u);
+    } catch { /* no key / quota / error → GDELT corpus only */ }
   }
   const corpus = parts.join('\n\n').slice(0, MAX_CORPUS);
   const haveSources = corpus.length > 200;
