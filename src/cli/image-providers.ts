@@ -146,8 +146,10 @@ const huggingface: ImageProvider = {
   available: () => Boolean(process.env['HF_TOKEN']),
   async generate({ prompt }) {
     try {
+      // HF migrated off api-inference.huggingface.co (now dead) to the router. Model + provider path both
+      // env-overridable in case HF reshuffles again.
       const model = process.env['HF_IMAGE_MODEL'] ?? 'black-forest-labs/FLUX.1-schnell';
-      const res = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
+      const res = await fetch(`https://router.huggingface.co/hf-inference/models/${model}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${process.env['HF_TOKEN']}`, 'content-type': 'application/json' },
         body: JSON.stringify({ inputs: prompt }),
