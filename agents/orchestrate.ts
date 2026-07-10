@@ -15,8 +15,8 @@ import { runConceptArchitect, type ConceptBrief } from './concept-architect.js';
 import { fitDurations } from './fit-durations.js';
 import { progress } from './progress.js';
 import { productionize } from './productionize.js';
-import { research } from './research.js';
-import { runStoryArchitect, type StoryBrief } from './story-architect.js';
+import { research, type FactSheet, PROMPT_VERSION as RESEARCH_VERSION } from './research.js';
+import { runStoryArchitect, type StoryBrief, PROMPT_VERSION as ARCHITECT_VERSION } from './story-architect.js';
 import { visualVerify } from './visual-verify.js';
 
 function conceptBriefFrom(b: StoryBrief, feedback?: string): ConceptBrief {
@@ -34,6 +34,36 @@ function looksLikeConcept(brief: string): boolean {
   return /\b(explain|teach me|how (does|do|is|are|a |an )|how\s+\w+\s+works?|what (is|are)|why (does|do|is|are)|the concept of)\b/i.test(
     brief,
   );
+}
+
+/**
+ * Record WHERE this video came from — the news point, the brief, the gathered facts, and the pipeline
+ * versions — into projects/<id>/source.json. Durable provenance: survives a Radar DB rollover, so a
+ * finished video is always traceable back to its source article + the facts it was built on.
+ */
+function writeProvenance(id: string, b: StoryBrief, factSheet?: FactSheet): void {
+  const rec = {
+    generatedAt: new Date().toISOString(),
+    brief: b.brief,
+    language: b.language ?? null,
+    aspect: b.aspect ?? '9:16',
+    source: {
+      url: b.sourceUrl ?? null,
+      summary: b.sourceSummary ?? null,
+      radar: b.radar ?? null, // candidate id, raw headline, publisher, angle, scores, whyIndia
+    },
+    facts: factSheet
+      ? {
+          headline: factSheet.headline,
+          when: factSheet.when,
+          confidence: factSheet.confidence,
+          keyNumbers: factSheet.keyNumbers,
+          sources: factSheet.sources,
+        }
+      : null,
+    pipeline: { research: RESEARCH_VERSION, architect: ARCHITECT_VERSION },
+  };
+  writeFileSync(resolve(PROJECT_ROOT, 'projects', id, 'source.json'), JSON.stringify(rec, null, 2) + '\n', 'utf8');
 }
 
 function slug(s: string): string {
@@ -81,6 +111,7 @@ export async function orchestrateBrief(b: StoryBrief, projectId?: string): Promi
     const id = projectId ?? `gen-${slug(arch.story.title)}-${hash}`;
     progress(`Script ready · ${arch.story.beats.length} steps · timing the narration…`);
     writeStory(id, arch.story);
+    writeProvenance(id, b); // concept/sim video — no news fact sheet, still record brief + source
     let attempts = arch.attempts;
     let problems = await visualVerify(id, b.brief);
     for (let v = 0; problems.length > 0 && v < 1; v++) {
@@ -119,6 +150,7 @@ export async function orchestrateBrief(b: StoryBrief, projectId?: string): Promi
   const scout = await resolveVisuals(arch.story, b.aspect);
   const id = projectId ?? `gen-${slug(arch.story.title)}-${hash}`;
   writeStory(id, arch.story);
+  writeProvenance(id, b, factSheet);
   return {
     projectId: id,
     storyPath: `projects/${id}/story.yaml`,

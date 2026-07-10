@@ -55,7 +55,7 @@ export interface FactSheet {
   confidence: 'sourced' | 'thin';
 }
 
-const PROMPT_VERSION = 'research@3';
+export const PROMPT_VERSION = 'research@3';
 const MAX_CORPUS = 14000;
 
 /** Fetch a URL and strip it to readable text (best-effort; '' on any failure). */

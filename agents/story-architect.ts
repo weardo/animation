@@ -11,7 +11,7 @@ import { PROJECT_ROOT, runClaudeText, extractJson } from './claude.js';
 import type { FactSheet } from './research.js';
 
 /** Bump when the prompt changes → invalidates the cache (like a pass PASS_VERSION). */
-const PROMPT_VERSION = 'story-architect@9';
+export const PROMPT_VERSION = 'story-architect@9';
 
 export interface StoryBrief {
   brief: string;
@@ -26,6 +26,19 @@ export interface StoryBrief {
   /** Seed source (a Radar candidate's article URL/summary) — carried for provenance/research. */
   sourceUrl?: string;
   sourceSummary?: string;
+  /** News-source PROVENANCE (the Radar candidate this video came from) — recorded into
+   *  projects/<id>/source.json so every video is traceable to its news point even after the Radar DB
+   *  rolls over. All optional (a hand-typed brief has none of this). */
+  radar?: {
+    candidateId?: string;
+    title?: string; // the RAW headline the story came from (not the reframed angle)
+    publisher?: string; // e.g. "ndtv"
+    lane?: string;
+    angle?: string; // the Radar's suggested VISUAL angle (a hint, not the story premise)
+    whyIndia?: string;
+    scores?: { aiScore?: number; indiaFit?: number; virality?: number };
+    seenAt?: number;
+  };
 }
 
 const SYSTEM = `You are the STORY ARCHITECT of an automated video studio. Turn the user's brief into a short, punchy explainer as STRICT JSON (a "Story IR"). Output ONLY the JSON object — no prose, no markdown fences.

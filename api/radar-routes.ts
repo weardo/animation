@@ -58,7 +58,11 @@ export function registerRadarRoutes(app: Express): void {
       return;
     }
     const job = createJob({
-      brief: cand.angle || cand.title,
+      // Seed the story from the REAL HEADLINE (title), NOT the reframed `angle`. The angle is a VISUAL
+      // suggestion ("Pakistan map lighting up 1,045 attack sites, a bar chart of the #1 rank…") that can
+      // drift from the factual hook — using it as the brief once abstracted "Pakistan #1 in terrorism,
+      // 1,045 attacks" into a vague "war within its borders" theme, losing the news. Title keeps the hook.
+      brief: cand.title || cand.angle,
       language: 'Hinglish',
       aspect: '9:16',
       style: 'plain',
@@ -67,6 +71,17 @@ export function registerRadarRoutes(app: Express): void {
       // fact-specific — not a vague round-about take on the headline.
       sourceUrl: cand.url,
       sourceSummary: cand.summary || cand.whyIndia,
+      // Provenance: record exactly which news point this video came from (durable in projects/<id>/source.json).
+      radar: {
+        candidateId: cand.id,
+        title: cand.title,
+        publisher: cand.source,
+        lane: cand.lane as string,
+        angle: cand.angle, // kept as a visual hint / record, not the story premise
+        whyIndia: cand.whyIndia,
+        scores: { aiScore: cand.aiScore, indiaFit: cand.indiaFit, virality: cand.virality },
+        seenAt: cand.seenAt,
+      },
     });
     s.attachJob(cand.id, job.id);
     res.json({ jobId: job.id, candidateId: cand.id });
