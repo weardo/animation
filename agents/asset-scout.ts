@@ -3,7 +3,10 @@
 // resolves each to an actual stock clip (Pexels, proxy-transcoded + cataloged) and swaps the placeholder
 // for the asset id the render resolves. Failures degrade gracefully — the footage item is dropped and
 // the beat falls back to text on the styled background (never a broken render).
+import { createHash } from 'node:crypto';
+
 import { pickFootage } from '../src/cli/footage.js';
+import { generateImage } from '../src/cli/imagegen.js';
 import { captureNewsshot } from '../src/cli/newsshot.js';
 import { pickPhoto } from '../src/cli/photo.js';
 import type { StoryIR } from '../src/ir/story.js';
@@ -25,6 +28,18 @@ function slugSubject(q: string): string {
   return ('img-' + q.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')).slice(0, 40);
 }
 
+/** A file-safe [a-z0-9_] catalog id for a generated illustration, content-addressed by its prompt. */
+function genId(prompt: string): string {
+  return 'gen_' + createHash('sha256').update(prompt).digest('hex').slice(0, 12);
+}
+
+/** Pixel size for a generated image by aspect (rendered fit:cover, so exact ratio isn't critical). */
+function genSize(orientation: Orientation): { width: number; height: number } {
+  if (orientation === 'landscape') return { width: 1344, height: 768 };
+  if (orientation === 'square') return { width: 1024, height: 1024 };
+  return { width: 768, height: 1344 };
+}
+
 export interface ScoutResult {
   resolved: number;
   failed: number;
@@ -39,6 +54,7 @@ export async function resolveVisuals(story: StoryIR, aspect?: string): Promise<S
   const seen = new Map<string, string | null>(); // footage query → resolved asset id (or null = failed)
   const seenWiki = new Map<string, string | null>(); // wiki subject → resolved image asset id
   const seenShot = new Map<string, string | null>(); // newsshot url → resolved screenshot asset id
+  const seenGen = new Map<string, string | null>(); // gen prompt → resolved generated-illustration asset id
   let resolved = 0;
   let failed = 0;
 
@@ -160,6 +176,56 @@ export async function resolveVisuals(story: StoryIR, aspect?: string): Promise<S
           }
         }
         // else: drop → the beat renders text over the styled background
+        continue;
+      }
+      // A `asset: "gen:<prompt>"` placeholder → an AI-GENERATED illustration from the FREE FLUX provider
+      // pool (Cloudflare → HF → Pollinations → AI Horde). For an ABSTRACT/CONCEPTUAL beat where no real
+      // photo/footage fits (economics, policy, a concept) or a stylized scene. Cached content-addressed;
+      // falls back to `fallback_q` footage if every provider fails.
+      if (av.startsWith('gen:')) {
+        const prompt = av.slice(4).trim();
+        let gid = seenGen.get(prompt);
+        if (gid === undefined) {
+          try {
+            const id = genId(prompt);
+            await generateImage({ prompt, id, rootDir: PROJECT_ROOT, ...genSize(orientation) });
+            gid = id;
+            resolved += 1;
+          } catch {
+            gid = null;
+            failed += 1;
+          }
+          seenGen.set(prompt, gid);
+        }
+        if (gid) {
+          const a = { ...((item.args as Record<string, unknown>) ?? {}) };
+          delete a['fallback_q'];
+          if (a['kenburns'] === undefined) a['kenburns'] = 'in';
+          if (a['fit'] === undefined) a['fit'] = 'cover';
+          kept.push({ ...(item as object), asset: gid, at: 'center', args: a } as (typeof kept)[number]);
+          hasFootage = true;
+          continue;
+        }
+        // All providers failed (rare — two keyless backstops) → the beat's fallback footage, else text.
+        const fbg = typeof (item.args as { fallback_q?: unknown } | undefined)?.fallback_q === 'string'
+          ? (item.args as { fallback_q: string }).fallback_q.trim()
+          : '';
+        if (fbg) {
+          let fid = seen.get(fbg);
+          if (fid === undefined) {
+            try { fid = (await pickFootage({ query: fbg, id: slugQuery(fbg), orientation, rootDir: PROJECT_ROOT })).id; resolved += 1; }
+            catch { fid = null; }
+            seen.set(fbg, fid);
+          }
+          if (fid) {
+            const a = { ...((item.args as Record<string, unknown>) ?? {}) };
+            delete a['fallback_q']; delete a['kenburns'];
+            if (a['fit'] === undefined) a['fit'] = 'cover';
+            a['loop'] = true; a['muted'] = true;
+            kept.push({ ...(item as object), asset: undefined, footage: fid, at: 'center', args: a } as (typeof kept)[number]);
+            hasFootage = true;
+          }
+        }
         continue;
       }
       const fv = typeof item.footage === 'string' ? item.footage : '';

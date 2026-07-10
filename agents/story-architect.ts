@@ -11,7 +11,7 @@ import { PROJECT_ROOT, runClaudeText, extractJson } from './claude.js';
 import type { FactSheet } from './research.js';
 
 /** Bump when the prompt changes → invalidates the cache (like a pass PASS_VERSION). */
-export const PROMPT_VERSION = 'story-architect@11';
+export const PROMPT_VERSION = 'story-architect@12'; // @12: gen: generated-illustration option
 
 export interface StoryBrief {
   brief: string;
@@ -132,9 +132,16 @@ RULES:
       Copy chart.data VERBATIM (the REAL numbers) into "data"; give ONLY the 'chart.emphasis' row a
       "color": "#ff4438" (others omit color). Pair the chart beat with a short "text" naming the metric
       ("1,045 हमले") and a 'say' built on those numbers.
+  (E) GENERATED ILLUSTRATION — for an ABSTRACT / CONCEPTUAL beat where NO real photo, footage, map, or chart
+      fits (an economic idea, a policy, a metaphor, a "what if", a concept) — a custom AI illustration beats
+      vague stock: { "asset": "gen:<a detailed illustration prompt>", "as": "bg", "args": { "z": 0, "fit": "cover", "kenburns": "in", "fallback_q": "<footage phrase>" } }.
+      Write the gen prompt as a FLAT-VECTOR EDITORIAL or CINEMATIC-STYLIZED illustration (e.g. "flat-vector
+      editorial illustration of a supply chain breaking, minimal, dark cinematic background") — NEVER for a
+      real named person/place/event (use a real WIKIMEDIA image for those). Use SPARINGLY (1 per reel at most).
   RULE OF THUMB: a striking STAT/ranking/report → a CHART (D) + the REAL source screenshot (C) as the
   STARS (lead with them, don't bury the number under generic footage); a named person/place/event → a
-  WIKIMEDIA image (A); a generic scene → footage (B); geography → the map. Prefer real data/images/maps.
+  WIKIMEDIA image (A); a generic scene → footage (B); geography → the map; an ABSTRACT CONCEPT with no real
+  visual → a GENERATED illustration (E). Prefer real data/images/maps; generate only for the abstract.
 - MOTION: every text has an "anim" (+ "z":20). Every beat has a "camera" (first="establishing", then vary
   slow_push_in / slow_pull_out / pan_left / pan_right / hold; never 3 same in a row).
 - Use ONLY these beat keys: id, say, duration, camera, show. Show keys: footage OR asset OR generator, text, as, at, args.
