@@ -19,6 +19,7 @@ import {
   synthNarration,
   alignNarration,
   timedWordsFromAlignment,
+  flowWordsFromEnglish,
   mouthTrackForNarration,
   type NarrateEngine,
   type AlignedWord,
@@ -27,6 +28,7 @@ import {
   DEFAULT_WPM,
   type NarrateRequest,
 } from './narrate.js';
+import { translateToEnglish, isEnglishLang } from './caption-english.js';
 
 /** The TTS engine ids the narrate pass accepts; an authored `voice.engine` outside this set is ignored. */
 const KNOWN_ENGINES: ReadonlySet<NarrateEngine> = new Set<NarrateEngine>([
@@ -56,7 +58,7 @@ const KNOWN_ENGINES: ReadonlySet<NarrateEngine> = new Set<NarrateEngine>([
  * emitted scene → bump the version (cache-invalidation rule). ffmpeg missing → no track (never fail).
  */
 export const PASS_ID = 'narrate';
-export const PASS_VERSION = '1.3';
+export const PASS_VERSION = '1.4'; // 1.4: `flow` caption mode (English karaoke synced to speech)
 
 /**
  * Resolve the EFFECTIVE voice for one beat's narration: the per-beat override ?? the speaking cast
@@ -110,10 +112,16 @@ export interface NarrateOptions {
    */
   captions?: boolean | undefined;
   /**
-   * Caption cadence: `line` (whole line for the cue window — default) or `words` (cumulative word
-   * reveal across `duration_frames`; timed by whisper forced-alignment when available, else even-split).
+   * Caption cadence: `line` (whole line — default), `words` (cumulative reveal), or `flow` (karaoke — a
+   * rolling ENGLISH phrase that highlights the spoken word; subtitles are translated to English and timed
+   * to the real speech via whisper). `words`/`flow` are timed by forced-alignment, else even-split.
    */
-  captionMode?: 'line' | 'words' | undefined;
+  captionMode?: 'line' | 'words' | 'flow' | undefined;
+  /**
+   * Narration language (e.g. "hi-IN", "en-IN"). Used by `flow` captions to decide whether to translate to
+   * English (non-English → translate; English → use the transcript verbatim). Defaults to $SARVAM_LANG.
+   */
+  captionLang?: string | undefined;
   /**
    * M4: force-align each narration wav to its transcript via faster-whisper (OFFLINE, cached content-
    * addressed) for PRECISE per-word caption timings (`words` mode only). Default true; missing whisper
@@ -165,7 +173,13 @@ export function applyNarration(sceneIR: SceneIR, story: StoryIR, opts: NarrateOp
   // Captions are re-derived here from this run's narration lines (replace any prior caption set).
   const wantCaptions = opts.captions !== false;
   const captionMode = opts.captionMode ?? 'line';
-  const wantAlign = opts.align !== false && captionMode === 'words';
+  // `flow` needs the whisper speech timeline too (to ride the real narration pace).
+  const wantAlign = opts.align !== false && (captionMode === 'words' || captionMode === 'flow');
+  // `flow` captions are ALWAYS English: translate unless the narration itself is English.
+  const captionLang = opts.captionLang ?? process.env['SARVAM_LANG'];
+  const translateCaptions = captionMode === 'flow' && !isEnglishLang(captionLang);
+  // Brand accent for the active-word highlight (a caption-edge override; else the renderer's saffron default).
+  const brandAccent = sceneIR.defs?.stylekit?.brand?.accent?.captionEdge;
   const wantLipSync = opts.lipSync !== false;
   const captions: CaptionCue[] = [];
   // M4b: mouth tracks keyed by the SPEAKER rig-layer id (one per narrated beat with an on-screen actor),
@@ -236,27 +250,38 @@ export function applyNarration(sceneIR: SceneIR, story: StoryIR, opts: NarrateOp
         duration_frames: durationFrames,
         mode: captionMode,
       };
-      if (captionMode === 'words') {
-        // Even-split fallback tokens (always present so the renderer never needs to re-tokenize).
-        cap.words = say.split(/\s+/).filter(Boolean);
-        // M4: force-align the cached wav → real per-word timings (OFFLINE, content-addressed cache).
-        // Whisper missing / failed → keep the even-split fallback (never fail the build).
+      if (captionMode === 'words' || captionMode === 'flow') {
+        // The whisper speech timeline (real per-word timings) — shared by both modes. Missing / failed →
+        // even-split fallback (never fail the build).
+        let al: { aligned: boolean; words: AlignedWord[] } = { aligned: false, words: [] };
         if (wantAlign) {
-          const al = alignNarration(res.wavPath, res.hash, say, audioDir, opts.rootDir);
-          if (al.aligned && al.words.length > 0) {
-            alignWords = al.words; // reused below for coarse viseme labels (no extra whisper run)
-            const timed = timedWordsFromAlignment(al.words, fps, durationFrames);
-            if (timed.length > 0) {
-              cap.wordsTimed = timed;
-              alignedCount += 1;
-            } else {
-              evenSplitCount += 1;
-            }
+          al = alignNarration(res.wavPath, res.hash, say, audioDir, opts.rootDir);
+          if (al.aligned && al.words.length > 0) alignWords = al.words; // reused for coarse viseme labels
+        }
+
+        if (captionMode === 'flow') {
+          // ENGLISH subtitle text (translated once, cached), timed to the real speech pace so it FLOWS with
+          // the narration (a muted viewer reads along). English narration → use the transcript verbatim.
+          const english = translateCaptions ? translateToEnglish(say, opts.rootDir) : say;
+          cap.text = english;
+          const timed = flowWordsFromEnglish(english, alignWords, fps, durationFrames);
+          // Keep `words` and `wordsTimed` the SAME token list (flow merges lone punctuation) so the
+          // renderer's chunking (words) and active-index (wordsTimed) never drift apart.
+          cap.words = timed.length > 0 ? timed.map((t) => t.w) : english.split(/\s+/).filter(Boolean);
+          if (timed.length > 0) cap.wordsTimed = timed;
+          if (brandAccent) cap.accent = brandAccent;
+          if (alignWords) alignedCount += 1;
+          else evenSplitCount += 1;
+        } else {
+          // `words`: cumulative reveal of the transcript at real spoken times (M4).
+          cap.words = say.split(/\s+/).filter(Boolean);
+          const timed = alignWords ? timedWordsFromAlignment(alignWords, fps, durationFrames) : [];
+          if (timed.length > 0) {
+            cap.wordsTimed = timed;
+            alignedCount += 1;
           } else {
             evenSplitCount += 1;
           }
-        } else {
-          evenSplitCount += 1;
         }
       }
       captions.push(cap);

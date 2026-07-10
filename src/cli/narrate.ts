@@ -576,6 +576,68 @@ export function timedWordsFromAlignment(
   return timed;
 }
 
+/**
+ * FLOW captions: time ENGLISH subtitle words onto the REAL narration speech timeline. The audio is Hindi
+ * (whisper `align` gives the actual per-word Hindi timeline); the caption is an ENGLISH translation with a
+ * different word count. We don't need exact per-word sync — just FLOW — so each English word `i` of `M` is
+ * placed at the speech position `i/M` interpolated across the Hindi word starts (which encode the true pace +
+ * pauses). No alignment → even-split across the window. Pure + deterministic; `at` is non-decreasing.
+ */
+export function flowWordsFromEnglish(
+  englishText: string,
+  aligned: AlignedWord[] | undefined,
+  fps: number,
+  durationFrames: number,
+): Array<{ w: string; at: number; dur: number }> {
+  // Tokenize, then MERGE standalone punctuation (a lone "—", ",", etc.) onto the previous word so it never
+  // becomes its own highlighted token / a tiny "country —" chunk. Keeps reading natural.
+  const raw = englishText.split(/\s+/).filter(Boolean);
+  const words: string[] = [];
+  for (const tok of raw) {
+    if (/^[—–\-·,.;:!?]+$/.test(tok) && words.length > 0) {
+      words[words.length - 1] += ' ' + tok;
+    } else {
+      words.push(tok);
+    }
+  }
+  const M = words.length;
+  if (M === 0) return [];
+
+  // The speech timeline in frames: the Hindi word START times (monotonic), clamped into the window. Falls
+  // back to an even 0..durationFrames ramp when there's no alignment.
+  const starts: number[] = [];
+  if (aligned && aligned.length > 0) {
+    for (const w of aligned) {
+      const f = Math.max(0, Math.min(durationFrames - 1, Math.round(w.start * fps)));
+      starts.push(f);
+    }
+  }
+  const atFor = (i: number): number => {
+    if (starts.length === 0) return Math.min(durationFrames - 1, Math.round((i / M) * durationFrames));
+    // Continuous index into the Hindi word-start array, then linear interpolation between neighbours.
+    const pos = (M === 1 ? 0 : i / (M - 1)) * (starts.length - 1);
+    const k = Math.floor(pos);
+    const frac = pos - k;
+    const a = starts[k] ?? 0;
+    const b = starts[Math.min(starts.length - 1, k + 1)] ?? a;
+    return Math.round(a + (b - a) * frac);
+  };
+
+  const timed: Array<{ w: string; at: number; dur: number }> = [];
+  let prev = 0;
+  for (let i = 0; i < M; i++) {
+    const at = Math.max(prev, Math.min(durationFrames - 1, atFor(i))); // non-decreasing
+    timed.push({ w: words[i]!, at, dur: 1 });
+    prev = at;
+  }
+  // Fill each word's `dur` up to the next word's start (last word runs to the window end).
+  for (let i = 0; i < timed.length; i++) {
+    const next = i + 1 < timed.length ? timed[i + 1]!.at : durationFrames;
+    timed[i]!.dur = Math.max(1, next - timed[i]!.at);
+  }
+  return timed;
+}
+
 // --- M4b lip-sync visemes: per-frame mouth-openness from the cached narration wav (OFFLINE, cached) ---
 //
 // Like TTS + alignment, the viseme/openness track is produced ONCE OFFLINE at build into a CONTENT-

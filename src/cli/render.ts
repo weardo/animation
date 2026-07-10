@@ -154,8 +154,8 @@ interface Args {
   wpm?: number | undefined;
   /** A1 captions: emit narration-synced on-screen subtitles (default on). `--no-captions` skips it. */
   captions: boolean;
-  /** Caption cadence: `line` (default) or `words` (cumulative reveal; whisper-timed when available). */
-  captionMode?: 'line' | 'words' | undefined;
+  /** Caption cadence: `flow` (default — English karaoke synced to speech), `line`, or `words`. */
+  captionMode?: 'line' | 'words' | 'flow' | undefined;
   /** M4 word-align: force-align captions with whisper for precise word timing (default on, `words` mode). */
   wordAlign: boolean;
   /** M4b lip-sync: derive a mouth track from narration to drive the speaker rig (default on). `--no-lip-sync` skips it. */
@@ -243,7 +243,10 @@ function parseArgs(argv: string[]): Args {
   // A1 captions: narration-synced subtitles, on by default with narration; --no-captions skips them.
   // --caption-mode line|words selects the on-screen cadence (default line).
   const captions = !argv.includes('--no-captions');
-  const captionMode = (flag('--caption-mode') === 'words' ? 'words' : 'line') as 'line' | 'words';
+  // `flow` (English karaoke, synced to speech) is the DEFAULT for this news-reel tool; --caption-mode
+  // line|words switches back to the narration-language line / cumulative reveal.
+  const cm = flag('--caption-mode');
+  const captionMode = (cm === 'line' || cm === 'words' || cm === 'flow' ? cm : 'flow') as 'line' | 'words' | 'flow';
   // M4 word-align: whisper forced-alignment for precise per-word caption timing (`words` mode). On by
   // default; --no-word-align skips the (slow first-run) whisper step and uses even-split directly.
   const wordAlign = !argv.includes('--no-word-align');

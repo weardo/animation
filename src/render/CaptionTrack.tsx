@@ -37,6 +37,37 @@ const CAPTION_FONT = '"Noto Sans Devanagari", "DejaVu Sans", sans-serif';
 const CAPTION_DEVANAGARI_FAMILY = 'Noto Sans Devanagari';
 const CAPTION_DEVANAGARI_URI = 'asset://fonts/NotoSansDevanagari.ttf';
 
+/** The default active-word highlight when a cue carries no brand `accent` (India Storyboard saffron). */
+const DEFAULT_ACCENT = '#FA7A1E';
+
+/**
+ * Group words into short readable phrases (flow captions show ONE chunk at a time). A chunk ends at
+ * sentence/clause punctuation (. , ! ? ; :) or once it reaches `maxWords`. Pure → deterministic. Returns
+ * [start,end) index ranges over `words`.
+ */
+function chunkRanges(words: string[], maxWords = 6, minWords = 3): Array<[number, number]> {
+  const ranges: Array<[number, number]> = [];
+  let start = 0;
+  for (let i = 0; i < words.length; i++) {
+    const len = i - start + 1;
+    const endsClause = /[.,!?;:—]$/.test(words[i] ?? '');
+    // Break at a clause end only once the chunk has some heft (avoids a lone "Friends,"); always break at
+    // maxWords or the final word.
+    if ((endsClause && len >= minWords) || len >= maxWords || i === words.length - 1) {
+      ranges.push([start, i + 1]);
+      start = i + 1;
+    }
+  }
+  if (ranges.length === 0) return [[0, words.length]];
+  // Merge a short trailing chunk into the previous so the last phrase never dangles (e.g. "of 8.574.").
+  const last = ranges[ranges.length - 1]!;
+  if (ranges.length > 1 && last[1] - last[0] < minWords) {
+    ranges[ranges.length - 2]![1] = last[1];
+    ranges.pop();
+  }
+  return ranges;
+}
+
 /** One caption cue, rendered for its window. The `words` mode reveals tokens cumulatively even-split. */
 const CaptionCueView: React.FC<{ cue: CaptionCue }> = ({ cue }) => {
   const frame = useCurrentFrame(); // LOCAL frame within the <Sequence> (0 at cue.at)
@@ -68,6 +99,42 @@ const CaptionCueView: React.FC<{ cue: CaptionCue }> = ({ cue }) => {
     }
   }
 
+  // FLOW (karaoke): show ONE rolling short phrase; highlight the currently-spoken word in the brand accent
+  // (already-spoken words full-white, upcoming words dimmed). Reads along with the voice for a muted viewer.
+  let flowNode: React.ReactNode = null;
+  if (cue.mode === 'flow') {
+    const words = cue.words && cue.words.length > 0 ? cue.words : cue.text.split(/\s+/).filter(Boolean);
+    const accent = cue.accent ?? DEFAULT_ACCENT;
+    // Active word (0-based): the last word whose start `at` <= local frame (deterministic step of frame).
+    let active = 0;
+    if (cue.wordsTimed && cue.wordsTimed.length > 0) {
+      for (let i = 0; i < cue.wordsTimed.length; i++) if (frame >= cue.wordsTimed[i]!.at) active = i;
+    } else if (words.length > 0) {
+      active = Math.floor(frame / (cue.duration_frames / words.length));
+    }
+    active = Math.max(0, Math.min(words.length - 1, active));
+    // The phrase (chunk) containing the active word — a rolling window, not the whole line.
+    const range = chunkRanges(words).find(([s, e]) => active >= s && active < e) ?? [0, words.length];
+    const [cs, ce] = range;
+    flowNode = words.slice(cs, ce).map((w, k) => {
+      const idx = cs + k;
+      const isActive = idx === active;
+      return (
+        <span
+          key={idx}
+          style={{
+            color: isActive ? accent : '#ffffff',
+            opacity: idx <= active ? 1 : 0.45, // spoken = full, upcoming = dim
+            fontWeight: isActive ? 800 : 600,
+            margin: '0 0.14em',
+          }}
+        >
+          {w}
+        </span>
+      );
+    });
+  }
+
   // Bottom-centre, readable: a semi-opaque dark pill behind light text (the standard subtitle look),
   // constrained to ~80% width so long lines wrap instead of bleeding to the edges.
   const wrapStyle: React.CSSProperties = {
@@ -97,7 +164,7 @@ const CaptionCueView: React.FC<{ cue: CaptionCue }> = ({ cue }) => {
   return (
     <AbsoluteFill data-caption={cue.id}>
       <div style={wrapStyle}>
-        <div style={pillStyle}>{text}</div>
+        <div style={pillStyle}>{cue.mode === 'flow' ? flowNode : text}</div>
       </div>
     </AbsoluteFill>
   );

@@ -862,16 +862,21 @@ export const CaptionCueSchema = z
     at: z.number().int().nonnegative(),
     /** On-screen length in frames (matches the source narration cue's `duration_frames`). */
     duration_frames: z.number().int().positive(),
-    /** Cadence: whole line, or cumulative word reveal (timed if `wordsTimed`, else even-split). Default `line`. */
-    mode: z.enum(['line', 'words']).default('line'),
-    /** Pre-tokenized words (for `mode:"words"`); the renderer reveals them even-split across the window. */
+    /**
+     * Cadence: `line` (whole line), `words` (cumulative reveal), or `flow` (karaoke — a rolling short
+     * phrase where the CURRENTLY-spoken word is highlighted; reads along with the voice for a muted viewer).
+     */
+    mode: z.enum(['line', 'words', 'flow']).default('line'),
+    /** Pre-tokenized words (for `words`/`flow`); revealed/tracked even-split when no `wordsTimed`. */
     words: z.array(z.string()).optional(),
     /**
      * M4 whisper forced-alignment: per-word LOCAL frame timings (token + `at` + `dur`, relative to the
-     * cue start). When present (and `mode:"words"`), the renderer reveals each word at its REAL spoken
-     * time instead of even-split. Produced OFFLINE + cached content-addressed → deterministic.
+     * cue start). When present (and `mode:"words"`/`"flow"`), the renderer times each word at its REAL
+     * spoken frame instead of even-split. Produced OFFLINE + cached content-addressed → deterministic.
      */
     wordsTimed: z.array(TimedWordSchema).optional(),
+    /** `flow` only: the brand accent color for the active-word highlight (e.g. saffron). Default in render. */
+    accent: z.string().optional(),
   })
   .strict();
 export type CaptionCue = z.infer<typeof CaptionCueSchema>;
