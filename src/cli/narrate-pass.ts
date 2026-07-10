@@ -58,7 +58,7 @@ const KNOWN_ENGINES: ReadonlySet<NarrateEngine> = new Set<NarrateEngine>([
  * emitted scene → bump the version (cache-invalidation rule). ffmpeg missing → no track (never fail).
  */
 export const PASS_ID = 'narrate';
-export const PASS_VERSION = '1.4'; // 1.4: `flow` caption mode (English karaoke synced to speech)
+export const PASS_VERSION = '1.5'; // 1.5: `flow` captions use a STEADY reading pace (no whisper)
 
 /**
  * Resolve the EFFECTIVE voice for one beat's narration: the per-beat override ?? the speaking cast
@@ -173,8 +173,9 @@ export function applyNarration(sceneIR: SceneIR, story: StoryIR, opts: NarrateOp
   // Captions are re-derived here from this run's narration lines (replace any prior caption set).
   const wantCaptions = opts.captions !== false;
   const captionMode = opts.captionMode ?? 'line';
-  // `flow` needs the whisper speech timeline too (to ride the real narration pace).
-  const wantAlign = opts.align !== false && (captionMode === 'words' || captionMode === 'flow');
+  // Only `words` mode needs whisper forced-alignment now. `flow` captions use a STEADY reading pace
+  // (decoupled from narration — user 2026-07-10), so they skip the slow whisper step entirely.
+  const wantAlign = opts.align !== false && captionMode === 'words';
   // `flow` captions are ALWAYS English: translate unless the narration itself is English.
   const captionLang = opts.captionLang ?? process.env['SARVAM_LANG'];
   const translateCaptions = captionMode === 'flow' && !isEnglishLang(captionLang);

@@ -577,15 +577,17 @@ export function timedWordsFromAlignment(
 }
 
 /**
- * FLOW captions: time ENGLISH subtitle words onto the REAL narration speech timeline. The audio is Hindi
- * (whisper `align` gives the actual per-word Hindi timeline); the caption is an ENGLISH translation with a
- * different word count. We don't need exact per-word sync — just FLOW — so each English word `i` of `M` is
- * placed at the speech position `i/M` interpolated across the Hindi word starts (which encode the true pace +
- * pauses). No alignment → even-split across the window. Pure + deterministic; `at` is non-decreasing.
+ * FLOW captions: time ENGLISH subtitle words at a STEADY, readable pace — DECOUPLED from the narration's
+ * per-word timing. Riding the real speech timeline made the flow jerky (rushing on fast speech, crawling on
+ * pauses); a viewer reads best at a smooth constant rate. So each of the `M` words gets an equal slice of the
+ * beat window — but the per-word dwell is CLAMPED to a comfortable reading band (never faster than
+ * MIN_WORD_FRAMES, never slower than MAX_WORD_FRAMES) and the sequence is scaled to fit the window. Pure +
+ * deterministic. (`fps` sets the clamp band in real time.) The `aligned` arg is accepted for signature
+ * compatibility but intentionally IGNORED — steadiness beats exact sync here (user 2026-07-10).
  */
 export function flowWordsFromEnglish(
   englishText: string,
-  aligned: AlignedWord[] | undefined,
+  _aligned: AlignedWord[] | undefined,
   fps: number,
   durationFrames: number,
 ): Array<{ w: string; at: number; dur: number }> {
@@ -603,37 +605,19 @@ export function flowWordsFromEnglish(
   const M = words.length;
   if (M === 0) return [];
 
-  // The speech timeline in frames: the Hindi word START times (monotonic), clamped into the window. Falls
-  // back to an even 0..durationFrames ramp when there's no alignment.
-  const starts: number[] = [];
-  if (aligned && aligned.length > 0) {
-    for (const w of aligned) {
-      const f = Math.max(0, Math.min(durationFrames - 1, Math.round(w.start * fps)));
-      starts.push(f);
-    }
-  }
-  const atFor = (i: number): number => {
-    if (starts.length === 0) return Math.min(durationFrames - 1, Math.round((i / M) * durationFrames));
-    // Continuous index into the Hindi word-start array, then linear interpolation between neighbours.
-    const pos = (M === 1 ? 0 : i / (M - 1)) * (starts.length - 1);
-    const k = Math.floor(pos);
-    const frac = pos - k;
-    const a = starts[k] ?? 0;
-    const b = starts[Math.min(starts.length - 1, k + 1)] ?? a;
-    return Math.round(a + (b - a) * frac);
-  };
+  // A comfortable reading band per word (in frames): ~0.28s floor .. ~0.9s ceiling at the scene fps.
+  const MIN_WORD_FRAMES = Math.max(4, Math.round(fps * 0.28));
+  const MAX_WORD_FRAMES = Math.max(MIN_WORD_FRAMES + 1, Math.round(fps * 0.9));
+  // Even slice of the window, then clamp into the readable band. If the clamped run overflows the window,
+  // scale it down so it still fits (steady, just a touch quicker); if short, the last word simply holds.
+  let per = Math.round(durationFrames / M);
+  per = Math.max(MIN_WORD_FRAMES, Math.min(MAX_WORD_FRAMES, per));
+  if (per * M > durationFrames) per = Math.max(1, Math.floor(durationFrames / M));
 
   const timed: Array<{ w: string; at: number; dur: number }> = [];
-  let prev = 0;
   for (let i = 0; i < M; i++) {
-    const at = Math.max(prev, Math.min(durationFrames - 1, atFor(i))); // non-decreasing
-    timed.push({ w: words[i]!, at, dur: 1 });
-    prev = at;
-  }
-  // Fill each word's `dur` up to the next word's start (last word runs to the window end).
-  for (let i = 0; i < timed.length; i++) {
-    const next = i + 1 < timed.length ? timed[i + 1]!.at : durationFrames;
-    timed[i]!.dur = Math.max(1, next - timed[i]!.at);
+    const at = Math.min(durationFrames - 1, i * per);
+    timed.push({ w: words[i]!, at, dur: per });
   }
   return timed;
 }

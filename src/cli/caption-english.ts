@@ -10,14 +10,14 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 /** Bump when the prompt changes → invalidates the cache (like a pass PASS_VERSION). */
-const PROMPT_VERSION = 'caption-en@1';
+const PROMPT_VERSION = 'caption-en@2';
 const CLAUDE_BIN = process.env['CLAUDE_BIN'] ?? 'claude';
 
 const SYSTEM =
-  'You are a subtitle translator for a news video. Translate the following Hinglish/Hindi narration line ' +
-  'into natural, PUNCHY ENGLISH subtitles a viewer reads while listening. Keep it CONCISE and faithful — ' +
-  'no padding, no explanation, keep numbers/names exactly. Output ONLY the English translation on one line, ' +
-  'no quotes, no notes.';
+  'You are a subtitle translator for a news video. Translate the given Hinglish/Hindi narration line into ' +
+  'natural, PUNCHY ENGLISH subtitles a viewer reads while listening. Keep it CONCISE and faithful — no ' +
+  'padding, keep numbers/names exactly. ⚠️ Output the English sentence and NOTHING ELSE: no label (do NOT ' +
+  'write "Translated subtitle:", "English:", etc.), no quotes, no preamble, no notes — just the sentence.';
 
 /** Extract the model text from `claude -p --output-format json` (the reply is in `.result`). */
 function extractResult(stdout: string): string {
@@ -28,6 +28,25 @@ function extractResult(stdout: string): string {
     /* not JSON — fall through */
   }
   return stdout.trim();
+}
+
+/**
+ * Clean the model reply down to JUST the translated line. The model sometimes prefixes a label/preamble
+ * ("Translated subtitle:", "English:", "Here's the translation:") or wraps quotes despite the instruction —
+ * strip those so ONLY the translation ends up on screen (user 2026-07-10).
+ */
+function cleanTranslation(s: string): string {
+  // If it came back multi-line, prefer the last non-empty line (the translation usually follows any preamble).
+  const lines = s.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  let t = lines.length > 1 ? (lines[lines.length - 1] as string) : (lines[0] ?? '');
+  // Strip a leading label like "Translated subtitle(s):" / "English (translation):" / "Here's ...:".
+  t = t.replace(
+    /^\s*(translated(\s+(subtitles?|line|text))?|english(\s+(translation|subtitle|version))?|translation|subtitle|caption|output|note|here('?s| is)[^:]{0,40})\s*[:\-–—]\s*/i,
+    '',
+  );
+  // Strip wrapping quotes / stray edge punctuation + collapse whitespace.
+  t = t.replace(/^["'“”«»\s]+|["'“”«»\s]+$/g, '').replace(/\s+/g, ' ').trim();
+  return t;
 }
 
 /**
@@ -42,23 +61,26 @@ export function translateToEnglish(text: string, rootDir: string): string {
   const cacheFile = resolve(cacheDir, `${key}.txt`);
   if (existsSync(cacheFile)) return readFileSync(cacheFile, 'utf8');
 
-  let english = trimmed;
+  let english = '';
   try {
     const stdout = execFileSync(
       CLAUDE_BIN,
       ['-p', '--output-format', 'json', '--strict-mcp-config', '--mcp-config', '{"mcpServers":{}}', '--allowedTools', ''],
       { input: `${SYSTEM}\n\nLINE: ${trimmed}`, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'], maxBuffer: 1 << 20 },
     );
-    const out = extractResult(stdout).replace(/^["'\s]+|["'\s]+$/g, '').replace(/\s+/g, ' ').trim();
-    if (out) english = out;
+    english = cleanTranslation(extractResult(stdout));
   } catch {
-    // no `claude` binary / bad output → keep the original (the caption still shows, just not translated).
-    english = trimmed;
+    english = '';
   }
 
-  mkdirSync(cacheDir, { recursive: true });
-  writeFileSync(cacheFile, english, 'utf8');
-  return english;
+  // Only CACHE a SUCCESSFUL translation. A transient `claude` failure returns the original text but is NOT
+  // cached, so a later render retries instead of permanently freezing the untranslated (Hindi) line.
+  if (english) {
+    mkdirSync(cacheDir, { recursive: true });
+    writeFileSync(cacheFile, english, 'utf8');
+    return english;
+  }
+  return trimmed;
 }
 
 /** True when the narration language is English (so no translation is needed — use the `say` verbatim). */
