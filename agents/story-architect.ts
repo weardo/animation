@@ -11,7 +11,7 @@ import { PROJECT_ROOT, runClaudeText, extractJson } from './claude.js';
 import type { FactSheet } from './research.js';
 
 /** Bump when the prompt changes → invalidates the cache (like a pass PASS_VERSION). */
-export const PROMPT_VERSION = 'story-architect@14'; // @14: clip: |phrase locator + contain
+export const PROMPT_VERSION = 'story-architect@15'; // @15: clip-audio beat has NO narration (no overlap)
 
 export interface StoryBrief {
   brief: string;
@@ -126,6 +126,11 @@ RULES:
       false when the WORDS matter (a gaffe, a quote) — the clip's own audio plays. Do NOT set "fit" (the scout
       uses 'contain' so the landscape clip is never side-cropped). Because the clip IS the evidence, DO NOT add
       an "unverified/we can't confirm" caveat beat for a story you are showing the real footage of.
+      ⚠️⚠️ AUDIO — a "muted": false clip plays the person's ACTUAL WORDS, so NEVER put "say" (narration) on that
+      beat: the VO would talk OVER the clip and both get muddy. Instead give the clip its OWN dedicated beat
+      with NO "say" field at all and an explicit "duration" of {"seconds": 4-6} (long enough for the phrase to
+      play) — let the clip's audio breathe. SET IT UP on the PREVIOUS beat's narration ("दोस्तों, सुनिए उन्होंने
+      क्या कहा:") and REACT on the NEXT beat. The clip beat still shows a "text" headline (silent, fine).
   (C) REAL SOURCE SCREENSHOT (EVIDENCE) — for a DATA/REPORT/RANKING/STATISTIC story, show the ACTUAL
       article/report the facts come from ("here is the real source", not a reconstruction). Use a URL from
       the fact sheet's 'sourceUrls': { "asset": "newsshot:<url>", "as": "bg", "args": { "z": 0, "fit": "contain", "kenburns": "out-slow", "fallback_q": "<footage phrase>" } }.
