@@ -87,6 +87,58 @@ export function searchClipUrl(query: string): { url: string; title: string } | n
   }
 }
 
+const WHISPER_PYTHON = '.venv-whisper/bin/python';
+const ALIGN_SCRIPT = 'scripts/tts/align_whisper.py';
+const HF_HOME = process.env['HF_HOME'] ?? '/mnt/data/astra/.cache/hf';
+
+/**
+ * Find WHEN a phrase is spoken in a clip → the start seconds (with a ~1s lead-in), so the reel plays FROM
+ * the actual moment (a gaffe / quote) instead of the clip's first seconds. Extracts the clip audio, whisper-
+ * transcribes it (the existing align script + .venv-whisper), and searches the transcript for `phrase`.
+ * Returns null on any failure (no whisper venv / phrase not found) → the caller plays from the start.
+ */
+export function locateClipMoment(clipPath: string, phrase: string, rootDir: string): number | null {
+  const py = resolvePath(rootDir, WHISPER_PYTHON);
+  const script = resolvePath(rootDir, ALIGN_SCRIPT);
+  if (!existsSync(py) || !existsSync(script) || !existsSync(clipPath) || !phrase.trim()) return null;
+  const norm = (s: string): string => s.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const target = norm(phrase);
+  if (!target) return null;
+  const tmp = resolvePath(rootDir, 'library', 'video', '.locate', objectHash({ clipPath, phrase }).slice(0, 12));
+  const wav = resolvePath(tmp, 'a.wav');
+  const alignJson = resolvePath(tmp, 'a.json');
+  try {
+    mkdirSync(tmp, { recursive: true });
+    execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', clipPath, '-ac', '1', '-ar', '16000', wav], { stdio: ['ignore', 'ignore', 'ignore'] });
+    execFileSync(py, [script, '--wav', wav, '--out', alignJson, '--model', 'small'], { stdio: ['ignore', 'ignore', 'ignore'], env: { ...process.env, HF_HOME } });
+    const words = JSON.parse(readFileSync(alignJson, 'utf8')) as Array<{ word: string; start: number }>;
+    // Build a normalized transcript + track each word's char offset → its start time.
+    let transcript = '';
+    const offsets: Array<{ char: number; t: number }> = [];
+    for (const x of words) {
+      const nw = norm(x.word);
+      if (!nw) continue;
+      offsets.push({ char: transcript.length, t: x.start });
+      transcript += nw + ' ';
+    }
+    const idx = transcript.indexOf(target);
+    if (idx >= 0) {
+      let t = 0;
+      for (const o of offsets) { if (o.char <= idx) t = o.t; else break; }
+      return Math.max(0, t - 1);
+    }
+    // Phrase not found verbatim → seek the LAST distinctive content word of the phrase.
+    const tw = target.split(' ').filter((w) => w.length > 3);
+    const key = tw[tw.length - 1];
+    const hit = key ? offsets.find((_, i) => norm(words[i]?.word ?? '') === key) : undefined;
+    return hit ? Math.max(0, hit.t - 1) : null;
+  } catch {
+    return null;
+  } finally {
+    try { rmSync(tmp, { recursive: true, force: true }); } catch { /* ignore */ }
+  }
+}
+
 /** yt-dlp metadata (publisher/title) without downloading. */
 function probeMeta(url: string): { publisher: string; title: string } {
   try {
